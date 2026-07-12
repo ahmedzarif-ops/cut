@@ -93,6 +93,11 @@ app.use("/api", helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// General per-IP throttle on all /api routes. Mounted before clerkMiddleware
+// so an unauthenticated flood can't consume JWT-verification work — the
+// limiter is IP-keyed and independent of auth status.
+app.use("/api", createApiLimiter());
+
 // Resolve the publishable key from the incoming request host so the same
 // server can serve multiple Clerk custom domains, falling back to the env key.
 app.use(
@@ -103,10 +108,6 @@ app.use(
     ),
   })),
 );
-
-// General per-IP throttle, before any route's requireAuth so unauthenticated
-// floods can't reach the Clerk verify path unthrottled.
-app.use("/api", createApiLimiter());
 
 app.use("/api", router);
 
