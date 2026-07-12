@@ -22,6 +22,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import { setDb, type Db } from "@workspace/db";
 import * as schema from "@workspace/db/schema";
 import router from "../routes";
+import { errorHandler } from "../middlewares/errorHandler";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = path.resolve(
@@ -90,6 +91,7 @@ export async function createTestContext(): Promise<TestContext> {
   app.use(express.json());
   app.use(testClerkAuth());
   app.use("/api", router);
+  app.use(errorHandler);
 
   return {
     app,
