@@ -789,7 +789,7 @@ After the `clerkMiddleware(...)` block (currently ends line 87) and BEFORE `app.
 app.use("/api", createApiLimiter());
 ```
 
-The final middleware order must read: pinoHttp → clerkLimiter(`/api/__clerk`) → clerkProxy(`/api/__clerk`) → cors → helmet(`/api`) → json → urlencoded → clerkMiddleware → apiLimiter(`/api`) → router(`/api`) → errorHandler.
+The final middleware order must read: pinoHttp → clerkLimiter(`/api/__clerk`) → clerkProxy(`/api/__clerk`) → cors → helmet(`/api`) → json → urlencoded → apiLimiter(`/api`) → clerkMiddleware → router(`/api`) → errorHandler. *(Amended post final review: apiLimiter moved ahead of clerkMiddleware, fix commit `26ba4c3`.)*
 
 - [ ] **Step 5: Run the security-headers test and the full api-server suite**
 

@@ -47,8 +47,8 @@ while touching auth, `db`, or the Express app.
   hangs, so the platform's kill grace period isn't wasted.
 - **`/api` is IP-rate-limited; `/api/__clerk` more strictly so.**
   `createApiLimiter` (`API_RATE_LIMIT`, default 100/min) is mounted ahead of
-  every route, so an unauthenticated flood can't reach `requireAuth`'s Clerk
-  verify path unthrottled. `createClerkLimiter` (`CLERK_RATE_LIMIT`, default
+  `clerkMiddleware` and every route, so an unauthenticated flood is throttled
+  before it can consume Clerk JWT-verification work or reach `requireAuth`. `createClerkLimiter` (`CLERK_RATE_LIMIT`, default
   30/min) guards the unauthenticated Clerk FAPI proxy specifically.
   `app.set("trust proxy", 1)` is required for both — it's what makes `req.ip`
   the real client IP behind the single edge proxy hop, not the proxy's own

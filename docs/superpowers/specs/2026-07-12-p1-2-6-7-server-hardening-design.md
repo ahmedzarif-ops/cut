@@ -131,11 +131,15 @@ app.set("trust proxy", 1)
 4. cors
 5. helmet         on /api
 6. express.json / urlencoded
-7. clerkMiddleware
-8. apiLimiter     on /api           (IP-keyed, before requireAuth)
+7. apiLimiter     on /api           (IP-keyed, before Clerk verify + requireAuth)
+8. clerkMiddleware
 9. router         on /api
 10. errorHandler  (last)
 ```
+
+*(Amended after the final whole-branch review: apiLimiter originally sat after
+clerkMiddleware; Zarif approved moving it ahead so unauthenticated floods are
+throttled before consuming JWT-verification work — fix commit `26ba4c3`.)*
 
 **Testability without breaking existing tests:** the 17 `me.test.ts` integration
 tests use the harness's own app (`helpers.ts:89`), which does **not** mount the
