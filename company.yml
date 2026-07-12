@@ -20,7 +20,7 @@ offer:
 
 icp:
   description: "Lifters (people who train with weights) who are cutting — trying to lose fat while keeping muscle — and want to be told what to do instead of juggling spreadsheets and three apps."
-  research_doc: ""      # not written yet — run "Research my ICP and write kb/icp-research.md" before GTM copy
+  research_doc: "kb/icp-research.md"   # sourced ICP research, 2026-07-12 (beachhead: the repeat cutter)
 
 brand:
   voice: "Direct, coach-like, zero fluff. Short sentences. Talks like a knowledgeable training partner, not a wellness brand. No hype, no guilt-tripping, no medical claims."
