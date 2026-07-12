@@ -1,5 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { getPool } from "@workspace/db";
+import { createShutdownHandler } from "./lib/shutdown";
 
 const rawPort = process.env["PORT"];
 
@@ -15,11 +17,19 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
-
+const server = app.listen(port, () => {
   logger.info({ port }, "Server listening");
 });
+
+const shutdown = createShutdownHandler({
+  server,
+  closePool: async () => {
+    await getPool()?.end();
+  },
+  logger,
+  timeoutMs: Number(process.env["SHUTDOWN_TIMEOUT_MS"] ?? 10_000),
+  exit: (code) => process.exit(code),
+});
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
