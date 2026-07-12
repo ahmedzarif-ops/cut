@@ -1,4 +1,8 @@
-CREATE TABLE "users" (
+-- Baseline migration. Hand-adjusted to be adoption-safe: existing
+-- environments were created with `drizzle-kit push` before migrations were
+-- introduced, so this file must succeed both on a blank database and on one
+-- that already has the pushed schema (IF NOT EXISTS + guarded constraint).
+CREATE TABLE IF NOT EXISTS "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"clerk_user_id" text NOT NULL,
 	"email" text,
@@ -10,7 +14,7 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_clerk_user_id_unique" UNIQUE("clerk_user_id")
 );
 --> statement-breakpoint
-CREATE TABLE "profiles" (
+CREATE TABLE IF NOT EXISTS "profiles" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
 	"display_name" text,
@@ -28,4 +32,8 @@ CREATE TABLE "profiles" (
 	CONSTRAINT "profiles_user_id_unique" UNIQUE("user_id")
 );
 --> statement-breakpoint
-ALTER TABLE "profiles" ADD CONSTRAINT "profiles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+DO $$ BEGIN
+	ALTER TABLE "profiles" ADD CONSTRAINT "profiles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+	WHEN duplicate_object THEN NULL;
+END $$;
