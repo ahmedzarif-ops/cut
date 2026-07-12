@@ -11,8 +11,18 @@ import {
   clerkProxyMiddleware,
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
+import helmet from "helmet";
+import {
+  createApiLimiter,
+  createClerkLimiter,
+} from "./middlewares/rateLimit";
 
 const app: Express = express();
+
+// Behind the Replit edge (a single proxy hop): trust it so req.ip is the real
+// client IP for rate-limit keying. `1`, not `true` — express-rate-limit rejects
+// a fully-permissive trust-proxy setting.
+app.set("trust proxy", 1);
 
 app.use(
   pinoHttp({
@@ -35,7 +45,9 @@ app.use(
 );
 
 // Clerk Frontend API proxy — must be mounted BEFORE body parsers (it streams
-// raw bytes). Only active in production; a no-op in development.
+// raw bytes). Throttle the unauthenticated proxy per IP before proxying.
+// Only active in production; a no-op in development.
+app.use(CLERK_PROXY_PATH, createClerkLimiter());
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
 // Explicit CORS allowlist. Never reflect arbitrary origins with credentials —
@@ -72,6 +84,12 @@ app.use(
     },
   }),
 );
+
+// Security headers on the API surface. Mounted AFTER the Clerk proxy so proxied
+// FAPI bytes are untouched. CSP disabled (JSON API); helmet's defaults still
+// emit nosniff, HSTS, X-Frame-Options, and no-referrer.
+app.use("/api", helmet({ contentSecurityPolicy: false }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -85,6 +103,10 @@ app.use(
     ),
   })),
 );
+
+// General per-IP throttle, before any route's requireAuth so unauthenticated
+// floods can't reach the Clerk verify path unthrottled.
+app.use("/api", createApiLimiter());
 
 app.use("/api", router);
 
