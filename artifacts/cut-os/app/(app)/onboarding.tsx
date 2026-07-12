@@ -2,8 +2,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetMeQueryKey,
   getGetMyProfileQueryKey,
+  useGetMe,
+  useGetMyProfile,
   useUpdateMe,
   useUpsertMyProfile,
+  type Profile,
 } from "@workspace/api-client-react";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -21,22 +24,15 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
-
-const GOALS = ["cut", "maintain", "recomp", "gain"] as const;
-const SEXES = ["male", "female", "other", "unspecified"] as const;
-const ACTIVITY = [
-  "sedentary",
-  "light",
-  "moderate",
-  "active",
-  "very_active",
-] as const;
-const EXPERIENCE = ["beginner", "intermediate", "advanced"] as const;
-
-type Goal = (typeof GOALS)[number];
-type Sex = (typeof SEXES)[number];
-type Activity = (typeof ACTIVITY)[number];
-type Experience = (typeof EXPERIENCE)[number];
+import {
+  ACTIVITY,
+  EXPERIENCE,
+  GOALS,
+  SEXES,
+  formStateToProfileInput,
+  profileToFormState,
+  type ProfileFormState,
+} from "@/lib/profile-form";
 
 const LABELS: Record<string, string> = {
   cut: "Cut",
@@ -57,12 +53,104 @@ const LABELS: Record<string, string> = {
   advanced: "Advanced",
 };
 
-function toNumber(value: string): number | undefined {
-  const n = Number(value);
-  return value.trim() !== "" && Number.isFinite(n) ? n : undefined;
+/**
+ * Loads the current account + profile before showing the form so editing an
+ * existing plan starts from the saved values. PUT /api/me/profile is a full
+ * replace — rendering this form blank for a user who already has a profile
+ * and letting them save would silently null every omitted field.
+ */
+export default function OnboardingScreen() {
+  const c = useColors();
+
+  const meQuery = useGetMe();
+  // Fetch the existing profile only when one can exist. 404 is a valid "no
+  // profile yet" state (first onboarding), so never retry it.
+  const profileQuery = useGetMyProfile({
+    query: {
+      queryKey: getGetMyProfileQueryKey(),
+      enabled: meQuery.data?.onboardingComplete === true,
+      retry: (failureCount, error) =>
+        (error as { status?: number })?.status !== 404 && failureCount < 2,
+    },
+  });
+
+  const profileSettled =
+    meQuery.data?.onboardingComplete !== true ||
+    profileQuery.isSuccess ||
+    (profileQuery.isError &&
+      (profileQuery.error as { status?: number })?.status === 404);
+
+  if (meQuery.isLoading || (!profileSettled && !profileQuery.isError)) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: c.background,
+        }}
+      >
+        <ActivityIndicator color={c.primary} />
+      </View>
+    );
+  }
+
+  // A hard failure loading existing data must not fall through to a blank
+  // form — saving it would wipe the profile. Offer a retry instead.
+  if (meQuery.isError || (!profileSettled && profileQuery.isError)) {
+    return (
+      <LoadErrorView
+        onRetry={() => {
+          if (meQuery.isError) meQuery.refetch();
+          if (profileQuery.isError) profileQuery.refetch();
+        }}
+      />
+    );
+  }
+
+  const profile = profileQuery.data ?? null;
+  return (
+    <OnboardingForm initial={profileToFormState(profile)} existing={profile} />
+  );
 }
 
-export default function OnboardingScreen() {
+function LoadErrorView({ onRetry }: { onRetry: () => void }) {
+  const c = useColors();
+  const insets = useSafeAreaInsets();
+  const s = makeStyles(c);
+
+  return (
+    <View
+      style={[
+        s.flex,
+        {
+          paddingTop: insets.top + 24,
+          paddingHorizontal: 24,
+          justifyContent: "center",
+        },
+      ]}
+    >
+      <Text style={s.title}>Couldn&apos;t load your plan</Text>
+      <Text style={s.subtitle}>
+        Check your connection and try again before editing.
+      </Text>
+      <Pressable
+        style={({ pressed }) => [s.button, pressed && s.buttonPressed]}
+        onPress={onRetry}
+      >
+        <Text style={s.buttonText}>Retry</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function OnboardingForm({
+  initial,
+  existing,
+}: {
+  initial: ProfileFormState;
+  existing: Profile | null;
+}) {
   const c = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -72,18 +160,13 @@ export default function OnboardingScreen() {
   const upsertProfile = useUpsertMyProfile();
   const updateMe = useUpdateMe();
 
-  const [displayName, setDisplayName] = React.useState("");
-  const [goal, setGoal] = React.useState<Goal>("cut");
-  const [sex, setSex] = React.useState<Sex>("unspecified");
-  const [birthYear, setBirthYear] = React.useState("");
-  const [heightCm, setHeightCm] = React.useState("");
-  const [startWeightKg, setStartWeightKg] = React.useState("");
-  const [goalWeightKg, setGoalWeightKg] = React.useState("");
-  const [activityLevel, setActivityLevel] =
-    React.useState<Activity>("moderate");
-  const [trainingExperience, setTrainingExperience] =
-    React.useState<Experience>("beginner");
+  const [form, setForm] = React.useState<ProfileFormState>(initial);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+
+  const set = <K extends keyof ProfileFormState>(
+    key: K,
+    value: ProfileFormState[K],
+  ) => setForm((prev) => ({ ...prev, [key]: value }));
 
   const busy = upsertProfile.isPending || updateMe.isPending;
 
@@ -91,17 +174,7 @@ export default function OnboardingScreen() {
     setSubmitError(null);
     try {
       await upsertProfile.mutateAsync({
-        data: {
-          goal,
-          sex,
-          activityLevel,
-          trainingExperience,
-          displayName: displayName.trim() || undefined,
-          birthYear: toNumber(birthYear),
-          heightCm: toNumber(heightCm),
-          startWeightKg: toNumber(startWeightKg),
-          goalWeightKg: toNumber(goalWeightKg),
-        },
+        data: formStateToProfileInput(form, existing),
       });
       await updateMe.mutateAsync({ data: { onboardingComplete: true } });
       await qc.invalidateQueries({ queryKey: getGetMyProfileQueryKey() });
@@ -157,15 +230,15 @@ export default function OnboardingScreen() {
           style={s.input}
           placeholder="How should we greet you?"
           placeholderTextColor={c.mutedForeground}
-          value={displayName}
-          onChangeText={setDisplayName}
+          value={form.displayName}
+          onChangeText={(v) => set("displayName", v)}
         />
 
         <Text style={s.label}>Goal</Text>
-        {renderChips(GOALS, goal, setGoal)}
+        {renderChips(GOALS, form.goal, (v) => set("goal", v))}
 
         <Text style={s.label}>Sex</Text>
-        {renderChips(SEXES, sex, setSex)}
+        {renderChips(SEXES, form.sex, (v) => set("sex", v))}
 
         <View style={s.twoCol}>
           <View style={s.col}>
@@ -175,8 +248,8 @@ export default function OnboardingScreen() {
               keyboardType="number-pad"
               placeholder="1995"
               placeholderTextColor={c.mutedForeground}
-              value={birthYear}
-              onChangeText={setBirthYear}
+              value={form.birthYear}
+              onChangeText={(v) => set("birthYear", v)}
             />
           </View>
           <View style={s.col}>
@@ -186,8 +259,8 @@ export default function OnboardingScreen() {
               keyboardType="decimal-pad"
               placeholder="180"
               placeholderTextColor={c.mutedForeground}
-              value={heightCm}
-              onChangeText={setHeightCm}
+              value={form.heightCm}
+              onChangeText={(v) => set("heightCm", v)}
             />
           </View>
         </View>
@@ -200,8 +273,8 @@ export default function OnboardingScreen() {
               keyboardType="decimal-pad"
               placeholder="85"
               placeholderTextColor={c.mutedForeground}
-              value={startWeightKg}
-              onChangeText={setStartWeightKg}
+              value={form.startWeightKg}
+              onChangeText={(v) => set("startWeightKg", v)}
             />
           </View>
           <View style={s.col}>
@@ -211,17 +284,21 @@ export default function OnboardingScreen() {
               keyboardType="decimal-pad"
               placeholder="78"
               placeholderTextColor={c.mutedForeground}
-              value={goalWeightKg}
-              onChangeText={setGoalWeightKg}
+              value={form.goalWeightKg}
+              onChangeText={(v) => set("goalWeightKg", v)}
             />
           </View>
         </View>
 
         <Text style={s.label}>Activity level</Text>
-        {renderChips(ACTIVITY, activityLevel, setActivityLevel)}
+        {renderChips(ACTIVITY, form.activityLevel, (v) =>
+          set("activityLevel", v),
+        )}
 
         <Text style={s.label}>Training experience</Text>
-        {renderChips(EXPERIENCE, trainingExperience, setTrainingExperience)}
+        {renderChips(EXPERIENCE, form.trainingExperience, (v) =>
+          set("trainingExperience", v),
+        )}
 
         {submitError && <Text style={s.error}>{submitError}</Text>}
 
