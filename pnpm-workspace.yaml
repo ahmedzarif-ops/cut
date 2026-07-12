@@ -47,8 +47,11 @@ catalog:
   '@tailwindcss/vite': ^4.1.14
   '@tanstack/react-query': ^5.90.21
   '@types/node': ^25.3.3
-  '@types/react': ^19.2.0
-  '@types/react-dom': ^19.2.0
+  # Must track react 19.1.0 (pinned below because expo requires it) — mixing
+  # 19.1.x and 19.2.x @types/react copies in one workspace makes ref types
+  # structurally incompatible and fails typecheck.
+  '@types/react': ~19.1.10
+  '@types/react-dom': ~19.1.7
   '@vitejs/plugin-react': ^5.0.4
   class-variance-authority: ^0.7.1
   clsx: ^2.1.1
@@ -63,6 +66,7 @@ catalog:
   tailwindcss: ^4.1.14
   tsx: ^4.21.0
   vite: ^7.3.2
+  vitest: ^3.2.4
   wouter: ^3.3.5
   zod: ^3.25.76
 
@@ -123,7 +127,9 @@ overrides:
   "@tailwindcss/oxide>@tailwindcss/oxide-linux-x64-musl": "-"
   "rollup>@rollup/rollup-android-arm-eabi": "-"
   "rollup>@rollup/rollup-android-arm64": "-"
-  "rollup>@rollup/rollup-darwin-arm64": "-"
+  # darwin-arm64 is intentionally NOT excluded: vitest (rollup native) must run
+  # on Apple Silicon dev machines. Optional platform deps never install on
+  # non-matching platforms, so this costs Replit's linux deployments nothing.
   "rollup>@rollup/rollup-darwin-x64": "-"
   "rollup>@rollup/rollup-freebsd-arm64": "-"
   "rollup>@rollup/rollup-freebsd-x64": "-"
