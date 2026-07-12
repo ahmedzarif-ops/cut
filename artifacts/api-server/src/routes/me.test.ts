@@ -91,6 +91,25 @@ describe("GET /api/me — JIT provisioning", () => {
       .where(eq(usersTable.clerkUserId, "clerk_jit_2"));
     expect(rows).toHaveLength(1);
   });
+
+  it("repeated GET /me reads never mutate the row (no write anywhere)", async () => {
+    const headers = asUser("clerk_getme_stable", "s@t.com");
+    const first = await request(ctx.app).get("/api/me").set(headers);
+    const [before] = await ctx.db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, "clerk_getme_stable"));
+
+    await request(ctx.app).get("/api/me").set(headers);
+    const [after] = await ctx.db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, "clerk_getme_stable"));
+
+    expect(first.status).toBe(200);
+    expect(first.body.email).toBe("s@t.com");
+    expect(after.updatedAt).toEqual(before.updatedAt);
+  });
 });
 
 describe("PATCH /api/me", () => {

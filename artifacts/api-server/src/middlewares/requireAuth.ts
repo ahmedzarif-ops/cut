@@ -1,5 +1,6 @@
 import { getAuth } from "@clerk/express";
 import type { NextFunction, Request, Response } from "express";
+import type { User } from "@workspace/db";
 import { provisionUser } from "../services/userService";
 
 /**
@@ -13,6 +14,7 @@ declare global {
     interface Request {
       userId?: string;
       clerkUserId?: string;
+      user?: User;
     }
   }
 }
@@ -50,5 +52,6 @@ export async function requireAuth(
 
   req.userId = user.id;
   req.clerkUserId = clerkUserId;
+  req.user = user;
   next();
 }
