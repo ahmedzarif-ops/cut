@@ -130,6 +130,39 @@ describe("PATCH /api/me", () => {
       .send({ timezone: "" });
     expect(res.status).toBe(400);
   });
+
+  it("rejects a syntactically-valid but unknown timezone with 400", async () => {
+    const res = await request(ctx.app)
+      .patch("/api/me")
+      .set(asUser("clerk_patch_4"))
+      .send({ timezone: "Not/AZone" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("Invalid timezone");
+  });
+
+  it("accepts and persists a real IANA timezone", async () => {
+    const headers = asUser("clerk_patch_5");
+    const res = await request(ctx.app)
+      .patch("/api/me")
+      .set(headers)
+      .send({ timezone: "Asia/Dhaka" });
+    expect(res.status).toBe(200);
+    expect(res.body.timezone).toBe("Asia/Dhaka");
+
+    const readBack = await request(ctx.app).get("/api/me").set(headers);
+    expect(readBack.body.timezone).toBe("Asia/Dhaka");
+  });
+
+  it("treats an empty-body PATCH as a no-op returning the current user", async () => {
+    const headers = asUser("clerk_patch_6");
+    // Seed a known value, then PATCH {} — nothing should change, status 200.
+    await request(ctx.app).patch("/api/me").set(headers).send({ units: "imperial" });
+
+    const res = await request(ctx.app).patch("/api/me").set(headers).send({});
+    expect(res.status).toBe(200);
+    expect(res.body.units).toBe("imperial");
+    expect(res.body.onboardingComplete).toBe(false);
+  });
 });
 
 describe("profile lifecycle", () => {

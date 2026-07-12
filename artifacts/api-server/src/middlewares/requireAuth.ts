@@ -1,7 +1,6 @@
 import { getAuth } from "@clerk/express";
 import type { NextFunction, Request, Response } from "express";
-import { eq } from "drizzle-orm";
-import { db, usersTable } from "@workspace/db";
+import { provisionUser } from "../services/userService";
 
 /**
  * Augment Express Request with the resolved internal identity. Handlers should
@@ -21,9 +20,9 @@ declare global {
 /**
  * Authentication gate + just-in-time (JIT) user provisioning.
  *
- * Verifies the Clerk session, then looks up (or creates on first access) the
- * internal `users` row keyed by the Clerk id, and attaches the internal uuid
- * to `req.userId`.
+ * Verifies the Clerk session, resolves (or creates on first access) the
+ * internal `users` row, and attaches the internal uuid to `req.userId`. All DB
+ * work lives in userService.
  */
 export async function requireAuth(
   req: Request,
@@ -41,16 +40,7 @@ export async function requireAuth(
   const claims = auth.sessionClaims as { email?: string } | undefined;
   const email = typeof claims?.email === "string" ? claims.email : null;
 
-  // Upsert on the unique clerk_user_id. onConflictDoUpdate always returns the
-  // row (inserted or existing), which avoids a select+insert race.
-  const [user] = await db
-    .insert(usersTable)
-    .values({ clerkUserId, email })
-    .onConflictDoUpdate({
-      target: usersTable.clerkUserId,
-      set: { updatedAt: new Date() },
-    })
-    .returning();
+  const user = await provisionUser({ clerkUserId, email });
 
   if (!user) {
     req.log.error({ clerkUserId }, "Failed to provision internal user");

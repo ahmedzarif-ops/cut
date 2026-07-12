@@ -4,6 +4,7 @@ import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import router from "./routes";
+import { errorHandler } from "./middlewares/errorHandler";
 import { logger } from "./lib/logger";
 import {
   CLERK_PROXY_PATH,
@@ -86,5 +87,8 @@ app.use(
 );
 
 app.use("/api", router);
+
+// Catch-all error normalizer — must be registered last, after all routes.
+app.use(errorHandler);
 
 export default app;
