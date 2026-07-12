@@ -20,3 +20,53 @@ When you add a rule (next-action, streaks, macro completion, e1RM progression),
 it goes in `lib/domain` with tests — never inline in a route or screen (build
 spec §29). The first Phase 2 consumer of `localDayKey` will be the streak /
 Today-aggregate service.
+
+## Server hardening invariants
+
+These keep the API server correct and stable under load; don't undo them
+while touching auth, `db`, or the Express app.
+
+- **JIT user provisioning is select-first, never a per-request write.**
+  `provisionUser` (`userService.ts`) selects on `clerk_user_id` first; it only
+  inserts on a miss, with `onConflictDoNothing` + a re-select to cover the
+  race where a concurrent request wins the insert. A returning user costs one
+  read and zero writes. `updated_at` on `users` therefore means "last
+  settings/profile change," not "last seen" — don't repurpose it as a
+  last-login timestamp. `requireAuth` attaches the resolved row as `req.user`;
+  `GET /me` returns it directly and must not re-select.
+- **The pg pool has a budget and an error handler.** `poolConfig()`
+  (`lib/db`) caps pool size via `PG_POOL_MAX` (default 5) — conservative for
+  a single autoscale instance against a pooled endpoint — and the pool
+  registers an `'error'` listener so a dropped idle connection logs and gets
+  evicted instead of crashing the process as an unhandled error. Point
+  `DATABASE_URL` at the provider's pooled endpoint (e.g. PgBouncer/Neon
+  pooler) in production, not a direct connection. On shutdown, `createShutdownHandler`
+  drains in-flight requests (`server.close`), then closes the pool, then
+  exits; `SIGTERM`/`SIGINT` both trigger it. A hard timeout
+  (`SHUTDOWN_TIMEOUT_MS`, default 10s) forces a non-zero exit if draining
+  hangs, so the platform's kill grace period isn't wasted.
+- **`/api` is IP-rate-limited; `/api/__clerk` more strictly so.**
+  `createApiLimiter` (`API_RATE_LIMIT`, default 100/min) is mounted ahead of
+  every route, so an unauthenticated flood can't reach `requireAuth`'s Clerk
+  verify path unthrottled. `createClerkLimiter` (`CLERK_RATE_LIMIT`, default
+  30/min) guards the unauthenticated Clerk FAPI proxy specifically.
+  `app.set("trust proxy", 1)` is required for both — it's what makes `req.ip`
+  the real client IP behind the single edge proxy hop, not the proxy's own
+  address. The rate-limit store is in-memory and **per-instance — a
+  stopgap**: correct under one autoscale instance, but limits reset per
+  instance and aren't shared, so a shared (Redis) store is required before
+  this is correct across multiple instances.
+- **`helmet` is mounted on `/api` with CSP disabled** — this is a JSON API,
+  not an HTML surface, so a content-security-policy is meaningless; helmet's
+  other defaults (`nosniff`, HSTS, `X-Frame-Options`, no-referrer) still
+  apply.
+
+**Deferred (not built here):**
+- Email refresh via a Clerk `user.updated` webhook or a Clerk token
+  template — today `email` is captured only at first provisioning
+  (`requireAuth` reads it off the initial session claims) and never
+  refreshed on subsequent logins, so a user who changes their email in Clerk
+  keeps the stale value in `users.email` until this lands.
+- A shared (Redis) rate-limit store, to make `API_RATE_LIMIT`/
+  `CLERK_RATE_LIMIT` correct across more than one autoscale instance.
+- P1-8: an `x-forwarded-host` allowlist for the Clerk proxy host resolution.
