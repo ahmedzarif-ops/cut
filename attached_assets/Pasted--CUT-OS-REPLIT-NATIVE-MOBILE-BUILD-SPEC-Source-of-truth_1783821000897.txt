@@ -1,0 +1,2787 @@
+# CUT OS — REPLIT NATIVE MOBILE BUILD SPEC
+## Source of truth for Replit Agent
+
+**Product:** CUT OS  
+**Primary user:** Zarif  
+**Primary platform:** iPhone  
+**Build type:** Native Mobile App in Replit  
+**Client:** React Native + Expo + TypeScript  
+**Backend:** Replit cloud server + Replit Database (PostgreSQL)  
+**Primary goal:** Help Zarif go from approximately 210 lb to 190 lb by September 26, 2026 while preserving muscle and minimizing decision fatigue.
+
+---
+
+# 0. READ THIS FIRST
+
+This is a **native mobile application**.
+
+It is not:
+- a landing page
+- a static HTML prototype
+- a responsive website pretending to be an app
+- a generic fitness dashboard
+- a MyFitnessPal clone
+- a design concept with dead controls
+
+Create the project as a **Mobile app artifact** in Replit.
+
+Use the React Native + Expo mobile workflow supported by Replit Agent.
+
+The application must be operable in:
+1. Replit iOS Simulator
+2. Expo Go on Zarif's real iPhone
+
+The cloud server and PostgreSQL database are the system of record.
+
+Do **not** use `localStorage` as the application database.
+
+Do not choose a web-only framework for the primary client.
+
+---
+
+# 1. THE MOST IMPORTANT PRODUCT PRINCIPLE
+
+When Zarif opens CUT OS, the app should answer:
+
+> **What do I need to do next to stay on track for my cut?**
+
+The app must reduce decision fatigue.
+
+The home screen is not a dashboard of everything.
+
+The home screen is an **execution surface**.
+
+The primary hierarchy is:
+
+1. next action
+2. calories and protein
+3. today's required actions
+4. fast logging
+5. recent momentum
+
+Everything else lives in the appropriate tab.
+
+---
+
+# 2. NON-NEGOTIABLE QA RULE
+
+A button is not considered implemented because:
+- a handler exists
+- TypeScript compiles
+- the screen renders
+- a component test passes
+- Agent says it should work
+
+A primary control is considered implemented only after the actual interaction has been exercised in the **running iOS Simulator**.
+
+Hardware-dependent behavior must also be exercised in **Expo Go on a real phone** when practical.
+
+Do not declare the app ready while any core user flow is dead, silently fails, loses data after reload, or navigates to an empty screen.
+
+Replit automated App Testing for web apps is not a substitute for native-mobile interaction testing.
+
+At the end of the build, create `QA_REPORT.md` containing:
+- every acceptance scenario
+- PASS / FAIL / BLOCKED
+- device or environment used
+- exact issue found
+- exact fix made
+- remaining limitation
+
+Do not write "all buttons work" unless the mandatory mobile acceptance matrix in this spec was actually executed.
+
+---
+
+# 3. USER CONTEXT
+
+## Zarif
+
+- Male
+- Approximately 30 years old
+- Height: 5'4"
+- Starting cut baseline: approximately 210 lb
+- Goal: 190 lb
+- Goal date: September 26, 2026
+- Target: approximately 20 lb lost in 10–11 weeks
+- Prior lifting history
+- Approximate historical strength baselines:
+  - Bench Press: 220 lb+
+  - Back Squat: 300 lb+
+  - Deadlift: approximately 400 lb
+- Comfortable with 16–18 hour intermittent fasting
+- Usually eats 2 meals per day
+- Likes a highly repeatable first meal
+- Dinner is usually:
+  - Bengali food at home
+  - Indian food
+  - Thai food
+  - Chinese food
+  - a healthier restaurant or delivery option
+- Common areas:
+  - Crandall, Texas
+  - Forney, Texas
+  - Garland, Texas
+  - Plano, Texas
+- Likes:
+  - chicken curry
+  - beef curry / bhuna
+  - fish curry
+  - keema
+  - rice
+  - eggs
+  - egg whites
+  - Greek yogurt
+  - berries
+- Does not want bland chicken-and-broccoli bodybuilder meal planning
+- Has a powerlifting / serious lifting background
+- Needs muscle retention to be treated as a first-class objective
+- Gets overwhelmed by dense text-heavy apps
+- Strong preference for premium Apple-like interaction design
+- Strong preference for rich blue branding
+- Dislikes generic "AI slop" UI
+
+---
+
+# 4. MVP SCOPE
+
+Build these five primary experiences:
+
+1. **Today**
+2. **Food**
+3. **Train**
+4. **Calendar**
+5. **Progress**
+
+Also build:
+- onboarding
+- authentication
+- settings / reminders
+- daily closeout
+- weekly review
+- data export
+
+Do not add:
+- social feed
+- friends
+- leaderboards
+- public profiles
+- AI chatbot
+- meal photo recognition
+- Apple Health / HealthKit integration
+- wearable integration
+- live Uber Eats ordering
+- subscription billing
+
+Those are post-MVP.
+
+Architect clean service boundaries so HealthKit and food-recognition adapters can be added later without rewriting core tracking logic.
+
+Do not install unsupported native modules solely to fake future functionality.
+
+The MVP should remain compatible with Expo Go where possible.
+
+---
+
+# 5. TECHNICAL ARCHITECTURE
+
+## 5.1 Client
+
+Use:
+- React Native
+- Expo
+- TypeScript
+
+Prefer:
+- Expo Router for route and tab navigation
+- TanStack Query for server state and cache
+- a very small local UI-state layer only where necessary
+- React Hook Form + Zod or equivalent typed form validation
+- Expo Haptics for restrained native feedback
+- Expo Notifications if reliable in the current mobile artifact and real-device preview
+- Expo SecureStore for client-side credential/token material when required by the selected auth path
+- React Native Safe Area Context
+- a chart library compatible with Expo Go, or React Native SVG-based charts
+
+Avoid:
+- a large Redux store duplicating server data
+- storing derived macro totals as independent editable state
+- multiple state-management libraries
+- unsupported native packages that require a custom dev build for MVP unless there is no reasonable Expo-compatible alternative
+
+## 5.2 Server
+
+Use a TypeScript server supported in the Replit project.
+
+Responsibilities:
+- authenticated API routes
+- user ownership validation
+- database reads/writes
+- deterministic next-action calculation
+- deterministic weekly review calculation
+- PR calculations
+- reminder preference persistence
+- data export
+- validation
+- error normalization
+
+Do not trust `user_id` sent from the client.
+
+Resolve authenticated user identity server-side.
+
+## 5.3 Database
+
+Use Replit Database / PostgreSQL.
+
+Use migrations.
+
+Use a typed ORM that is compatible with the Replit scaffold. Drizzle is preferred if it fits the generated project cleanly.
+
+The database is the source of truth for:
+- profile
+- weight entries
+- measurements
+- meal templates
+- food entries
+- workout sessions
+- workout sets
+- daily logs
+- weekly reviews
+- reminder preferences
+
+Derived values should be calculated from source entries.
+
+## 5.4 Authentication decision gate
+
+Start with Replit Auth through Agent because this application is initially for Zarif and he already has a Replit account.
+
+Before building the full authenticated data layer:
+
+1. implement authentication
+2. launch the native app in the iOS Simulator
+3. verify sign-in can complete in the native workflow
+4. verify the server receives a stable authenticated identity
+5. verify a database row can be created and read back for that identity
+6. verify user A cannot access another user ID by changing a client request
+
+If Replit Auth is not reliable or supported for the running native artifact, use another Replit-supported managed auth option such as Clerk.
+
+Do not hand-roll password authentication.
+
+Record the final auth decision and reason in `ARCHITECTURE.md`.
+
+## 5.5 Client/server boundary
+
+The client may:
+- optimistically update UI
+- temporarily queue an entry
+- cache recent reads
+- animate completion
+
+The server owns:
+- authorization
+- canonical values
+- duplicate protection
+- database writes
+- weekly review logic
+- next-action rules
+- PR persistence
+- source-of-truth calculations
+
+## 5.6 Offline and poor-connection behavior
+
+Fitness logging must not feel dangerous in a gym with weak service.
+
+For create/update operations:
+- preserve form data until confirmed saved
+- show pending state
+- retry safe transient failures
+- use an idempotency key for create mutations
+- do not create duplicate food entries or workout sets on retry
+- roll back optimistic totals on permanent failure
+- show a visible "Not synced" state instead of silently pretending a failed mutation succeeded
+
+A full offline-first CRDT architecture is not required.
+
+---
+
+# 6. APP SHELL AND NAVIGATION
+
+Use a native bottom tab bar with five tabs:
+
+1. Today
+2. Food
+3. Train
+4. Calendar
+5. Progress
+
+Use icons plus short labels.
+
+Requirements:
+- every tab is a real route
+- tab state survives normal screen pushes
+- back navigation behaves natively
+- no `href="#"` patterns
+- no web DOM navigation assumptions
+- no invisible overlays blocking touch
+- minimum 44×44 pt touch targets
+- safe-area aware
+- keyboard avoidance for forms
+- scrolling remains usable with the keyboard open
+
+The five primary tabs must be reachable in one tap.
+
+Settings may open from a small profile/settings control in the top area.
+
+---
+
+# 7. DESIGN SYSTEM
+
+## 7.1 Brand
+
+Name:
+**CUT OS**
+
+Optional goal mark:
+**190**
+
+## 7.2 Visual direction
+
+Premium.
+Athletic.
+Calm.
+Technical.
+Focused.
+Mature.
+
+Think:
+- Apple Fitness-level restraint
+- premium sports watch companion
+- high-end personal operating system
+- clear visual hierarchy
+
+Do not clone any existing product.
+
+## 7.3 Palette
+
+Use a restrained blue system.
+
+Suggested semantic roles:
+- Deep navy: primary dark surface / major hero
+- Electric blue: primary action / active state
+- Mid blue: progress
+- Sky tint: quiet selected background
+- Cool white: main canvas
+- Cool gray-blue: secondary canvas
+- Slate: secondary text
+- Green: completed / on-track only
+- Amber: attention / due
+- Red: destructive or clear failure only
+
+Avoid:
+- purple gradients
+- magenta
+- rainbow gradients
+- neon cyberpunk
+- dark gaming UI
+- military/tactical theme
+
+## 7.4 Typography
+
+Use native or Expo-compatible high-quality system typography.
+
+Hierarchy:
+- large next action
+- strong metric numerals
+- concise section titles
+- short labels
+- secondary details de-emphasized
+
+Do not render long instructional paragraphs on primary screens.
+
+## 7.5 Surfaces
+
+Use:
+- large intentional hero surfaces
+- thin separators
+- a small number of meaningful cards
+- subtle depth
+- restrained shadows
+
+Avoid:
+- 30 identical rounded cards
+- a pill around every label
+- generic component-library demo appearance
+- excessive glassmorphism
+
+## 7.6 Motion
+
+Use restrained motion:
+- screen transitions: approximately 180–260 ms
+- progress fill
+- count changes
+- check completion
+- bottom sheet entry
+- PR card scale from about 0.98 to 1.0 with a subtle blue glow
+- button press compression
+
+Use haptics:
+- light selection feedback for tab-like selectors when appropriate
+- success haptic for successful log completion
+- stronger success haptic for a genuine PR
+
+No constant floating decorations.
+
+Respect reduced-motion preferences where supported.
+
+---
+
+# 8. ONBOARDING
+
+Show onboarding only when the authenticated user has no cut profile.
+
+Use a concise native flow.
+
+## Step 1 — Goal
+
+Fields:
+- current weight
+- goal weight
+- goal date
+
+Pre-fill:
+- 210 lb
+- 190 lb
+- September 26, 2026
+
+## Step 2 — Nutrition
+
+Fields:
+- calorie target
+- protein target
+- carb guideline
+- fat guideline
+- fiber minimum
+- meals per day
+
+Pre-fill:
+- 1,800 kcal
+- 160g protein
+- 150g carbs
+- 60g fat
+- 25g fiber
+- 2 meals/day
+
+## Step 3 — Activity
+
+Fields:
+- step target
+- water target
+- strength days
+
+Pre-fill:
+- 10,000 steps
+- 3.0 L water
+- Monday
+- Wednesday
+- Friday
+
+CTA:
+**Start my cut**
+
+After successful profile creation:
+- seed system meal templates
+- seed workout templates
+- seed historical PR baselines
+- route to Today
+
+Do not repeat onboarding when a profile already exists.
+
+---
+
+# 9. TODAY TAB
+
+This is the highest-priority screen.
+
+## 9.1 Header
+
+Show:
+- CUT OS
+- current date
+- 190 lb goal
+- compact days remaining
+
+Do not use a giant profile header.
+
+## 9.2 NEXT ACTION engine
+
+The most visually dominant surface is the next action.
+
+The server should return a deterministic next-action object:
+
+```ts
+type NextAction = {
+  type:
+    | "WEIGH_IN"
+    | "MEAL_ONE"
+    | "TRAIN"
+    | "PROTEIN_GAP"
+    | "STEPS_GAP"
+    | "CLOSEOUT"
+    | "WEEKLY_REVIEW"
+    | "DAY_CLOSED";
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  route: string;
+  payload?: Record<string, unknown>;
+  priority: number;
+};
+```
+
+Do not generate next actions with an LLM.
+
+## 9.3 Suggested priority rules
+
+Evaluate the authenticated user's local date and timezone.
+
+Default timezone:
+`America/Chicago`
+
+Priority rules:
+
+1. Sunday weekly review is overdue from the prior completed week
+2. no morning weight logged
+3. no Meal 1 logged and it is a normal meal window
+4. today's scheduled strength/cardio session not completed
+5. protein target projected materially behind based on logged intake
+6. step target materially behind later in the day
+7. closeout due in the evening
+8. day complete
+
+Use local time thoughtfully.
+
+Do not tell the user to eat Meal 1 at 7:00 AM when the profile says 16–18 hour fasting and two meals per day.
+
+Default Meal 1 guidance window:
+approximately 12:00 PM–3:00 PM
+
+Default closeout window:
+after 8:00 PM
+
+## 9.4 Next-action examples
+
+### No weight
+**Log your morning weight**
+
+Before food or water. The trend matters more than one number.
+
+CTA:
+**Log weight**
+
+### Weight logged, Meal 1 missing
+**Eat the default Meal 1**
+
+High protein early makes dinner easier.
+
+CTA:
+**Open Meal 1**
+
+### Training due
+**Full Body A is next**
+
+Keep the muscle. Do not chase a max today.
+
+CTA:
+**Start workout**
+
+### Protein behind
+**You need 62g more protein**
+
+Choose dinner around the protein first.
+
+CTA:
+**Find dinner**
+
+### Evening incomplete
+**Close the loop**
+
+Meals, macros, steps and training need a 60-second closeout.
+
+CTA:
+**Close today**
+
+### Complete
+**Day closed**
+
+Stop optimizing. Recover and repeat tomorrow.
+
+CTA:
+**View progress**
+
+Every CTA must route to or open the exact promised action.
+
+## 9.5 Live targets
+
+Primary metrics:
+- Calories: current / 1,800
+- Protein: current / 160g
+
+Secondary:
+- Steps: current / 10,000
+- Water: current / 3.0 L
+
+Do not show all macros equally on Today.
+
+Use blue progress indicators.
+
+Warn without shaming.
+
+## 9.6 Daily actions
+
+Five required actions:
+1. Morning weigh-in
+2. Meal 1
+3. Macro target
+4. Training or movement
+5. Daily closeout
+
+Each row:
+- has a real completion state
+- is tappable
+- opens the correct workflow
+- updates from persisted data
+- cannot remain visually complete after the underlying data is deleted
+
+Daily status score:
+number of completed required actions out of 5.
+
+Streak:
+count consecutive days with at least 4 of 5 actions complete.
+
+Do not count future dates.
+
+## 9.7 Fast log
+
+Actions:
+- `+0.5 L` water
+- Log steps
+- Log food
+- Log weight
+
+Use native bottom sheets or modal screens.
+
+Each mutation:
+- validates
+- persists
+- gives success feedback
+- updates totals
+- survives app reload
+
+---
+
+# 10. FOOD TAB
+
+## 10.1 Purpose
+
+Zarif normally eats two meals per day.
+
+The system should make:
+- Meal 1 automatic
+- dinner flexible but controlled
+
+## 10.2 Daily macro header
+
+Show:
+- calories consumed / target
+- calories remaining
+- protein consumed / target
+- protein remaining
+
+Secondary expandable detail:
+- carbs
+- fat
+- fiber
+
+## 10.3 Day selector
+
+Allow:
+- today
+- previous day
+- next day only for viewing planned templates, not logging completed intake into the future by default
+
+Do not allow future food entries through normal daily tracking.
+
+## 10.4 Meal 1 templates
+
+Seed system templates.
+
+### Zarif Default
+
+Ingredients:
+- 3 whole eggs
+- 1 cup egg whites
+- Dannon Light & Fit Greek yogurt
+- 1 cup berries
+- 4 oz chicken or turkey
+
+Approximate seed macros:
+- 620 kcal
+- 82g protein
+- 35g carbs
+- 18g fat
+- 7g fiber
+
+Recommended:
+5–6 days per week
+
+### Desi Egg Scramble
+
+Ingredients:
+- 3 eggs
+- egg whites
+- onion
+- green chili
+- cilantro
+- masala
+- Greek yogurt
+- berries
+- 4 oz chicken or turkey
+
+Approximate:
+- 630 kcal
+- 81g protein
+- 38g carbs
+- 19g fat
+- 7g fiber
+
+### High-Protein Light Meal 1
+
+Ingredients:
+- 2 eggs
+- 1.25 cups egg whites
+- Greek yogurt
+- berries
+- 5 oz grilled chicken or turkey
+
+Approximate:
+- 590 kcal
+- 87g protein
+- 33g carbs
+- 12g fat
+- 7g fiber
+
+## 10.5 Template actions
+
+Each meal template must support:
+- details
+- log meal
+- edit serving/macros before logging
+- favorite
+- duplicate as a personal template
+
+Repeated rapid taps must not create duplicate entries.
+
+Use:
+- disabled mutation button while saving
+- idempotency key
+- unique request ID
+
+## 10.6 Bengali home dinner library
+
+Seed:
+
+### Bengali Chicken Curry Plate
+- 8–10 oz cooked chicken
+- 1 measured cup rice
+- 1–2 cups vegetables
+- curry oil must be accounted for
+
+Approx:
+- 820 kcal
+- 75g protein
+- 75g carbs
+- 23g fat
+- 8g fiber
+
+### Beef Bhuna / Curry Plate
+- 7–8 oz beef
+- 1 measured cup rice
+- large vegetable side
+- no second rice scoop
+
+Approx:
+- 900 kcal
+- 68g protein
+- 73g carbs
+- 34g fat
+- 7g fiber
+
+### Fish Curry Plate
+- 8–10 oz fish
+- 1 cup rice
+- dal or vegetables
+- no fried side
+
+Approx:
+- 760 kcal
+- 68g protein
+- 78g carbs
+- 18g fat
+- 10g fiber
+
+### Lean Keema Bowl
+- 8 oz lean keema
+- 1 cup rice
+- cucumber and onion salad
+- vegetables
+
+Approx:
+- 850 kcal
+- 70g protein
+- 72g carbs
+- 28g fat
+- 8g fiber
+
+Clearly label home-style macros as estimates.
+
+## 10.7 Restaurant / delivery playbooks
+
+These are curated ordering playbooks.
+
+They are **not live Uber Eats inventory**.
+
+Use location selectors:
+- Crandall
+- Forney
+- Garland
+- Plano
+
+Seed playbooks:
+
+### Crandall
+- Chick-fil-A grilled protein play
+- Golden Chick protein plate
+
+### Forney
+- Chipotle double-chicken bowl
+- Cowboy Chicken rotisserie plate
+- MOMO & Curry tandoori rule
+- Panera protein-first dinner
+
+### Garland
+- Momo Curry #2 tandoori plate
+- Zato Thai lean order
+- Biryani portion protocol
+- Indopak grilled-protein rule
+
+### Plano
+- 3-protein poke bowl
+- Mediterranean grilled chicken / kebab plate
+- Thai basil protein plate
+
+Each playbook includes:
+- location
+- restaurant / cuisine
+- order
+- modifications
+- skip list
+- optional add-ons
+- approximate calorie range
+- approximate protein range
+- estimate disclaimer
+- personalized `Fits today` status
+
+## 10.8 Fits-today logic
+
+Calculate:
+- calories remaining
+- protein remaining
+
+Status examples:
+
+**BEST FIT**
+Enough calorie room and projected protein meaningfully closes the protein gap.
+
+**FITS**
+Can fit within calorie range with normal modification.
+
+**TIGHT**
+Upper estimate may exceed calories remaining.
+
+**PROTEIN LIGHT**
+Fits calories but does not sufficiently close the protein gap.
+
+Do not use AI for this calculation.
+
+## 10.9 Manual food entry
+
+Fields:
+- name
+- meal type
+- serving note
+- calories
+- protein
+- carbs
+- fat
+- fiber
+
+Actions:
+- save
+- edit
+- delete
+- duplicate
+- favorite / save as template
+
+Required:
+- calories greater than or equal to 0
+- macros greater than or equal to 0
+- clearly handle unknown macros
+
+Deleting or editing a food entry must immediately recalculate:
+- daily totals
+- next action
+- daily status
+- weekly averages
+
+## 10.10 Daily food log
+
+Show:
+- Meal 1
+- Dinner
+- Other
+
+Each entry:
+- name
+- serving note
+- calories
+- protein
+- edit
+- delete
+
+Use swipe actions only as an optional convenience.
+
+Never make swipe the only way to edit or delete.
+
+---
+
+# 11. TRAIN TAB
+
+## 11.1 Training principle
+
+The cut is the mission.
+
+Strength training exists primarily to preserve muscle and training output.
+
+Do not encourage daily max attempts.
+
+PRs are tracked, not forced.
+
+## 11.2 Weekly schedule
+
+### Monday — Full Body A
+- Back Squat — 3 × 6–8
+- Bench Press — 3 × 6–8
+- Barbell Row — 3 × 8–10
+- Romanian Deadlift — 3 × 8–10
+- Lateral Raise — 3 × 12–15
+- Biceps Curl — 2 × 10–15
+- Triceps Pressdown — 2 × 10–15
+
+### Tuesday — Zone 2 + Stairs
+- Brisk walk — 60 min
+- Stairs — 10 min
+
+### Wednesday — Full Body B
+- Deadlift — 3 × 4–6
+- Incline Dumbbell Press — 3 × 8–10
+- Lat Pulldown — 3 × 8–12
+- Bulgarian Split Squat — 3 × 8–10 per leg
+- Shoulder Press — 3 × 8–10
+- Biceps Curl — 2 × 10–15
+- Triceps Pressdown — 2 × 10–15
+
+### Thursday — Brisk Walk
+- 60 min
+- Stairs optional 10 min if recovered
+
+### Friday — Full Body Rotation
+- Leg Press or Squat — 3 × 8–10
+- Bench or Incline Press — 3 × 6–10
+- Row or Pulldown — 3 × 8–12
+- Romanian Deadlift — 3 × 8–10
+- Lateral Raise — 3 × 12–15
+- Arms — 2 sets each
+
+### Saturday — Fun Cardio
+Choose:
+- trail bike
+- swim
+- walk / jog
+
+Target:
+60 min
+
+### Sunday — Recovery + Weekly Review
+- easy walk 30–45 min
+- mobility 10 min
+- weekly review
+
+## 11.3 Train home
+
+Show:
+- today's planned workout
+- training status
+- prior comparable session
+- one concise cut-specific note
+
+CTA:
+**Start workout**
+
+If already started:
+**Resume workout**
+
+If complete:
+**View workout**
+
+## 11.4 Workout session
+
+Use a native session screen.
+
+Sticky top:
+- workout name
+- elapsed time
+- completion progress
+- finish control
+
+Exercise sections:
+- exercise name
+- prescription
+- prior session summary
+- current best
+- sets
+
+For each weighted set:
+- set number
+- weight
+- reps
+- optional RIR
+- completion state
+
+Actions:
+- complete set
+- edit set
+- delete set
+- add set
+
+Allow rapid numeric input.
+
+The keyboard must not cover the save/complete action.
+
+Use number pads where appropriate.
+
+## 11.5 Previous values
+
+For each exercise show:
+- last comparable set sequence
+- best recent estimated 1RM
+- historical baseline where applicable
+
+Example:
+
+Previous session:
+- 185 × 7
+- 185 × 6
+- 175 × 8
+
+Target:
+3 × 6–8
+
+## 11.6 PR engine
+
+Use deterministic calculations.
+
+Epley estimated 1RM:
+
+`estimated_1rm = weight * (1 + reps / 30)`
+
+For one rep:
+`estimated_1rm = weight`
+
+Track:
+- absolute weight PR
+- rep PR at the same weight
+- estimated 1RM PR
+
+Historical baseline records:
+- Bench Press: 220 lb
+- Back Squat: 300 lb
+- Deadlift: 400 lb
+
+Mark historical baselines:
+`UNVERIFIED_HISTORICAL_BASELINE`
+
+Do not treat them as sets performed in the current app.
+
+## 11.7 PR experience
+
+When a genuine PR occurs:
+
+Show a restrained native overlay:
+
+**NEW PR**
+
+Bench Press  
+185 × 8
+
+Estimated 1RM  
+234 lb
+
+Use:
+- strong success haptic
+- subtle blue glow
+- short scale transition
+
+Do not:
+- cover the interface for several seconds
+- use confetti
+- auto-share
+- block the next set
+
+## 11.8 Workout completion
+
+`Complete workout` must:
+
+1. validate session has sensible state
+2. persist final session
+3. set completed timestamp
+4. derive workout completion for that date
+5. update Today
+6. update Calendar
+7. update Progress / PR board
+8. invalidate relevant client queries
+9. show success state
+
+The user must be able to reopen a completed session.
+
+Editing a completed session:
+- is allowed
+- recalculates PRs and summaries
+- records updated_at
+
+---
+
+# 12. CALENDAR TAB
+
+Build a real cut calendar.
+
+Cut target:
+September 26, 2026
+
+The calendar must be native and tappable.
+
+## 12.1 Month view
+
+Each day may show minimal status dots for:
+- weight
+- movement/workout
+- nutrition
+- closeout
+- weekly review
+
+Do not make each date visually noisy.
+
+## 12.2 Day detail
+
+Tapping a date opens a bottom sheet or detail screen.
+
+Show:
+- date
+- planned training
+- training status
+- weight
+- calories
+- protein
+- steps
+- water
+- meals logged
+- daily status score
+- closeout state
+- note
+
+Past date:
+show real history.
+
+Today:
+show real state and relevant actions.
+
+Future date:
+show plan only.
+
+Normal tracking flows must not create completed entries for future dates.
+
+## 12.3 Month navigation
+
+Support:
+- previous month
+- next month
+- jump to today
+
+Preserve selected date safely.
+
+No crash on months that begin or end on different weekdays.
+
+## 12.4 Reminders
+
+Settings:
+- morning weigh-in
+- daily closeout
+- Sunday weekly review
+
+Defaults:
+- Weigh-in: 8:00 AM
+- Closeout: 8:30 PM
+- Weekly review: Sunday 7:00 PM
+- Timezone: America/Chicago
+
+Use `expo-notifications` only if the current Replit Expo workflow supports the required behavior.
+
+Local scheduled notifications are acceptable for MVP.
+
+Requirements:
+- ask for permission at a contextual time, not immediately on first launch
+- persist reminder preferences
+- reschedule when a time changes
+- cancel when disabled
+- avoid duplicate scheduled reminders
+- test on Expo Go / real iPhone
+- document known Expo Go notification limitations if encountered
+
+If notifications cannot be implemented reliably in the current artifact:
+- do not leave fake toggles
+- hide or disable unsupported controls clearly
+- create a calendar reminder export fallback
+
+---
+
+# 13. PROGRESS TAB
+
+## 13.1 Goal header
+
+Show:
+- start weight
+- current weight
+- goal weight
+- pounds lost
+- pounds remaining
+- days remaining
+- required average weekly loss from now to goal date
+
+Keep it concise.
+
+## 13.2 Weight entry
+
+Fields:
+- date
+- morning weight
+- optional note
+
+Default date:
+today
+
+Future dates prohibited.
+
+Allow:
+- create
+- edit
+- delete
+
+Default expected behavior:
+one canonical weight entry per user per date.
+
+## 13.3 Weight chart
+
+Show:
+- daily values with lower visual emphasis
+- 7-day moving average with higher visual emphasis
+- goal trajectory
+
+Use a polished native chart.
+
+Do not over-label every point.
+
+Use pounds.
+
+## 13.4 Weekly averages
+
+Use calendar-aware local dates.
+
+A weekly comparison requires two complete 7-day windows.
+
+Do not compare:
+- 2 days against 7 days
+- partial current week against full prior week
+without clearly labeling the comparison partial.
+
+## 13.5 Adaptive cut coach
+
+This is deterministic.
+
+No LLM.
+
+### Target lane
+
+If weekly average loss is between 1.5 and 2.2 lb:
+
+Recommendation:
+**Hold course**
+
+Reason:
+Rate of loss is in the target lane.
+
+Do not recommend more cardio or fewer calories.
+
+### Slow
+
+If weekly average loss is less than 1.0 lb:
+
+Do not change the plan after one weekly window.
+
+If this occurs for **two consecutive full weekly comparisons**:
+
+Recommend one:
+- reduce calorie target from 1,800 to 1,650
+- add 2,000 average daily steps
+
+Selection rule:
+- if calorie logging compliance is poor, recommend `Tighten food logging` before changing targets
+- if average calories are materially above target, recommend `Hit the existing calorie target`
+- if calories are on target but steps are consistently below target, recommend `Add 2,000 daily steps`
+- if calories and steps are compliant but loss remains slow, recommend `Reduce calorie target to 1,650`
+
+Exactly one primary recommendation.
+
+### Too fast
+
+If weekly average loss exceeds 2.5 lb after the first 14 days:
+
+Recommendation:
+**Add 100–150 calories**
+
+Reason:
+Protect training performance and lean mass.
+
+If only one abnormal week occurs:
+watch the next window before escalating further.
+
+## 13.6 Measurements
+
+Track:
+- waist
+- chest
+- hips
+- thigh
+- upper arm
+
+Fields:
+- entry date
+- measurements
+- optional note
+
+Default cadence:
+weekly
+
+Show:
+- latest
+- baseline
+- change
+- small trend when enough entries exist
+
+Use inches.
+
+## 13.7 PR board
+
+Default:
+- Bench Press
+- Back Squat
+- Deadlift
+- Romanian Deadlift
+- Incline Dumbbell Press
+- Barbell Row / row variation
+- Lat Pulldown
+- Shoulder Press
+
+Any new weighted exercise should appear after it has a completed set.
+
+For each:
+- best weight
+- best rep PR
+- best estimated 1RM
+- latest date
+
+---
+
+# 14. DAILY CLOSEOUT
+
+Daily closeout is a core product feature.
+
+Open from:
+- Today checklist
+- Next Action
+- Calendar day detail for today
+
+Summary:
+- weight logged
+- calories
+- protein
+- carbs
+- fat
+- fiber
+- steps
+- water
+- workout/movement
+- meals logged
+
+CTA:
+**Everything is entered — close today**
+
+Secondary:
+**Fix entries first**
+
+Do not prevent an imperfect day from closing.
+
+The purpose is honest data.
+
+On close:
+1. persist closeout timestamp
+2. derive the current daily status
+3. update streak
+4. update Calendar
+5. update Today
+6. recalculate weekly review inputs
+
+If food or workout data is edited later:
+- recompute the daily status
+- preserve that the user performed a closeout
+- show an `Edited after closeout` indicator if useful
+
+Do not store stale duplicated macro totals in daily_logs.
+
+---
+
+# 15. WEEKLY REVIEW
+
+Default:
+Sunday evening
+
+The weekly review must be useful in under 2 minutes.
+
+Show:
+
+1. current 7-day average weight
+2. previous 7-day average weight
+3. change
+4. days with 4/5 daily actions complete
+5. average calories
+6. average protein
+7. average steps
+8. workouts completed / planned
+9. latest waist measurement
+10. PRs this period
+11. biggest consistency gap
+12. exactly one primary recommendation
+
+Example recommendations:
+- Hold course
+- Tighten food logging
+- Hit the existing calorie target
+- Protein needs attention
+- Complete the third lift
+- Add 2,000 daily steps
+- Reduce calorie target to 1,650
+- Add 100–150 calories
+
+Do not generate a motivational essay.
+
+CTA:
+**Close weekly review**
+
+Persist:
+- input metrics snapshot
+- deterministic recommendation code
+- human-readable recommendation
+- review closed timestamp
+
+The source entries remain canonical.
+
+---
+
+# 16. SETTINGS
+
+Keep settings small.
+
+Sections:
+
+## Cut targets
+- calorie target
+- protein
+- carbs
+- fat
+- fiber
+- steps
+- water
+- goal weight
+- goal date
+
+## Reminders
+- weigh-in
+- closeout
+- weekly review
+
+## Units
+MVP:
+- pounds
+- inches
+- liters
+
+No unit system switching needed unless trivial.
+
+## Account
+- current user
+- sign out
+
+## Data
+- export data
+- app version / build
+
+---
+
+# 17. DATA EXPORT
+
+Provide:
+**Export my CUT OS data**
+
+Server produces:
+- JSON full export
+- CSVs for:
+  - weights
+  - measurements
+  - food entries
+  - workout sessions / sets
+  - daily logs
+  - weekly reviews
+
+Do not include server secrets.
+
+The export is for user ownership and backup.
+
+---
+
+# 18. DATABASE MODEL
+
+Use typed migrations.
+
+Exact naming may adapt to the ORM, but preserve the semantics.
+
+## profiles
+
+- id UUID PK
+- user_id unique authenticated user identifier
+- name
+- height_in numeric
+- start_weight_lb numeric
+- goal_weight_lb numeric
+- cut_start_date date
+- cut_target_date date
+- calorie_target integer
+- protein_target_g integer
+- carb_target_g integer
+- fat_target_g integer
+- fiber_target_g integer
+- steps_target integer
+- water_target_l numeric
+- meals_per_day integer
+- timezone text
+- created_at
+- updated_at
+
+## profile_strength_days
+
+- id
+- profile_id FK
+- day_of_week integer
+- unique profile_id + day_of_week
+
+## weight_entries
+
+- id UUID
+- user_id
+- entry_date date
+- weight_lb numeric
+- note nullable
+- created_at
+- updated_at
+- unique user_id + entry_date
+
+## measurement_entries
+
+- id UUID
+- user_id
+- entry_date
+- waist_in nullable
+- chest_in nullable
+- hips_in nullable
+- thigh_in nullable
+- arm_in nullable
+- note nullable
+- created_at
+- updated_at
+
+## meal_templates
+
+- id UUID
+- owner_user_id nullable
+- name
+- category
+- location nullable
+- restaurant_or_cuisine nullable
+- description
+- order_instructions nullable
+- modifications nullable
+- skip_list nullable
+- optional_addons nullable
+- calories_min nullable
+- calories_max nullable
+- calories_exact nullable
+- protein_min_g nullable
+- protein_max_g nullable
+- protein_exact_g nullable
+- carbs_g nullable
+- fat_g nullable
+- fiber_g nullable
+- is_estimate boolean
+- is_system_template boolean
+- is_active boolean
+- created_at
+- updated_at
+
+System templates:
+owner_user_id null
+
+Personal templates:
+owner_user_id authenticated user
+
+## user_template_favorites
+
+- id
+- user_id
+- meal_template_id
+- created_at
+- unique user_id + meal_template_id
+
+## food_entries
+
+- id UUID
+- user_id
+- entry_date
+- meal_type
+- name
+- serving_note nullable
+- calories numeric
+- protein_g numeric
+- carbs_g numeric
+- fat_g numeric
+- fiber_g numeric
+- source_template_id nullable
+- idempotency_key
+- created_at
+- updated_at
+- unique user_id + idempotency_key
+
+## workout_templates
+
+- id UUID
+- name
+- day_of_week integer
+- workout_type
+- description
+- is_system_template
+- created_at
+- updated_at
+
+## workout_template_exercises
+
+- id UUID
+- workout_template_id FK
+- exercise_name
+- sort_order
+- prescribed_sets integer nullable
+- rep_min integer nullable
+- rep_max integer nullable
+- duration_minutes integer nullable
+- notes nullable
+
+## workout_sessions
+
+- id UUID
+- user_id
+- workout_template_id nullable
+- session_date
+- name
+- status enum or validated text:
+  - PLANNED
+  - IN_PROGRESS
+  - COMPLETED
+- started_at nullable
+- completed_at nullable
+- note nullable
+- created_at
+- updated_at
+
+Prevent multiple accidental active sessions for the same planned workout/date.
+
+## workout_sets
+
+- id UUID
+- workout_session_id
+- user_id
+- exercise_name
+- set_number
+- weight_lb nullable
+- reps nullable
+- rir nullable
+- duration_minutes nullable
+- estimated_1rm nullable
+- completed boolean
+- idempotency_key
+- created_at
+- updated_at
+- unique user_id + idempotency_key
+
+## historical_strength_baselines
+
+- id UUID
+- user_id
+- exercise_name
+- weight_lb
+- reps
+- estimated_1rm
+- source_type
+- note nullable
+- created_at
+
+Seed:
+- Bench Press 220 × 1
+- Back Squat 300 × 1
+- Deadlift 400 × 1
+- source_type `UNVERIFIED_HISTORICAL_BASELINE`
+
+## daily_logs
+
+- id UUID
+- user_id
+- log_date
+- steps integer default 0
+- water_l numeric default 0
+- daily_closeout boolean default false
+- closed_at nullable
+- note nullable
+- created_at
+- updated_at
+- unique user_id + log_date
+
+Do not store canonical daily macro totals here.
+
+## weekly_reviews
+
+- id UUID
+- user_id
+- week_start
+- week_end
+- avg_weight nullable
+- previous_avg_weight nullable
+- avg_calories nullable
+- avg_protein nullable
+- avg_steps nullable
+- planned_workouts integer
+- completed_workouts integer
+- compliance_days integer
+- waist_in nullable
+- primary_gap_code nullable
+- recommendation_code
+- recommendation_text
+- closed_at nullable
+- created_at
+- updated_at
+- unique user_id + week_start + week_end
+
+## reminder_preferences
+
+- id UUID
+- user_id unique
+- weigh_in_enabled boolean
+- weigh_in_time local time
+- closeout_enabled boolean
+- closeout_time local time
+- weekly_review_enabled boolean
+- weekly_review_day integer
+- weekly_review_time local time
+- timezone
+- created_at
+- updated_at
+
+---
+
+# 19. API / SERVICE CONTRACTS
+
+Exact route style may follow the Replit scaffold.
+
+Provide typed service boundaries.
+
+Minimum capabilities:
+
+## Profile
+- get profile
+- create profile
+- update targets
+
+## Today
+- get today's aggregate
+- get next action
+- get daily status
+- update steps
+- update water
+- close day
+
+## Weight
+- list range
+- create/upsert today
+- edit
+- delete
+
+## Measurements
+- list
+- create
+- edit
+- delete
+
+## Food
+- list daily entries
+- create
+- edit
+- delete
+- list templates by category/location
+- favorite template
+- create personal template
+
+## Workouts
+- get today's plan
+- start session
+- resume active session
+- get session
+- create set
+- edit set
+- delete set
+- complete session
+- list sessions
+- get PR board
+
+## Calendar
+- get date-range summaries
+- get day detail
+
+## Weekly Review
+- calculate current review
+- close review
+- list review history
+
+## Reminders
+- get preferences
+- update preferences
+
+## Export
+- generate authenticated user export
+
+Use shared TypeScript types or generated schemas where practical.
+
+---
+
+# 20. CALCULATION RULES
+
+## 20.1 Daily food totals
+
+Derive from food_entries for user/date:
+
+- calories = sum calories
+- protein = sum protein_g
+- carbs = sum carbs_g
+- fat = sum fat_g
+- fiber = sum fiber_g
+
+## 20.2 Macro action completion
+
+Default rule for the daily `Macro target` action:
+
+Complete when:
+- calories >= 1,450
+- calories <= calorie target + 100
+- protein >= 150g
+
+These thresholds are Zarif-specific defaults.
+
+Keep target values profile-driven where possible.
+
+Do not mark the macro action complete solely because calories are low.
+
+## 20.3 Movement completion
+
+Complete when:
+- planned workout/session is completed
+
+OR, on non-strength recovery/cardio days:
+- planned movement is marked complete
+
+OR:
+- steps >= steps target when there is no incomplete required strength session
+
+Do not allow 10,000 steps to silently replace a scheduled Monday strength session.
+
+## 20.4 Meal 1 completion
+
+Complete when a food entry for the date has:
+- meal_type `MEAL_ONE`
+
+Do not infer Meal 1 from time alone.
+
+## 20.5 Daily status score
+
+Score 0–5 from:
+- weight logged
+- Meal 1 logged
+- macro target met
+- movement requirement met
+- closeout done
+
+## 20.6 Streak
+
+Count consecutive local calendar days ending today or yesterday where:
+daily status score >= 4
+
+If today is still in progress and below 4:
+do not prematurely break yesterday's streak.
+
+## 20.7 Estimated 1RM
+
+Use Epley:
+
+For reps == 1:
+`e1rm = weight`
+
+For reps > 1:
+`e1rm = weight * (1 + reps / 30)`
+
+Round for display.
+Preserve reasonable precision internally.
+
+## 20.8 Weight trend
+
+7-day moving average:
+mean of available daily weight entries in the rolling 7-day period.
+
+For formal weekly review comparisons:
+require sufficient coverage.
+
+Preferred:
+at least 5 weigh-ins in each 7-day window.
+
+If coverage is lower:
+label confidence as incomplete and do not make aggressive target changes.
+
+---
+
+# 21. ERROR HANDLING
+
+Every mutation failure must:
+
+1. keep entered form values
+2. show a clear user-facing error
+3. distinguish retryable vs validation errors where possible
+4. allow retry
+5. avoid duplicate creation
+
+Never:
+- silently dismiss a modal on failed save
+- show success before a permanent failure is known
+- leave totals showing optimistic data after rollback
+- lose a logged workout set because the keyboard closed
+
+Use a consistent native toast/banner pattern.
+
+---
+
+# 22. LOADING STATES
+
+Initial authenticated loads:
+- use skeletons for major surfaces
+
+Small mutations:
+- keep screen context visible
+- disable only the relevant save action
+- show a compact progress state
+
+Do not flash a full-screen spinner for:
+- adding water
+- logging a set
+- editing food
+- logging weight
+
+---
+
+# 23. EMPTY STATES
+
+Bad:
+`No data available`
+
+Good:
+`Log your morning weight before food or water. Your trend starts with the first entry.`
+
+Bad:
+`No workouts`
+
+Good:
+`Full Body A is ready Monday. Start the session when you get to the gym.`
+
+Bad:
+`No meals`
+
+Good:
+`Your default Meal 1 is ready. Log it in one tap or adjust the serving first.`
+
+Every empty state should point to the next useful action.
+
+---
+
+# 24. TEST STRATEGY
+
+## 24.1 Automated tests
+
+Create tests for pure/domain logic:
+
+- macro totals
+- daily status
+- streak calculation
+- next-action priority
+- Epley e1RM
+- weight moving average
+- weekly window validation
+- adaptive coach recommendation
+- fits-today restaurant logic
+- idempotency behavior
+- future-date protection
+
+Use fixed dates and explicit timezone handling.
+
+Do not use the actual current clock inside domain tests without injecting or freezing time.
+
+Create API integration tests for:
+- auth ownership
+- create/read/update/delete weight
+- duplicate food mutation
+- food totals after edit/delete
+- workout set lifecycle
+- session completion
+- calendar range summaries
+- weekly review calculation
+
+## 24.2 Native manual tests
+
+Use:
+- Replit iOS Simulator for all primary interaction flows
+- Expo Go on a real iPhone for haptics and notifications
+
+The iOS Simulator tap-through is mandatory.
+
+## 24.3 Development seed mode
+
+Create a safe development-only seed mechanism.
+
+Fixtures:
+- blank new user
+- Zarif baseline user
+- 14 days of historical data for weekly review tests
+- PR-trigger workout scenario
+- slow-loss scenario
+- target-lane scenario
+- too-fast-loss scenario
+
+Never expose a production endpoint that lets arbitrary users seed another user's account.
+
+---
+
+# 25. MANDATORY MOBILE ACCEPTANCE MATRIX
+
+Execute in the running native iOS Simulator.
+
+Record results in `QA_REPORT.md`.
+
+## A. App boot and auth
+
+1. Launch app.
+2. Confirm no red error screen.
+3. Sign in.
+4. Confirm authenticated profile loads.
+5. Kill/restart the app.
+6. Confirm session behavior is intentional and documented.
+7. Sign out.
+8. Confirm private routes cannot be opened.
+9. Sign back in.
+
+## B. Onboarding
+
+Use a user with no profile.
+
+1. Enter 210 lb.
+2. Enter 190 lb goal.
+3. Confirm September 26, 2026.
+4. Confirm 1,800 kcal.
+5. Confirm 160g protein.
+6. Confirm 2 meals/day.
+7. Confirm M/W/F strength.
+8. Tap Start my cut.
+9. Confirm save state.
+10. Confirm Today opens.
+11. Kill/reopen.
+12. Confirm onboarding does not repeat.
+
+## C. Bottom navigation
+
+1. Tap Today.
+2. Tap Food.
+3. Confirm Food content.
+4. Tap Train.
+5. Confirm Train content.
+6. Tap Calendar.
+7. Confirm calendar.
+8. Tap Progress.
+9. Confirm progress.
+10. Rapidly switch tabs.
+11. Confirm no blank screen.
+12. Confirm no touch overlay blocks tabs.
+
+## D. Weight flow
+
+1. On Today tap Log weight.
+2. Enter 209.4.
+3. Save.
+4. Confirm success feedback.
+5. Confirm modal/screen closes appropriately.
+6. Confirm weight daily action completes.
+7. Open Progress.
+8. Confirm current weight is 209.4.
+9. Kill/reopen app.
+10. Confirm 209.4 persists.
+11. Edit to 209.2.
+12. Confirm chart/summary update.
+13. Delete.
+14. Confirm Today action reopens.
+15. Re-log 209.4.
+
+## E. Meal template
+
+1. Open Food.
+2. Open Meal 1.
+3. Open Zarif Default details.
+4. Confirm ingredients.
+5. Tap Log meal.
+6. Confirm calories increase by seed amount.
+7. Confirm protein increases.
+8. Confirm Today Meal 1 completes.
+9. Rapidly tap Log twice in a fresh duplicate scenario.
+10. Confirm only one entry exists.
+11. Edit serving note or macros.
+12. Confirm totals recalculate.
+13. Delete.
+14. Confirm totals recalculate.
+15. Confirm Meal 1 action reopens.
+16. Log again.
+
+## F. Food location selectors
+
+1. Tap Crandall.
+2. Confirm Crandall playbooks only.
+3. Tap Forney.
+4. Confirm Forney playbooks only.
+5. Tap Garland.
+6. Confirm Garland playbooks only.
+7. Tap Plano.
+8. Confirm Plano playbooks only.
+9. Open Chipotle playbook.
+10. Confirm order instructions.
+11. Confirm modifications.
+12. Confirm skip list.
+13. Confirm estimate label.
+14. Confirm Fits Today state.
+15. Log the playbook.
+16. Confirm totals update.
+
+## G. Manual food
+
+1. Tap Log food.
+2. Enter:
+   - Chicken curry + rice
+   - 825 kcal
+   - 72g protein
+   - 75g carbs
+   - 25g fat
+   - 8g fiber
+3. Save.
+4. Confirm entry appears.
+5. Edit calories to 800.
+6. Confirm totals decrease by 25.
+7. Delete.
+8. Confirm totals remove entry.
+9. Confirm next action recalculates.
+
+## H. Water
+
+1. Record starting water.
+2. Tap +0.5 L.
+3. Confirm +0.5.
+4. Tap three more times.
+5. Confirm total is 2.0 L above starting value.
+6. Kill/reopen.
+7. Confirm persistence.
+8. Confirm no duplicate mutation after reconnect/retry simulation.
+
+## I. Steps
+
+1. Tap Log steps.
+2. Enter 8,234.
+3. Save.
+4. Confirm Today updates.
+5. Edit to 10,100.
+6. Confirm target state updates.
+7. Kill/reopen.
+8. Confirm persistence.
+
+## J. Start and resume workout
+
+Use a Monday date in development fixtures if needed.
+
+1. Open Train.
+2. Confirm Full Body A.
+3. Tap Start workout.
+4. Confirm session created once.
+5. Back out.
+6. Reopen Train.
+7. Confirm Resume workout.
+8. Resume.
+9. Confirm same session.
+
+## K. Workout sets
+
+1. Open Bench Press.
+2. Enter 185 lb.
+3. Enter 8 reps.
+4. Optional RIR 2.
+5. Complete set.
+6. Confirm set row.
+7. Confirm haptic behavior in Expo Go later.
+8. Add second set.
+9. Edit second set.
+10. Confirm e1RM recalculates.
+11. Delete second set.
+12. Confirm first set remains.
+13. Add all prescribed sets.
+14. Confirm progress indicator.
+
+## L. PR
+
+Use a fixture where 185 × 8 is a PR or log a sufficient test set.
+
+1. Complete PR set.
+2. Confirm NEW PR overlay.
+3. Confirm exercise.
+4. Confirm weight × reps.
+5. Confirm e1RM.
+6. Confirm overlay does not block continued logging.
+7. Dismiss/continue.
+8. Open Progress.
+9. Confirm PR board.
+10. Kill/reopen.
+11. Confirm PR remains derived from saved set.
+
+## M. Workout complete
+
+1. Complete enough session data to finish.
+2. Tap Complete workout.
+3. Confirm server save.
+4. Confirm success.
+5. Open Today.
+6. Confirm movement/training action completes.
+7. Open Calendar.
+8. Confirm date indicator.
+9. Open Progress.
+10. Confirm relevant strength metrics.
+11. Kill/reopen.
+12. Confirm completed workout persists.
+13. Reopen completed workout.
+14. Edit one set.
+15. Confirm PR/summary recalculates.
+
+## N. Calendar
+
+1. Open Calendar.
+2. Tap today.
+3. Confirm today's detail.
+4. Tap a seeded past date.
+5. Confirm historical data.
+6. Tap a future date.
+7. Confirm plan only.
+8. Confirm no future completion pollution.
+9. Navigate next month.
+10. Navigate previous month.
+11. Jump to today.
+12. Rapidly select dates.
+13. Confirm no crash or stale detail.
+
+## O. Measurements
+
+1. Open Progress.
+2. Tap Add measurement.
+3. Enter:
+   - waist 39.5
+   - chest 43
+   - hips 42
+   - thigh 24
+   - arm 16
+4. Save.
+5. Confirm latest values.
+6. Kill/reopen.
+7. Confirm persistence.
+8. Add a second dated measurement fixture.
+9. Confirm change from baseline.
+
+## P. Daily closeout
+
+1. Open Today.
+2. Open closeout.
+3. Confirm values equal actual entries.
+4. Exit.
+5. Edit food.
+6. Reopen closeout.
+7. Confirm corrected values.
+8. Tap Everything is entered — close today.
+9. Confirm closeout action completes.
+10. Confirm streak/momentum state.
+11. Confirm calendar.
+12. Kill/reopen.
+13. Confirm closeout persists.
+
+## Q. Weekly review
+
+Use seeded 14-day data.
+
+### Target lane fixture
+1. Open weekly review.
+2. Confirm current average.
+3. Confirm previous average.
+4. Confirm calculated loss.
+5. Confirm recommendation is Hold course.
+
+### Slow fixture
+1. Confirm two full slow weekly comparisons where required.
+2. Confirm recommendation follows compliance hierarchy.
+3. Confirm exactly one recommendation.
+
+### Too-fast fixture
+1. Confirm cut age >14 days.
+2. Confirm weekly loss >2.5 lb.
+3. Confirm Add 100–150 calories.
+
+Also verify:
+- average calories
+- average protein
+- average steps
+- planned/completed workouts
+- compliance days
+- waist
+- PR count
+
+## R. Notifications on real iPhone / Expo Go
+
+1. Open reminder settings.
+2. Enable weigh-in reminder.
+3. Grant notification permission.
+4. Set a near-term test time.
+5. Confirm one notification is scheduled.
+6. Change time.
+7. Confirm old schedule is removed/replaced.
+8. Disable.
+9. Confirm schedule is canceled.
+10. Repeat for closeout.
+11. Verify weekly review schedule.
+12. Record platform limitations.
+
+Do not mark notification QA PASS from the simulator alone.
+
+## S. Failure recovery
+
+Simulate or induce a safe failed mutation.
+
+1. Enter a food form.
+2. Fail the network/save.
+3. Confirm form values remain.
+4. Confirm error appears.
+5. Retry.
+6. Confirm one row is created.
+7. Confirm no duplicate.
+8. Repeat on a workout set if practical.
+
+## T. Console / runtime
+
+During the matrix:
+- resolve uncaught JS errors
+- resolve unhandled promise rejections
+- resolve React key warnings
+- resolve navigation warnings
+- resolve repeated failed requests caused by app code
+- resolve infinite render loops
+- resolve state updates after unmount
+- resolve duplicate mutation warnings
+
+No core flow is accepted with a red error screen or silent failure.
+
+---
+
+# 26. REAL IPHONE QA GATE
+
+After simulator QA:
+
+Open the app through **Expo Go** on Zarif's iPhone.
+
+Test:
+
+1. Cold launch
+2. Sign in
+3. Bottom tabs
+4. Log weight
+5. Log Meal 1
+6. Add 0.5 L water
+7. Log steps
+8. Start workout
+9. Enter a set using the numeric keyboard
+10. Confirm keyboard does not hide actions
+11. Confirm haptic feedback
+12. Scroll long Food screen
+13. Open/close bottom sheets
+14. Background the app
+15. Return to app
+16. Kill/relaunch
+17. Confirm data persistence
+18. Notification permission
+19. Near-term test notification
+
+Record result in `QA_REPORT.md`.
+
+If the user cannot participate in real-device QA during the Agent run:
+- mark hardware-only items `BLOCKED — REAL DEVICE REQUIRED`
+- do not claim PASS
+- complete every simulator-testable item
+- provide the exact five-minute Expo Go test script for Zarif
+
+---
+
+# 27. BUILD PHASES AND HARD GATES
+
+## Phase 0 — Foundation
+
+Create:
+- mobile artifact
+- TypeScript architecture
+- database
+- migrations
+- auth proof
+- `ARCHITECTURE.md`
+- test setup
+
+Gate:
+- native preview boots
+- auth identity proof works
+- database read/write for authenticated user works
+
+## Phase 1 — App shell
+
+Build:
+- design tokens
+- safe areas
+- bottom navigation
+- screen shells
+- error boundary
+- loading patterns
+
+Gate:
+execute Acceptance Matrix C.
+
+Do not continue with all features while navigation is broken.
+
+## Phase 2 — Profile and core data
+
+Build:
+- onboarding
+- profile
+- weight
+- daily log
+- Today aggregates
+
+Gate:
+execute B, D, H, I.
+
+## Phase 3 — Food
+
+Build:
+- templates
+- Bengali meals
+- restaurant playbooks
+- manual entries
+- totals
+- edit/delete
+- favorites
+- fits-today logic
+
+Gate:
+execute E, F, G.
+
+## Phase 4 — Training
+
+Build:
+- schedule
+- sessions
+- sets
+- previous values
+- e1RM
+- PR engine
+- completion
+
+Gate:
+execute J, K, L, M.
+
+## Phase 5 — Calendar and progress
+
+Build:
+- date range summaries
+- day detail
+- weight chart
+- measurements
+- PR board
+
+Gate:
+execute N, O.
+
+## Phase 6 — Cut operating system
+
+Build:
+- next-action engine
+- daily closeout
+- streak
+- weekly review
+- adaptive coach
+
+Gate:
+execute P and Q plus domain tests.
+
+## Phase 7 — Reminders and export
+
+Build:
+- reminder preferences
+- scheduled notifications where supported
+- JSON/CSV export
+
+Gate:
+execute R on real device where possible.
+
+## Phase 8 — Failure recovery and regression
+
+Execute:
+- S
+- T
+- complete regression of A–Q
+
+Update:
+`QA_REPORT.md`
+
+Do not call the project complete before Phase 8.
+
+---
+
+# 28. REPOSITORY DOCUMENTATION
+
+Create:
+
+## README.md
+Include:
+- what CUT OS is
+- how to run the mobile app
+- how to open iOS Simulator
+- how to preview with Expo Go
+- server/database overview
+- environment variables
+- test commands
+- seed commands
+- production/publish notes
+
+## ARCHITECTURE.md
+Include:
+- mobile client
+- cloud server
+- PostgreSQL
+- auth decision
+- data flow
+- source-of-truth rules
+- next-action logic location
+- PR logic location
+- weekly review logic location
+- notification design
+- future HealthKit adapter boundary
+
+## QA_REPORT.md
+Use the acceptance matrix.
+
+## PRODUCT_RULES.md
+Extract the deterministic product rules:
+- daily score
+- streak
+- macro completion
+- movement completion
+- next-action priority
+- PR calculations
+- weight trends
+- adaptive coach
+
+The code and PRODUCT_RULES.md must agree.
+
+---
+
+# 29. CODE QUALITY RULES
+
+- TypeScript strict mode
+- no `any` used casually
+- validate API inputs
+- validate server outputs where useful
+- centralize date/timezone handling
+- centralize unit assumptions
+- centralize design tokens
+- use reusable domain services
+- keep screens thin
+- avoid giant 1,000-line components
+- do not duplicate macro calculations in multiple screens
+- do not duplicate PR calculation logic client and server without shared tested code
+- handle loading, empty, error, and success states
+- use stable list keys
+- no placeholder controls
+- no dead buttons
+- no commented-out fake features presented in UI
+- no secrets in client code
+- no client-trusted authorization
+- no console noise left from debugging
+
+---
+
+# 30. FUTURE-READY BOUNDARIES
+
+Do not implement these in MVP, but document extension points.
+
+## Health data adapter
+
+Future interface concept:
+
+```ts
+interface HealthDataProvider {
+  getDailySteps(date: string): Promise<number | null>;
+  getWeightEntries(startDate: string, endDate: string): Promise<HealthWeightEntry[]>;
+  getSleepSummary(date: string): Promise<SleepSummary | null>;
+}
+```
+
+Current provider:
+manual tracking only.
+
+Future:
+Apple Health / HealthKit adapter.
+
+## Food intelligence adapter
+
+Future:
+meal photo and text interpretation.
+
+Current:
+manual entry and templates.
+
+## Restaurant availability adapter
+
+Future:
+live location and delivery availability.
+
+Current:
+curated playbooks.
+
+Do not hard-wire future vendors into core domain logic.
+
+---
+
+# 31. FINAL DELIVERY FORMAT
+
+At completion, Agent must report:
+
+1. Replit project status
+2. Native mobile artifact confirmed
+3. React Native / Expo version
+4. Backend architecture
+5. Authentication method chosen and why
+6. Database tables created
+7. Migrations status
+8. Automated test results
+9. iOS Simulator acceptance results
+10. Expo Go real-device results
+11. Failed or blocked acceptance items
+12. Known limitations
+13. Notification status
+14. Data export status
+15. Publish / preview instructions
+16. Exact next action for Zarif
+
+Do not say:
+- "should work"
+- "appears functional"
+- "buttons are wired"
+- "all tests passed"
+
+unless the report contains the actual evidence.
+
+---
+
+# 32. PRODUCT DEFINITION OF DONE
+
+CUT OS is ready for Zarif when he can:
+
+1. wake up
+2. open the app
+3. see the next action
+4. log his weight
+5. log his default Meal 1 in one tap
+6. choose a Bengali or restaurant dinner that fits the day
+7. see remaining calories and protein
+8. start the scheduled workout
+9. log weight and reps quickly
+10. see a legitimate PR
+11. complete the workout
+12. log steps and water
+13. close the day
+14. return the next morning
+15. find every entry still there
+16. review a real 7-day weight trend
+17. complete a Sunday review
+18. receive one clear plan adjustment when the deterministic rules justify it
+
+The app should feel like a private cut operating system built for Zarif.
+
+Build that.

@@ -1,0 +1,30 @@
+Build CUT OS as a **native mobile app** in Replit.
+
+I attached `CUT_OS_REPLIT_NATIVE_BUILD_SPEC.md`. Treat it as the source of truth and product requirements document.
+
+Critical instructions:
+
+- Create/use a **Mobile app artifact**, not a web app.
+- Build the client with React Native + Expo + TypeScript.
+- Use Replit's cloud server and Replit Database/PostgreSQL as the system of record.
+- Do not reuse the prior static HTML prototype.
+- Do not use localStorage as the database.
+- This app is designed for my iPhone and must be tested as a native app.
+- The design must be premium, clean, blue, Apple-like, and low-cognitive-load. Avoid generic AI-dashboard styling.
+- The primary product question is: **"What do I need to do next to stay on track for my cut?"**
+- Implement the deterministic next-action engine, food/macro tracking, Bengali and restaurant meal playbooks, workout logging, PR engine, 75-day calendar, weight trend, measurements, daily closeout, reminders, and weekly review exactly as specified.
+- Keep the MVP compatible with Expo Go where reasonably possible. Do not add HealthKit or unsupported native modules yet.
+- Use managed authentication. Start with Replit Auth through Agent, but first prove the auth flow works in the running native artifact and produces a stable server-side user identity. If it does not work reliably for the native artifact, use another Replit-supported managed auth option such as Clerk. Do not hand-roll passwords.
+- Build in the phases and hard gates defined in the spec.
+- After each phase, run its required acceptance scenarios before continuing.
+- Replit App Testing for web apps is NOT a substitute for native QA.
+- You must manually exercise all simulator-testable primary controls in the running iOS Simulator.
+- Hardware-only behavior such as haptics and notifications must be tested through Expo Go on a real iPhone when a tester is available. If a real-device step cannot be executed, mark it BLOCKED in `QA_REPORT.md`; do not claim PASS.
+- Create automated tests for all deterministic domain logic and API ownership/idempotency flows.
+- Create `README.md`, `ARCHITECTURE.md`, `PRODUCT_RULES.md`, and `QA_REPORT.md`.
+- Do not declare completion while any core tab, save, edit, delete, navigation, workout, food, weight, closeout, or persistence flow is dead.
+- Do not claim "all buttons work" from code inspection or compilation. Actually tap through the running native app.
+
+Begin by reading the full spec. Then create the native architecture and execute Phase 0. Continue through all phases without asking me to restate requirements that are already in the spec.
+
+At the end, give me the exact mobile preview instructions or QR-code flow I should use in Expo Go and a factual PASS / FAIL / BLOCKED summary from `QA_REPORT.md`.
