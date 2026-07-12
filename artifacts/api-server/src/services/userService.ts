@@ -6,6 +6,8 @@ import {
   type User,
   type Profile,
 } from "@workspace/db";
+import { isValidTimeZone } from "@workspace/domain";
+import { HttpError } from "../lib/httpError";
 
 /**
  * Just-in-time user provisioning. Upserts on the unique clerk_user_id;
@@ -43,6 +45,14 @@ export async function updateUser(
   userId: string,
   patch: UpdateUserPatch,
 ): Promise<User | undefined> {
+  if (patch.timezone !== undefined && !isValidTimeZone(patch.timezone)) {
+    throw new HttpError(400, "Invalid timezone");
+  }
+  // An empty patch is a no-op: Drizzle rejects an empty SET, and "change
+  // nothing" should return the current row unchanged, not error.
+  if (Object.keys(patch).length === 0) {
+    return getUserById(userId);
+  }
   const [user] = await db
     .update(usersTable)
     .set(patch)
