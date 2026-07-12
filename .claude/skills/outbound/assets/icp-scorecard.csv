@@ -1,0 +1,13 @@
+signal,what_to_look_for,type,points,notes
+Target segment,In your ICP (set TARGET_SEGMENTS in score_leads.py to match company.yml),fit,25,non-target segment = DISQUALIFY
+Reachable,Has a valid email and/or phone,fit,15,"both = 15, one = 10, none = DISQUALIFY (can't work it)"
+Size sweet spot,~5-75 employees (edit to your ICP),fit,20,"too small (<5) = may not afford; too big (>=250) = likely in-house team"
+Affordability,Est. revenue above your floor (~$250k default),fit,15,floor to afford your offer; below = affordability risk flag
+Weak/no website,No site or poor/dated site,gap,10,"clear 'we can help' signal; fair site = partial credit"
+Few reviews,Under ~50 public reviews,gap,8,visible room to improve market presence
+Low rating,Average rating under 4.0,gap,4,reputation-improvement opportunity
+Ad status,Not running paid ads (greenfield) OR running ads (budget exists),gap,5,"greenfield = 5 (untapped); already advertising = 3 (proven budget, optimize)"
+Disqualifier - non-target segment,Outside your ICP — not a fit,disqualifier,,forces tier D
+Disqualifier - no contact,No email and no phone,disqualifier,,forces tier D
+Disqualifier - has incumbent,(If known) already retains an agency / has the internal function,disqualifier,,note in 'notes'; treat as low priority / different pitch
+Tiers,A >=75 | B 55-74 | C 35-54 | D <35,scoring,,work A then B; C = nurture; D = disqualified/weak

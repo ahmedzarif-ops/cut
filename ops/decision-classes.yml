@@ -1,0 +1,42 @@
+# decision-classes.yml — the closed taxonomy of decision CLASSES the CEO Twin
+# ledger validates against. Every ledger entry's `class` field must be one of the
+# strings listed under `classes:` below (enforced by scripts/ceo-twin-ledger.mjs
+# validateEntry via the CLI). The autonomy ratchet groups by this class to decide
+# when a reversible class has earned auto-do status.
+#
+# This is a GENERIC STARTER SET. Add, rename, or remove classes to match how your
+# company actually makes decisions — keep them lowercase dotted slugs
+# (namespace.thing), and keep the list closed (no free-text classes) so the drift
+# guard stays meaningful.
+
+classes:
+  # Product / build
+  - product.scope
+  - product.direction
+  - product.deploy
+  # Growth / marketing
+  - growth.channel
+  - growth.experiment
+  - growth.content
+  # Pricing / offer
+  - pricing.change
+  - offer.packaging
+  # Revenue / finance
+  - finance.spend
+  - finance.forecast
+  # Sales / pipeline
+  - sales.deal
+  - sales.outreach
+  # People / vendors
+  - people.hiring
+  - vendor.commitment
+  # Operations / process
+  - ops.process
+  - ops.tooling
+  # Brand / legal / compliance
+  - brand.positioning
+  - legal.exposure
+  - compliance.claim
+  # Data / measurement
+  - data.measurement
+  - data.instrumentation

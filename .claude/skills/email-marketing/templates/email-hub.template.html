@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{COMPANY_NAME}} Email Command Center - {{RUN_DATE}}</title>
+<!-- Palette below is a NEUTRAL placeholder. Swap the :root values for your own from
+     company.yml -> brand.visual_notes. -->
+<style>
+  :root{
+    --brand:#1E6E68; --brand-deep:#185853; --accent:#B5894C; --cream:#F5F2EC;
+    --ink:#1F2733; --paper:#FBFAF6; --line:#E4DDCF; --muted:#6F6A5C;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;font-size:17px}
+  header.hero{background:var(--brand);color:var(--cream);padding:40px 24px 28px}
+  header.hero .wrap{max-width:980px;margin:0 auto}
+  header.hero .kicker{color:var(--accent);font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;font-size:13px;margin:0 0 8px}
+  header.hero h1{margin:0;font-size:34px;line-height:1.15}
+  header.hero p.sub{margin:10px 0 0;color:#C9C3B5;font-size:18px}
+  nav.toc{position:sticky;top:0;z-index:10;background:var(--brand-deep);
+    padding:10px 24px;border-bottom:3px solid var(--accent)}
+  nav.toc .wrap{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 18px}
+  nav.toc a{color:var(--cream);text-decoration:none;font-size:14px;font-weight:600;opacity:.85}
+  nav.toc a:hover{opacity:1;color:#fff}
+  main{max-width:980px;margin:0 auto;padding:8px 24px 64px}
+  section{padding:28px 0;border-bottom:1px solid var(--line)}
+  section h2{font-size:24px;margin:0 0 6px;color:var(--brand)}
+  section .lead{color:var(--muted);margin:0 0 16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:18px 20px;margin:12px 0;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .card.accent{border-left:4px solid var(--accent)}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:15px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--cream);color:var(--brand);font-weight:700}
+  .pill{display:inline-block;background:var(--cream);color:var(--brand);
+    border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12px;
+    font-weight:700;margin:0 6px 6px 0}
+  .copy-pointer{background:var(--brand);color:var(--cream);border-radius:10px;
+    padding:16px 20px;font-weight:600}
+  .copy-pointer code{background:rgba(255,255,255,.14);padding:2px 7px;border-radius:5px}
+  footer{max-width:980px;margin:0 auto;padding:24px;color:var(--muted);font-size:14px}
+  ol,ul{padding-left:22px}
+  @media(max-width:640px){header.hero h1{font-size:26px}section h2{font-size:20px}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <p class="kicker">{{COMPANY_NAME}} - Email Command Center</p>
+    <h1>{{RUN_TITLE}}</h1>
+    <p class="sub">{{RUN_DATE}} - {{RUN_SUBTITLE}}</p>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#summary">Summary</a>
+    <a href="#map">Lifecycle map</a>
+    <a href="#programs">Programs in this run</a>
+    <a href="#segments">Segmentation</a>
+    <a href="#measure">Measurement</a>
+    <a href="#roadmap">Roadmap + first 20</a>
+    <a href="#copy">Copy blocks</a>
+  </div>
+</nav>
+
+<main>
+  <section id="summary">
+    <h2>Executive summary</h2>
+    <p class="lead">The situation, the recommended lifecycle push, and the biggest bet.</p>
+    <div class="card accent">{{EXEC_SUMMARY}}</div>
+  </section>
+
+  <section id="map">
+    <h2>Lifecycle map</h2>
+    <p class="lead">The offer ladder as connected flows.</p>
+    {{LIFECYCLE_MAP}}
+  </section>
+
+  <section id="programs">
+    <h2>Programs in this run</h2>
+    <p class="lead">Each in-scope program with its trigger, branches, CTA, and measurement.</p>
+    {{PROGRAMS}}
+  </section>
+
+  <section id="segments">
+    <h2>Audience and segmentation</h2>
+    <p class="lead">Who we target and how the message shifts.</p>
+    {{SEGMENTATION}}
+  </section>
+
+  <section id="measure">
+    <h2>Measurement and experimentation</h2>
+    <p class="lead">Downstream-outcome metrics and the first tests.</p>
+    {{MEASUREMENT}}
+  </section>
+
+  <section id="roadmap">
+    <h2>90-day roadmap and ranked first 20</h2>
+    <p class="lead">The build order and the highest-value emails to create first.</p>
+    {{ROADMAP}}
+  </section>
+
+  <section id="copy">
+    <h2>Copy blocks</h2>
+    <div class="copy-pointer">
+      Ready-to-send sequences live alongside this file in <code>./sequences/</code>, one file per
+      program, plus <code>libraries.md</code> (subjects, preheaders, CTAs, segment modules).
+      {{COPY_NOTE}}
+    </div>
+  </section>
+</main>
+
+<footer>
+  {{COMPANY_NAME}} email run, {{RUN_DATE}}. Internal planning document, noindex.
+  Value-first, honest urgency only, zero fabricated proof. Pricing from config.
+  A human wires the ESP; nothing sends automatically.
+</footer>
+</body>
+</html>

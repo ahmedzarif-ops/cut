@@ -1,0 +1,39 @@
+# company.yml — the ONE place your company's facts live.
+# Every skill and agent in this kit grounds itself here instead of hardcoding anything.
+# Filled via the SETUP.md interview on 2026-07-12. Edit any value later; skills always read current state.
+
+company:
+  name: "CUT"
+  legal_entity: ""      # not formed yet — revisit before revenue
+  domain: ""            # no website domain yet — App Store product first
+  one_liner: "CUT is a mobile app that tells lifters exactly what to do next to finish their cut — training, food, and weigh-ins, one next action at a time."
+
+owner:
+  name: "Zarif"
+  email: "ahmed.zarif@gmail.com"
+  is_technical: false   # plain English, no jargon, real trade-offs, starred recommendations
+
+offer:
+  summary: "A paid subscription in the App Store that acts like a cutting coach: it looks at your weigh-ins and workouts and tells you the one next thing to do to keep your cut on track."
+  pricing_notes: "App Store subscription via RevenueCat; price not decided yet — skills that need a price must ask first, never assume."
+  booking_link: ""
+
+icp:
+  description: "Lifters (people who train with weights) who are cutting — trying to lose fat while keeping muscle — and want to be told what to do instead of juggling spreadsheets and three apps."
+  research_doc: ""      # not written yet — run "Research my ICP and write kb/icp-research.md" before GTM copy
+
+brand:
+  voice: "Direct, coach-like, zero fluff. Short sentences. Talks like a knowledgeable training partner, not a wellness brand. No hype, no guilt-tripping, no medical claims."
+  banned_phrases: []
+  visual_notes: ""      # not established yet
+
+kb_dir: "kb/"
+
+legal:
+  jurisdiction: "US"
+  regulated_claims: "No health or medical claims — CUT is a coaching tool, not medical advice. Privacy hard rule (GTM change order §6): body weight, calories, macros, and measurements never appear in URLs, logs, analytics events, or third-party SDKs."
+
+integrations:
+  deploy_target: ""     # product ships via the Apple App Store; no marketing site yet
+  esp: ""               # no email service provider yet
+  crm: ""               # no CRM yet

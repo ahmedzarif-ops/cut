@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{COMPANY}}</title>
+<style>
+  /* Neutral default palette. Swap these tokens for your brand (company.yml -> brand.visual_notes).
+     System-font stacks only: no web fonts, so the deck renders correctly opened straight
+     from disk (file://) with no external requests. */
+  :root{
+    --teal:#1E6E68; --teal-deep:#0f3d39; --paper:#F5F2EC; --brass:#B5894C;
+    --ink:#1F2733; --ink-soft:#41505C; --ink-mute:#8A8576; --line:#E4DDCF;
+    --card:#FBFAF6; --success:#3E8E78; --error:#C2603F;
+    --serif:Georgia,'Times New Roman',serif;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+    font-size:18px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{font-family:var(--serif);font-weight:600;line-height:1.12;margin:0}
+  p{margin:0 0 14px}
+  ul,ol{margin:0 0 14px;padding-left:22px}
+  li{margin:0 0 8px}
+  strong{font-weight:700}
+  .muted{color:var(--ink-mute)}
+  /* Slides */
+  .slide{min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+    max-width:1000px;margin:0 auto;padding:72px 48px;border-bottom:1px solid var(--line)}
+  .slide h2{font-size:2.2rem;margin:0 0 20px;color:var(--teal-deep)}
+  .slide h3{font-size:1.5rem;margin:0 0 14px}
+  .slide ul li{font-size:1.12rem}
+  .cover{background:var(--teal);color:var(--paper);min-height:100vh}
+  .cover h1{font-size:3.4rem;color:#fff;max-width:18ch}
+  .cover .subhead{margin-top:18px;font-size:1.4rem;color:#dcebe8}
+  .factors li{margin-bottom:12px}
+  /* Example Scenario callout */
+  .scenario{border:2px solid var(--brass);border-radius:16px;background:#fff;
+    padding:28px 30px;margin:6px 0}
+  .scenario-label{display:block;background:var(--brass);color:#fff;font-weight:700;
+    font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;
+    margin:-28px -30px 22px;padding:12px 30px;border-radius:13px 13px 0 0;font-family:var(--sans)}
+  .scenario h3{color:var(--teal-deep)}
+  .scenario-beats{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:18px}
+  .scenario-beats .beat h4{font-size:1.05rem;color:var(--brass);margin:0 0 8px;text-transform:uppercase;
+    letter-spacing:.04em;font-family:var(--sans);font-weight:700}
+  .scenario-beats ul{padding-left:18px}
+  .scenario-beats li{font-size:1rem;color:var(--ink-soft)}
+  .scenario-numbers{margin-top:18px;font-size:.95rem;font-style:italic}
+  /* Animated demo (product dashboard mock) */
+  .demo{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;
+    box-shadow:0 12px 40px rgba(15,61,57,.10);margin:6px 0}
+  .demo-bar{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--card);
+    border-bottom:1px solid var(--line)}
+  .demo-bar .dots{display:flex;gap:6px}
+  .demo-bar .dots i{width:11px;height:11px;border-radius:50%}
+  .demo-bar .dots i:nth-child(1){background:#E4A6A6}
+  .demo-bar .dots i:nth-child(2){background:#E7CFA6}
+  .demo-bar .dots i:nth-child(3){background:#A6CDB0}
+  .demo-title{font-weight:600;font-size:.92rem;color:var(--ink-soft)}
+  .tag-sample{margin-left:auto;background:#E4EFE9;color:var(--teal-deep);font-weight:700;
+    font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;padding:4px 10px;border-radius:999px}
+  .demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px}
+  .panel{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:18px}
+  .panel-h{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+    color:var(--ink-mute);margin:0 0 10px}
+  .score{display:flex;align-items:flex-end;gap:12px;margin-bottom:14px}
+  .score>span:first-child{font-family:var(--serif);font-size:3rem;font-weight:600;line-height:.9;color:var(--teal-deep)}
+  .chip{background:#E4EFE9;color:var(--teal-deep);font-weight:700;font-size:.8rem;
+    padding:5px 11px;border-radius:999px;display:inline-block}
+  .lens{margin-bottom:10px}
+  .lens-row{display:flex;justify-content:space-between;font-size:.85rem;color:var(--ink-soft)}
+  .lens-val{font-weight:600}
+  .bar{height:8px;border-radius:999px;background:#E9E3D6;overflow:hidden;margin-top:4px}
+  .bar-fill{height:100%;border-radius:999px;background:var(--teal);width:0}
+  .demo.in .bar-fill{width:var(--w);transition:width 1100ms cubic-bezier(.22,1,.36,1)}
+  .move{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;
+    background:#fff;padding:11px;margin-bottom:9px}
+  .move .tick{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;
+    border-radius:6px;background:#E4EFE9;color:var(--teal-deep);font-size:.8rem;flex:0 0 auto}
+  .move p{margin:0;font-size:.92rem}
+  .fu-quote{font-weight:600;font-size:.95rem;margin:0 0 10px}
+  .touches{display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--ink-soft);margin-bottom:12px}
+  .stars{color:var(--brass);letter-spacing:2px;margin:0 0 8px;font-weight:600;color:var(--ink)}
+  .review{border:1px solid var(--line);border-radius:11px;background:#fff;padding:11px;font-size:.9rem;
+    color:var(--ink-soft);margin:0 0 8px}
+  .demo-foot{text-align:center;font-size:.82rem;color:var(--ink-mute);padding:0 20px 18px;margin:0}
+  /* Offer */
+  .ladder{list-style:none;padding:0;margin:18px 0 0}
+  .ladder li{background:#fff;border:1px solid var(--line);border-left:4px solid var(--brass);
+    border-radius:10px;padding:14px 18px;margin-bottom:10px;font-size:1.05rem}
+  /* Proof + CTA */
+  .proof p{font-size:1.15rem;max-width:60ch}
+  .guarantee{font-weight:600;color:var(--teal-deep)}
+  .cta{background:var(--teal-deep);color:var(--paper);align-items:flex-start}
+  .cta h2{color:#fff}
+  .btn{display:inline-block;background:var(--brass);color:#fff;text-decoration:none;font-weight:700;
+    font-size:1.15rem;padding:16px 30px;border-radius:12px;margin-top:14px}
+  .deck-foot{max-width:1000px;margin:0 auto;padding:26px 48px;color:var(--ink-mute);font-size:.85rem}
+  @media(max-width:760px){
+    .slide{padding:56px 24px;min-height:auto}
+    .cover h1{font-size:2.3rem}.slide h2{font-size:1.7rem}
+    .scenario-beats,.demo-grid{grid-template-columns:1fr}
+    .scenario-label{margin:-28px -30px 18px}
+  }
+  @media print{
+    .slide{min-height:auto;page-break-after:always;border-bottom:none}
+    .demo{box-shadow:none}
+    .bar-fill{width:var(--w) !important}
+    a[href]:after{content:""}
+  }
+</style>
+</head>
+<body>
+  <main class="deck">
+    {{COVER}}
+    {{PAIN}}
+    {{DIAGNOSIS}}
+    <section class="slide"><h2>What this looks like in practice</h2>
+      <p class="muted">A walk-through of how the system fixes these leaks, step by step.</p>
+      {{SCENARIO}}
+    </section>
+    <section class="slide"><h2>See it working</h2>
+      <p class="muted">This is the product dashboard every customer gets, shown here with sample data.</p>
+      {{DEMO}}
+    </section>
+    {{OFFER}}
+    {{PROOF}}
+    {{CTA}}
+  </main>
+  <footer class="deck-foot">The Example Scenario is a simulation, not a real client result. Prices and terms are shown as of the deck build date.</footer>
+</body>
+</html>

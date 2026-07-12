@@ -1,0 +1,9 @@
+[
+  { "name": "tier-A reversible reorder", "decision": { "summary": "Reorder this week's content queue", "tags": ["content_queue_reorder"], "door": "two_way", "magnitude": "low", "lane": "seo_content", "reversible": true }, "expectedTier": "A" },
+  { "name": "tier-B medium copy refresh", "decision": { "summary": "Refresh the about-page copy", "tags": ["copy_edit"], "door": "two_way", "magnitude": "medium", "lane": "seo_content", "reversible": true }, "expectedTier": "B" },
+  { "name": "tier-C pricing change", "decision": { "summary": "Drop a product's price by 80%", "tags": ["pricing_or_packaging_changes"], "door": "two_way", "magnitude": "high", "lane": "self", "reversible": true }, "expectedTier": "C" },
+  { "name": "tier-C deploy", "decision": { "summary": "Deploy the site to production", "tags": ["production_deployment"], "door": "one_way", "magnitude": "high", "lane": "self", "reversible": false }, "expectedTier": "C" },
+  { "name": "tier-C specialist gate block", "decision": { "summary": "Ship a blog post the anti-slop gate flagged as blocking", "tags": ["specialist_gate_blocking"], "door": "two_way", "magnitude": "medium", "lane": "seo_content", "reversible": true }, "expectedTier": "C" },
+  { "name": "tier-C from the owner's email", "decision": { "summary": "Send an outbound email from the owner's address", "tags": ["sent_from_ceo_name_or_email"], "door": "two_way", "magnitude": "low", "lane": "outbound", "reversible": false }, "expectedTier": "C" },
+  { "name": "innovation-lens growth idea (reversible) holds", "decision": { "summary": "Test a bold new distinctive hero concept on a noindex page", "tags": ["growth_experiment"], "door": "two_way", "magnitude": "medium", "lane": "cro_funnel", "reversible": true }, "expectedTier": "B" }
+]

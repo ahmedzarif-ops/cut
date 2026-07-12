@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Growth, {{DATE}}</title>
+<style>
+:root{
+  --teal:#1E6E68;--paper:#F5F2EC;--brass:#B5894C;--ink:#1F2733;--inkSoft:#41505C;
+  --inkMute:#8A8576;--line:#E4DDCF;--card:#FBFAF6;--bad:#C2603F;--good:#3E8E78;
+  --serif:Georgia,'Times New Roman',serif;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55}
+main{max-width:720px;margin:0 auto;padding:28px 20px}
+.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:600;color:var(--brass)}
+h1{font-family:var(--serif);font-size:26px;margin:6px 0 4px}
+.meta{color:var(--inkMute);font-size:13px;margin-bottom:18px}
+.headline{font-size:18px;font-weight:600;margin:0 0 16px}
+.card{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:16px 18px;margin:14px 0}
+.card h2{font-family:var(--serif);font-size:18px;margin:0 0 8px}
+details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 16px;margin:14px 0}
+summary{cursor:pointer;font-weight:600;color:var(--teal)}
+ul{margin:6px 0;padding-left:20px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em}
+.foot{color:var(--inkMute);font-size:12px;margin-top:22px;border-top:1px solid var(--line);padding-top:10px}
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Daily Growth</div>
+  <h1>{{DATE}}</h1>
+  <div class="meta">Marketing pod, chaired by Mark. Pull, not push. One pane: clears up into the weekly cockpit.</div>
+  <p class="headline">{{HEADLINE}}</p>
+  <div class="card"><h2>The proposal</h2>{{THE_PROPOSAL}}</div>
+  <details><summary>Pod detail</summary>{{POD_DETAIL}}</details>
+  <div class="card"><h2>Blockers and escalations</h2>{{BLOCKERS_ESCALATIONS}}</div>
+  <div class="card"><h2>Pending your action</h2>{{PENDING}}</div>
+  <div class="foot">Generated {{GENERATED}}. A steady report is the system working correctly, not a broken tool.</div>
+</main>
+</body>
+</html>

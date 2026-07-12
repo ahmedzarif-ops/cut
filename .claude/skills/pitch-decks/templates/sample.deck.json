@@ -1,0 +1,94 @@
+{
+  "segment": "sample-segment",
+  "sampleLead": {
+    "company": "Summit & Co",
+    "owner_name": "Dana",
+    "city": "Austin",
+    "segment": "your segment",
+    "situation": "busy season, missing inbound while heads-down on delivery"
+  },
+  "destinations": {
+    "primary": "https://REPLACE_WITH_company.domain/start",
+    "booking": "https://REPLACE_WITH_offer.booking_link",
+    "home": "https://REPLACE_WITH_company.domain/"
+  },
+  "cover": {
+    "headline": "{{COMPANY}}: stop losing {{SEGMENT}} jobs online",
+    "subhead": "A plan for {{OWNER_NAME}} in {{CITY}}"
+  },
+  "pain": {
+    "headline": "Where the jobs leak",
+    "points": [
+      "Inbound missed while you are heads-down on delivery",
+      "Thin proof next to a competitor with a longer track record",
+      "Quotes that go quiet and never get a follow-up"
+    ]
+  },
+  "diagnosis": {
+    "headline": "The places jobs leak",
+    "factors": [
+      { "name": "Get found", "line": "Show up when a buyer searches for what you do." },
+      { "name": "Fast response", "line": "The first to respond wins most competitive deals." }
+    ]
+  },
+  "scenario": {
+    "company": "a 6-person shop in a mid-size metro",
+    "before": [
+      "Misses a large share of inbound during peak season",
+      "Sends one quote, never follows up"
+    ],
+    "applied": [
+      { "piece": "Follow-up flow", "does": "works every sent quote on a day 2 / 6 / 12 cadence" },
+      { "piece": "Review flow", "does": "drafts a review request after each completed job" }
+    ],
+    "after": [
+      "Recovers a few quotes a month it used to lose to silence",
+      "A review count that keeps climbing"
+    ],
+    "numbersNote": "Illustrative, based on a $1,200 average job value. Not a guaranteed result."
+  },
+  "demo": {
+    "appName": "Command Center",
+    "scoreLabel": "Visibility score",
+    "scoreValue": 86,
+    "scoreDelta": "+12 this month",
+    "lenses": [
+      { "label": "Get found", "value": 90 },
+      { "label": "Proof", "value": 74 },
+      { "label": "Clarity", "value": 86 },
+      { "label": "Trust", "value": 80 },
+      { "label": "Fast response", "value": 68 },
+      { "label": "Follow-up", "value": 92 }
+    ],
+    "movesLabel": "Your moves this week",
+    "moves": [
+      "Follow up on 3 quotes worth $18,400 before they go cold",
+      "Request reviews from 2 finished jobs this week",
+      "Publish this week's post: 5 quick checks buyers ask about"
+    ],
+    "pipelineLabel": "Follow-up flow",
+    "followUp": { "quote": "Sample open quote", "value": 14200, "recovered": 12600 },
+    "proofLabel": "Reviews",
+    "proofLine": "4.9 from 38 reviews",
+    "review": "Hi Dana, thanks for trusting us with the job. If you have 30 seconds, a quick review really helps a small local team like ours. Here is the link."
+  },
+  "offer": {
+    "headline": "Ways in",
+    "note": "One system, a few ways in, at your pace.",
+    "tiers": [
+      { "name": "Free check", "price": "", "line": "see where you are losing jobs in two minutes." },
+      { "name": "Tier 1", "price": "REPLACE from company.yml offer.pricing_notes", "line": "your do-this-next plan." },
+      { "name": "Tier 2", "price": "REPLACE from company.yml offer.pricing_notes", "line": "the system runs it, you approve." }
+    ]
+  },
+  "proof": {
+    "headline": "Who built this",
+    "who": "REPLACE with the founder proof from company.yml owner, past-framed and true. No fabricated testimonials, counts, or results.",
+    "guarantee": "REPLACE with your real guarantee terms, or remove this key if you do not offer one."
+  },
+  "cta": {
+    "headline": "See exactly where you are losing jobs",
+    "primaryLabel": "Run the free 2-minute check",
+    "primaryDest": "primary"
+  }
+}

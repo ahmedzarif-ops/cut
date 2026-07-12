@@ -1,0 +1,9 @@
+{
+  "deck": [
+    { "type": "cover", "ratio": "1x1", "eyebrow": "Your Brand", "title": "5 ways buyers slip away before they ever reach out" },
+    { "type": "point", "ratio": "1x1", "num": "1", "title": "Slow response time", "body": "Most buyers hire whoever answers first. Minutes matter." },
+    { "type": "point", "ratio": "1x1", "num": "2", "title": "No follow-up system", "body": "A quote sent and forgotten is a deal lost to whoever followed up." },
+    { "type": "stat", "ratio": "1x1", "figure": "78%", "caption": "of buyers go with the first business that responds (industry estimate — cite before publishing)." },
+    { "type": "cta", "ratio": "1x1", "title": "Get your free assessment", "cta": "yourdomain.example" }
+  ]
+}

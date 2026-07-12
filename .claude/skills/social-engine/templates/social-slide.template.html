@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* PLACEHOLDER BRAND — swap these tokens (colors, fonts, wordmark, logo) for your own.
+     Align to company.yml -> brand.visual_notes so slides match your site/decks/emails.
+     The layout/craft below is the reusable part; only the identity values change. */
+  :root{
+    --paper:#F5F2EC; --card:#FBFAF6; --ink:#1F2733; --ink-soft:#41505C; --ink-mute:#6F6A5C;
+    --accent:#1E6E68; --accent-dark:#185853; --on-accent:#F5F2EC;
+    --accent-2:#B5894C; --accent-2-soft:#E7CFA6; --line:#E4DDCF;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;
+       background-image:radial-gradient(120% 80% at 50% 0%, rgba(30,110,104,0.06), transparent 60%);
+       display:flex;flex-direction:column}
+  .slide{position:relative;display:flex;flex-direction:column;justify-content:center}
+  .ratio-1x1{width:1080px;height:1080px;padding:96px}
+  .ratio-9x16{width:1080px;height:1920px;padding:140px 96px}
+  .logo{display:none;align-items:center;gap:18px;position:absolute;top:96px;left:96px}
+  .ratio-9x16 .logo{top:120px}
+  .type-cover .logo,.type-cta .logo{display:flex}
+  .logo svg{width:50px;height:50px;flex:none}
+  .wordmark{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:34px;letter-spacing:-0.01em;color:var(--ink)}
+  .content{display:flex;flex-direction:column}
+  .type-cover .content,.type-cta .content{justify-content:flex-end;flex:1}
+  .eyebrow{font-size:30px;font-weight:600;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent-2);margin-bottom:30px}
+  .title{font-family:'Fraunces',Georgia,serif;font-optical-sizing:auto;letter-spacing:-0.015em;
+         line-height:1.06;font-weight:600;color:var(--ink);font-size:92px}
+  .ratio-1x1 .title{font-size:74px}
+  .body{font-size:40px;line-height:1.5;color:var(--ink-soft);margin-top:36px;max-width:18em}
+  .num{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:120px;line-height:1;color:var(--accent-2);margin-bottom:20px}
+  .figure{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:320px;line-height:0.9;
+          letter-spacing:-0.02em;color:var(--accent)}
+  .ratio-1x1 .figure{font-size:240px}
+  .caption{font-size:46px;line-height:1.35;color:var(--ink-soft);margin-top:20px;max-width:15em}
+  .cta-line{align-self:flex-start;margin-top:48px;background:var(--accent);color:var(--on-accent);font-weight:600;
+            font-size:40px;padding:28px 50px;border-radius:999px;box-shadow:0 6px 18px rgba(30,110,104,0.22)}
+</style>
+</head>
+<body class="slide ratio-{{RATIO}} type-{{TYPE}}">
+  <div class="logo" aria-hidden="true">
+    <!-- PLACEHOLDER logo mark — replace with your own SVG -->
+    <svg viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="25" cy="25" r="21" stroke="#1E6E68" stroke-width="4"/>
+      <circle cx="25" cy="25" r="11" stroke="#1E6E68" stroke-width="3"/>
+      <circle cx="25" cy="25" r="4.5" fill="#B5894C"/>
+    </svg>
+    <span class="wordmark">Your Brand</span>
+  </div>
+  <div class="content">{{CONTENT}}</div>
+</body>
+</html>

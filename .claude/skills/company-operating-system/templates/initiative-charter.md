@@ -1,0 +1,22 @@
+# Initiative Charter — [Initiative Name]
+
+- Company objective:
+- Primary constraint addressed:
+- Customer problem:
+- Impact hypothesis (revenue / retention / cost):
+- Evidence:
+- In-scope:
+- Out-of-scope:
+- Primary owner agent:
+- Supporting agents:
+- Owner decision rights:
+- Milestones:
+- Success metric:
+- Guardrail metrics:
+- Data source:
+- Cost / capacity:
+- Risks:
+- Dependencies:
+- Stop condition:
+- Review date:
+- Post-mortem requirement:

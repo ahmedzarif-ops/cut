@@ -1,0 +1,20 @@
+metric,definition,formula,source,product_line,cadence,target,owner,notes
+Top-of-funnel started,Count of top-of-funnel entries begun (signup / lead form / quiz),count(distinct entry_id where started),App DB + web analytics,Top-of-funnel,weekly,,Head of Data,top of funnel
+Top-of-funnel completion rate,Share of started entries that were completed,completed / started,App DB,Top-of-funnel,weekly,60%,Head of Data,low denominator early = read directionally
+Low-ticket purchases,Count of low-ticket / tripwire product sales,count(billing charges where product=tripwire & succeeded),Billing,Low-ticket,weekly,,Head of Data,one-off revenue (NOT in MRR)
+Top-of-funnel to low-ticket rate,Share of completed entries that buy the low-ticket product,tripwire_purchases / entries_completed,App DB + billing,Low-ticket,monthly,,Head of Data,
+Subscription new starts,New recurring-subscription starts this period,count(billing subscriptions created where product=subscription),Billing,Subscription,weekly,,Head of Data,
+Low-ticket to subscription rate,Share of low-ticket buyers who start a subscription,subscription_new / tripwire_purchases,Billing,Subscription,monthly,,Head of Data,small denominator = directional
+MRR,Monthly recurring revenue from subscriptions only,sum(active subscription monthly amounts),Billing,Subscription,daily,,Head of Data + Reva (RevOps),recurring ONLY; reconcile to Reva's books (RevOps & Finance); exclude one-off & services
+New MRR,MRR added from new subscribers this period,sum(new subscription MRR),Billing,Subscription,monthly,,Head of Data,component of MRR movement
+Expansion MRR,MRR added from existing subscribers upgrading,sum(upgrade deltas),Billing,Subscription,monthly,,Head of Data,
+Contraction MRR,MRR lost from downgrades,sum(downgrade deltas),Billing,Subscription,monthly,,Head of Data,
+Churned MRR,MRR lost from cancellations,sum(cancelled subscription MRR),Billing,Subscription,monthly,,Head of Data,
+Logo churn rate,Subscribers lost over subscribers at period start,subs_lost / subs_start_of_period,Billing,Subscription,monthly,<4%,Head of Data,
+Net revenue retention,Revenue retained + expansion across existing base,(start_MRR + expansion - contraction - churn) / start_MRR,Billing,Subscription,monthly,>100%,Head of Data,<100% = base shrinking before new sales
+Blended CAC,Acquisition cost per new subscriber,total acquisition spend / subscription_new,Ad-platform connector + billing,Subscription,monthly,,Head of Data,also track by channel
+LTV,Modeled lifetime value of a subscriber,(ARPU x gross_margin) / churn_rate,Billing (modeled),Subscription,monthly,,Head of Data,WIDE confidence band at low volume; state uncertainty
+LTV to CAC ratio,Ratio of lifetime value to acquisition cost,LTV / blended_CAC,derived,Subscription,monthly,>3,Head of Data,rough ratio given LTV uncertainty
+CAC payback,Months to recover CAC from gross margin,blended_CAC / (ARPU x gross_margin),derived,Subscription,monthly,<12,Head of Data,
+Services revenue,One-off high-touch / services revenue,sum(billing charges where product=services),Billing,Services,monthly,,Head of Data,one-off (NOT in MRR)
+Self-reported attribution,How customers say they heard about you,count by response,App DB (intake),All,monthly,,Head of Data,captures dark social tracking misses

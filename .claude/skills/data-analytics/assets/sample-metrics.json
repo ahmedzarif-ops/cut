@@ -1,0 +1,83 @@
+{
+  "title": "CEO Dashboard",
+  "subtitle": "Internal growth snapshot (example data)",
+  "as_of": "2026-06-27",
+  "freshness": "EXAMPLE DATA for demonstration. Wire to real sources before use. Billing + app DB would sync nightly; self-reported attribution lags ~1 week.",
+  "sources": ["Billing", "App DB", "Web analytics", "Ad-platform connector"],
+  "sections": [
+    {
+      "name": "Revenue & retention",
+      "metrics": [
+        {
+          "name": "MRR", "value": 8910, "unit": "$", "prior": 7700, "target": 12000,
+          "good_direction": "up",
+          "series": [
+            {"period": "Jan", "value": 3300}, {"period": "Feb", "value": 4200},
+            {"period": "Mar", "value": 5100}, {"period": "Apr", "value": 6400},
+            {"period": "May", "value": 7700}, {"period": "Jun", "value": 8910}
+          ],
+          "note": "Recurring subscriptions only; excludes one-off and services revenue."
+        },
+        {
+          "name": "Active subscribers", "value": 30, "unit": "count", "prior": 26,
+          "good_direction": "up",
+          "series": [
+            {"period": "Jan", "value": 11}, {"period": "Feb", "value": 14},
+            {"period": "Mar", "value": 17}, {"period": "Apr", "value": 22},
+            {"period": "May", "value": 26}, {"period": "Jun", "value": 30}
+          ]
+        },
+        {
+          "name": "Logo churn (monthly)", "value": 3.3, "unit": "%", "prior": 4.1,
+          "good_direction": "down", "note": "Subscribers lost / start-of-month subscribers."
+        },
+        {
+          "name": "Net revenue retention", "value": 104, "unit": "%", "prior": 101,
+          "good_direction": "up", "note": "Below 100% means the base is shrinking even before new sales."
+        }
+      ]
+    },
+    {
+      "name": "Acquisition funnel",
+      "metrics": [
+        {
+          "name": "Top-of-funnel started", "value": 412, "unit": "count", "prior": 350,
+          "good_direction": "up"
+        },
+        {
+          "name": "Completion rate", "value": 61, "unit": "%", "prior": 58,
+          "good_direction": "up", "note": "Completed / started."
+        },
+        {
+          "name": "Low-ticket purchases", "value": 47, "unit": "count", "prior": 39,
+          "good_direction": "up", "note": "One-off tripwire product."
+        },
+        {
+          "name": "Low-ticket → subscription", "value": 14, "unit": "%", "prior": 12,
+          "good_direction": "up", "note": "Small denominator — read as directional, not precise."
+        }
+      ]
+    },
+    {
+      "name": "Unit economics",
+      "metrics": [
+        {
+          "name": "Blended CAC", "value": 180, "unit": "$", "prior": 205,
+          "good_direction": "down", "note": "Total acquisition spend / new subscribers."
+        },
+        {
+          "name": "Estimated LTV", "value": 2300, "unit": "$", "prior": 2100,
+          "good_direction": "up", "note": "Modeled from current churn; wide confidence band at this volume."
+        },
+        {
+          "name": "LTV : CAC", "value": 12.8, "unit": "", "prior": 10.2,
+          "good_direction": "up", "note": "Healthy >3. Treat as a rough ratio given the LTV uncertainty."
+        },
+        {
+          "name": "CAC payback (months)", "value": 1.9, "unit": "", "prior": 2.4,
+          "good_direction": "down"
+        }
+      ]
+    }
+  ]
+}
