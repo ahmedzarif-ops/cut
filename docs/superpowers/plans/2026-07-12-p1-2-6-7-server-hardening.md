@@ -6,12 +6,12 @@
 
 **Architecture:** Three independent hardening changes to the request lifecycle. P1-2 rewrites `provisionUser` to select-first (zero writes for a returning user) and reuses the fetched row via `req.user`. P1-6 adds a pool budget + error handler in `@workspace/db` and a testable `createShutdownHandler` wired to SIGTERM/SIGINT in the server entry. P1-7 adds `trust proxy`, two `express-rate-limit` limiters, and `helmet` to `app.ts`. The existing integration harness rebuilds its own Express app, so the limiters/helmet added to `app.ts` don't touch the 44 existing tests.
 
-**Tech Stack:** Express 5, Drizzle + node-postgres (`pg`), `express-rate-limit` ^8.5.2, `helmet` ^8.3.0, Vitest + Supertest, PGlite (test DB).
+**Tech Stack:** Express 5, Drizzle + node-postgres (`pg`), `express-rate-limit` ^8.5.2, `helmet` ^8.2.0, Vitest + Supertest, PGlite (test DB).
 
 ## Global Constraints
 
 - Run all commands from `cut-main/` (pnpm 10 monorepo, Node v25).
-- New deps pinned: `helmet` `^8.3.0`, `express-rate-limit` `^8.5.2` (both Express-5-compatible).
+- New deps pinned: `helmet` `^8.2.0`, `express-rate-limit` `^8.5.2` (both Express-5-compatible). (helmet was planned at `^8.3.0`, but 8.3.0 was <24h old and blocked by the workspace's `minimumReleaseAge` supply-chain gate; Zarif chose `^8.2.0` — same v8 API — over excluding helmet from the gate. Future installs pick up 8.3.0+ once mature.)
 - `@workspace/domain` stays zero-runtime-dep and I/O-free; `@workspace/db` owns the pool.
 - Identity: every table references internal `users.id` (uuid); never key by the raw Clerk id. Queries scope by `req.userId`.
 - Privacy (CLAUDE.md / GTM §6): no health values (weight, calories, macros, measurements) in logs — pool/shutdown/limiter logs carry only signals, IDs, and error objects.
@@ -707,7 +707,7 @@ Wire `trust proxy`, both limiters, and helmet into `app.ts` in the correct order
 
 In `artifacts/api-server/package.json`, add to `dependencies`:
 ```jsonc
-    "helmet": "^8.3.0",
+    "helmet": "^8.2.0",
 ```
 Run: `pnpm install`
 Expected: resolves.
@@ -847,7 +847,7 @@ git commit -m "docs: record P1-2/6/7 hardening invariants + deferred follow-ups"
 - P1-7 apiLimiter before auth + strict `/api/__clerk` limiter → Tasks 4 (factories) + 5 (wiring) ✓
 - P1-7 helmet → Task 5 ✓
 - Docs (PRODUCT_RULES invariants) → Task 6 ✓
-- Deps pinned (helmet 8.3.0, express-rate-limit 8.5.2) → Global Constraints + Tasks 4/5 ✓
+- Deps pinned (helmet 8.2.0, express-rate-limit 8.5.2) → Global Constraints + Tasks 4/5 ✓
 
 **Placeholder scan:** No TBD/TODO; every code step shows complete final code; every run step states the exact command and expected result.
 
