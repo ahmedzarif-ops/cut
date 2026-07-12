@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: CUT OS API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: me
+    description: Current authenticated user
 paths:
   /healthz:
     get:
@@ -24,6 +26,103 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /me:
+    get:
+      operationId: getMe
+      tags: [me]
+      summary: Get the current authenticated user
+      description: >-
+        Returns the internal user record for the authenticated Clerk identity,
+        creating it on first access (just-in-time provisioning).
+      responses:
+        "200":
+          description: The current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateMe
+      tags: [me]
+      summary: Update the current user's account settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: The updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /me/profile:
+    get:
+      operationId: getMyProfile
+      tags: [me]
+      summary: Get the current user's profile
+      responses:
+        "200":
+          description: The user's profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "404":
+          description: Profile not created yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      operationId: upsertMyProfile
+      tags: [me]
+      summary: Create or replace the current user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInput"
+      responses:
+        "200":
+          description: The saved profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +132,134 @@ components:
           type: string
       required:
         - status
-
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    User:
+      type: object
+      required:
+        - id
+        - timezone
+        - units
+        - onboardingComplete
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        email:
+          type: ["string", "null"]
+        timezone:
+          type: string
+        units:
+          type: string
+          enum: [metric, imperial]
+        onboardingComplete:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UserUpdate:
+      type: object
+      properties:
+        timezone:
+          type: string
+          minLength: 1
+        units:
+          type: string
+          enum: [metric, imperial]
+        onboardingComplete:
+          type: boolean
+    Profile:
+      type: object
+      required:
+        - id
+        - userId
+        - goal
+        - sex
+        - activityLevel
+        - trainingExperience
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        displayName:
+          type: ["string", "null"]
+        goal:
+          type: string
+          enum: [cut, maintain, recomp, gain]
+        sex:
+          type: string
+          enum: [male, female, other, unspecified]
+        birthYear:
+          type: ["integer", "null"]
+        heightCm:
+          type: ["number", "null"]
+        startWeightKg:
+          type: ["number", "null"]
+        goalWeightKg:
+          type: ["number", "null"]
+        targetDate:
+          type: ["string", "null"]
+          description: Calendar date in YYYY-MM-DD form (no time component).
+        activityLevel:
+          type: string
+          enum: [sedentary, light, moderate, active, very_active]
+        trainingExperience:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ProfileInput:
+      type: object
+      required:
+        - goal
+      properties:
+        displayName:
+          type: string
+        goal:
+          type: string
+          enum: [cut, maintain, recomp, gain]
+        sex:
+          type: string
+          enum: [male, female, other, unspecified]
+        birthYear:
+          type: integer
+          minimum: 1900
+          maximum: 2025
+        heightCm:
+          type: number
+          minimum: 50
+          maximum: 300
+        startWeightKg:
+          type: number
+          minimum: 20
+          maximum: 500
+        goalWeightKg:
+          type: number
+          minimum: 20
+          maximum: 500
+        targetDate:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          description: Calendar date in YYYY-MM-DD form (no time component).
+        activityLevel:
+          type: string
+          enum: [sedentary, light, moderate, active, very_active]
+        trainingExperience:
+          type: string
+          enum: [beginner, intermediate, advanced]
