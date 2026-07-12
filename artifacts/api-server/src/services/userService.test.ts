@@ -1,6 +1,13 @@
 import { describe, it, expect, afterEach } from "vitest";
+import { eq } from "drizzle-orm";
+import { usersTable } from "@workspace/db/schema";
 import { createTestContext, type TestContext } from "../test/helpers";
-import { provisionUser, upsertProfile, getProfile } from "./userService";
+import {
+  provisionUser,
+  getUserByClerkId,
+  upsertProfile,
+  getProfile,
+} from "./userService";
 
 let ctx: TestContext;
 afterEach(async () => {
@@ -17,6 +24,33 @@ describe("provisionUser", () => {
     expect(first?.id).toBeDefined();
     expect(second?.id).toBe(first?.id);
     expect(first?.clerkUserId).toBe("clerk_abc");
+  });
+});
+
+describe("provisionUser — no hot-path write", () => {
+  it("does not modify the row on a returning user's request", async () => {
+    ctx = await createTestContext();
+    await provisionUser({ clerkUserId: "clerk_nowrite", email: "n@w.com" });
+    const [before] = await ctx.db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, "clerk_nowrite"));
+
+    await provisionUser({ clerkUserId: "clerk_nowrite", email: "n@w.com" });
+    const [after] = await ctx.db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, "clerk_nowrite"));
+
+    // Old code bumped updated_at on every call; select-first leaves it alone.
+    expect(after.updatedAt).toEqual(before.updatedAt);
+  });
+
+  it("getUserByClerkId returns the row, or undefined when unknown", async () => {
+    ctx = await createTestContext();
+    const created = await provisionUser({ clerkUserId: "clerk_byid", email: null });
+    expect((await getUserByClerkId("clerk_byid"))?.id).toBe(created?.id);
+    expect(await getUserByClerkId("clerk_absent")).toBeUndefined();
   });
 });
 

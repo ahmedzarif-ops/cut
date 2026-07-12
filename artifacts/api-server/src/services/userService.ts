@@ -10,22 +10,38 @@ import { isValidTimeZone } from "@workspace/domain";
 import { HttpError } from "../lib/httpError";
 
 /**
- * Just-in-time user provisioning. Upserts on the unique clerk_user_id;
- * onConflictDoUpdate always returns the row (inserted or existing), avoiding a
- * select+insert race. Returns undefined only if the write returned no row.
+ * Just-in-time user provisioning with no per-request write.
+ *
+ * Select-first — a returning user (the overwhelming common case) is one read
+ * and zero writes. On a miss, insert; `onConflictDoNothing` + a re-select
+ * covers the race where a concurrent request created the same clerk_user_id
+ * between our SELECT and INSERT.
  */
 export async function provisionUser(input: {
   clerkUserId: string;
   email: string | null;
 }): Promise<User | undefined> {
-  const [user] = await db
+  const existing = await getUserByClerkId(input.clerkUserId);
+  if (existing) return existing;
+
+  const [inserted] = await db
     .insert(usersTable)
     .values({ clerkUserId: input.clerkUserId, email: input.email })
-    .onConflictDoUpdate({
-      target: usersTable.clerkUserId,
-      set: { updatedAt: new Date() },
-    })
+    .onConflictDoNothing({ target: usersTable.clerkUserId })
     .returning();
+  if (inserted) return inserted;
+
+  // Lost the insert race — another request created the row. Re-select it.
+  return getUserByClerkId(input.clerkUserId);
+}
+
+export async function getUserByClerkId(
+  clerkUserId: string,
+): Promise<User | undefined> {
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.clerkUserId, clerkUserId));
   return user;
 }
 

@@ -8,23 +8,14 @@ import {
   UpsertMyProfileResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
-import {
-  getUserById,
-  updateUser,
-  getProfile,
-  upsertProfile,
-} from "../services/userService";
+import { updateUser, getProfile, upsertProfile } from "../services/userService";
 
 const router: IRouter = Router();
 
-// GET /api/me — current user (JIT-provisioned by requireAuth).
+// GET /api/me — current user. requireAuth already resolved and attached the
+// full internal row as req.user, so no second query is needed here.
 router.get("/me", requireAuth, async (req, res): Promise<void> => {
-  const user = await getUserById(req.userId!);
-  if (!user) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  res.json(GetMeResponse.parse(user));
+  res.json(GetMeResponse.parse(req.user));
 });
 
 // PATCH /api/me — update account settings (timezone, units, onboarding flag).
