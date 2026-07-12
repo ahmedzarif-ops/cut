@@ -1,4 +1,8 @@
-const memo = new Map<string, boolean>();
+// Cache ONLY valid zones — a bounded, fixed-per-process set (~hundreds). Invalid
+// inputs are deliberately NOT cached: they are caller-controlled and unbounded,
+// so caching them would let a client grow this Map without limit. Re-probing an
+// invalid zone is cheap.
+const validZones = new Set<string>();
 
 /**
  * Whether `timeZone` is a real IANA zone the runtime understands.
@@ -7,20 +11,16 @@ const memo = new Map<string, boolean>();
  * accepts every valid one — including `UTC`/`Etc/UTC` and aliases, which
  * `Intl.supportedValuesOf("timeZone")` omits on some runtimes (Node v25). This
  * is the write-boundary guard for `users.timezone`, the key behind all future
- * user-local daily rollups. Results are memoized (the zone set is fixed per
- * process).
+ * user-local daily rollups.
  */
 export function isValidTimeZone(timeZone: string): boolean {
-  const cached = memo.get(timeZone);
-  if (cached !== undefined) return cached;
-  let valid: boolean;
+  if (validZones.has(timeZone)) return true;
   try {
     new Intl.DateTimeFormat(undefined, { timeZone });
-    valid = true;
   } catch (err) {
     if (!(err instanceof RangeError)) throw err;
-    valid = false;
+    return false;
   }
-  memo.set(timeZone, valid);
-  return valid;
+  validZones.add(timeZone);
+  return true;
 }
