@@ -1,0 +1,50 @@
+Apply the attached `CUT_OS_PUBLIC_GTM_1M_CHANGE_ORDER.md` to the current CUT OS Replit project now.
+
+This is a business and architecture change order.
+
+The business objective has changed: CUT OS is intended to become a public App Store subscription product with a stretch target of approximately $1M in gross first-year revenue and healthy consumer-software margins.
+
+Do NOT restart the native app and do NOT discard working code.
+
+First:
+1. read the original CUT OS native build spec
+2. read this change order
+3. inspect the current project state
+4. identify every Zarif-specific assumption currently hardcoded into product logic, UI, database schema, auth, templates, or tests
+5. create a migration/refactor plan ordered by severity and rework cost
+
+Then implement the public-ready architecture in the current project.
+
+Critical decisions from the change order:
+
+- Keep Zarif as the founder/first-user development fixture, but generalize the product for multiple users.
+- Position the launch wedge as: `The adaptive cut operating system for people who lift.`
+- The core product job remains: `Tell me exactly what I need to do next to finish my cut without giving up the muscle I already built.`
+- Build public personalization for goals, meal frequency, fasting preference, cuisines, dietary restrictions, restaurant/home eating, training experience, and training days.
+- Do not turn CUT OS into a generic calorie tracker.
+- Add subscription architecture for `CUT_OS_PRO`.
+- Initial price targets are $19.99 monthly and $99.99 annual, with annual visually primary.
+- Initial trial test is 7 days.
+- The user must see a personalized plan reveal and first Next Action before the paywall.
+- Prefer RevenueCat with `react-native-purchases` and a clean entitlement service abstraction.
+- Remember: real IAP cannot be fully tested in Expo Go. Configure a proper Expo/EAS development-build path for real purchase testing. Expo Go mock/preview behavior is not purchase QA.
+- Add restore purchases, subscription management, entitlement gating, and purchase QA documentation.
+- If Google social login is offered on iOS, implement the required equivalent privacy-preserving login option; prefer Sign in with Apple plus Google.
+- Add in-app account deletion.
+- Generalize all user data ownership and run cross-user authorization tests.
+- Add first-party growth analytics with a strict safe-property allowlist.
+- Do not send weight, measurements, calorie/macronutrient values, food, workout performance, PRs, HealthKit data, or other health/fitness values to ad platforms or general third-party behavioral analytics.
+- Add the product/revenue funnel event taxonomy specified in the change order.
+- Add creator/referral attribution architecture.
+- Add remote-config/experiment architecture.
+- Add a separate protected admin/growth control plane; it may be a web admin surface.
+- Create the year-1 revenue planning model around approximately 10,000 payers and the conversion sensitivity scenarios in the spec.
+- Target 50%+ contribution margin at scale after platform fees, refunds, variable infrastructure, and direct acquisition spend.
+- Create all documentation listed in the change order.
+- Preserve the existing mandatory native QA process and add the change-order QA gates.
+
+Before modifying code, explicitly state whether any current architectural choice would create major public-launch rework if left unchanged. Fix those items first.
+
+Do not claim subscriptions are production-ready from Expo Go. Do not claim public readiness until multi-user isolation, account deletion, analytics safety, entitlement gating, and the development-build purchase path are verified or clearly marked BLOCKED with exact reasons.
+
+Continue in Power Mode with high effort. Do not ask me to restate product context that already exists in the attached specs.

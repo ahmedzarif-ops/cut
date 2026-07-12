@@ -1,0 +1,968 @@
+# CUT OS — PUBLIC GTM + $1M YEAR-1 REVENUE CHANGE ORDER
+
+## Status
+
+This change order supersedes any assumption that CUT OS is permanently a private, Zarif-only application.
+
+Do **not** discard the native mobile build or restart the project.
+
+Preserve the current React Native + Expo + TypeScript direction, Replit cloud backend, PostgreSQL source-of-truth model, and native QA gates.
+
+Change the architecture and product model now so CUT OS can become a public App Store subscription business.
+
+## Business objective
+
+Build CUT OS with a credible path to:
+
+- public iOS launch
+- paid subscription monetization
+- approximately **$1,000,000 in gross year-1 revenue**
+- healthy consumer software contribution margins
+- scalable multi-user architecture
+- privacy-conscious growth analytics
+- creator / affiliate distribution
+- future Android launch
+
+This is a stretch operating target, not a guaranteed forecast.
+
+### Revenue planning assumption
+
+Launch pricing target:
+
+- Monthly: **$19.99**
+- Annual: **$99.99**
+- Annual should be the primary merchandising offer
+- 7-day trial is the initial test default
+- no permanent lifetime plan
+- no full-featured free tier at initial launch
+
+Planning shorthand:
+
+- target approximately **10,000 first-year paying customers**
+- target approximately **$100 first-year gross billed revenue per payer**
+- 10,000 × approximately $100 = approximately $1,000,000 gross billed revenue
+
+This is a business planning model, not a hardcoded application calculation.
+
+The application must support pricing experiments and remote paywall configuration rather than embedding prices throughout UI code.
+
+---
+
+# 1. PRODUCT POSITIONING MUST CHANGE
+
+CUT OS is not positioned as:
+
+- another calorie tracker
+- another workout log
+- another generic AI fitness coach
+- MyFitnessPal with a better interface
+
+Initial market wedge:
+
+> **The adaptive cut operating system for people who lift.**
+
+Core job:
+
+> Tell me exactly what I need to do next to finish my cut without giving up the muscle I already built.
+
+Initial ideal customer profile:
+
+- age approximately 25–40
+- has prior lifting experience
+- understands basic calories or protein but struggles with consistent execution
+- needs to lose approximately 15–30 lb
+- works a demanding job, owns a business, or has an inconsistent schedule
+- dislikes bland meal plans
+- eats restaurant, cultural, family, or mixed cuisine
+- has repeatedly started cuts and lost consistency
+- wants a system, not more fitness content
+
+Do not gender-lock the underlying product or database.
+
+The first GTM creative and positioning can focus heavily on men who lift because that is the launch wedge.
+
+Founder-first product truth:
+
+CUT OS was originally designed around Zarif's real cut.
+
+Keep a Zarif development/demo seed.
+
+Do not hardcode Zarif's profile, cuisine, measurements, height, training numbers, locations, or goals into public product logic.
+
+---
+
+# 2. PUBLIC USER PERSONALIZATION
+
+Generalize onboarding.
+
+## Goal profile
+
+Collect:
+
+- current weight
+- goal weight
+- target date
+- height
+- optional age range or date of birth if actually required by product logic
+- timezone
+- unit preference
+- primary goal:
+  - cut fat while preserving muscle
+  - lose weight
+  - maintain
+- lifting experience:
+  - new
+  - intermediate
+  - experienced
+- desired weekly strength frequency
+
+Do not make unsupported medical recommendations from age or biometric data.
+
+## Nutrition behavior
+
+Collect:
+
+- meals per day
+- fasting preference
+- protein target knowledge:
+  - let CUT OS recommend
+  - I know my target
+- common meal environment:
+  - mostly home cooked
+  - mixed
+  - mostly restaurants / delivery
+- preferred cuisines, multi-select:
+  - American
+  - Bengali
+  - Indian
+  - Pakistani
+  - Thai
+  - Chinese
+  - Mediterranean
+  - Mexican
+  - Japanese
+  - Korean
+  - other
+- dietary preferences / restrictions
+- allergies as user-provided safety metadata
+- foods the user refuses to eat
+- repeat-meal tolerance:
+  - I like a default meal
+  - some variety
+  - high variety
+
+CUT OS should use these inputs to determine what meal templates and playbooks surface first.
+
+## Training behavior
+
+Collect:
+
+- strength days
+- gym access
+- common cardio
+- approximate historic lifting context
+- preferred workout duration
+
+Do not require users to enter PRs during onboarding.
+
+---
+
+# 3. PERSONALIZED SEED SYSTEM
+
+Replace Zarif-only seeding with a public template architecture.
+
+System templates may have:
+
+- cuisine tags
+- meal-type tags
+- high-protein score
+- calorie band
+- protein band
+- prep-effort score
+- restaurant/home classification
+- repeat-meal suitability
+- dietary tags
+
+The Zarif profile should surface:
+
+- egg / egg-white Meal 1
+- Greek yogurt
+- berries
+- chicken/turkey
+- Bengali home meals
+- Indian / Thai / Chinese playbooks
+
+A different user should receive a different prioritized library.
+
+Do not build the recommendation system with an LLM for MVP.
+
+Use deterministic scoring based on:
+
+- calories remaining
+- protein remaining
+- cuisine preference
+- meal type
+- food restrictions
+- historical favorites
+- repeated recent meals
+- prep preference
+- location/playbook relevance when available
+
+Document the scoring logic.
+
+---
+
+# 4. MONETIZATION ARCHITECTURE
+
+## Subscription product
+
+Initial entitlement:
+
+`CUT_OS_PRO`
+
+Initial products:
+
+- `cut_os_monthly`
+- `cut_os_annual`
+
+Target launch prices:
+
+- $19.99 / month
+- $99.99 / year
+
+Do not display hardcoded price copy if store product metadata can supply localized prices.
+
+## Trial
+
+Initial experiment:
+
+- 7-day free trial
+
+Trial should begin after:
+
+1. onboarding
+2. goal summary
+3. personalized cut plan preview
+4. first next-action preview
+
+Then show the paywall.
+
+The user must understand the personalized value before being asked to start a trial.
+
+## Paywall model
+
+Use premium positioning.
+
+Do not launch with an unlimited full-feature freemium product.
+
+Recommended initial flow:
+
+1. Download
+2. Goal-driven onboarding
+3. Personalized "Your Cut OS" plan reveal
+4. Show:
+   - target timeline
+   - initial calories/protein
+   - weekly training structure
+   - default meal strategy
+   - first next action
+5. Paywall
+6. 7-day trial
+7. Annual plan visually primary
+8. Monthly plan clearly available
+9. restore purchases
+10. terms and privacy links
+
+Paywall message hierarchy:
+
+**Stop restarting your cut.**
+
+CUT OS tells you what to do next, adjusts when progress actually changes, and protects the training work you already put in.
+
+Value pillars:
+
+- Next Action engine
+- adaptive cut review
+- protein-first meal system
+- flexible cuisine / restaurant playbooks
+- workout and PR tracking
+- weight-trend logic
+- daily and weekly closeout
+
+Do not market generic "AI-powered fitness."
+
+## Purchase infrastructure
+
+Use a dedicated subscription service abstraction.
+
+Preferred production option:
+
+- RevenueCat
+- `react-native-purchases`
+- `react-native-purchases-ui` if its UI meets the design requirements
+
+Use RevenueCat entitlements as the subscription-access source of truth across platforms.
+
+The backend may mirror entitlement state for operational queries, but do not create a contradictory independent subscription truth.
+
+### Expo requirement
+
+Real in-app purchases require custom native code and an Expo development build.
+
+Expo Go may be used for preview/mock subscription UI only.
+
+Do not claim real purchase QA passed in Expo Go.
+
+Configure an EAS development build for:
+
+- iOS Simulator where supported for UI/integration preview
+- physical iPhone / sandbox purchase testing
+
+Create a dedicated `PURCHASE_QA_REPORT.md`.
+
+## Store compliance
+
+Digital access consumed inside CUT OS must follow current App Store purchase rules.
+
+Create:
+
+- restore purchases
+- manage subscription access
+- clear renewal terms
+- clear price
+- privacy policy
+- terms
+- account deletion inside the app
+
+If Google Sign-In is offered as a primary social login on iOS, implement an Apple-compliant equivalent login option. Prefer Sign in with Apple plus Google.
+
+---
+
+# 5. PUBLIC MULTI-USER ARCHITECTURE
+
+Audit every table and endpoint.
+
+Requirements:
+
+- every private entry belongs to the authenticated user
+- no client-supplied user ID is trusted
+- server resolves identity
+- no user can enumerate another user's records
+- all queries scope by authenticated identity
+- admin tooling is separated from consumer endpoints
+- development seed tooling is not exposed in production
+
+Add explicit authorization integration tests.
+
+Attempt cross-user access for:
+
+- weight
+- measurements
+- food entries
+- workouts
+- workout sets
+- daily logs
+- weekly reviews
+- reminders
+- subscription profile
+
+Record results.
+
+---
+
+# 6. GROWTH ANALYTICS ARCHITECTURE
+
+Zarif is a growth marketer.
+
+The application must be instrumented for decision-making from the start.
+
+However, CUT OS handles sensitive health and fitness data.
+
+## Non-negotiable data boundary
+
+Do **not** send the following values to Meta, Google Ads, TikTok Ads, ad networks, or general third-party behavioral analytics:
+
+- body weight
+- goal weight
+- pounds lost
+- BMI
+- waist or body measurements
+- calories consumed
+- calorie target
+- protein/macros
+- foods consumed
+- workout weight
+- workout sets/reps
+- PR values
+- health data
+- HealthKit data
+- sleep values
+- medical information
+- free-text health notes
+
+Do not place these values in:
+
+- ad event parameters
+- campaign URLs
+- analytics user properties
+- crash-report breadcrumbs
+- session replay
+- support logs by default
+
+## Allowed growth event taxonomy
+
+Create privacy-minimized events such as:
+
+- app_opened
+- onboarding_started
+- onboarding_step_completed
+- onboarding_completed
+- plan_reveal_viewed
+- paywall_viewed
+- trial_started
+- subscription_started
+- subscription_restored
+- day_one_core_action_completed
+- first_closeout_completed
+- first_workout_completed
+- weekly_review_viewed
+- weekly_review_completed
+- reminder_enabled
+- referral_code_applied
+- referral_share_opened
+- account_deleted
+
+For segmentation, prefer non-sensitive operational dimensions:
+
+- app_version
+- platform
+- acquisition_channel when lawfully available
+- country/region at coarse level
+- onboarding_variant
+- paywall_variant
+- trial_offer_variant
+- subscription_product
+- anonymous experiment assignment
+
+Do not create ad audiences based on a user's weight loss, food intake, workout performance, body measurements, HealthKit data, or other health/fitness data.
+
+## First-party analytics
+
+Create an internal `product_events` or equivalent first-party event stream.
+
+Minimum fields:
+
+- id
+- authenticated_user_id nullable for lawful anonymous pre-auth events
+- anonymous_install_id
+- event_name
+- event_time
+- app_version
+- platform
+- session_id
+- experiment_assignments JSON
+- safe_properties JSON
+
+Build a strict safe-property allowlist.
+
+Reject or strip sensitive keys server-side.
+
+Create tests proving prohibited health keys cannot be written to the product event stream.
+
+## Funnel dashboard metrics
+
+Instrument these core metrics:
+
+Acquisition:
+- installs or first opens by source where measurable
+- cost per install
+- creative / campaign aggregate performance
+
+Activation:
+- onboarding completion
+- plan reveal reach
+- paywall reach
+- trial start
+- first core action
+- first daily closeout
+
+Revenue:
+- download/first-open to trial
+- trial to paid
+- download/first-open to paid
+- annual vs monthly mix
+- gross revenue
+- refunds
+- realized revenue per payer
+- revenue per install
+- CAC / cost per paying customer
+- payback period
+
+Retention:
+- D1
+- D3
+- D7
+- D14
+- D30
+- weekly review completion
+- closed-day frequency
+- active paid users
+- subscription renewal / cancellation
+
+North-star candidate:
+
+**Weekly On-Plan Users**
+
+Definition candidate:
+paid or trial users who complete at least 4 of 5 daily actions on at least 4 days in a rolling 7-day period.
+
+This is a product success metric.
+
+Do not transmit the underlying health values to advertising systems.
+
+---
+
+# 7. YEAR-1 REVENUE OPERATING MODEL
+
+Do not hardcode this model into the consumer app.
+
+Create `YEAR1_REVENUE_MODEL.md`.
+
+## Base target math
+
+Target:
+
+`$1,000,000 gross billed revenue`
+
+Pricing:
+
+- annual = $99.99
+- monthly = $19.99
+
+Planning assumption:
+
+- approximately 75–80% of payers on annual
+- monthly payer contributes approximately five paid months inside the measured first-year window on average for planning
+
+At those assumptions, first-year billed revenue per payer is approximately $100.
+
+Therefore:
+
+**approximately 10,000 paying customers are required for approximately $1M gross billed revenue.**
+
+## Acquisition sensitivity
+
+Model at least:
+
+- 2.66% download/first-open to paid
+- 4.0%
+- 5.5%
+- 8.0%
+- 10.5%
+
+At approximately 10,000 payers, rough first-open/download requirements are:
+
+- 2.66% = approximately 376,000
+- 4.0% = approximately 250,000
+- 5.5% = approximately 182,000
+- 8.0% = approximately 125,000
+- 10.5% = approximately 95,000
+
+Make assumptions editable in documentation or an internal model.
+
+## Margin target
+
+Operating target:
+
+- App Store/platform fees: use actual realized rate
+- refunds: monitor actual
+- infrastructure + AI variable cost: target below 5% of gross revenue
+- creator/affiliate + paid acquisition: manage to a blended contribution model
+- target contribution margin after platform fees, refunds, variable infrastructure, and direct acquisition spend:
+  **50%+ at scale**
+
+Do not optimize for raw revenue while paid acquisition loses money.
+
+## CAC guardrail
+
+Initial target:
+
+**blended cost per paying customer <= $25**
+
+Stretch:
+<= $20
+
+Do not scale a paid channel solely because cost per install is low.
+
+Scale against:
+- payer conversion
+- realized payer revenue
+- refund behavior
+- 30-day engagement
+- payback
+
+---
+
+# 8. GTM ARCHITECTURE FOR THE PRODUCT
+
+The product should support this launch motion.
+
+## Initial wedge creative
+
+Audience:
+
+People who lift and repeatedly fail cuts because execution breaks.
+
+Creative problems:
+
+- "I know calories. Why do I keep restarting every Monday?"
+- "I don't need another macro tracker. Tell me what to do next."
+- "MyFitnessPal tracks what happened. CUT OS tells me what happens next."
+- "I lift. I eat real food. I travel. I need a cut system, not chicken and broccoli."
+- "Your cut should adjust to your actual week, not a PDF from eight weeks ago."
+
+Do not use competitor trademarks inside the app metadata without a deliberate legal/ASO review.
+
+## Founder story
+
+Use Zarif as the first-user story:
+
+- busy growth marketer / founder
+- prior lifting experience
+- approximately 210 lb
+- wants to lose approximately 20 lb
+- eats Bengali food and restaurant food
+- hates bland meal plans
+- built a system around his actual execution problem
+
+Do not publish private health data beyond what Zarif deliberately approves for marketing.
+
+## Organic short-form engine
+
+Support shareable but privacy-controlled outputs later.
+
+MVP may include a manually triggered share card:
+
+- `Day 18 of my cut`
+- consistency score
+- streak
+- general progress status
+
+Do not include body weight or measurements by default.
+
+The user must explicitly choose any sensitive value before it appears in a share asset.
+
+## Creator / affiliate system
+
+Add public-ready referral architecture.
+
+Tables or services:
+
+- referral_codes
+- referral_attributions
+- creator_partners
+- conversion attribution
+- payout status
+
+Do not build automated money payouts during MVP unless required.
+
+Initial business model:
+
+- creators receive a code / link
+- first-touch and last-touch attribution are recorded separately
+- define an attribution window
+- annual and monthly purchase attribution captured
+- finance/admin export supports payout calculation
+
+Recommended initial creator offer for testing:
+
+- 20% of first-year net subscription proceeds attributable to the creator
+
+This is a test assumption.
+
+Do not hardcode the commercial percentage into consumer UI.
+
+Keep affiliate economics configurable.
+
+## Referral loop
+
+After meaningful product success moments:
+
+- first 7-day streak
+- weekly review closed
+- meaningful progress milestone
+
+Allow:
+
+**Invite someone starting a cut**
+
+Do not show referral prompts immediately after account creation.
+
+Do not incentivize fake installs or App Store reviews.
+
+---
+
+# 9. PUBLIC APP STORE READINESS
+
+Add an `APP_STORE_READINESS.md`.
+
+Track:
+
+- Apple Developer account
+- bundle identifier
+- app name availability research
+- trademark/name review status
+- App Store category
+- age rating inputs
+- privacy policy URL
+- terms URL
+- support URL
+- account deletion
+- Sign in with Apple status
+- Google login status
+- in-app purchase products
+- subscription group
+- trial
+- restore purchases
+- App Privacy answers
+- demo/review account or fully featured review mode
+- backend availability during review
+- review notes
+- TestFlight
+- screenshots
+- app icon
+- subscription disclosures
+- crash-free production build
+- data export
+- notification permissions
+- privacy manifest / native SDK review where required
+
+Do not describe the app as diagnosing, treating, or preventing disease.
+
+Keep positioning in consumer fitness / wellness.
+
+Review every third-party SDK for data handling.
+
+---
+
+# 10. BRAND / NAME GATE
+
+Continue using `CUT OS` as the working product name.
+
+Do not assume trademark clearance.
+
+Before App Store submission or major paid media spend:
+
+- search App Store naming conflicts
+- search common-law usage
+- perform trademark screening
+- select final bundle/display name
+- document result in `BRAND_CLEARANCE_STATUS.md`
+
+Do not create legal claims that a name is cleared merely because a web search found nothing.
+
+---
+
+# 11. ADMIN / GROWTH CONTROL PLANE
+
+Create a separate protected admin surface.
+
+This can be a web admin tool if that is operationally simpler.
+
+It is not the consumer mobile app.
+
+Admin capabilities:
+
+- aggregate user counts
+- onboarding funnel
+- paywall funnel
+- trial starts
+- subscriptions
+- annual/monthly mix
+- revenue summary from trusted subscription provider data
+- refund summary where available
+- retention cohorts
+- weekly on-plan users
+- top acquisition sources
+- experiment performance
+- creator/referral performance
+- safe feature flag controls
+- meal template management
+- restaurant playbook management
+
+Do not expose individual health records by default in the growth dashboard.
+
+Any customer support data-access tooling must be:
+- access controlled
+- auditable
+- purpose limited
+
+---
+
+# 12. REMOTE CONFIG AND EXPERIMENTS
+
+Create a simple experiment/remote-config abstraction.
+
+Initial experiments:
+
+- onboarding headline
+- plan reveal framing
+- paywall hero
+- annual-vs-monthly visual emphasis
+- trial copy
+- social-proof placement
+- meal strategy framing
+
+Do not dynamically experiment with:
+- unsafe weight-loss targets
+- medical claims
+- increasingly aggressive calorie deficits
+- hidden subscription terms
+
+Experiment assignment must be stable per user/install.
+
+Record:
+- experiment
+- variant
+- assignment time
+
+No health values in experiment analytics properties.
+
+---
+
+# 13. REVISED DOCUMENTATION
+
+Update:
+
+- README.md
+- ARCHITECTURE.md
+- PRODUCT_RULES.md
+- QA_REPORT.md
+
+Create:
+
+- `PUBLIC_PRODUCT_STRATEGY.md`
+- `YEAR1_REVENUE_MODEL.md`
+- `MONETIZATION_ARCHITECTURE.md`
+- `GROWTH_ANALYTICS_SPEC.md`
+- `APP_STORE_READINESS.md`
+- `PRIVACY_DATA_BOUNDARIES.md`
+- `PURCHASE_QA_REPORT.md`
+- `BRAND_CLEARANCE_STATUS.md`
+
+---
+
+# 14. CHANGE-ORDER QA GATES
+
+Before calling the architecture public-ready:
+
+## Generalization
+
+- Create a Zarif fixture.
+- Create a non-Zarif fixture:
+  - 5'10"
+  - 185 lb
+  - 165 lb goal
+  - 3 meals/day
+  - Mediterranean and Mexican cuisine
+  - no intermittent fasting
+  - 4 strength days
+- Confirm neither user inherits the other's:
+  - goals
+  - meals
+  - training
+  - measurements
+  - PRs
+  - food
+  - reminders
+
+## Subscription preview
+
+In Expo Go Preview API/mock mode:
+- personalized plan reveal
+- paywall
+- annual primary
+- monthly available
+- trial copy
+- restore path visible
+- entitlement gating logic can be exercised without crash
+
+Do not mark real purchases PASS.
+
+## Development-build purchase QA
+
+Using a real Expo development build:
+- App Store sandbox account
+- monthly purchase
+- annual trial start
+- entitlement unlock
+- app relaunch
+- entitlement remains
+- restore purchases
+- cancellation/expiration test where practical
+- server mirror/event receipt
+- no duplicate purchase events
+
+## Analytics safety
+
+Attempt to send prohibited event properties:
+- weight
+- goal_weight
+- calories
+- protein
+- waist
+- workout_weight
+- healthkit_steps
+
+Confirm server allowlist rejects or strips them.
+
+## Account deletion
+
+- create account
+- add weight
+- add food
+- add workout
+- request deletion in app
+- confirm access removed
+- confirm deletion workflow behaves as documented
+- confirm subscription management instructions remain available as required
+
+## Login
+
+If Google login exists on iOS:
+- confirm equivalent compliant login option exists
+- confirm Sign in with Apple behavior if selected
+- confirm user identity unifies correctly with subscription identity
+
+## Public privacy
+
+Review third-party SDK inventory.
+
+Document:
+- SDK
+- purpose
+- data received
+- data sent
+- whether it receives health/fitness values
+- whether it is required
+
+No marketing SDK should receive underlying health/fitness data.
+
+---
+
+# 15. FINAL PRODUCT PRINCIPLE
+
+The public version of CUT OS must preserve the thing that made Zarif want it:
+
+> He did not want to study another dashboard. He wanted the app to tell him what to do next.
+
+Do not let public-market generalization turn CUT OS into a bloated tracker.
+
+Every new public feature must answer one of:
+
+1. Does this improve the Next Action?
+2. Does this make execution easier?
+3. Does this make progress interpretation better?
+4. Does this improve paid conversion or retention without harming user trust?
+
+If the answer is no, do not put it in the first public release.
