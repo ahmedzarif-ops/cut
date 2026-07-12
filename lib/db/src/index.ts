@@ -6,17 +6,47 @@ const { Pool } = pg;
 
 export type Db = NodePgDatabase<typeof schema>;
 
+export interface PoolConfig {
+  connectionString: string | undefined;
+  max: number;
+  idleTimeoutMillis: number;
+  connectionTimeoutMillis: number;
+}
+
+/**
+ * Connection-pool budget. `max` is env-tunable (PG_POOL_MAX, default 5) —
+ * conservative for a single autoscale instance against a pooled Postgres
+ * endpoint. Pure, so it can be unit-tested without a live database.
+ */
+export function poolConfig(env: NodeJS.ProcessEnv = process.env): PoolConfig {
+  return {
+    connectionString: env.DATABASE_URL,
+    max: Number(env.PG_POOL_MAX ?? 5),
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
+  };
+}
+
 let _pool: pg.Pool | null = null;
 let _db: Db | null = null;
 
 function createDefaultDb(): Db {
-  if (!process.env.DATABASE_URL) {
+  const config = poolConfig();
+  if (!config.connectionString) {
     throw new Error(
       "DATABASE_URL must be set. Did you forget to provision a database?",
     );
   }
-  _pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  return drizzle(_pool, { schema });
+  const pool = new Pool(config);
+  // An idle-client error (DB dropped the connection, network blip) is emitted
+  // on the pool. Without a listener Node treats it as an unhandled 'error' and
+  // crashes the process. Log the signal (no health values — privacy rule) and
+  // let the pool evict the dead client.
+  pool.on("error", (err) => {
+    console.error("[db] idle pool client error", err);
+  });
+  _pool = pool;
+  return drizzle(pool, { schema });
 }
 
 /**
