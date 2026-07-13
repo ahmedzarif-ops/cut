@@ -11,42 +11,62 @@
 // `pnpm run codegen:check`. To fix a reported drift, run `pnpm run codegen` and commit
 // the regenerated files.
 //
-// The check is intentionally stronger than `git diff --exit-code`: it uses
-// `git status --porcelain --untracked-files=all` so a NEW or DELETED generated file
-// (which a plain diff would miss) also fails the gate. It never mutates the index.
-import { execSync } from "node:child_process";
+// Design notes:
+//  - Stronger than `git diff --exit-code`: uses `git status --porcelain
+//    --untracked-files=all` so a NEW or DELETED generated file (which a plain diff would
+//    miss) also fails the gate.
+//  - cwd-independent: git commands run against the repo root, because a git pathspec that
+//    matches nothing returns empty — a false PASS — and this gate's whole job is to never
+//    false-pass, whatever cwd it is invoked from.
+//  - No shell: every command is run via execFileSync with an argv array, so the generated
+//    dir paths can never be shell-interpreted.
+import { execFileSync } from "node:child_process";
 
-// Generated (codegen-owned) directories. Sibling files like custom-fetch.ts and
-// index.ts are hand-written wrappers and are deliberately NOT covered.
+// Generated (codegen-owned) directories, repo-root-relative. Sibling files like
+// custom-fetch.ts and index.ts are hand-written wrappers and are deliberately NOT covered.
 const GENERATED_DIRS = [
   "lib/api-zod/src/generated",
   "lib/api-client-react/src/generated",
 ];
 
-const capture = (cmd) => execSync(cmd, { stdio: "pipe", encoding: "utf8" });
-const dirsArg = GENERATED_DIRS.join(" ");
+const git = (args, opts = {}) =>
+  execFileSync("git", args, { encoding: "utf8", ...opts });
+
+// Resolve the repo root once; all subsequent git/pnpm calls run from there.
+let root;
+try {
+  root = git(["rev-parse", "--show-toplevel"]).trim();
+} catch {
+  console.error("codegen:check FAIL — not inside a git repository.");
+  process.exit(1);
+}
 
 // 1. Regenerate using the exact command developers run, so the gate can never disagree
 //    with the documented workflow.
 try {
-  execSync("pnpm --filter @workspace/api-spec run codegen", { stdio: "inherit" });
+  execFileSync("pnpm", ["--filter", "@workspace/api-spec", "run", "codegen"], {
+    stdio: "inherit",
+    cwd: root,
+  });
 } catch {
-  console.error("\n✖ codegen:check — codegen itself failed (see output above).");
+  console.error("\ncodegen:check FAIL — codegen itself failed (see output above).");
   process.exit(1);
 }
 
 // 2. Assert the committed generated output is byte-identical to the regenerated output.
-const drift = capture(`git status --porcelain --untracked-files=all -- ${dirsArg}`).trim();
+const drift = git(
+  ["status", "--porcelain", "--untracked-files=all", "--", ...GENERATED_DIRS],
+  { cwd: root },
+).trim();
 
 if (drift) {
   console.error(
-    "\n✖ codegen drift detected — committed API codegen is out of sync with openapi.yaml.",
+    "\ncodegen:check FAIL — committed API codegen is out of sync with openapi.yaml.",
   );
-  console.error("  Changed paths:");
+  console.error("  Drifted paths (status: ' M' modified, '??' new, ' D' deleted):");
   for (const line of drift.split("\n")) console.error("    " + line);
   console.error("\n  Fix: run `pnpm run codegen` and commit the regenerated files.\n");
-  console.error(capture(`git --no-pager diff -- ${dirsArg}`));
   process.exit(1);
 }
 
-console.log("✓ codegen:check — generated API output is in sync with openapi.yaml.");
+console.log("codegen:check OK — generated API output is in sync with openapi.yaml.");
