@@ -113,7 +113,7 @@ describe("GET /api/me — JIT provisioning", () => {
 });
 
 describe("PATCH /api/me", () => {
-  it("updates timezone, units, and onboarding flag", async () => {
+  it("updates timezone and units", async () => {
     const headers = asUser("clerk_patch_1");
     const res = await request(ctx.app)
       .patch("/api/me")
@@ -121,17 +121,55 @@ describe("PATCH /api/me", () => {
       .send({
         timezone: "America/Chicago",
         units: "imperial",
-        onboardingComplete: true,
       });
     expect(res.status).toBe(200);
     expect(res.body.timezone).toBe("America/Chicago");
     expect(res.body.units).toBe("imperial");
-    expect(res.body.onboardingComplete).toBe(true);
 
     const readBack = await request(ctx.app).get("/api/me").set(headers);
     expect(readBack.body.timezone).toBe("America/Chicago");
     expect(readBack.body.units).toBe("imperial");
-    expect(readBack.body.onboardingComplete).toBe(true);
+  });
+
+  it("rejects onboardingComplete=true when the user has no profile (P1-4 invariant)", async () => {
+    const res = await request(ctx.app)
+      .patch("/api/me")
+      .set(asUser("clerk_patch_noprofile"))
+      .send({ onboardingComplete: true });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe(
+      "Cannot complete onboarding before creating a profile",
+    );
+  });
+
+  it("accepts onboardingComplete=true once a profile exists", async () => {
+    const headers = asUser("clerk_patch_withprofile");
+    await request(ctx.app)
+      .put("/api/me/profile")
+      .set(headers)
+      .send({ goal: "cut" });
+    const res = await request(ctx.app)
+      .patch("/api/me")
+      .set(headers)
+      .send({ onboardingComplete: true });
+    expect(res.status).toBe(200);
+    expect(res.body.onboardingComplete).toBe(true);
+  });
+
+  it("rejects onboardingComplete=false — un-onboarding is not a client operation", async () => {
+    const headers = asUser("clerk_patch_unonboard");
+    await request(ctx.app)
+      .put("/api/me/profile")
+      .set(headers)
+      .send({ goal: "cut" });
+    const res = await request(ctx.app)
+      .patch("/api/me")
+      .set(headers)
+      .send({ onboardingComplete: false });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe(
+      "Onboarding completion is derived from your profile and cannot be unset",
+    );
   });
 
   it("rejects an invalid units value", async () => {
@@ -221,6 +259,22 @@ describe("profile lifecycle", () => {
     expect(get.status).toBe(200);
     expect(get.body.displayName).toBe("Test Lifter");
     expect(get.body.heightCm).toBeCloseTo(180);
+  });
+
+  it("PUT /me/profile atomically marks onboarding complete (P1-4)", async () => {
+    const headers = asUser("clerk_atomic_onboard");
+    // Fresh user starts un-onboarded.
+    const before = await request(ctx.app).get("/api/me").set(headers);
+    expect(before.body.onboardingComplete).toBe(false);
+    // A single PUT — with no follow-up PATCH — both creates the profile and
+    // marks onboarding done, so the flag and the profile can never disagree.
+    const put = await request(ctx.app)
+      .put("/api/me/profile")
+      .set(headers)
+      .send({ goal: "cut" });
+    expect(put.status).toBe(200);
+    const after = await request(ctx.app).get("/api/me").set(headers);
+    expect(after.body.onboardingComplete).toBe(true);
   });
 
   it("PUT is a full replace — omitted optional fields reset to null", async () => {

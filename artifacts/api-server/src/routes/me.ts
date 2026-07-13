@@ -18,7 +18,9 @@ router.get("/me", requireAuth, async (req, res): Promise<void> => {
   res.json(GetMeResponse.parse(req.user));
 });
 
-// PATCH /api/me — update account settings (timezone, units, onboarding flag).
+// PATCH /api/me — update account settings (timezone, units). The onboarding
+// flag is server-owned, not a free setting: updateUser validates it against
+// profile existence (see PRODUCT_RULES "Onboarding completion", P1-4).
 router.patch("/me", requireAuth, async (req, res): Promise<void> => {
   const parsed = UpdateMeBody.safeParse(req.body);
   if (!parsed.success) {

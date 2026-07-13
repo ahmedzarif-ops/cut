@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
   db,
   usersTable,
@@ -64,6 +64,25 @@ export async function updateUser(
   if (patch.timezone !== undefined && !isValidTimeZone(patch.timezone)) {
     throw new HttpError(400, "Invalid timezone");
   }
+  // Onboarding completion is derived from profile existence and owned by the
+  // upsertProfile transaction — it is not a client-settable bit. The flag is
+  // only ever turned on by creating a profile, so a PATCH may CONFIRM `true`
+  // (when a profile already exists) but may never set `false`; un-onboarding is
+  // not a settings operation (P1-4 invariant). Rejecting `false` outright also
+  // removes the only PATCH path that could write the flag out of step with a
+  // concurrently-created profile — there is no check-then-act race left to lose.
+  if (patch.onboardingComplete === false) {
+    throw new HttpError(
+      400,
+      "Onboarding completion is derived from your profile and cannot be unset",
+    );
+  }
+  if (patch.onboardingComplete === true && !(await getProfile(userId))) {
+    throw new HttpError(
+      400,
+      "Cannot complete onboarding before creating a profile",
+    );
+  }
   // An empty patch is a no-op: Drizzle rejects an empty SET, and "change
   // nothing" should return the current row unchanged, not error.
   if (Object.keys(patch).length === 0) {
@@ -103,6 +122,11 @@ export interface UpsertProfileInput {
  * Create or replace the user's profile. PUT is a full replace: every optional
  * field the client omits is reset to its null/default rather than retaining a
  * stale value (the P0 edit-plan data-loss contract). Only `goal` is required.
+ *
+ * Atomic onboarding (P1-4): the profile write and the `users.onboardingComplete`
+ * flag flip happen in ONE transaction, so the flag and profile-existence can
+ * never disagree — a partial failure rolls both back. This replaces the old
+ * non-atomic client flow (PUT profile, then a separate PATCH of the flag).
  */
 export async function upsertProfile(
   userId: string,
@@ -121,25 +145,36 @@ export async function upsertProfile(
     goalWeightKg: input.goalWeightKg ?? null,
     targetDate: input.targetDate ?? null,
   };
-  const [profile] = await db
-    .insert(profilesTable)
-    .values(values)
-    .onConflictDoUpdate({
-      target: profilesTable.userId,
-      set: {
-        goal: values.goal,
-        sex: values.sex,
-        activityLevel: values.activityLevel,
-        trainingExperience: values.trainingExperience,
-        displayName: values.displayName,
-        birthYear: values.birthYear,
-        heightCm: values.heightCm,
-        startWeightKg: values.startWeightKg,
-        goalWeightKg: values.goalWeightKg,
-        targetDate: values.targetDate,
-        updatedAt: new Date(),
-      },
-    })
-    .returning();
-  return profile;
+  return db.transaction(async (tx) => {
+    const [profile] = await tx
+      .insert(profilesTable)
+      .values(values)
+      .onConflictDoUpdate({
+        target: profilesTable.userId,
+        set: {
+          goal: values.goal,
+          sex: values.sex,
+          activityLevel: values.activityLevel,
+          trainingExperience: values.trainingExperience,
+          displayName: values.displayName,
+          birthYear: values.birthYear,
+          heightCm: values.heightCm,
+          startWeightKg: values.startWeightKg,
+          goalWeightKg: values.goalWeightKg,
+          targetDate: values.targetDate,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    // Mark onboarding complete in the same transaction. Guarded to the
+    // false→true transition so re-saving a profile (an edit) doesn't needlessly
+    // bump users.updated_at on every save.
+    await tx
+      .update(usersTable)
+      .set({ onboardingComplete: true })
+      .where(
+        and(eq(usersTable.id, userId), eq(usersTable.onboardingComplete, false)),
+      );
+    return profile;
+  });
 }

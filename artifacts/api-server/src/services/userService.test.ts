@@ -75,3 +75,22 @@ describe("upsertProfile full-replace", () => {
     expect(profile?.targetDate).toBeNull();
   });
 });
+
+describe("upsertProfile — atomic onboarding (P1-4)", () => {
+  it("marks the user onboarded in the same transaction as the profile write", async () => {
+    ctx = await createTestContext();
+    const user = await provisionUser({ clerkUserId: "clerk_atomic", email: null });
+    expect(user?.onboardingComplete).toBe(false);
+
+    await upsertProfile(user!.id, { goal: "cut" });
+
+    const [after] = await ctx.db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, user!.id));
+    // Flag flips true alongside the profile row — never a second, separable write.
+    expect(after.onboardingComplete).toBe(true);
+    // A profile row exists for that user — the flag now reflects reality.
+    expect(await getProfile(user!.id)).toBeDefined();
+  });
+});
