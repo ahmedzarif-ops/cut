@@ -67,6 +67,7 @@ one-line rule under `## Lessons` below, in the same turn. Never delete a lesson.
 ## Lessons
 
 - (grows as this company operates)
+- A PR the agent authored is never self-merged: gates (Knox etc.) qualify it, but the merge click belongs to the owner — the away-mode grant does not cover approving one's own work. (2026-07-12, PR #4)
 
 ## Where to look next
 
