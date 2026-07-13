@@ -16,6 +16,7 @@ import {
   createApiLimiter,
   createClerkLimiter,
 } from "./middlewares/rateLimit";
+import { buildAllowedHosts, buildAllowedOrigins } from "./lib/allowedHosts";
 
 const app: Express = express();
 
@@ -54,22 +55,10 @@ app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 // in production the Clerk proxy makes web sessions first-party cookies, so a
 // reflected origin would let any site issue credentialed requests to /api/*.
 // Native mobile clients send no Origin header and are always allowed.
-const allowedOrigins = new Set(
-  [
-    process.env.REPLIT_DEV_DOMAIN,
-    process.env.REPLIT_EXPO_DEV_DOMAIN,
-    ...(process.env.CORS_ALLOWED_ORIGINS?.split(",") ?? []),
-  ]
-    .map((value) => value?.trim())
-    .filter((value): value is string => Boolean(value))
-    // Normalize bare domains to https and never allow plaintext (http://)
-    // origins — credentialed requests must only come over TLS.
-    .map((value) => {
-      if (value.startsWith("http://")) return null;
-      return value.startsWith("https://") ? value : `https://${value}`;
-    })
-    .filter((value): value is string => value !== null),
-);
+// Built from the shared allowlist source (lib/allowedHosts.ts) that also
+// gates Clerk host resolution below.
+const allowedOrigins = buildAllowedOrigins();
+const allowedHosts = buildAllowedHosts();
 
 app.use(
   cors({
@@ -99,14 +88,20 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api", createApiLimiter());
 
 // Resolve the publishable key from the incoming request host so the same
-// server can serve multiple Clerk custom domains, falling back to the env key.
+// server can serve multiple Clerk custom domains. Only ALLOWLISTED hosts
+// participate (x-forwarded-host is client-writable); an unknown or missing
+// host falls back to the env key — never to a header-derived one. The
+// fallback also bypasses publishableKeyFromHost, which throws on an empty
+// host when the fallback key is a live (pk_live_) key.
 app.use(
-  clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
-      getClerkProxyHost(req) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
-    ),
-  })),
+  clerkMiddleware((req) => {
+    const host = getClerkProxyHost(req, allowedHosts);
+    return {
+      publishableKey: host
+        ? publishableKeyFromHost(host, process.env.CLERK_PUBLISHABLE_KEY)
+        : process.env.CLERK_PUBLISHABLE_KEY,
+    };
+  }),
 );
 
 app.use("/api", router);

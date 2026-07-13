@@ -60,6 +60,18 @@ while touching auth, `db`, or the Express app.
   not an HTML surface, so a content-security-policy is meaningless; helmet's
   other defaults (`nosniff`, HSTS, `X-Frame-Options`, no-referrer) still
   apply.
+- **Clerk host resolution is allowlist-only.** `x-forwarded-host` is
+  client-writable, so `getClerkProxyHost` only ever returns a hostname
+  present in the shared allowlist (`lib/allowedHosts.ts`, built from the
+  same env vars as the CORS allowlist: `REPLIT_DEV_DOMAIN`,
+  `REPLIT_EXPO_DEV_DOMAIN`, `CORS_ALLOWED_ORIGINS`) — a spoofed header value
+  never reaches `publishableKeyFromHost` or the `Clerk-Proxy-Url` header. An
+  unknown or missing host falls back to `CLERK_PUBLISHABLE_KEY` (bypassing
+  `publishableKeyFromHost`, which throws on an empty host with a live key)
+  and the proxy sends no `Clerk-Proxy-Url` at all. Consequence: every
+  public domain the app serves — including the production `.replit.app`
+  domain — must be listed in `CORS_ALLOWED_ORIGINS` (or the Replit env
+  vars) or multi-domain Clerk flows fall back to the single env key.
 
 **Deferred (not built here):**
 - Email refresh via a Clerk `user.updated` webhook or a Clerk token
@@ -69,4 +81,3 @@ while touching auth, `db`, or the Express app.
   keeps the stale value in `users.email` until this lands.
 - A shared (Redis) rate-limit store, to make `API_RATE_LIMIT`/
   `CLERK_RATE_LIMIT` correct across more than one autoscale instance.
-- P1-8: an `x-forwarded-host` allowlist for the Clerk proxy host resolution.
