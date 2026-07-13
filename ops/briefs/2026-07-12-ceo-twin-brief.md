@@ -40,9 +40,23 @@ None (first run; ratchet needs 5 clean matches per class).
   "no self-merge of Twin-authored PRs" (lesson from PR #4, also in CLAUDE.md Lessons).
   Ratify or adjust the grant scope when you have two minutes.
 
+## Second shift (same day, "takeover while I game")
+
+- **PR #4 merged** (Zarif's explicit tap authorized it).
+- **PR #5 — P1-11 native lane** built, gated, merged (Zarif's tap): bundle id
+  `com.zarifahmed.cut` + `android.package`, eas.json (dev/preview/prod), expo-dev-client
+  ~6.0.21 (SDK-54 exact, cleared the release-age gate). Deferred to owner/cost: `eas init`
+  (needs your Expo account), actual EAS builds, EXPO_PUBLIC_* env migration.
+- **PR #6 — P1-8 security fix** built TDD, gated (Knox 88 PASS; **Cyrus SHIP**), merged
+  (Zarif's tap): x-forwarded-host allowlist shared with CORS, env-key fallback, latent
+  host-less 500 fixed, Clerk-Proxy-Url scheme pinned to https. Tests **65 → 82**.
+- Post-merge main verified: full suite green.
+
 ## Recommended next moves (in order)
 
-1. **Merge PR #4** (one click; tests-only + one guarded fix, gates green).
-2. **P1-11** (bundle id `com.zarifahmed.cut` + eas.json + expo-dev-client) — next product
-   batch, now unblocked; full build loop next session.
-3. Reconsider the **Replit QA pass** before any real users touch the app.
+1. **P1-9/10** (zod ^4 migration + codegen drift gate) — the last non-native P1 pair;
+   riskier than today's work, wants a fresh session with the build loop.
+2. **P1-4** (atomic onboarding transaction).
+3. Reconsider the **Replit QA pass** — now also carries Cyrus's edge-header check
+   (confirm the edge replaces, not appends, x-forwarded-proto/host).
+4. Prune the stale `p1-2-6-7-server-hardening` remote branch in the GitHub UI.
