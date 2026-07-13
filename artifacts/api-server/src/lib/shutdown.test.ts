@@ -44,6 +44,57 @@ describe("createShutdownHandler", () => {
     vi.useRealTimers();
   });
 
+  it("logs a server.close error but still drains the pool and exits 0", async () => {
+    const exit = vi.fn();
+    const logger = makeLogger();
+    const closePool = vi.fn().mockResolvedValue(undefined);
+    // server.close reports an error (e.g. server was never listening).
+    const server = {
+      close: vi.fn((cb: (e?: Error) => void) => cb(new Error("close failed"))),
+    };
+
+    const handler = createShutdownHandler({
+      server,
+      closePool,
+      logger,
+      timeoutMs: 5000,
+      exit,
+    });
+    handler("SIGTERM");
+
+    await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(0));
+    expect(logger.error).toHaveBeenCalledWith(
+      { err: expect.any(Error) },
+      "Error during server close",
+    );
+    // The close error must not skip the pool teardown.
+    expect(closePool).toHaveBeenCalledTimes(1);
+  });
+
+  it("logs a pool-close rejection and exits 1", async () => {
+    const exit = vi.fn();
+    const logger = makeLogger();
+    const poolErr = new Error("pool teardown failed");
+    const closePool = vi.fn().mockRejectedValue(poolErr);
+    const server = { close: vi.fn((cb: (e?: Error) => void) => cb()) };
+
+    const handler = createShutdownHandler({
+      server,
+      closePool,
+      logger,
+      timeoutMs: 5000,
+      exit,
+    });
+    handler("SIGTERM");
+
+    await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(1));
+    expect(exit).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      { err: poolErr },
+      "Error closing DB pool",
+    );
+  });
+
   it("ignores a second signal (close is called once)", () => {
     const server = { close: vi.fn() };
     const handler = createShutdownHandler({
