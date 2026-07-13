@@ -22,7 +22,7 @@ export const HealthCheckResponse = zod.object({
  * @summary Get the current authenticated user
  */
 export const GetMeResponse = zod.object({
-  "id": zod.string(),
+  "id": zod.uuid(),
   "email": zod.string().nullish(),
   "timezone": zod.string(),
   "units": zod.enum(['metric', 'imperial']),
@@ -45,7 +45,7 @@ export const UpdateMeBody = zod.object({
 })
 
 export const UpdateMeResponse = zod.object({
-  "id": zod.string(),
+  "id": zod.uuid(),
   "email": zod.string().nullish(),
   "timezone": zod.string(),
   "units": zod.enum(['metric', 'imperial']),
@@ -59,8 +59,8 @@ export const UpdateMeResponse = zod.object({
  * @summary Get the current user's profile
  */
 export const GetMyProfileResponse = zod.object({
-  "id": zod.string(),
-  "userId": zod.string(),
+  "id": zod.uuid(),
+  "userId": zod.uuid(),
   "displayName": zod.string().nullish(),
   "goal": zod.enum(['cut', 'maintain', 'recomp', 'gain']),
   "sex": zod.enum(['male', 'female', 'other', 'unspecified']),
@@ -108,8 +108,8 @@ export const UpsertMyProfileBody = zod.object({
 })
 
 export const UpsertMyProfileResponse = zod.object({
-  "id": zod.string(),
-  "userId": zod.string(),
+  "id": zod.uuid(),
+  "userId": zod.uuid(),
   "displayName": zod.string().nullish(),
   "goal": zod.enum(['cut', 'maintain', 'recomp', 'gain']),
   "sex": zod.enum(['male', 'female', 'other', 'unspecified']),
