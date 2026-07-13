@@ -88,7 +88,10 @@ export function clerkProxyMiddleware(): RequestHandler {
       path.replace(new RegExp(`^${CLERK_PROXY_PATH}`), ""),
     on: {
       proxyReq: (proxyReq, req) => {
-        const protocol = req.headers["x-forwarded-proto"] || "https";
+        // Scheme is pinned: x-forwarded-proto is client-writable in the same
+        // appended-header scenario P1-8 fixed, and the proxy only runs behind
+        // TLS — never derive a handshake URL scheme from a request header.
+        const protocol = "https";
         const host = getClerkProxyHost(req, allowedHosts);
 
         // Guard the unknown/empty-host case: never advertise a proxy URL

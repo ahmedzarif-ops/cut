@@ -47,6 +47,8 @@ export function buildAllowedHosts(
 ): Set<string> {
   return new Set(
     sourceValues(env)
+      // Scheme is stripped here (not in normalizeHost) because normalizeHost
+      // is shared with raw request-header input, which never carries a scheme.
       .map((value) => normalizeHost(value.replace(/^https:\/\//, "")))
       .filter((value): value is string => Boolean(value)),
   );
