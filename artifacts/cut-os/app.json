@@ -14,9 +14,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.zarifahmed.cut"
     },
-    "android": {},
+    "android": {
+      "package": "com.zarifahmed.cut"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
