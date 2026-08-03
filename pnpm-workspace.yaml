@@ -68,7 +68,11 @@ catalog:
   vite: ^7.3.2
   vitest: ^3.2.4
   wouter: ^3.3.5
-  zod: ^3.25.76
+  # zod ^4 keeps both `zod/v4` (drizzle-zod in lib/db) and `zod/v3` subpaths, so
+  # both consumers compile on one install and orval's `format: uuid` -> `z.uuid()`
+  # (a v4 top-level API) works — resolving the P1-9 dialect split. See
+  # `.agents/memory/orval-zod-codegen.md`.
+  zod: ^4.4.3
 
 autoInstallPeers: false
 

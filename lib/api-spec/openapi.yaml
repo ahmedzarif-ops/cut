@@ -151,6 +151,7 @@ components:
       properties:
         id:
           type: string
+          format: uuid
         email:
           type: ["string", "null"]
         timezone:
@@ -191,8 +192,10 @@ components:
       properties:
         id:
           type: string
+          format: uuid
         userId:
           type: string
+          format: uuid
         displayName:
           type: ["string", "null"]
         goal:
