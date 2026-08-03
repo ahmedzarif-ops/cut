@@ -71,6 +71,21 @@ not a public-launch readiness claim.
     restricted Settings, and sign-out remain available;
   - owner-scoped native query state, an eligibility form/restricted screen, and
     cache-clearing guards for stale data and Clerk principal transitions.
+- The iOS release configuration now has a tested fail-closed baseline:
+  - production EAS builds require a clean commit, the intended production
+    environment, a live Clerk publishable key, a canonical same-origin Clerk
+    proxy, and public Privacy, Terms, and Support destinations;
+  - native startup rejects malformed release configuration without initializing
+    Clerk or the API client and shows explicit loading/error states instead of a
+    blank authentication screen;
+  - bearer credentials can be sent only to the configured matching HTTPS API
+    origin, including when a caller supplies the header directly;
+  - OpenAPI declares bearer authentication for private operations and keeps only
+    the health check public;
+  - validated, accessible Privacy, Terms, and Support controls appear during
+    sign-up, adult eligibility, normal Settings, and restricted Settings;
+  - the native privacy-manifest baseline, exempt-encryption declaration, and
+    disabled arbitrary network loads resolve in Expo introspection.
 - Malformed and oversized JSON requests now return sanitized `400`/`413`
   responses rather than becoming generic server errors.
 - pnpm is pinned to `10.34.5`, and GitHub CI now runs frozen install, generated
@@ -83,11 +98,16 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 199 tests** (domain 31, database 4, mobile 53, API 111).
+- `pnpm run test`: **PASS — 269 tests** (domain 31, database 4, mobile 123, API 111).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
-- Production-style Expo export for iOS: **PASS — 1,730 modules; 6.08 MB Hermes bundle**.
+- Production-style Expo export for iOS: **PASS — 1,733 modules; 6.1 MB Hermes bundle**.
+- Production release-environment preflight: **PASS** with representative
+  non-secret values; missing, malformed, private, reserved, cross-origin, and
+  insecure configurations fail closed in automated coverage.
+- Expo native-config introspection: **PASS** for bundle ID, privacy-manifest
+  baseline, exempt-only encryption declaration, and disabled arbitrary loads.
 - Blank-database migrations, including deletion lifecycle/hash constraints,
   finite nutrition checks, retry index, and meal deletion tombstones: **PASS**.
 - Baseline adoption-safe migration test: **PASS**.
@@ -122,29 +142,37 @@ The Desktop folder originally provided was an incomplete export: it lacked Git o
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
-1. Complete native-device acceptance for `adult-18-v1`, including deep links,
+1. Decide whether v1 launches free or with the planned subscription. If paid,
+   implement RevenueCat and complete every sandbox entitlement path; if free,
+   remove subscription promises from the launch metadata and review script.
+2. Finalize the CUT OS icon/launch branding and the first App Store screenshot
+   set, then complete name clearance.
+3. Publish owner/counsel-approved Privacy, Terms, and Support pages and supply
+   their final HTTPS destinations to the production EAS environment.
+4. Link the intended Apple and Expo/EAS projects, configure the six validated
+   production values, and create an internal TestFlight build.
+5. Complete native-device acceptance for `adult-18-v1`, including deep links,
    offline/relaunch, shared-device account switching, stale-cache clearing,
-   deletion in every eligibility state, and VoiceOver. Add public
-   Terms/Privacy/Support links to normal and restricted Settings.
-2. Produce reproducible recipes, nutrition methodology/sources, allergen
+   deletion in every eligibility state, legal/support links, and VoiceOver.
+6. Produce reproducible recipes, nutrition methodology/sources, allergen
    substantiation, and qualified review records for every public meal template.
-3. Exercise success, cancellation, timeout, app-kill, retry, second-device, and
+7. Exercise success, cancellation, timeout, app-kill, retry, second-device, and
    shared-device account-switch scenarios with a real Clerk development identity
    in an iOS development build.
-4. Have qualified counsel approve adults-18+ Terms/EULA, Privacy Policy,
+8. Have qualified counsel approve adults-18+ Terms/EULA, Privacy Policy,
    notice-at-collection, retention/underage handling, launch jurisdictions, and
    sufficiency of the self-declared assurance method and permanent
    ineligible-identity workflow.
-5. Define tombstone/backups retention—including the maximum accepted lifetime
+9. Define tombstone/backups retention—including the maximum accepted lifetime
    of stale Clerk sessions/tokens—deletion completion expectations, production
    monitoring, alerting, and manual reconciliation.
-6. Inventory privacy manifests and required-reason APIs in the generated iOS
-   archive; reconcile `APP_STORE_METADATA.md`, complete the current Apple
-   questionnaire truthfully, and apply the higher 18+ override once the
-   Terms/EULA minimum is final.
-7. Add dietary preferences/allergy exclusions only after the deletion and privacy paths exist.
-8. Add authoritative calorie/protein targets and deterministic hard filters before using the product name **Best Balanced Fit**.
-9. Then advance Today to training and closeout actions.
+10. Inventory privacy manifests and required-reason APIs in the generated iOS
+    archive; reconcile `APP_STORE_METADATA.md`, complete the current Apple
+    questionnaire truthfully, and apply the higher 18+ override once the
+    Terms/EULA minimum is final.
+11. Add dietary preferences/allergy exclusions only after the deletion and privacy paths exist.
+12. Add authoritative calorie/protein targets and deterministic hard filters before using the product name **Best Balanced Fit**.
+13. Then advance Today to training and closeout actions.
 
 ## Owner actions not yet required for local development
 

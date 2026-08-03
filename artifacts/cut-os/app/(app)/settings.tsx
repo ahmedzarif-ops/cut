@@ -21,6 +21,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { LegalSupportLinks } from "@/components/LegalSupportLinks";
 import { useColors } from "@/hooks/useColors";
 import {
   accountDeletionKey,
@@ -367,6 +368,8 @@ export default function SettingsScreen() {
           </Text>
         </Pressable>
       </View>
+
+      <LegalSupportLinks />
 
       <View style={[s.card, s.dangerCard]}>
         <Text style={s.dangerOverline}>ACCOUNT DELETION</Text>

@@ -14,7 +14,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { LegalSupportLinks } from "@/components/LegalSupportLinks";
 import { useColors } from "@/hooks/useColors";
+
+const SIGN_UP_LEGAL_LINK_IDS = ["terms", "privacyPolicy"] as const;
 
 export default function SignUpScreen() {
   const { signUp, errors, fetchStatus } = useSignUp();
@@ -174,6 +177,10 @@ export default function SignUpScreen() {
                 I confirm I am at least 18 years old.
               </Text>
             </Pressable>
+            <LegalSupportLinks
+              variant="compact"
+              includedIds={SIGN_UP_LEGAL_LINK_IDS}
+            />
             {submitError && <Text style={s.error}>{submitError}</Text>}
 
             <Pressable

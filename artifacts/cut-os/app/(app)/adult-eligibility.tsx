@@ -24,6 +24,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { LegalSupportLinks } from "@/components/LegalSupportLinks";
 import { useColors } from "@/hooks/useColors";
 import {
   ADULT_ELIGIBILITY_POLICY_VERSION,
@@ -37,6 +38,8 @@ import {
   type DateOfBirthFields,
 } from "@/lib/adult-eligibility";
 import { useAdultEligibilityGate } from "@/lib/adult-eligibility-gate";
+
+const PRIVACY_POLICY_LINK_ID = ["privacyPolicy"] as const;
 
 export default function AdultEligibilityScreen() {
   const { userId, sessionId, signOut } = useAuth();
@@ -373,13 +376,17 @@ export default function AdultEligibilityScreen() {
             : "CUT OS is only available to adults age 18 or older. Enter your date of birth to continue."}
         </Text>
 
-        <View accessible style={s.disclosureCard}>
+        <View style={s.disclosureCard}>
           <Text style={s.disclosureTitle}>Your date is not saved</Text>
           <Text style={s.disclosureText}>
             CUT OS does not save your date of birth on this device or put it in
             links. It is sent to the server only for this eligibility check and
             discarded after the decision.
           </Text>
+          <LegalSupportLinks
+            variant="compact"
+            includedIds={PRIVACY_POLICY_LINK_ID}
+          />
         </View>
 
         <Text accessibilityRole="header" style={s.sectionTitle}>

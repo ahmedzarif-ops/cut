@@ -25,6 +25,30 @@ This inventory describes the current repository, not a completed legal disclosur
 
 CUT OS currently has no advertising SDK and no product-analytics SDK in the application dependency list. That must be rechecked against the final production archive rather than assumed from this document.
 
+## App privacy manifest baseline
+
+The Expo iOS configuration now produces an app-level privacy manifest with
+tracking disabled and no tracking domains. Its current first-party collected
+data entries are Name, Email Address, Health, Fitness, User ID, and Other Data
+Types. Every entry is linked to the account, used for App Functionality, and not
+used for tracking; the entries involved in adapting the experience also declare
+Product Personalization.
+
+The root manifest also aggregates required-reason API declarations found in the
+installed native dependency set because static CocoaPod manifests may not all be
+parsed by Apple:
+
+- File Timestamp: `0A2A.1`, `3B52.1`, `C617.1`.
+- Disk Space: `85F4.1`, `E174.1`.
+- User Defaults: `CA92.1`.
+- System Boot Time: `35F9.1`.
+
+This is an engineering baseline, not final App Store disclosure evidence. The
+generated `.xcarchive` privacy report, final dependency graph, production vendor
+behavior, public Privacy Policy, and App Store Connect answers must still be
+reconciled. Raw DOB remains excluded from the manifest under the implemented
+immediate-discard request behavior, subject to owner/counsel confirmation.
+
 ## App Store disclosure working position
 
 Apple's final questionnaire should be answered from the shipped behavior and every third-party SDK. Likely categories for the current design include:

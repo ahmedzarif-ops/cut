@@ -47,11 +47,17 @@ real App Store purchases.
 | `CLERK_SECRET_KEY`                  | api-server                    | Clerk server key, FAPI proxy, and backend account deletion |
 | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | cut-os EAS release            | Clerk publishable key embedded in the submitted app        |
 | `EXPO_PUBLIC_DOMAIN`                | cut-os EAS release            | HTTPS API hostname embedded in the submitted app           |
+| `EXPO_PUBLIC_CLERK_PROXY_URL`       | cut-os EAS release            | Exact same-origin `https://<domain>/api/__clerk` route     |
+| `EXPO_PUBLIC_PRIVACY_POLICY_URL`    | cut-os EAS release            | Public Privacy Policy opened from sign-up and Settings     |
+| `EXPO_PUBLIC_TERMS_URL`             | cut-os EAS release            | Public Terms of Use opened from sign-up and Settings       |
+| `EXPO_PUBLIC_SUPPORT_URL`           | cut-os EAS release            | Public support page opened from Settings                   |
 | `PORT`                              | api-server                    | Listen port (Replit-provided)                              |
 
-The two `EXPO_PUBLIC_*` values must be configured and verified in the
-production EAS environment before TestFlight; the development script derives
-them automatically, but an EAS build does not inherit that shell mapping.
+All six release values must be configured and verified in the production EAS
+environment before TestFlight. They are public app configuration, never secret
+storage. The development script derives the API and Clerk values automatically,
+but an EAS build does not inherit that shell mapping. See
+`EAS_RELEASE_RUNBOOK.md`.
 
 ## Tests & checks
 
@@ -59,6 +65,7 @@ them automatically, but an EAS build does not inherit that shell mapping.
 pnpm run typecheck   # all packages
 pnpm run test        # vitest: domain + database + API integration (PGlite) + mobile unit
 pnpm run build       # typecheck + build everything
+pnpm --filter @workspace/cut-os run validate:release-config
 ```
 
 ## Database
@@ -83,6 +90,7 @@ database from the committed migrations, so drift fails tests.
 - `ADR_003_ADULT_ELIGIBILITY.md` — adults-only eligibility and data-minimization boundary
 - `APP_STORE_METADATA.md` — working App Store answers, evidence, and approvals
 - `PRIVACY_DATA_MAP.md` — current data inventory and App Store privacy gates
+- `EAS_RELEASE_RUNBOOK.md` — production environment, build, and TestFlight handoff
 - `PHASE_0_CLAUDE_AUDIT.md` — post-Phase-0 architecture audit findings
 - `replit.md` — operational quick reference
 - Product spec + change order: `attached_assets/`

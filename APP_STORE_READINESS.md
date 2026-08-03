@@ -42,6 +42,15 @@ Defer until v1.1+:
 - [x] Committed migrations tested from a blank database.
 - [x] OpenAPI-generated client and response validators.
 - [x] EAS development/preview/production profiles.
+- [x] Profiles explicitly bind their matching EAS environments; production is
+      pinned to the Expo SDK 54-compatible Xcode 26 image and requires a clean
+      commit.
+- [x] Production release configuration fails before install when the public API,
+      live Clerk key, or required public legal/support URLs are missing or unsafe.
+- [x] Runtime configuration and the API transport fail closed; authorization is
+      never attached to an unresolved, non-HTTPS, or non-matching API origin.
+- [x] OpenAPI declares bearer authentication for all private operations and
+      explicitly keeps health public.
 - [x] Bundle identifier reserved in config: `com.zarifahmed.cut`.
 - [x] First server-backed Next Action and daily weigh-in slice.
 - [x] First server-backed curated balanced-meal engineering foundation with daily totals.
@@ -66,7 +75,9 @@ Defer until v1.1+:
 - [x] Account-deletion engineering flow passes the final automated verification run.
 - [ ] Account deletion passes real-Clerk, app-kill, poor-network, second-device,
       shared-device, and iOS development-build validation.
-- [ ] Privacy manifest and third-party SDK inventory.
+- [x] App-level privacy-manifest baseline and installed-package required-reason
+      API inventory; collection entries match the current engineering data map.
+- [ ] Final `.xcarchive` privacy report and embedded third-party SDK inventory.
 - [ ] App Privacy responses.
 - [ ] Legal URLs and store metadata.
 - [ ] TestFlight internal/external beta.
@@ -80,13 +91,18 @@ Defer until v1.1+:
 - [ ] App record created in App Store Connect.
 - [ ] EAS project linked and production credentials verified.
 - [ ] Production EAS environment defines and verifies
-      `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and `EXPO_PUBLIC_DOMAIN` for the exact
-      Clerk tenant and HTTPS API host used by the submitted binary.
+      `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, `EXPO_PUBLIC_DOMAIN`, and the public
+      Privacy, Terms, and Support URLs for the exact services used by the
+      submitted binary. The Clerk proxy must be the canonical same-origin
+      `/api/__clerk` route.
 - [ ] Meal-catalog deployments drain old API replicas and run one catalog
       version at a time; mixed-version writers are not allowed by the current
       release procedure.
 - [ ] Production upload built with Xcode 26+ and the iOS 26 SDK or later.
 - [ ] Valid privacy manifests included for the app and required third-party SDKs.
+- [x] Native config resolves with arbitrary network loads disabled and the
+      current exempt-only encryption declaration; both require final-archive
+      verification before submission.
 
 Apple has required iOS uploads to use the iOS 26 SDK or later since April 28, 2026: [Upcoming Requirements](https://developer.apple.com/news/upcoming-requirements/).
 
@@ -113,6 +129,8 @@ Reference: [Offering account deletion in your app](https://developer.apple.com/s
 
 - [ ] Privacy Policy is public and accessible in-app.
 - [ ] Terms and support URLs are public.
+- [x] Validated Privacy, Terms, and Support controls are implemented in normal
+      and adult-restricted paths and fail closed when release values are absent.
 - [ ] Data inventory covers CUT OS and every third-party SDK.
 - [ ] Production data inventory is reconciled against `PRIVACY_DATA_MAP.md` and the final binary.
 - [ ] App Privacy label matches the production binary and backend.
@@ -131,8 +149,8 @@ Reference: [Offering account deletion in your app](https://developer.apple.com/s
       restricted Settings, and sign-out remain usable in automated coverage.
 - [ ] The preceding transient-DOB and fail-closed controls pass native-device,
       live-Clerk, archive inspection, and production observability verification.
-- [ ] Public Terms, Privacy, and Support links are reachable from both normal and
-      adult-restricted Settings without opening private guidance.
+- [ ] Owner-supplied public Terms, Privacy, and Support destinations are verified
+      from both normal and adult-restricted Settings in the submitted build.
 - [ ] The permanent v1 ineligible-identity behavior is reviewed: no in-app DOB
       correction/retry; later adult access requires account/identity deletion
       and a new account. Settings/deletion/sign-out and support instructions work.

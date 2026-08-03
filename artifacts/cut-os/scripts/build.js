@@ -137,7 +137,7 @@ async function startMetro(expoPublicDomain, expoPublicReplId) {
   console.log("Starting Metro...");
   console.log(`Setting EXPO_PUBLIC_DOMAIN=${expoPublicDomain}`);
   // In production the Clerk Frontend API is reached through a same-origin
-  // proxy mounted on the backend at CLERK_PROXY_URL (a path like /__clerk).
+  // proxy mounted on the backend at CLERK_PROXY_URL (/api/__clerk).
   const clerkProxyUrl = process.env.CLERK_PROXY_URL
     ? `https://${expoPublicDomain}${process.env.CLERK_PROXY_URL}`
     : "";

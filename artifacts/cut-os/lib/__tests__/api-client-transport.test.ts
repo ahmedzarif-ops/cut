@@ -1,12 +1,15 @@
 import {
+  customFetch,
   deleteMe,
   getMe,
+  setBaseUrl,
   setAuthTokenGetter,
   setGoneResponseHandler,
 } from "@workspace/api-client-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 afterEach(() => {
+  setBaseUrl(null);
   setAuthTokenGetter(null);
   setGoneResponseHandler(null);
   vi.unstubAllGlobals();
@@ -30,6 +33,7 @@ describe("API client principal isolation", () => {
       );
       return new Response(null, { status: 204 });
     });
+    setBaseUrl("https://api.example.com");
     setAuthTokenGetter(globalTokenGetter);
     vi.stubGlobal("fetch", fetchMock);
 
@@ -40,6 +44,55 @@ describe("API client principal isolation", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(globalTokenGetter).not.toHaveBeenCalled();
   });
+
+  it("never sends a bearer token to an unresolved relative API URL", async () => {
+    const fetchMock = vi.fn();
+    setAuthTokenGetter(async () => "token-for-user-a");
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getMe()).rejects.toThrow(/matching HTTPS API origin/i);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sends a bearer token only after resolving the configured HTTPS API", async () => {
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        expect(input.toString()).toBe("https://api.example.com/api/me");
+        expect(new Headers(init?.headers).get("authorization")).toBe(
+          "Bearer token-for-user-a",
+        );
+        return new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      },
+    );
+    setBaseUrl("https://api.example.com");
+    setAuthTokenGetter(async () => "token-for-user-a");
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getMe();
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    "https://other.example.com/api/me",
+    "http://api.example.com/api/me",
+  ])(
+    "rejects explicit authorization for an unsafe absolute target: %s",
+    async (target) => {
+      const fetchMock = vi.fn();
+      setBaseUrl("https://api.example.com");
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(
+        customFetch(target, {
+          headers: { Authorization: "Bearer caller-provided-token" },
+        }),
+      ).rejects.toThrow(/matching HTTPS API origin/i);
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
 
   it("uses the snapshotted 410 handler instead of a later principal handler", async () => {
     const response = deferred<Response>();

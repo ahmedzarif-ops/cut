@@ -98,6 +98,30 @@ function resolveUrl(input: RequestInfo | URL): string {
   return input.url;
 }
 
+function isAllowedAuthenticatedTarget(url: string): boolean {
+  if (!_baseUrl) return false;
+
+  try {
+    const base = new URL(_baseUrl);
+    const target = new URL(url);
+    return (
+      base.protocol === "https:" &&
+      target.protocol === "https:" &&
+      target.origin === base.origin
+    );
+  } catch {
+    return false;
+  }
+}
+
+function assertAllowedAuthenticatedTarget(url: string): void {
+  if (!isAllowedAuthenticatedTarget(url)) {
+    throw new TypeError(
+      "customFetch: refusing to send authorization without a configured, matching HTTPS API origin.",
+    );
+  }
+}
+
 function mergeHeaders(...sources: Array<HeadersInit | undefined>): Headers {
   const headers = new Headers();
 
@@ -383,16 +407,19 @@ export async function customFetch<T = unknown>(
     headers.set("accept", DEFAULT_JSON_ACCEPT);
   }
 
+  const requestInfo = { method, url: resolveUrl(input) };
+
   // Attach bearer token when an auth getter is configured and no
   // Authorization header has been explicitly provided.
-  if (_authTokenGetter && !headers.has("authorization")) {
+  if (headers.has("authorization")) {
+    assertAllowedAuthenticatedTarget(requestInfo.url);
+  } else if (_authTokenGetter) {
     const token = await _authTokenGetter();
     if (token) {
+      assertAllowedAuthenticatedTarget(requestInfo.url);
       headers.set("authorization", `Bearer ${token}`);
     }
   }
-
-  const requestInfo = { method, url: resolveUrl(input) };
 
   const response = await fetch(input, { ...init, method, headers });
 

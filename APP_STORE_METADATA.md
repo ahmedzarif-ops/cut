@@ -19,9 +19,9 @@ here is a substitute for owner, legal, or App Review approval.
 | Primary category    | Health & Fitness                                                                                          | Owner must confirm against the final feature set.                                         |
 | Made for Kids       | No                                                                                                        | Do not select the Kids category.                                                          |
 | Public description  | Must state that CUT OS is for adults 18+ and provides general wellness/fitness guidance, not medical care | Final copy requires owner, legal, and qualified health/nutrition review.                  |
-| Support URL         | Pending                                                                                                   | Public, functional URL required before submission.                                        |
-| Privacy Policy URL  | Pending                                                                                                   | Apple requires a public Privacy Policy URL for iOS.                                       |
-| Terms/EULA          | Pending                                                                                                   | Must set a minimum age of 18 and match the product gate and rating override.              |
+| Support URL         | Pending; validated in-app configuration is implemented                                                    | Owner must supply and verify a public, functional HTTPS page before submission.           |
+| Privacy Policy URL  | Pending; validated in-app configuration is implemented                                                    | Owner/counsel must publish and verify the required HTTPS policy before submission.        |
+| Terms/EULA          | Pending; validated in-app Terms link is implemented                                                       | Owner/counsel must choose and publish the final 18+ terms/EULA position.                  |
 | Age Suitability URL | Optional; pending owner decision                                                                          | If supplied, it must explain the adults-only policy and self-declared gate accurately.    |
 
 ## Age rating and questionnaire

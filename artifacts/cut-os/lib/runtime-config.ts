@@ -1,0 +1,221 @@
+export type RuntimeConfig = {
+  apiBaseUrl: string;
+  clerkPublishableKey: string;
+  clerkProxyUrl?: string;
+};
+
+export type RuntimeConfigIssue =
+  | "api_domain_missing"
+  | "api_domain_invalid"
+  | "clerk_publishable_key_missing"
+  | "clerk_publishable_key_invalid"
+  | "clerk_proxy_url_missing"
+  | "clerk_proxy_url_invalid";
+
+export type RuntimeConfigResult =
+  | { ok: true; config: RuntimeConfig }
+  | { ok: false; issues: RuntimeConfigIssue[] };
+
+type RuntimeEnvironment = {
+  EXPO_PUBLIC_DOMAIN?: string;
+  EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
+  EXPO_PUBLIC_CLERK_PROXY_URL?: string;
+};
+
+const NON_PUBLIC_DNS_SUFFIXES = [
+  ".example",
+  ".home",
+  ".home.arpa",
+  ".internal",
+  ".invalid",
+  ".lan",
+  ".local",
+  ".localhost",
+  ".onion",
+  ".test",
+];
+
+function isValidDnsHostname(hostname: string): boolean {
+  if (!hostname || hostname.length > 253 || hostname.includes(":")) {
+    return false;
+  }
+  const labels = hostname.toLowerCase().split(".");
+  return labels.every(
+    (label) =>
+      label.length > 0 &&
+      label.length <= 63 &&
+      /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label),
+  );
+}
+
+function isPublicDnsHostname(hostname: string): boolean {
+  const normalized = hostname.toLowerCase();
+  return Boolean(
+    isValidDnsHostname(normalized) &&
+    normalized.includes(".") &&
+    !/^\d{1,3}(?:\.\d{1,3}){3}$/.test(normalized) &&
+    !NON_PUBLIC_DNS_SUFFIXES.some((suffix) => normalized.endsWith(suffix)),
+  );
+}
+
+function parseApiDomain(value: string | undefined): string | null {
+  const candidate = value?.trim();
+  if (!candidate) return null;
+
+  // This variable is intentionally hostname-only. Rejecting URL syntax keeps
+  // API requests from being redirected through credentials, paths, or query
+  // strings that were accidentally pasted into the build environment.
+  if (
+    candidate.includes("://") ||
+    candidate.includes("/") ||
+    candidate.includes("?") ||
+    candidate.includes("#") ||
+    candidate.includes("@")
+  ) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(`https://${candidate}`);
+    if (
+      !parsed.hostname ||
+      parsed.port ||
+      candidate.endsWith(".") ||
+      !isValidDnsHostname(parsed.hostname) ||
+      parsed.host !== candidate.toLowerCase()
+    ) {
+      return null;
+    }
+    return parsed.host;
+  } catch {
+    return null;
+  }
+}
+
+function decodeUnpaddedBase64(value: string): string | null {
+  const alphabet =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  if (!value || value.length % 4 === 1 || !/^[A-Za-z0-9+/]+$/.test(value)) {
+    return null;
+  }
+
+  let output = "";
+  let buffer = 0;
+  let bits = 0;
+  for (const character of value) {
+    buffer = (buffer << 6) | alphabet.indexOf(character);
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      output += String.fromCharCode((buffer >> bits) & 0xff);
+      buffer &= (1 << bits) - 1;
+    }
+  }
+
+  if (bits > 0 && buffer !== 0) return null;
+  return output;
+}
+
+function parseClerkPublishableKey(value: string | undefined): string | null {
+  const candidate = value?.trim();
+  if (!candidate) return null;
+
+  const parts = candidate.split("_");
+  if (
+    parts.length !== 3 ||
+    parts[0] !== "pk" ||
+    (parts[1] !== "test" && parts[1] !== "live")
+  ) {
+    return null;
+  }
+
+  // Match Clerk's publishable-key contract so a build cannot pass preflight
+  // and then fail while ClerkProvider initializes.
+  const decoded = decodeUnpaddedBase64(parts[2] ?? "");
+  if (!decoded?.endsWith("$")) return null;
+  const frontendApi = decoded.slice(0, -1);
+  if (frontendApi.includes("$") || !frontendApi.includes(".")) return null;
+
+  return candidate;
+}
+
+function parseClerkProxyUrl(
+  value: string | undefined,
+  apiDomain: string | null,
+): string | null | undefined {
+  const candidate = value?.trim();
+  if (!candidate) return undefined;
+
+  try {
+    const parsed = new URL(candidate);
+    if (
+      parsed.protocol !== "https:" ||
+      !parsed.hostname ||
+      parsed.username ||
+      parsed.password ||
+      parsed.search ||
+      parsed.hash ||
+      !apiDomain ||
+      parsed.origin !== `https://${apiDomain}` ||
+      parsed.pathname.replace(/\/+$/, "") !== "/api/__clerk"
+    ) {
+      return null;
+    }
+    return parsed.toString().replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
+}
+
+export function resolveRuntimeConfig(
+  environment: RuntimeEnvironment,
+): RuntimeConfigResult {
+  const issues: RuntimeConfigIssue[] = [];
+  const apiDomain = parseApiDomain(environment.EXPO_PUBLIC_DOMAIN);
+  const publishableKey = parseClerkPublishableKey(
+    environment.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
+  );
+  const proxyUrl = parseClerkProxyUrl(
+    environment.EXPO_PUBLIC_CLERK_PROXY_URL,
+    apiDomain,
+  );
+
+  if (!environment.EXPO_PUBLIC_DOMAIN?.trim()) {
+    issues.push("api_domain_missing");
+  } else if (!apiDomain) {
+    issues.push("api_domain_invalid");
+  } else if (
+    publishableKey?.startsWith("pk_live_") &&
+    !isPublicDnsHostname(apiDomain)
+  ) {
+    issues.push("api_domain_invalid");
+  }
+
+  if (!environment.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim()) {
+    issues.push("clerk_publishable_key_missing");
+  } else if (!publishableKey) {
+    issues.push("clerk_publishable_key_invalid");
+  }
+
+  if (
+    publishableKey?.startsWith("pk_live_") &&
+    !environment.EXPO_PUBLIC_CLERK_PROXY_URL?.trim()
+  ) {
+    issues.push("clerk_proxy_url_missing");
+  } else if (proxyUrl === null) {
+    issues.push("clerk_proxy_url_invalid");
+  }
+
+  if (issues.length || !apiDomain || !publishableKey) {
+    return { ok: false, issues };
+  }
+
+  return {
+    ok: true,
+    config: {
+      apiBaseUrl: `https://${apiDomain}`,
+      clerkPublishableKey: publishableKey,
+      clerkProxyUrl: proxyUrl ?? undefined,
+    },
+  };
+}

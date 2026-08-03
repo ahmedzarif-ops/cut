@@ -80,14 +80,16 @@ Flow:
    decision and `403` for ineligible. Eligibility status/submission and account
    deletion status/deletion are the restricted server allowlist; native
    restricted Settings and sign-out remain reachable. Terms/Privacy/Support
-   links remain a pre-launch Settings requirement.
+   controls are implemented in normal and restricted paths; owner-approved
+   public destinations and native verification remain pre-launch requirements.
 8. The native layout resolves deletion and eligibility state before private
    screens or queries mount. Offline/unknown state fails closed and cannot show
    cached health data. A pre-signup notice/local precheck, if present, is only
    data-minimization defense in depth.
 9. In production, the Clerk Frontend API is reached through a same-origin
    proxy mounted at `/api/__clerk` (`clerkProxyMiddleware.ts`) so custom
-   domains work without CNAME setup.
+   domains work without CNAME setup. The release validator and runtime require
+   its exact HTTPS URL whenever a live Clerk publishable key is embedded.
 
 **Identity rule:** every user-owned domain table references `users.id`
 (internal uuid), never the raw Clerk id — dev and prod Clerk instances issue
@@ -107,6 +109,9 @@ identity tombstone under a retention policy that must be approved before launch.
   responses through them before sending. Thin route/service checks enforce
   integer-only fields and strict meal-object keys that the current generator
   does not emit from OpenAPI automatically.
+- OpenAPI declares bearer authentication globally and explicitly exempts only
+  the public health check. The native transport refuses to attach authorization
+  until a relative API path resolves to the configured matching HTTPS origin.
 - `ADR_003_ADULT_ELIGIBILITY.md` defines the adults-only authorization boundary.
   The server, not navigation or `onboardingComplete`, owns the decision. A full
   DOB is consumed in memory and excluded from responses; every legacy account
