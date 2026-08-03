@@ -34,6 +34,17 @@ while touching auth, `db`, or the Express app.
   settings/profile change," not "last seen" — don't repurpose it as a
   last-login timestamp. `requireAuth` attaches the resolved row as `req.user`;
   `GET /me` returns it directly and must not re-select.
+- **Onboarding completion is atomic and means "a profile exists."**
+  `upsertProfile` (`userService.ts`) writes the profile row and flips
+  `users.onboardingComplete` true in ONE transaction, so the flag and
+  profile-existence can never disagree — a partial failure rolls both back.
+  The flag is therefore not a client-settable bit: `PATCH /me` may CONFIRM
+  `onboardingComplete: true` only when a profile already exists (else `400`) and
+  rejects `false` outright — un-onboarding is not a settings operation, and
+  refusing it also removes any check-then-act window against a concurrent
+  profile write (P1-4). The only way the flag turns on is `PUT /me/profile`,
+  which sets it atomically; don't reintroduce a client- or route-level path that
+  sets it independently of the profile write.
 - **The pg pool has a budget and an error handler.** `poolConfig()`
   (`lib/db`) caps pool size via `PG_POOL_MAX` (default 5) — conservative for
   a single autoscale instance against a pooled endpoint — and the pool
