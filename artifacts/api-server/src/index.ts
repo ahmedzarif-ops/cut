@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { getPool } from "@workspace/db";
 import { createShutdownHandler } from "./lib/shutdown";
+import { startAccountDeletionWorker } from "./services/accountDeletionWorker";
 
 const rawPort = process.env["PORT"];
 
@@ -21,9 +22,21 @@ const server = app.listen(port, () => {
   logger.info({ port }, "Server listening");
 });
 
+const configuredDeletionInterval = Number(
+  process.env["ACCOUNT_DELETION_RETRY_INTERVAL_MS"] ?? 60_000,
+);
+const accountDeletionWorker = startAccountDeletionWorker({
+  intervalMs:
+    Number.isFinite(configuredDeletionInterval) &&
+    configuredDeletionInterval > 0
+      ? configuredDeletionInterval
+      : 60_000,
+});
+
 const shutdown = createShutdownHandler({
   server,
   closePool: async () => {
+    await accountDeletionWorker.stop();
     await getPool()?.end();
   },
   logger,

@@ -27,7 +27,7 @@ router.get(
   requireAuth,
   async (req, res): Promise<void> => {
     const parsed = ListMyWeightEntriesQueryParams.safeParse(req.query);
-    if (!parsed.success) {
+    if (!parsed.success || !Number.isInteger(parsed.data.limit)) {
       throw new HttpError(400, "Invalid weight history query");
     }
     const entries = await listWeightEntries(req.userId!, parsed.data.limit);

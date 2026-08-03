@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { NextAction } from './nextAction';
+import type { Nutrition } from './nutrition';
 import type { WeightEntry } from './weightEntry';
 
 export interface TodayState {
@@ -13,4 +14,7 @@ export interface TodayState {
   dayKey: string;
   nextAction: NextAction;
   weightEntry: WeightEntry | null;
+  /** @minimum 0 */
+  mealCount: number;
+  nutritionTotals: Nutrition;
 }

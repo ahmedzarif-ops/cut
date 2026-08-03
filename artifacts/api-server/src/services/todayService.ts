@@ -11,12 +11,18 @@ import {
   todayKey,
   type Clock,
   type NextAction,
+  type NutritionFacts,
 } from "@workspace/domain";
+
+import { HttpError } from "../lib/httpError";
+import { getMealEntriesForDay, nutritionTotals } from "./mealService";
 
 export interface TodayState {
   dayKey: string;
   nextAction: NextAction;
   weightEntry: WeightEntry | null;
+  mealCount: number;
+  nutritionTotals: NutritionFacts;
 }
 
 export async function getWeightEntryForDay(
@@ -40,14 +46,20 @@ export async function getTodayState(
   clock: Clock = systemClock,
 ): Promise<TodayState> {
   const dayKey = todayKey(clock, user.timezone);
-  const weightEntry = await getWeightEntryForDay(user.id, dayKey);
+  const [weightEntry, mealEntries] = await Promise.all([
+    getWeightEntryForDay(user.id, dayKey),
+    getMealEntriesForDay(user.id, dayKey),
+  ]);
   return {
     dayKey,
     nextAction: selectNextAction({
       onboardingComplete: user.onboardingComplete,
       hasWeightToday: Boolean(weightEntry),
+      hasMealToday: mealEntries.length > 0,
     }),
     weightEntry: weightEntry ?? null,
+    mealCount: mealEntries.length,
+    nutritionTotals: nutritionTotals(mealEntries),
   };
 }
 
@@ -72,6 +84,13 @@ export async function listWeightEntries(
   userId: string,
   limit = 14,
 ): Promise<WeightEntry[]> {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 90) {
+    throw new HttpError(
+      400,
+      "Weight history limit must be a whole number from 1 to 90",
+    );
+  }
+
   return db
     .select()
     .from(weightEntriesTable)

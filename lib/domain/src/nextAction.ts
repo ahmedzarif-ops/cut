@@ -1,4 +1,5 @@
-export type NextActionKind = "complete_onboarding" | "weigh_in" | "first_meal";
+export type NextActionKind =
+  "complete_onboarding" | "weigh_in" | "first_meal" | "review_meals";
 
 export interface NextAction {
   kind: NextActionKind;
@@ -9,6 +10,7 @@ export interface NextAction {
 export interface NextActionInput {
   onboardingComplete: boolean;
   hasWeightToday: boolean;
+  hasMealToday: boolean;
 }
 
 /**
@@ -33,10 +35,19 @@ export function selectNextAction(input: NextActionInput): NextAction {
     };
   }
 
+  if (!input.hasMealToday) {
+    return {
+      kind: "first_meal",
+      title: "Build your first balanced meal",
+      detail:
+        "Start with a protein anchor, then add produce and a measured carb or fat.",
+    };
+  }
+
   return {
-    kind: "first_meal",
-    title: "Build your first balanced meal",
+    kind: "review_meals",
+    title: "Review today’s meals",
     detail:
-      "Start with a protein anchor, then add produce and a measured carb or fat.",
+      "See what you’ve logged. Add another meal only when it fits your needs.",
   };
 }

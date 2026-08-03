@@ -1,0 +1,567 @@
+import { useAuth, useSession } from "@clerk/expo";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  deleteMe as deleteMeRequest,
+  getGetAccountDeletionStatusQueryKey,
+} from "@workspace/api-client-react";
+import * as Crypto from "expo-crypto";
+import * as Haptics from "expo-haptics";
+import * as SecureStore from "expo-secure-store";
+import * as WebBrowser from "expo-web-browser";
+import { useRouter } from "expo-router";
+import React from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useColors } from "@/hooks/useColors";
+import {
+  accountDeletionKey,
+  createAccountDeletionMarker,
+  serializeAccountDeletionMarker,
+  type AccountDeletionMarker,
+} from "@/lib/account-deletion";
+import { useAccountDeletionGate } from "@/lib/account-deletion-gate";
+import { pendingMealCreateKey } from "@/lib/meal-create-intent";
+
+const APP_STORE_SUBSCRIPTIONS_URL =
+  "https://apps.apple.com/account/subscriptions";
+
+export default function SettingsScreen() {
+  const { userId, sessionId, signOut } = useAuth();
+  const { session } = useSession();
+  const router = useRouter();
+  const qc = useQueryClient();
+  const c = useColors();
+  const insets = useSafeAreaInsets();
+  const s = makeStyles(c);
+  const { marker, serverStatus, setMarker } = useAccountDeletionGate();
+
+  const [actionError, setActionError] = React.useState<string | null>(null);
+  const [subscriptionError, setSubscriptionError] = React.useState<
+    string | null
+  >(null);
+  const [operationBusy, setOperationBusy] = React.useState(false);
+  const operationLock = React.useRef(false);
+  const mounted = React.useRef(true);
+  const currentPrincipal = React.useRef({ userId, sessionId });
+  currentPrincipal.current = { userId, sessionId };
+
+  React.useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
+
+  const recoveryRequired = marker !== null || serverStatus !== "none";
+  const busy = operationBusy;
+
+  const openSubscriptions = async () => {
+    setSubscriptionError(null);
+    try {
+      await WebBrowser.openBrowserAsync(APP_STORE_SUBSCRIPTIONS_URL);
+    } catch {
+      setSubscriptionError(
+        "Couldn't open Apple subscription settings. Try again when you're online.",
+      );
+    }
+  };
+
+  const isCurrentPrincipal = (ownerUserId: string, ownerSessionId: string) =>
+    currentPrincipal.current.userId === ownerUserId &&
+    currentPrincipal.current.sessionId === ownerSessionId;
+
+  const assertCurrentPrincipal = (
+    ownerUserId: string,
+    ownerSessionId: string,
+  ) => {
+    if (!mounted.current || !isCurrentPrincipal(ownerUserId, ownerSessionId)) {
+      throw new PrincipalChangedError();
+    }
+  };
+
+  const finishTerminalDeletion = async (
+    ownerUserId: string,
+    ownerSessionId: string,
+  ) => {
+    // Server completion is authoritative. Remove every owner-scoped recovery
+    // record before signout; cleanup failure must not resurrect deleted server
+    // data or leave a different principal's session gated.
+    await Promise.all([
+      SecureStore.deleteItemAsync(accountDeletionKey(ownerUserId)).catch(
+        () => undefined,
+      ),
+      SecureStore.deleteItemAsync(pendingMealCreateKey(ownerUserId)).catch(
+        () => undefined,
+      ),
+    ]);
+
+    qc.clear();
+    void Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success,
+    ).catch(() => undefined);
+    if (mounted.current && isCurrentPrincipal(ownerUserId, ownerSessionId)) {
+      setMarker(null);
+    }
+
+    // Scope signout to the session that authorized deletion. If another
+    // principal became active mid-flight, their session is left untouched.
+    await signOut({ sessionId: ownerSessionId }).catch(() => undefined);
+    if (mounted.current && isCurrentPrincipal(ownerUserId, ownerSessionId)) {
+      router.replace("/sign-in");
+    }
+  };
+
+  const ensureRecoveryMarker = async (
+    ownerUserId: string,
+    ownerSessionId: string,
+  ): Promise<AccountDeletionMarker> => {
+    if (marker) {
+      if (marker.ownerClerkUserId !== ownerUserId) {
+        throw new PrincipalChangedError();
+      }
+      return marker;
+    }
+
+    const created = createAccountDeletionMarker(
+      ownerUserId,
+      Crypto.randomUUID(),
+      new Date().toISOString(),
+    );
+    await SecureStore.setItemAsync(
+      accountDeletionKey(ownerUserId),
+      serializeAccountDeletionMarker(created),
+    );
+    assertCurrentPrincipal(ownerUserId, ownerSessionId);
+    setMarker(created);
+    return created;
+  };
+
+  const runDeletion = async () => {
+    if (
+      !userId ||
+      !sessionId ||
+      !session ||
+      session.id !== sessionId ||
+      session.user?.id !== userId ||
+      operationLock.current
+    ) {
+      return;
+    }
+
+    const ownerUserId = userId;
+    const ownerSessionId = sessionId;
+    const ownerSession = session;
+    operationLock.current = true;
+    setOperationBusy(true);
+    setActionError(null);
+
+    try {
+      if (serverStatus === "completed") {
+        await finishTerminalDeletion(ownerUserId, ownerSessionId);
+        return;
+      }
+
+      try {
+        await ensureRecoveryMarker(ownerUserId, ownerSessionId);
+      } catch (error) {
+        if (error instanceof PrincipalChangedError) return;
+        if (
+          mounted.current &&
+          isCurrentPrincipal(ownerUserId, ownerSessionId)
+        ) {
+          setActionError(
+            "Deletion did not start because CUT OS couldn't save a recovery checkpoint on this device. Retry before deleting anything.",
+          );
+        }
+        return;
+      }
+
+      // Stop every in-flight query before the server tombstones the identity.
+      // The layout's marker gate prevents private screens from mounting again.
+      try {
+        assertCurrentPrincipal(ownerUserId, ownerSessionId);
+        await qc.cancelQueries();
+        assertCurrentPrincipal(ownerUserId, ownerSessionId);
+      } catch (error) {
+        if (error instanceof PrincipalChangedError) return;
+        if (
+          mounted.current &&
+          isCurrentPrincipal(ownerUserId, ownerSessionId)
+        ) {
+          setActionError(
+            "Deletion is paused safely. CUT OS couldn't stop active account requests; retry to continue.",
+          );
+        }
+        return;
+      }
+
+      try {
+        assertCurrentPrincipal(ownerUserId, ownerSessionId);
+        const token = await tokenWithinTimeout(() =>
+          ownerSession.getToken({ skipCache: true }),
+        );
+        assertCurrentPrincipal(ownerUserId, ownerSessionId);
+        if (!token) {
+          throw new Error("A deletion authorization token is unavailable.");
+        }
+
+        // The request carries the captured session's token explicitly. It can
+        // never fall through to the module-global token getter for a new user.
+        await deleteMeRequest({
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (error) {
+        if (error instanceof PrincipalChangedError) return;
+        const status = apiStatus(error);
+        if (
+          mounted.current &&
+          isCurrentPrincipal(ownerUserId, ownerSessionId)
+        ) {
+          setActionError(
+            status === 401
+              ? "CUT OS can no longer authenticate this login. Your recovery request remains saved; sign out if retry cannot verify it."
+              : "CUT OS couldn't confirm completion. Your device recovery checkpoint is saved—retry safely to verify whether the request is pending or complete.",
+          );
+          void qc.invalidateQueries({
+            queryKey: getGetAccountDeletionStatusQueryKey(),
+          });
+        }
+        return;
+      }
+
+      await finishTerminalDeletion(ownerUserId, ownerSessionId);
+    } finally {
+      operationLock.current = false;
+      if (mounted.current && isCurrentPrincipal(ownerUserId, ownerSessionId)) {
+        setOperationBusy(false);
+      }
+    }
+  };
+
+  const confirmDeletion = () => {
+    Alert.alert(
+      "Delete your CUT OS account?",
+      "This permanently deletes your CUT OS account and fitness data. It does not cancel an App Store subscription—manage that with Apple first if needed.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete account",
+          style: "destructive",
+          onPress: () => void runDeletion(),
+        },
+      ],
+    );
+  };
+
+  const deletionTitle =
+    serverStatus === "completed"
+      ? "Deletion complete"
+      : recoveryRequired
+        ? "Deletion needs attention"
+        : "Delete account";
+  const deletionBody =
+    serverStatus === "completed"
+      ? "Your account deletion is complete. Finish signing out on this device."
+      : serverStatus === "pending"
+        ? "The server is securely finishing your deletion. Retry to confirm completion."
+        : marker
+          ? "A deletion request is saved on this device. Retry safely to send or confirm it."
+          : "Permanently delete your CUT OS login, profile, weigh-ins, and meal history.";
+  const deletionButton =
+    serverStatus === "completed"
+      ? "Finish and sign out"
+      : recoveryRequired
+        ? "Retry account deletion"
+        : "Delete account";
+
+  return (
+    <ScrollView
+      style={s.flex}
+      contentContainerStyle={[
+        s.container,
+        { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 },
+      ]}
+    >
+      <View style={s.headerRow}>
+        {!recoveryRequired ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to Today"
+            disabled={busy}
+            hitSlop={8}
+            style={({ pressed }) => [
+              s.backButton,
+              busy && s.disabled,
+              pressed && !busy && s.pressed,
+            ]}
+            onPress={() => router.back()}
+          >
+            <Text style={s.backButtonText}>‹</Text>
+          </Pressable>
+        ) : (
+          <View style={s.backButtonPlaceholder} />
+        )}
+        <Text style={s.headerContext}>
+          {recoveryRequired ? "ACCOUNT RECOVERY" : "TODAY"}
+        </Text>
+      </View>
+
+      <Text accessibilityRole="header" style={s.title}>
+        Settings
+      </Text>
+      <Text style={s.subtitle}>
+        Manage your subscription and CUT OS account.
+      </Text>
+
+      <View style={s.card}>
+        <Text style={s.cardOverline}>SUBSCRIPTION</Text>
+        <Text style={s.cardTitle}>App Store subscription</Text>
+        <Text style={s.cardBody}>
+          Deleting CUT OS does not cancel billing through Apple. Cancel or
+          review renewal in your App Store subscriptions.
+        </Text>
+        {subscriptionError ? (
+          <Text accessibilityRole="alert" style={s.errorText}>
+            {subscriptionError}
+          </Text>
+        ) : null}
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel="Manage App Store subscription"
+          style={({ pressed }) => [s.secondaryAction, pressed && s.pressed]}
+          onPress={() => void openSubscriptions()}
+        >
+          <Text style={s.secondaryActionText}>
+            Manage App Store subscription
+          </Text>
+        </Pressable>
+      </View>
+
+      <View style={[s.card, s.dangerCard]}>
+        <Text style={s.dangerOverline}>ACCOUNT DELETION</Text>
+        <Text style={s.cardTitle}>{deletionTitle}</Text>
+        <Text style={s.cardBody}>{deletionBody}</Text>
+        {actionError ? (
+          <Text
+            accessibilityRole="alert"
+            accessibilityLiveRegion="assertive"
+            style={s.errorText}
+          >
+            {actionError}
+          </Text>
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: busy, busy }}
+          disabled={busy}
+          style={({ pressed }) => [
+            s.deleteButton,
+            busy && s.disabled,
+            pressed && !busy && s.pressed,
+          ]}
+          onPress={
+            recoveryRequired ? () => void runDeletion() : confirmDeletion
+          }
+        >
+          {busy ? (
+            <View style={s.busyRow}>
+              <ActivityIndicator color={c.destructiveForeground} />
+              <Text style={s.deleteButtonText}>Deleting securely…</Text>
+            </View>
+          ) : (
+            <Text style={s.deleteButtonText}>{deletionButton}</Text>
+          )}
+        </Pressable>
+      </View>
+
+      {!recoveryRequired ? (
+        <Pressable
+          accessibilityRole="button"
+          style={s.doneButton}
+          onPress={() => router.back()}
+        >
+          <Text style={s.doneText}>Done</Text>
+        </Pressable>
+      ) : null}
+    </ScrollView>
+  );
+}
+
+function apiStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== "object" || !("status" in error)) {
+    return undefined;
+  }
+  const status = (error as { status?: unknown }).status;
+  return typeof status === "number" ? status : undefined;
+}
+
+class PrincipalChangedError extends Error {
+  readonly name = "PrincipalChangedError";
+}
+
+async function tokenWithinTimeout(
+  getToken: () => Promise<string | null>,
+): Promise<string | null> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      getToken(),
+      new Promise<null>((resolve) => {
+        timeout = setTimeout(() => resolve(null), 5000);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+function makeStyles(c: ReturnType<typeof useColors>) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: c.background },
+    container: { paddingHorizontal: 24 },
+    headerRow: {
+      minHeight: 44,
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    backButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: c.secondary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    backButtonPlaceholder: { width: 44, height: 44 },
+    backButtonText: {
+      color: c.foreground,
+      fontFamily: "Inter_500Medium",
+      fontSize: 34,
+      lineHeight: 38,
+      marginTop: -2,
+    },
+    headerContext: {
+      color: c.mutedForeground,
+      fontFamily: "Inter_700Bold",
+      fontSize: 12,
+      letterSpacing: 1.3,
+      marginLeft: 12,
+    },
+    title: {
+      color: c.foreground,
+      fontFamily: "Inter_700Bold",
+      fontSize: 30,
+      lineHeight: 37,
+    },
+    subtitle: {
+      color: c.mutedForeground,
+      fontFamily: "Inter_400Regular",
+      fontSize: 15,
+      lineHeight: 22,
+      marginTop: 7,
+      marginBottom: 24,
+    },
+    card: {
+      backgroundColor: c.card,
+      borderColor: c.border,
+      borderWidth: 1,
+      borderRadius: c.radius,
+      padding: 20,
+      marginBottom: 14,
+    },
+    dangerCard: { borderColor: c.destructive },
+    cardOverline: {
+      color: c.primary,
+      fontFamily: "Inter_700Bold",
+      fontSize: 11,
+      letterSpacing: 1.2,
+      marginBottom: 7,
+    },
+    dangerOverline: {
+      color: c.destructive,
+      fontFamily: "Inter_700Bold",
+      fontSize: 11,
+      letterSpacing: 1.2,
+      marginBottom: 7,
+    },
+    cardTitle: {
+      color: c.cardForeground,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 19,
+      lineHeight: 25,
+    },
+    cardBody: {
+      color: c.mutedForeground,
+      fontFamily: "Inter_400Regular",
+      fontSize: 14,
+      lineHeight: 21,
+      marginTop: 8,
+    },
+    secondaryAction: {
+      minHeight: 48,
+      borderRadius: c.radius,
+      backgroundColor: c.secondary,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 14,
+      marginTop: 18,
+    },
+    secondaryActionText: {
+      color: c.primary,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 15,
+      textAlign: "center",
+    },
+    deleteButton: {
+      minHeight: 54,
+      borderRadius: c.radius,
+      backgroundColor: c.destructive,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 16,
+      marginTop: 18,
+    },
+    deleteButtonText: {
+      color: c.destructiveForeground,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 16,
+      textAlign: "center",
+    },
+    busyRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+    },
+    errorText: {
+      color: c.destructive,
+      fontFamily: "Inter_500Medium",
+      fontSize: 13,
+      lineHeight: 19,
+      marginTop: 12,
+    },
+    doneButton: {
+      minHeight: 48,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 2,
+    },
+    doneText: {
+      color: c.primary,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 15,
+    },
+    disabled: { opacity: 0.5 },
+    pressed: { opacity: 0.84 },
+  });
+}

@@ -15,6 +15,48 @@
       "when": 1785739594330,
       "tag": "0001_add_weight_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785765541988,
+      "tag": "0002_add_meal_entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785766549728,
+      "tag": "0003_account_deletion_persistence",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785768984617,
+      "tag": "0004_harden_account_deletion_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785769886131,
+      "tag": "0005_add_meal_catalog_version",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785771775931,
+      "tag": "0006_concerned_firebird",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785771963050,
+      "tag": "0007_closed_paladin",
+      "breakpoints": true
     }
   ]
 }

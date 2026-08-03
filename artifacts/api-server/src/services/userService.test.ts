@@ -18,8 +18,14 @@ describe("provisionUser", () => {
   it("creates a row on first call and returns the same row on the second (idempotent)", async () => {
     ctx = await createTestContext();
 
-    const first = await provisionUser({ clerkUserId: "clerk_abc", email: "a@b.com" });
-    const second = await provisionUser({ clerkUserId: "clerk_abc", email: "a@b.com" });
+    const first = await provisionUser({
+      clerkUserId: "clerk_abc",
+      email: "a@b.com",
+    });
+    const second = await provisionUser({
+      clerkUserId: "clerk_abc",
+      email: "a@b.com",
+    });
 
     expect(first?.id).toBeDefined();
     expect(second?.id).toBe(first?.id);
@@ -48,13 +54,32 @@ describe("provisionUser — no hot-path write", () => {
 
   it("getUserByClerkId returns the row, or undefined when unknown", async () => {
     ctx = await createTestContext();
-    const created = await provisionUser({ clerkUserId: "clerk_byid", email: null });
+    const created = await provisionUser({
+      clerkUserId: "clerk_byid",
+      email: null,
+    });
     expect((await getUserByClerkId("clerk_byid"))?.id).toBe(created?.id);
     expect(await getUserByClerkId("clerk_absent")).toBeUndefined();
   });
 });
 
 describe("upsertProfile full-replace", () => {
+  it("rejects a fractional birth year before writing", async () => {
+    ctx = await createTestContext();
+    const user = await provisionUser({
+      clerkUserId: "clerk_fractional_birth_year",
+      email: null,
+    });
+
+    await expect(
+      upsertProfile(user!.id, { goal: "cut", birthYear: 1995.5 }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "Birth year must be a whole number",
+    });
+    expect(await getProfile(user!.id)).toBeUndefined();
+  });
+
   it("resets omitted optional fields to null on re-save", async () => {
     ctx = await createTestContext();
     const user = await provisionUser({ clerkUserId: "clerk_p", email: null });
@@ -79,7 +104,10 @@ describe("upsertProfile full-replace", () => {
 describe("upsertProfile — atomic onboarding (P1-4)", () => {
   it("marks the user onboarded in the same transaction as the profile write", async () => {
     ctx = await createTestContext();
-    const user = await provisionUser({ clerkUserId: "clerk_atomic", email: null });
+    const user = await provisionUser({
+      clerkUserId: "clerk_atomic",
+      email: null,
+    });
     expect(user?.onboardingComplete).toBe(false);
 
     await upsertProfile(user!.id, { goal: "cut" });

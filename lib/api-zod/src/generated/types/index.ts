@@ -6,11 +6,19 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './accountDeletionBlockedResponse';
+export * from './accountDeletionStatus';
+export * from './accountDeletionStatusStatus';
 export * from './error';
 export * from './healthStatus';
 export * from './listMyWeightEntriesParams';
+export * from './mealEntry';
+export * from './mealEntryInput';
+export * from './mealEntryUpdate';
+export * from './mealOption';
 export * from './nextAction';
 export * from './nextActionKind';
+export * from './nutrition';
 export * from './profile';
 export * from './profileActivityLevel';
 export * from './profileGoal';
@@ -21,6 +29,7 @@ export * from './profileInputSex';
 export * from './profileInputTrainingExperience';
 export * from './profileSex';
 export * from './profileTrainingExperience';
+export * from './todayMeals';
 export * from './todayState';
 export * from './user';
 export * from './userUnits';

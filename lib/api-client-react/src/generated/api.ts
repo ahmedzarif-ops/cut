@@ -20,11 +20,18 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AccountDeletionBlockedResponse,
+  AccountDeletionStatus,
   Error,
   HealthStatus,
   ListMyWeightEntriesParams,
+  MealEntry,
+  MealEntryInput,
+  MealEntryUpdate,
+  MealOption,
   Profile,
   ProfileInput,
+  TodayMeals,
   TodayState,
   User,
   UserUpdate,
@@ -171,7 +178,7 @@ export const getGetMeQueryKey = () => {
     }
 
 
-export const getGetMeQueryOptions = <TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<Error>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMeQueryOptions = <TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -190,14 +197,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetMeQueryResult = NonNullable<Awaited<ReturnType<typeof getMe>>>
-export type GetMeQueryError = ErrorType<Error>
+export type GetMeQueryError = ErrorType<Error | AccountDeletionBlockedResponse>
 
 
 /**
  * @summary Get the current authenticated user
  */
 
-export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<Error>>(
+export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -241,7 +248,7 @@ export const updateMe = async (userUpdate: UserUpdate, options?: RequestInit): P
 
 
 
-export const getUpdateMeMutationOptions = <TError = ErrorType<Error>,
+export const getUpdateMeMutationOptions = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMe>>, TError,{data: BodyType<UserUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateMe>>, TError,{data: BodyType<UserUpdate>}, TContext> => {
 
@@ -270,12 +277,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdateMeMutationResult = NonNullable<Awaited<ReturnType<typeof updateMe>>>
     export type UpdateMeMutationBody = BodyType<UserUpdate>
-    export type UpdateMeMutationError = ErrorType<Error>
+    export type UpdateMeMutationError = ErrorType<Error | AccountDeletionBlockedResponse>
 
     /**
  * @summary Update the current user's account settings
  */
-export const useUpdateMe = <TError = ErrorType<Error>,
+export const useUpdateMe = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMe>>, TError,{data: BodyType<UserUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateMe>>,
@@ -285,6 +292,156 @@ export const useUpdateMe = <TError = ErrorType<Error>,
       > => {
       return useMutation(getUpdateMeMutationOptions(options));
     }
+
+export const getDeleteMeUrl = () => {
+
+
+
+
+  return `/api/me`
+}
+
+/**
+ * Durably tombstones the account, deletes the Clerk identity through the server, and then removes the local user, profile, weigh-ins, and meal history. A 204 is returned only after identity deletion and the local cascade are terminal. A 503 means terminal completion could not be confirmed; retry/status recovery is required, and any request that was successfully staged remains durable for server retry.
+ * @summary Permanently delete the current user's account
+ */
+export const deleteMe = async ( options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteMeUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteMeMutationOptions = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMe>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMe>>, TError,void, TContext> => {
+
+const mutationKey = ['deleteMe'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMe>>, void> = () => {
+
+
+          return  deleteMe(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMeMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMe>>>
+
+    export type DeleteMeMutationError = ErrorType<Error>
+
+    /**
+ * @summary Permanently delete the current user's account
+ */
+export const useDeleteMe = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMe>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMe>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDeleteMeMutationOptions(options));
+    }
+
+export const getGetAccountDeletionStatusUrl = () => {
+
+
+
+
+  return `/api/me/account-deletion`
+}
+
+/**
+ * Checks durable deletion state without creating an internal user. Normal authenticated endpoints return 410 while deletion is pending or completed, preventing a valid stale token from recreating the account.
+ * @summary Get the current identity's account-deletion status
+ */
+export const getAccountDeletionStatus = async ( options?: RequestInit): Promise<AccountDeletionStatus> => {
+
+  return customFetch<AccountDeletionStatus>(getGetAccountDeletionStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAccountDeletionStatusQueryKey = () => {
+    return [
+    `/api/me/account-deletion`
+    ] as const;
+    }
+
+
+export const getGetAccountDeletionStatusQueryOptions = <TData = Awaited<ReturnType<typeof getAccountDeletionStatus>>, TError = ErrorType<Error>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAccountDeletionStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAccountDeletionStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccountDeletionStatus>>> = ({ signal }) => getAccountDeletionStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAccountDeletionStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAccountDeletionStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getAccountDeletionStatus>>>
+export type GetAccountDeletionStatusQueryError = ErrorType<Error>
+
+
+/**
+ * @summary Get the current identity's account-deletion status
+ */
+
+export function useGetAccountDeletionStatus<TData = Awaited<ReturnType<typeof getAccountDeletionStatus>>, TError = ErrorType<Error>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAccountDeletionStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAccountDeletionStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetMyProfileUrl = () => {
 
@@ -319,7 +476,7 @@ export const getGetMyProfileQueryKey = () => {
     }
 
 
-export const getGetMyProfileQueryOptions = <TData = Awaited<ReturnType<typeof getMyProfile>>, TError = ErrorType<Error>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMyProfileQueryOptions = <TData = Awaited<ReturnType<typeof getMyProfile>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -338,14 +495,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetMyProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getMyProfile>>>
-export type GetMyProfileQueryError = ErrorType<Error>
+export type GetMyProfileQueryError = ErrorType<Error | AccountDeletionBlockedResponse>
 
 
 /**
  * @summary Get the current user's profile
  */
 
-export function useGetMyProfile<TData = Awaited<ReturnType<typeof getMyProfile>>, TError = ErrorType<Error>>(
+export function useGetMyProfile<TData = Awaited<ReturnType<typeof getMyProfile>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -389,7 +546,7 @@ export const upsertMyProfile = async (profileInput: ProfileInput, options?: Requ
 
 
 
-export const getUpsertMyProfileMutationOptions = <TError = ErrorType<Error>,
+export const getUpsertMyProfileMutationOptions = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertMyProfile>>, TError,{data: BodyType<ProfileInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof upsertMyProfile>>, TError,{data: BodyType<ProfileInput>}, TContext> => {
 
@@ -418,12 +575,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpsertMyProfileMutationResult = NonNullable<Awaited<ReturnType<typeof upsertMyProfile>>>
     export type UpsertMyProfileMutationBody = BodyType<ProfileInput>
-    export type UpsertMyProfileMutationError = ErrorType<Error>
+    export type UpsertMyProfileMutationError = ErrorType<Error | AccountDeletionBlockedResponse>
 
     /**
  * @summary Create or replace the current user's profile
  */
-export const useUpsertMyProfile = <TError = ErrorType<Error>,
+export const useUpsertMyProfile = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertMyProfile>>, TError,{data: BodyType<ProfileInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof upsertMyProfile>>,
@@ -467,7 +624,7 @@ export const getGetTodayQueryKey = () => {
     }
 
 
-export const getGetTodayQueryOptions = <TData = Awaited<ReturnType<typeof getToday>>, TError = ErrorType<Error>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetTodayQueryOptions = <TData = Awaited<ReturnType<typeof getToday>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -486,14 +643,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetTodayQueryResult = NonNullable<Awaited<ReturnType<typeof getToday>>>
-export type GetTodayQueryError = ErrorType<Error>
+export type GetTodayQueryError = ErrorType<Error | AccountDeletionBlockedResponse>
 
 
 /**
  * @summary Get the current user's Today state
  */
 
-export function useGetToday<TData = Awaited<ReturnType<typeof getToday>>, TError = ErrorType<Error>>(
+export function useGetToday<TData = Awaited<ReturnType<typeof getToday>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -510,6 +667,376 @@ export function useGetToday<TData = Awaited<ReturnType<typeof getToday>>, TError
 
 
 
+
+export const getListMyMealOptionsUrl = () => {
+
+
+
+
+  return `/api/me/meal-options`
+}
+
+/**
+ * Returns the versioned meal catalog in a general balanced-meal order. Options include declared ingredients and common allergens, but are not personalized medical or allergy advice.
+ * @summary List ranked balanced-meal options
+ */
+export const listMyMealOptions = async ( options?: RequestInit): Promise<MealOption[]> => {
+
+  return customFetch<MealOption[]>(getListMyMealOptionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyMealOptionsQueryKey = () => {
+    return [
+    `/api/me/meal-options`
+    ] as const;
+    }
+
+
+export const getListMyMealOptionsQueryOptions = <TData = Awaited<ReturnType<typeof listMyMealOptions>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyMealOptions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyMealOptionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyMealOptions>>> = ({ signal }) => listMyMealOptions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyMealOptions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyMealOptionsQueryResult = NonNullable<Awaited<ReturnType<typeof listMyMealOptions>>>
+export type ListMyMealOptionsQueryError = ErrorType<Error | AccountDeletionBlockedResponse>
+
+
+/**
+ * @summary List ranked balanced-meal options
+ */
+
+export function useListMyMealOptions<TData = Awaited<ReturnType<typeof listMyMealOptions>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyMealOptions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyMealOptionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetTodayMealsUrl = () => {
+
+
+
+
+  return `/api/me/meals/today`
+}
+
+/**
+ * @summary Get today's logged meals and nutrition totals
+ */
+export const getTodayMeals = async ( options?: RequestInit): Promise<TodayMeals> => {
+
+  return customFetch<TodayMeals>(getGetTodayMealsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTodayMealsQueryKey = () => {
+    return [
+    `/api/me/meals/today`
+    ] as const;
+    }
+
+
+export const getGetTodayMealsQueryOptions = <TData = Awaited<ReturnType<typeof getTodayMeals>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTodayMeals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTodayMealsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTodayMeals>>> = ({ signal }) => getTodayMeals({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTodayMeals>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTodayMealsQueryResult = NonNullable<Awaited<ReturnType<typeof getTodayMeals>>>
+export type GetTodayMealsQueryError = ErrorType<Error | AccountDeletionBlockedResponse>
+
+
+/**
+ * @summary Get today's logged meals and nutrition totals
+ */
+
+export function useGetTodayMeals<TData = Awaited<ReturnType<typeof getTodayMeals>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTodayMeals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTodayMealsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateMyMealEntryUrl = () => {
+
+
+
+
+  return `/api/me/meal-entries`
+}
+
+/**
+ * The client echoes the dayKey and catalogVersion it reviewed, while the server remains authoritative for the user's local calendar day and copies the selected template's per-serving nutrition into the historical entry. Repeating the same clientRequestId and payload returns the original entry, even after that day or catalog release is superseded. A request UUID remains consumed if its meal is later deleted, preventing a delayed replay from recreating it. A new entry must match both the current server day and the current catalog version.
+ * @summary Log a catalog meal for today
+ */
+export const createMyMealEntry = async (mealEntryInput: MealEntryInput, options?: RequestInit): Promise<MealEntry> => {
+
+  return customFetch<MealEntry>(getCreateMyMealEntryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mealEntryInput)
+  }
+);}
+
+
+
+
+
+export const getCreateMyMealEntryMutationOptions = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMyMealEntry>>, TError,{data: BodyType<MealEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMyMealEntry>>, TError,{data: BodyType<MealEntryInput>}, TContext> => {
+
+const mutationKey = ['createMyMealEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMyMealEntry>>, {data: BodyType<MealEntryInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMyMealEntry(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMyMealEntryMutationResult = NonNullable<Awaited<ReturnType<typeof createMyMealEntry>>>
+    export type CreateMyMealEntryMutationBody = BodyType<MealEntryInput>
+    export type CreateMyMealEntryMutationError = ErrorType<Error | AccountDeletionBlockedResponse>
+
+    /**
+ * @summary Log a catalog meal for today
+ */
+export const useCreateMyMealEntry = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMyMealEntry>>, TError,{data: BodyType<MealEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createMyMealEntry>>,
+        TError,
+        {data: BodyType<MealEntryInput>},
+        TContext
+      > => {
+      return useMutation(getCreateMyMealEntryMutationOptions(options));
+    }
+
+export const getUpdateMyMealEntryUrl = (mealEntryId: string,) => {
+
+
+
+
+  return `/api/me/meal-entries/${mealEntryId}`
+}
+
+/**
+ * @summary Update a logged meal's serving count
+ */
+export const updateMyMealEntry = async (mealEntryId: string,
+    mealEntryUpdate: MealEntryUpdate, options?: RequestInit): Promise<MealEntry> => {
+
+  return customFetch<MealEntry>(getUpdateMyMealEntryUrl(mealEntryId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mealEntryUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateMyMealEntryMutationOptions = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyMealEntry>>, TError,{mealEntryId: string;data: BodyType<MealEntryUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMyMealEntry>>, TError,{mealEntryId: string;data: BodyType<MealEntryUpdate>}, TContext> => {
+
+const mutationKey = ['updateMyMealEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMyMealEntry>>, {mealEntryId: string;data: BodyType<MealEntryUpdate>}> = (props) => {
+          const {mealEntryId,data} = props ?? {};
+
+          return  updateMyMealEntry(mealEntryId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMyMealEntryMutationResult = NonNullable<Awaited<ReturnType<typeof updateMyMealEntry>>>
+    export type UpdateMyMealEntryMutationBody = BodyType<MealEntryUpdate>
+    export type UpdateMyMealEntryMutationError = ErrorType<Error | AccountDeletionBlockedResponse>
+
+    /**
+ * @summary Update a logged meal's serving count
+ */
+export const useUpdateMyMealEntry = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyMealEntry>>, TError,{mealEntryId: string;data: BodyType<MealEntryUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMyMealEntry>>,
+        TError,
+        {mealEntryId: string;data: BodyType<MealEntryUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateMyMealEntryMutationOptions(options));
+    }
+
+export const getDeleteMyMealEntryUrl = (mealEntryId: string,) => {
+
+
+
+
+  return `/api/me/meal-entries/${mealEntryId}`
+}
+
+/**
+ * @summary Delete a logged meal
+ */
+export const deleteMyMealEntry = async (mealEntryId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteMyMealEntryUrl(mealEntryId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteMyMealEntryMutationOptions = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyMealEntry>>, TError,{mealEntryId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMyMealEntry>>, TError,{mealEntryId: string}, TContext> => {
+
+const mutationKey = ['deleteMyMealEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMyMealEntry>>, {mealEntryId: string}> = (props) => {
+          const {mealEntryId} = props ?? {};
+
+          return  deleteMyMealEntry(mealEntryId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMyMealEntryMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMyMealEntry>>>
+
+    export type DeleteMyMealEntryMutationError = ErrorType<Error | AccountDeletionBlockedResponse>
+
+    /**
+ * @summary Delete a logged meal
+ */
+export const useDeleteMyMealEntry = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyMealEntry>>, TError,{mealEntryId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMyMealEntry>>,
+        TError,
+        {mealEntryId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteMyMealEntryMutationOptions(options));
+    }
 
 export const getListMyWeightEntriesUrl = (params?: ListMyWeightEntriesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -551,7 +1078,7 @@ export const getListMyWeightEntriesQueryKey = (params?: ListMyWeightEntriesParam
     }
 
 
-export const getListMyWeightEntriesQueryOptions = <TData = Awaited<ReturnType<typeof listMyWeightEntries>>, TError = ErrorType<Error>>(params?: ListMyWeightEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyWeightEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListMyWeightEntriesQueryOptions = <TData = Awaited<ReturnType<typeof listMyWeightEntries>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>(params?: ListMyWeightEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyWeightEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -570,14 +1097,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListMyWeightEntriesQueryResult = NonNullable<Awaited<ReturnType<typeof listMyWeightEntries>>>
-export type ListMyWeightEntriesQueryError = ErrorType<Error>
+export type ListMyWeightEntriesQueryError = ErrorType<Error | AccountDeletionBlockedResponse>
 
 
 /**
  * @summary List the current user's recent weigh-ins
  */
 
-export function useListMyWeightEntries<TData = Awaited<ReturnType<typeof listMyWeightEntries>>, TError = ErrorType<Error>>(
+export function useListMyWeightEntries<TData = Awaited<ReturnType<typeof listMyWeightEntries>>, TError = ErrorType<Error | AccountDeletionBlockedResponse>>(
  params?: ListMyWeightEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyWeightEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -621,7 +1148,7 @@ export const upsertTodayWeight = async (weightEntryInput: WeightEntryInput, opti
 
 
 
-export const getUpsertTodayWeightMutationOptions = <TError = ErrorType<Error>,
+export const getUpsertTodayWeightMutationOptions = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertTodayWeight>>, TError,{data: BodyType<WeightEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof upsertTodayWeight>>, TError,{data: BodyType<WeightEntryInput>}, TContext> => {
 
@@ -650,12 +1177,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpsertTodayWeightMutationResult = NonNullable<Awaited<ReturnType<typeof upsertTodayWeight>>>
     export type UpsertTodayWeightMutationBody = BodyType<WeightEntryInput>
-    export type UpsertTodayWeightMutationError = ErrorType<Error>
+    export type UpsertTodayWeightMutationError = ErrorType<Error | AccountDeletionBlockedResponse>
 
     /**
  * @summary Create or replace today's weigh-in
  */
-export const useUpsertTodayWeight = <TError = ErrorType<Error>,
+export const useUpsertTodayWeight = <TError = ErrorType<Error | AccountDeletionBlockedResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertTodayWeight>>, TError,{data: BodyType<WeightEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof upsertTodayWeight>>,

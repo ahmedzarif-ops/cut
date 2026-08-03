@@ -13,4 +13,5 @@ export const NextActionKind = {
   complete_onboarding: 'complete_onboarding',
   weigh_in: 'weigh_in',
   first_meal: 'first_meal',
+  review_meals: 'review_meals',
 } as const;

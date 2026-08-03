@@ -72,4 +72,26 @@ describe("app middleware order", () => {
     // CSP is deliberately disabled for the JSON API.
     expect(res.headers["content-security-policy"]).toBeUndefined();
   });
+
+  it("returns client errors for malformed and oversized JSON bodies", async () => {
+    const malformed = await request(app)
+      .post("/api/me")
+      .set({
+        "x-forwarded-for": "9.9.9.4",
+        "content-type": "application/json",
+      })
+      .send('{"broken"');
+    expect(malformed.status).toBe(400);
+    expect(malformed.body).toEqual({ error: "Invalid request body" });
+
+    const oversized = await request(app)
+      .post("/api/me")
+      .set({
+        "x-forwarded-for": "9.9.9.5",
+        "content-type": "application/json",
+      })
+      .send(JSON.stringify({ value: "x".repeat(110_000) }));
+    expect(oversized.status).toBe(413);
+    expect(oversized.body).toEqual({ error: "Request body too large" });
+  });
 });

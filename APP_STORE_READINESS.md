@@ -6,11 +6,14 @@
 
 Ship:
 
-- Account and adult onboarding.
+- Account and onboarding. Public guidance remains blocked until an
+  owner/legal-approved minimum-age policy is required and enforced server-side.
 - Separate profile and time-bounded cut-cycle data.
 - Today / Next Action.
 - Daily weigh-in and trend.
-- Balanced food logging, saved meals, macros, and Best Balanced Fit.
+- Curated balanced-meal logging and daily macro totals. Personalized **Best
+  Balanced Fit** ships only if authoritative targets, preference filters,
+  disclosures, and safety review land; otherwise defer it.
 - Workout plan, session/set logging, and PR detection.
 - Daily closeout and weekly review.
 - Calendar and local reminders.
@@ -39,11 +42,22 @@ Defer until v1.1+:
 - [x] EAS development/preview/production profiles.
 - [x] Bundle identifier reserved in config: `com.zarifahmed.cut`.
 - [x] First server-backed Next Action and daily weigh-in slice.
+- [x] First server-backed curated balanced-meal engineering foundation with daily totals.
+- [x] Versioned day/catalog handshake plus durable owner-scoped recovery for
+      uncertain meal creates.
+- [x] Retry-safe meal deletion and replay tombstones that retain no nutrition
+      values and cascade with account deletion.
+- [x] pnpm version pin and GitHub CI gates for frozen install, generated
+      contract drift, typecheck, and automated tests.
+- [x] Engineering privacy data-map draft covering current fitness/nutrition data.
+- [x] Unused native location and photo-picker packages removed from the launch dependency set.
 - [ ] Verified iOS Simulator boot on the current release branch.
 - [ ] Seven-day founder dogfood.
 - [ ] Full launch feature scope.
 - [ ] RevenueCat integration.
-- [ ] Account deletion.
+- [x] Account-deletion engineering flow passes the final automated verification run.
+- [ ] Account deletion passes real-Clerk, app-kill, poor-network, second-device,
+      shared-device, and iOS development-build validation.
 - [ ] Privacy manifest and third-party SDK inventory.
 - [ ] App Privacy responses.
 - [ ] Legal URLs and store metadata.
@@ -57,6 +71,12 @@ Defer until v1.1+:
 - [ ] Legal entity, agreements, tax, and banking complete.
 - [ ] App record created in App Store Connect.
 - [ ] EAS project linked and production credentials verified.
+- [ ] Production EAS environment defines and verifies
+      `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and `EXPO_PUBLIC_DOMAIN` for the exact
+      Clerk tenant and HTTPS API host used by the submitted binary.
+- [ ] Meal-catalog deployments drain old API replicas and run one catalog
+      version at a time; mixed-version writers are not allowed by the current
+      release procedure.
 - [ ] Production upload built with Xcode 26+ and the iOS 26 SDK or later.
 - [ ] Valid privacy manifests included for the app and required third-party SDKs.
 
@@ -69,6 +89,12 @@ Apple has required iOS uploads to use the iOS 26 SDK or later since April 28, 20
 - [ ] Sign in with Apple added if the final primary login mix requires it under Guideline 4.8.
 - [ ] Delete Account is easy to find in Settings.
 - [ ] Deletion removes associated data not legally required to be retained.
+- [ ] A real Clerk development identity is deleted and cannot recreate an
+      internal account from a surviving session.
+- [ ] Pending deletion age, retry failures, alerts, and manual reconciliation
+      are operationally monitored.
+- [ ] Tombstone, backup, and legally required retention periods plus deletion
+      completion expectations are documented in the public Privacy Policy.
 - [ ] Apple sign-in tokens are revoked during deletion, if used.
 - [ ] User can manage the Apple subscription before or after deleting the CUT OS account.
 
@@ -79,10 +105,17 @@ Reference: [Offering account deletion in your app](https://developer.apple.com/s
 - [ ] Privacy Policy is public and accessible in-app.
 - [ ] Terms and support URLs are public.
 - [ ] Data inventory covers CUT OS and every third-party SDK.
+- [ ] Production data inventory is reconciled against `PRIVACY_DATA_MAP.md` and the final binary.
 - [ ] App Privacy label matches the production binary and backend.
 - [ ] Health/fitness data never enters advertising audiences or marketing data mining.
 - [ ] Logs and analytics contain no raw weight, measurements, macros, workouts, allergies, or health conditions.
 - [ ] Wellness/medical age-rating and regulated-device declarations are answered accurately.
+- [ ] Product/legal owners approve the minimum-age policy; onboarding requires
+      the necessary data and the server blocks cut, weight, and meal guidance
+      when the policy is not satisfied. Terms and age-rating answers match.
+- [ ] Every public meal template has reproducible ingredient quantities and
+      yield, nutrition source/methodology, substantiated allergen/dietary
+      labels, a qualified reviewer, and a review date.
 - [ ] Recommendations and public claims receive qualified professional/legal review.
 
 References: [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/) and [App Privacy Details](https://developer.apple.com/app-store/app-privacy-details/).
@@ -91,7 +124,7 @@ References: [App Review Guidelines](https://developer.apple.com/app-store/review
 
 - [ ] App Store subscription group created.
 - [ ] Working offer approved: $19.99 monthly / $99.99 annual / seven-day trial.
-- [ ] RevenueCat products map to one `cut_os_pro` entitlement.
+- [ ] RevenueCat products map to one `CUT_OS_PRO` entitlement.
 - [ ] Paywall clearly states price, period, trial, auto-renewal, and cancellation.
 - [ ] Sandbox purchase, renew, cancel, expire, billing retry, refund, reinstall, and restore pass.
 - [ ] Manage Subscription works.
@@ -135,6 +168,8 @@ External beta:
 - Silent loss or duplication of food, weight, or workout writes.
 - Authentication failures affecting a meaningful share of users.
 - Recommendation behavior that could plausibly create health risk.
+- Missing or bypassable minimum-age enforcement.
+- Unreviewed nutrition, allergen, or dietary claims in the public catalog.
 
 ## Release sequence
 

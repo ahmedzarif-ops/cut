@@ -56,6 +56,22 @@ export const UpdateMeResponse = zod.object({
 
 
 /**
+ * Durably tombstones the account, deletes the Clerk identity through the server, and then removes the local user, profile, weigh-ins, and meal history. A 204 is returned only after identity deletion and the local cascade are terminal. A 503 means terminal completion could not be confirmed; retry/status recovery is required, and any request that was successfully staged remains durable for server retry.
+ * @summary Permanently delete the current user's account
+ */
+export const DeleteMeResponse = zod.void()
+
+
+/**
+ * Checks durable deletion state without creating an internal user. Normal authenticated endpoints return 410 while deletion is pending or completed, preventing a valid stale token from recreating the account.
+ * @summary Get the current identity's account-deletion status
+ */
+export const GetAccountDeletionStatusResponse = zod.object({
+  "status": zod.enum(['none', 'pending', 'completed'])
+})
+
+
+/**
  * @summary Get the current user's profile
  */
 export const GetMyProfileResponse = zod.object({
@@ -81,6 +97,7 @@ export const GetMyProfileResponse = zod.object({
  */
 export const upsertMyProfileBodyBirthYearMin = 1900;
 export const upsertMyProfileBodyBirthYearMax = 2025;
+export const upsertMyProfileBodyBirthYearMultipleOf = 1;
 
 export const upsertMyProfileBodyHeightCmMin = 50;
 export const upsertMyProfileBodyHeightCmMax = 300;
@@ -98,7 +115,7 @@ export const UpsertMyProfileBody = zod.object({
   "displayName": zod.string().optional(),
   "goal": zod.enum(['cut', 'maintain', 'recomp', 'gain']),
   "sex": zod.enum(['male', 'female', 'other', 'unspecified']).optional(),
-  "birthYear": zod.number().min(upsertMyProfileBodyBirthYearMin).max(upsertMyProfileBodyBirthYearMax).optional(),
+  "birthYear": zod.number().min(upsertMyProfileBodyBirthYearMin).max(upsertMyProfileBodyBirthYearMax).multipleOf(upsertMyProfileBodyBirthYearMultipleOf).optional(),
   "heightCm": zod.number().min(upsertMyProfileBodyHeightCmMin).max(upsertMyProfileBodyHeightCmMax).optional(),
   "startWeightKg": zod.number().min(upsertMyProfileBodyStartWeightKgMin).max(upsertMyProfileBodyStartWeightKgMax).optional(),
   "goalWeightKg": zod.number().min(upsertMyProfileBodyGoalWeightKgMin).max(upsertMyProfileBodyGoalWeightKgMax).optional(),
@@ -130,12 +147,24 @@ export const UpsertMyProfileResponse = zod.object({
  */
 export const getTodayResponseDayKeyRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const getTodayResponseWeightEntryOneRecordedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getTodayResponseMealCountMin = 0;
+
+export const getTodayResponseNutritionTotalsCaloriesKcalMin = 0;
+
+export const getTodayResponseNutritionTotalsProteinGMin = 0;
+
+export const getTodayResponseNutritionTotalsCarbsGMin = 0;
+
+export const getTodayResponseNutritionTotalsFatGMin = 0;
+
+export const getTodayResponseNutritionTotalsFiberGMin = 0;
+
 
 
 export const GetTodayResponse = zod.object({
   "dayKey": zod.string().regex(getTodayResponseDayKeyRegExp),
   "nextAction": zod.object({
-  "kind": zod.enum(['complete_onboarding', 'weigh_in', 'first_meal']),
+  "kind": zod.enum(['complete_onboarding', 'weigh_in', 'first_meal', 'review_meals']),
   "title": zod.string(),
   "detail": zod.string()
 }),
@@ -146,8 +175,231 @@ export const GetTodayResponse = zod.object({
   "weightKg": zod.number(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
-}),zod.null()])
+}),zod.null()]),
+  "mealCount": zod.number().min(getTodayResponseMealCountMin),
+  "nutritionTotals": zod.object({
+  "caloriesKcal": zod.number().min(getTodayResponseNutritionTotalsCaloriesKcalMin),
+  "proteinG": zod.number().min(getTodayResponseNutritionTotalsProteinGMin),
+  "carbsG": zod.number().min(getTodayResponseNutritionTotalsCarbsGMin),
+  "fatG": zod.number().min(getTodayResponseNutritionTotalsFatGMin),
+  "fiberG": zod.number().min(getTodayResponseNutritionTotalsFiberGMin)
 })
+})
+
+
+/**
+ * Returns the versioned meal catalog in a general balanced-meal order. Options include declared ingredients and common allergens, but are not personalized medical or allergy advice.
+ * @summary List ranked balanced-meal options
+ */
+
+export const listMyMealOptionsResponseCaloriesKcalMin = 0;
+
+export const listMyMealOptionsResponseProteinGMin = 0;
+
+export const listMyMealOptionsResponseCarbsGMin = 0;
+
+export const listMyMealOptionsResponseFatGMin = 0;
+
+export const listMyMealOptionsResponseFiberGMin = 0;
+
+
+
+export const ListMyMealOptionsResponseItem = zod.object({
+  "id": zod.string(),
+  "catalogVersion": zod.string().min(1),
+  "name": zod.string(),
+  "description": zod.string(),
+  "cuisine": zod.string(),
+  "servingDescription": zod.string(),
+  "dietaryTags": zod.array(zod.string()),
+  "ingredients": zod.array(zod.string()),
+  "allergens": zod.array(zod.string()),
+  "caloriesKcal": zod.number().min(listMyMealOptionsResponseCaloriesKcalMin),
+  "proteinG": zod.number().min(listMyMealOptionsResponseProteinGMin),
+  "carbsG": zod.number().min(listMyMealOptionsResponseCarbsGMin),
+  "fatG": zod.number().min(listMyMealOptionsResponseFatGMin),
+  "fiberG": zod.number().min(listMyMealOptionsResponseFiberGMin),
+  "fitReason": zod.string()
+})
+export const ListMyMealOptionsResponse = zod.array(ListMyMealOptionsResponseItem)
+
+
+/**
+ * @summary Get today's logged meals and nutrition totals
+ */
+export const getTodayMealsResponseDayKeyRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+export const getTodayMealsResponseEntriesItemLoggedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getTodayMealsResponseEntriesItemServingsMin = 0.25;
+export const getTodayMealsResponseEntriesItemServingsMax = 4;
+
+export const getTodayMealsResponseEntriesItemCaloriesKcalMin = 0;
+
+export const getTodayMealsResponseEntriesItemProteinGMin = 0;
+
+export const getTodayMealsResponseEntriesItemCarbsGMin = 0;
+
+export const getTodayMealsResponseEntriesItemFatGMin = 0;
+
+export const getTodayMealsResponseEntriesItemFiberGMin = 0;
+
+export const getTodayMealsResponseTotalsCaloriesKcalMin = 0;
+
+export const getTodayMealsResponseTotalsProteinGMin = 0;
+
+export const getTodayMealsResponseTotalsCarbsGMin = 0;
+
+export const getTodayMealsResponseTotalsFatGMin = 0;
+
+export const getTodayMealsResponseTotalsFiberGMin = 0;
+
+
+
+export const GetTodayMealsResponse = zod.object({
+  "dayKey": zod.string().regex(getTodayMealsResponseDayKeyRegExp),
+  "entries": zod.array(zod.object({
+  "id": zod.uuid(),
+  "catalogVersion": zod.string().min(1),
+  "templateId": zod.string(),
+  "clientRequestId": zod.uuid(),
+  "name": zod.string(),
+  "servingDescription": zod.string(),
+  "loggedOn": zod.string().regex(getTodayMealsResponseEntriesItemLoggedOnRegExp),
+  "servings": zod.number().min(getTodayMealsResponseEntriesItemServingsMin).max(getTodayMealsResponseEntriesItemServingsMax),
+  "caloriesKcal": zod.number().min(getTodayMealsResponseEntriesItemCaloriesKcalMin),
+  "proteinG": zod.number().min(getTodayMealsResponseEntriesItemProteinGMin),
+  "carbsG": zod.number().min(getTodayMealsResponseEntriesItemCarbsGMin),
+  "fatG": zod.number().min(getTodayMealsResponseEntriesItemFatGMin),
+  "fiberG": zod.number().min(getTodayMealsResponseEntriesItemFiberGMin),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "totals": zod.object({
+  "caloriesKcal": zod.number().min(getTodayMealsResponseTotalsCaloriesKcalMin),
+  "proteinG": zod.number().min(getTodayMealsResponseTotalsProteinGMin),
+  "carbsG": zod.number().min(getTodayMealsResponseTotalsCarbsGMin),
+  "fatG": zod.number().min(getTodayMealsResponseTotalsFatGMin),
+  "fiberG": zod.number().min(getTodayMealsResponseTotalsFiberGMin)
+})
+})
+
+
+/**
+ * The client echoes the dayKey and catalogVersion it reviewed, while the server remains authoritative for the user's local calendar day and copies the selected template's per-serving nutrition into the historical entry. Repeating the same clientRequestId and payload returns the original entry, even after that day or catalog release is superseded. A request UUID remains consumed if its meal is later deleted, preventing a delayed replay from recreating it. A new entry must match both the current server day and the current catalog version.
+ * @summary Log a catalog meal for today
+ */
+
+export const createMyMealEntryBodyDayKeyRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+export const createMyMealEntryBodyServingsMin = 0.25;
+export const createMyMealEntryBodyServingsMax = 4;
+
+
+
+export const CreateMyMealEntryBody = zod.object({
+  "clientRequestId": zod.uuid(),
+  "catalogVersion": zod.string().min(1),
+  "dayKey": zod.string().regex(createMyMealEntryBodyDayKeyRegExp),
+  "mealTemplateId": zod.string().min(1),
+  "servings": zod.number().min(createMyMealEntryBodyServingsMin).max(createMyMealEntryBodyServingsMax)
+})
+
+
+export const createMyMealEntryResponseLoggedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createMyMealEntryResponseServingsMin = 0.25;
+export const createMyMealEntryResponseServingsMax = 4;
+
+export const createMyMealEntryResponseCaloriesKcalMin = 0;
+
+export const createMyMealEntryResponseProteinGMin = 0;
+
+export const createMyMealEntryResponseCarbsGMin = 0;
+
+export const createMyMealEntryResponseFatGMin = 0;
+
+export const createMyMealEntryResponseFiberGMin = 0;
+
+
+
+export const CreateMyMealEntryResponse = zod.object({
+  "id": zod.uuid(),
+  "catalogVersion": zod.string().min(1),
+  "templateId": zod.string(),
+  "clientRequestId": zod.uuid(),
+  "name": zod.string(),
+  "servingDescription": zod.string(),
+  "loggedOn": zod.string().regex(createMyMealEntryResponseLoggedOnRegExp),
+  "servings": zod.number().min(createMyMealEntryResponseServingsMin).max(createMyMealEntryResponseServingsMax),
+  "caloriesKcal": zod.number().min(createMyMealEntryResponseCaloriesKcalMin),
+  "proteinG": zod.number().min(createMyMealEntryResponseProteinGMin),
+  "carbsG": zod.number().min(createMyMealEntryResponseCarbsGMin),
+  "fatG": zod.number().min(createMyMealEntryResponseFatGMin),
+  "fiberG": zod.number().min(createMyMealEntryResponseFiberGMin),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a logged meal's serving count
+ */
+export const UpdateMyMealEntryParams = zod.object({
+  "mealEntryId": zod.uuid()
+})
+
+export const updateMyMealEntryBodyServingsMin = 0.25;
+export const updateMyMealEntryBodyServingsMax = 4;
+
+
+
+export const UpdateMyMealEntryBody = zod.object({
+  "servings": zod.number().min(updateMyMealEntryBodyServingsMin).max(updateMyMealEntryBodyServingsMax)
+})
+
+
+export const updateMyMealEntryResponseLoggedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updateMyMealEntryResponseServingsMin = 0.25;
+export const updateMyMealEntryResponseServingsMax = 4;
+
+export const updateMyMealEntryResponseCaloriesKcalMin = 0;
+
+export const updateMyMealEntryResponseProteinGMin = 0;
+
+export const updateMyMealEntryResponseCarbsGMin = 0;
+
+export const updateMyMealEntryResponseFatGMin = 0;
+
+export const updateMyMealEntryResponseFiberGMin = 0;
+
+
+
+export const UpdateMyMealEntryResponse = zod.object({
+  "id": zod.uuid(),
+  "catalogVersion": zod.string().min(1),
+  "templateId": zod.string(),
+  "clientRequestId": zod.uuid(),
+  "name": zod.string(),
+  "servingDescription": zod.string(),
+  "loggedOn": zod.string().regex(updateMyMealEntryResponseLoggedOnRegExp),
+  "servings": zod.number().min(updateMyMealEntryResponseServingsMin).max(updateMyMealEntryResponseServingsMax),
+  "caloriesKcal": zod.number().min(updateMyMealEntryResponseCaloriesKcalMin),
+  "proteinG": zod.number().min(updateMyMealEntryResponseProteinGMin),
+  "carbsG": zod.number().min(updateMyMealEntryResponseCarbsGMin),
+  "fatG": zod.number().min(updateMyMealEntryResponseFatGMin),
+  "fiberG": zod.number().min(updateMyMealEntryResponseFiberGMin),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a logged meal
+ */
+export const DeleteMyMealEntryParams = zod.object({
+  "mealEntryId": zod.uuid()
+})
+
+export const DeleteMyMealEntryResponse = zod.void()
 
 
 /**
@@ -155,11 +407,12 @@ export const GetTodayResponse = zod.object({
  */
 export const listMyWeightEntriesQueryLimitDefault = 14;
 export const listMyWeightEntriesQueryLimitMax = 90;
+export const listMyWeightEntriesQueryLimitMultipleOf = 1;
 
 
 
 export const ListMyWeightEntriesQueryParams = zod.object({
-  "limit": zod.coerce.number().min(1).max(listMyWeightEntriesQueryLimitMax).default(listMyWeightEntriesQueryLimitDefault)
+  "limit": zod.coerce.number().min(1).max(listMyWeightEntriesQueryLimitMax).multipleOf(listMyWeightEntriesQueryLimitMultipleOf).default(listMyWeightEntriesQueryLimitDefault)
 })
 
 export const listMyWeightEntriesResponseRecordedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');

@@ -69,4 +69,16 @@ describe("Today state and weigh-ins", () => {
     expect(await listWeightEntries(userA!.id)).toHaveLength(1);
     expect(await listWeightEntries(userB!.id)).toHaveLength(0);
   });
+
+  it("rejects a fractional weight-history limit before querying", async () => {
+    const user = await provisionUser({
+      clerkUserId: "weight_fractional_limit",
+      email: null,
+    });
+
+    await expect(listWeightEntries(user!.id, 1.5)).rejects.toMatchObject({
+      statusCode: 400,
+      message: "Weight history limit must be a whole number from 1 to 90",
+    });
+  });
 });

@@ -72,6 +72,8 @@ export default function TodayScreen() {
     query: {
       queryKey: getGetTodayQueryKey(),
       enabled: meQuery.data?.onboardingComplete === true,
+      // Keep a foreground screen from showing yesterday after local midnight.
+      refetchInterval: 60_000,
     },
   });
   const saveWeightMutation = useUpsertTodayWeight();
@@ -229,6 +231,10 @@ export default function TodayScreen() {
       );
     }
 
+    const nextActionKind = String(today.nextAction.kind);
+    const isMealAction =
+      nextActionKind === "first_meal" || nextActionKind === "review_meals";
+
     return (
       <View style={s.stack}>
         <View style={[s.card, s.nextCard]}>
@@ -236,6 +242,28 @@ export default function TodayScreen() {
           <Text style={s.nextTitle}>{today.nextAction.title}</Text>
           <Text style={s.cardBody}>{today.nextAction.detail}</Text>
           {today.nextAction.kind === "weigh_in" ? weightEditor : null}
+          {isMealAction ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                nextActionKind === "first_meal"
+                  ? "Open balanced meals"
+                  : "Review today’s meals"
+              }
+              style={({ pressed }) => [
+                s.button,
+                s.nextButton,
+                pressed && s.buttonPressed,
+              ]}
+              onPress={() => router.push("/meal-one")}
+            >
+              <Text style={s.buttonText}>
+                {nextActionKind === "first_meal"
+                  ? "Open balanced meals"
+                  : "Review meals"}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {today.weightEntry ? (
@@ -259,6 +287,42 @@ export default function TodayScreen() {
                 </Text>
               </Pressable>
             )}
+          </View>
+        ) : null}
+
+        {today.mealCount > 0 ? (
+          <View style={s.card}>
+            <Text style={s.successLabel}>NUTRITION LOGGED</Text>
+            <View
+              accessible
+              accessibilityLabel={`${today.mealCount} ${today.mealCount === 1 ? "meal" : "meals"} logged, ${Math.round(today.nutritionTotals.caloriesKcal)} calories and ${Math.round(today.nutritionTotals.proteinG)} grams protein`}
+              style={s.nutritionRow}
+            >
+              <View style={s.nutritionMetric}>
+                <Text style={s.nutritionValue}>
+                  {Math.round(today.nutritionTotals.caloriesKcal)}
+                </Text>
+                <Text style={s.nutritionLabel}>kcal</Text>
+              </View>
+              <View style={s.nutritionDivider} />
+              <View style={s.nutritionMetric}>
+                <Text style={s.nutritionValue}>
+                  {Math.round(today.nutritionTotals.proteinG)}g
+                </Text>
+                <Text style={s.nutritionLabel}>protein</Text>
+              </View>
+            </View>
+            <Text style={s.nutritionDetail}>
+              {today.mealCount} {today.mealCount === 1 ? "meal" : "meals"} ·{" "}
+              {Math.round(today.nutritionTotals.fiberG)}g fiber
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              style={s.secondaryButton}
+              onPress={() => router.push("/meal-one")}
+            >
+              <Text style={s.secondaryButtonText}>Review logged meals</Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -306,10 +370,25 @@ export default function TodayScreen() {
       ]}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={s.greeting}>{greeting()}</Text>
-      <Text style={s.name}>
-        {profile?.displayName || me?.email || "Athlete"}
-      </Text>
+      <View style={s.topRow}>
+        <View style={s.topRowText}>
+          <Text style={s.greeting}>{greeting()}</Text>
+          <Text style={s.name}>
+            {profile?.displayName || me?.email || "Athlete"}
+          </Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open Settings"
+          style={({ pressed }) => [
+            s.settingsButton,
+            pressed && s.buttonPressed,
+          ]}
+          onPress={() => router.push("/settings")}
+        >
+          <Text style={s.settingsButtonText}>Settings</Text>
+        </Pressable>
+      </View>
 
       {renderContent()}
 
@@ -324,6 +403,14 @@ function makeStyles(c: ReturnType<typeof useColors>) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: c.background },
     container: { paddingHorizontal: 24 },
+    topRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      marginBottom: 24,
+    },
+    topRowText: { flex: 1 },
     greeting: {
       color: c.mutedForeground,
       fontFamily: "Inter_500Medium",
@@ -334,7 +421,22 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontFamily: "Inter_700Bold",
       fontSize: 28,
       marginTop: 2,
-      marginBottom: 24,
+    },
+    settingsButton: {
+      minWidth: 44,
+      minHeight: 44,
+      borderRadius: c.radius,
+      borderColor: c.border,
+      borderWidth: 1,
+      backgroundColor: c.secondary,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 12,
+    },
+    settingsButtonText: {
+      color: c.primary,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 14,
     },
     loading: { paddingVertical: 48, alignItems: "center" },
     stack: { gap: 14 },
@@ -414,6 +516,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     buttonDisabled: { opacity: 0.55 },
     buttonPressed: { opacity: 0.85 },
+    nextButton: { marginTop: 0 },
     buttonText: {
       color: c.primaryForeground,
       fontFamily: "Inter_600SemiBold",
@@ -441,6 +544,34 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontFamily: "Inter_600SemiBold",
       fontSize: 16,
       marginLeft: 6,
+    },
+    nutritionRow: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      marginTop: 12,
+    },
+    nutritionMetric: { flex: 1 },
+    nutritionValue: {
+      color: c.foreground,
+      fontFamily: "Inter_700Bold",
+      fontSize: 30,
+    },
+    nutritionLabel: {
+      color: c.mutedForeground,
+      fontFamily: "Inter_500Medium",
+      fontSize: 13,
+      marginTop: 1,
+    },
+    nutritionDivider: {
+      width: StyleSheet.hairlineWidth,
+      backgroundColor: c.border,
+      marginHorizontal: 18,
+    },
+    nutritionDetail: {
+      color: c.mutedForeground,
+      fontFamily: "Inter_400Regular",
+      fontSize: 13,
+      marginTop: 12,
     },
     statRow: {
       flexDirection: "row",

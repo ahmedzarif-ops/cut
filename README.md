@@ -13,6 +13,7 @@ The adaptive cut operating system for people who lift. Native mobile app
 | `lib/api-client-react`     | Generated typed react-query client                    |
 | `lib/api-zod`              | Generated Zod validators (server-side)                |
 | `lib/db`                   | Drizzle schema + committed migrations                 |
+| `lib/domain`               | Shared deterministic product and nutrition rules      |
 | `artifacts/mockup-sandbox` | Replit design-preview tooling (not the product)       |
 
 ## Run it
@@ -23,24 +24,34 @@ pnpm install
 # API server (needs DATABASE_URL, CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY)
 pnpm --filter @workspace/api-server run dev
 
-# Mobile app — open in Replit iOS simulator or scan with Expo Go
+# Mobile development preview (configured Clerk environment required)
 pnpm --filter @workspace/cut-os run dev
 ```
 
+Expo Go is useful for development preview only. Release acceptance requires a
+configured EAS development build or full Xcode/Simulator; Expo Go cannot verify
+real App Store purchases.
+
 ### Environment variables
 
-| Var                     | Used by                       | Purpose                       |
-| ----------------------- | ----------------------------- | ----------------------------- |
-| `DATABASE_URL`          | api-server, lib/db            | Postgres connection           |
-| `CLERK_PUBLISHABLE_KEY` | api-server, cut-os dev script | Clerk client key              |
-| `CLERK_SECRET_KEY`      | api-server                    | Clerk server key / FAPI proxy |
-| `PORT`                  | api-server                    | Listen port (Replit-provided) |
+| Var                                 | Used by                       | Purpose                                                    |
+| ----------------------------------- | ----------------------------- | ---------------------------------------------------------- |
+| `DATABASE_URL`                      | api-server, lib/db            | Postgres connection                                        |
+| `CLERK_PUBLISHABLE_KEY`             | api-server, cut-os dev script | Clerk client key for local/Replit development              |
+| `CLERK_SECRET_KEY`                  | api-server                    | Clerk server key, FAPI proxy, and backend account deletion |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | cut-os EAS release            | Clerk publishable key embedded in the submitted app        |
+| `EXPO_PUBLIC_DOMAIN`                | cut-os EAS release            | HTTPS API hostname embedded in the submitted app           |
+| `PORT`                              | api-server                    | Listen port (Replit-provided)                              |
+
+The two `EXPO_PUBLIC_*` values must be configured and verified in the
+production EAS environment before TestFlight; the development script derives
+them automatically, but an EAS build does not inherit that shell mapping.
 
 ## Tests & checks
 
 ```sh
 pnpm run typecheck   # all packages
-pnpm run test        # vitest: api-server integration (PGlite) + cut-os unit
+pnpm run test        # vitest: domain + database + API integration (PGlite) + mobile unit
 pnpm run build       # typecheck + build everything
 ```
 
@@ -61,6 +72,9 @@ database from the committed migrations, so drift fails tests.
 - `QA_REPORT.md` — what has actually been verified, and where
 - `WORK_STATUS.md` — current continuation state and next implementation slice
 - `APP_STORE_READINESS.md` — focused v1 scope and release gates
+- `ADR_001_BALANCED_MEALS.md` — meal catalog, snapshot, and safety decision
+- `ADR_002_ACCOUNT_DELETION.md` — resumable local-data and Clerk deletion
+- `PRIVACY_DATA_MAP.md` — current data inventory and App Store privacy gates
 - `PHASE_0_CLAUDE_AUDIT.md` — post-Phase-0 architecture audit findings
 - `replit.md` — operational quick reference
 - Product spec + change order: `attached_assets/`

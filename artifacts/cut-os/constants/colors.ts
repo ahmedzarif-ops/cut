@@ -75,10 +75,10 @@ const light: typeof dark = {
   accent: "#DBEAFE",
   accentForeground: "#1E3A8A",
 
-  success: "#16A34A",
+  success: "#166534",
   successForeground: "#FFFFFF",
 
-  warning: "#D97706",
+  warning: "#92400E",
   warningForeground: "#FFFFFF",
 
   destructive: "#DC2626",

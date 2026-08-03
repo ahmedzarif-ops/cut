@@ -5,6 +5,19 @@
  * CUT OS API specification
  * OpenAPI spec version: 0.1.0
  */
+export type AccountDeletionStatusStatus = typeof AccountDeletionStatusStatus[keyof typeof AccountDeletionStatusStatus];
+
+
+export const AccountDeletionStatusStatus = {
+  none: 'none',
+  pending: 'pending',
+  completed: 'completed',
+} as const;
+
+export interface AccountDeletionStatus {
+  status: AccountDeletionStatusStatus;
+}
+
 export type NextActionKind = typeof NextActionKind[keyof typeof NextActionKind];
 
 
@@ -12,6 +25,7 @@ export const NextActionKind = {
   complete_onboarding: 'complete_onboarding',
   weigh_in: 'weigh_in',
   first_meal: 'first_meal',
+  review_meals: 'review_meals',
 } as const;
 
 export interface NextAction {
@@ -38,11 +52,110 @@ export interface WeightEntryInput {
   weightKg: number;
 }
 
+export interface Nutrition {
+  /** @minimum 0 */
+  caloriesKcal: number;
+  /** @minimum 0 */
+  proteinG: number;
+  /** @minimum 0 */
+  carbsG: number;
+  /** @minimum 0 */
+  fatG: number;
+  /** @minimum 0 */
+  fiberG: number;
+}
+
 export interface TodayState {
   /** @pattern ^\d{4}-\d{2}-\d{2}$ */
   dayKey: string;
   nextAction: NextAction;
   weightEntry: WeightEntry | null;
+  /** @minimum 0 */
+  mealCount: number;
+  nutritionTotals: Nutrition;
+}
+
+export interface MealOption {
+  id: string;
+  /** @minLength 1 */
+  catalogVersion: string;
+  name: string;
+  description: string;
+  cuisine: string;
+  servingDescription: string;
+  dietaryTags: string[];
+  ingredients: string[];
+  allergens: string[];
+  /** @minimum 0 */
+  caloriesKcal: number;
+  /** @minimum 0 */
+  proteinG: number;
+  /** @minimum 0 */
+  carbsG: number;
+  /** @minimum 0 */
+  fatG: number;
+  /** @minimum 0 */
+  fiberG: number;
+  fitReason: string;
+}
+
+export interface MealEntry {
+  id: string;
+  /** @minLength 1 */
+  catalogVersion: string;
+  templateId: string;
+  clientRequestId: string;
+  name: string;
+  servingDescription: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  loggedOn: string;
+  /**
+     * @minimum 0.25
+     * @maximum 4
+     */
+  servings: number;
+  /** @minimum 0 */
+  caloriesKcal: number;
+  /** @minimum 0 */
+  proteinG: number;
+  /** @minimum 0 */
+  carbsG: number;
+  /** @minimum 0 */
+  fatG: number;
+  /** @minimum 0 */
+  fiberG: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MealEntryInput {
+  clientRequestId: string;
+  /** @minLength 1 */
+  catalogVersion: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  dayKey: string;
+  /** @minLength 1 */
+  mealTemplateId: string;
+  /**
+     * @minimum 0.25
+     * @maximum 4
+     */
+  servings: number;
+}
+
+export interface MealEntryUpdate {
+  /**
+     * @minimum 0.25
+     * @maximum 4
+     */
+  servings: number;
+}
+
+export interface TodayMeals {
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  dayKey: string;
+  entries: MealEntry[];
+  totals: Nutrition;
 }
 
 export interface HealthStatus {
@@ -225,6 +338,11 @@ export interface ProfileInput {
   activityLevel?: ProfileInputActivityLevel;
   trainingExperience?: ProfileInputTrainingExperience;
 }
+
+/**
+ * Account deletion is pending or complete; private access is blocked
+ */
+export type AccountDeletionBlockedResponse = Error;
 
 export type ListMyWeightEntriesParams = {
 /**

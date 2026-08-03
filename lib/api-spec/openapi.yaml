@@ -47,6 +47,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
     patch:
       operationId: updateMe
       tags: [me]
@@ -64,8 +66,70 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+    delete:
+      operationId: deleteMe
+      tags: [me]
+      summary: Permanently delete the current user's account
+      description: >-
+        Durably tombstones the account, deletes the Clerk identity through the
+        server, and then removes the local user, profile, weigh-ins, and meal
+        history. A 204 is returned only after identity deletion and the local
+        cascade are terminal. A 503 means terminal completion could not be
+        confirmed; retry/status recovery is required, and any request that was
+        successfully staged remains durable for server retry.
+      responses:
+        "204":
+          description: Identity and local CUT OS account data are deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: Deletion could not be confirmed; retry or status recovery is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /me/account-deletion:
+    get:
+      operationId: getAccountDeletionStatus
+      tags: [me]
+      summary: Get the current identity's account-deletion status
+      description: >-
+        Checks durable deletion state without creating an internal user.
+        Normal authenticated endpoints return 410 while deletion is pending or
+        completed, preventing a valid stale token from recreating the account.
+      responses:
+        "200":
+          description: Durable account-deletion status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDeletionStatus"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: Deletion status is temporarily unavailable
           content:
             application/json:
               schema:
@@ -94,6 +158,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
     put:
       operationId: upsertMyProfile
       tags: [me]
@@ -123,6 +189,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
   /me/today:
     get:
       operationId: getToday
@@ -141,6 +209,181 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+  /me/meal-options:
+    get:
+      operationId: listMyMealOptions
+      tags: [me]
+      summary: List ranked balanced-meal options
+      description: >-
+        Returns the versioned meal catalog in a general balanced-meal order.
+        Options include declared ingredients and common allergens, but are not
+        personalized medical or allergy advice.
+      responses:
+        "200":
+          description: Ranked meal options
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MealOption"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+  /me/meals/today:
+    get:
+      operationId: getTodayMeals
+      tags: [me]
+      summary: Get today's logged meals and nutrition totals
+      responses:
+        "200":
+          description: Meals for the user's current local calendar day
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TodayMeals"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+  /me/meal-entries:
+    post:
+      operationId: createMyMealEntry
+      tags: [me]
+      summary: Log a catalog meal for today
+      description: >-
+        The client echoes the dayKey and catalogVersion it reviewed, while the
+        server remains authoritative for the user's local calendar day and
+        copies the selected template's per-serving nutrition into the
+        historical entry. Repeating the same clientRequestId and payload
+        returns the original entry, even after that day or catalog release is
+        superseded. A request UUID remains consumed if its meal is later
+        deleted, preventing a delayed replay from recreating it. A new entry
+        must match both the current server day and the current catalog version.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealEntryInput"
+      responses:
+        "201":
+          description: The logged meal, or the original result of an identical retry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealEntry"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Meal template not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: The idempotency key was already used for another payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "412":
+          description: >-
+            The reviewed local day/catalog is stale or this request was already
+            deleted; refresh meal state and require review before logging
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+  /me/meal-entries/{mealEntryId}:
+    parameters:
+      - in: path
+        name: mealEntryId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      operationId: updateMyMealEntry
+      tags: [me]
+      summary: Update a logged meal's serving count
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealEntryUpdate"
+      responses:
+        "200":
+          description: The updated logged meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealEntry"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Meal entry not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+    delete:
+      operationId: deleteMyMealEntry
+      tags: [me]
+      summary: Delete a logged meal
+      responses:
+        "204":
+          description: Meal entry deleted
+        "400":
+          description: Invalid meal entry ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
   /me/weight-entries:
     get:
       operationId: listMyWeightEntries
@@ -151,6 +394,7 @@ paths:
           name: limit
           schema:
             type: integer
+            multipleOf: 1
             minimum: 1
             maximum: 90
             default: 14
@@ -163,12 +407,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/WeightEntry"
+        "400":
+          description: Invalid weight history query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
   /me/weight-entries/today:
     put:
       operationId: upsertTodayWeight
@@ -199,15 +451,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
 components:
+  responses:
+    AccountDeletionBlocked:
+      description: Account deletion is pending or complete; private access is blocked
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
+    AccountDeletionStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [none, pending, completed]
     NextAction:
       type: object
       required: [kind, title, detail]
       properties:
         kind:
           type: string
-          enum: [complete_onboarding, weigh_in, first_meal]
+          enum: [complete_onboarding, weigh_in, first_meal, review_meals]
         title:
           type: string
         detail:
@@ -243,7 +511,7 @@ components:
           maximum: 500
     TodayState:
       type: object
-      required: [dayKey, nextAction, weightEntry]
+      required: [dayKey, nextAction, weightEntry, mealCount, nutritionTotals]
       properties:
         dayKey:
           type: string
@@ -254,6 +522,197 @@ components:
           oneOf:
             - $ref: "#/components/schemas/WeightEntry"
             - type: "null"
+        mealCount:
+          type: integer
+          minimum: 0
+        nutritionTotals:
+          $ref: "#/components/schemas/Nutrition"
+    Nutrition:
+      type: object
+      required: [caloriesKcal, proteinG, carbsG, fatG, fiberG]
+      properties:
+        caloriesKcal:
+          type: number
+          minimum: 0
+        proteinG:
+          type: number
+          minimum: 0
+        carbsG:
+          type: number
+          minimum: 0
+        fatG:
+          type: number
+          minimum: 0
+        fiberG:
+          type: number
+          minimum: 0
+    MealOption:
+      type: object
+      required:
+        - id
+        - catalogVersion
+        - name
+        - description
+        - cuisine
+        - servingDescription
+        - dietaryTags
+        - ingredients
+        - allergens
+        - caloriesKcal
+        - proteinG
+        - carbsG
+        - fatG
+        - fiberG
+        - fitReason
+      properties:
+        id:
+          type: string
+        catalogVersion:
+          type: string
+          minLength: 1
+        name:
+          type: string
+        description:
+          type: string
+        cuisine:
+          type: string
+        servingDescription:
+          type: string
+        dietaryTags:
+          type: array
+          items:
+            type: string
+        ingredients:
+          type: array
+          items:
+            type: string
+        allergens:
+          type: array
+          items:
+            type: string
+        caloriesKcal:
+          type: number
+          minimum: 0
+        proteinG:
+          type: number
+          minimum: 0
+        carbsG:
+          type: number
+          minimum: 0
+        fatG:
+          type: number
+          minimum: 0
+        fiberG:
+          type: number
+          minimum: 0
+        fitReason:
+          type: string
+    MealEntry:
+      type: object
+      required:
+        - id
+        - catalogVersion
+        - templateId
+        - clientRequestId
+        - name
+        - servingDescription
+        - loggedOn
+        - servings
+        - caloriesKcal
+        - proteinG
+        - carbsG
+        - fatG
+        - fiberG
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        catalogVersion:
+          type: string
+          minLength: 1
+        templateId:
+          type: string
+        clientRequestId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        servingDescription:
+          type: string
+        loggedOn:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        servings:
+          type: number
+          minimum: 0.25
+          maximum: 4
+        caloriesKcal:
+          type: number
+          minimum: 0
+        proteinG:
+          type: number
+          minimum: 0
+        carbsG:
+          type: number
+          minimum: 0
+        fatG:
+          type: number
+          minimum: 0
+        fiberG:
+          type: number
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    MealEntryInput:
+      type: object
+      additionalProperties: false
+      required:
+        [clientRequestId, catalogVersion, dayKey, mealTemplateId, servings]
+      properties:
+        clientRequestId:
+          type: string
+          format: uuid
+        catalogVersion:
+          type: string
+          minLength: 1
+        dayKey:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        mealTemplateId:
+          type: string
+          minLength: 1
+        servings:
+          type: number
+          minimum: 0.25
+          maximum: 4
+    MealEntryUpdate:
+      type: object
+      additionalProperties: false
+      required: [servings]
+      properties:
+        servings:
+          type: number
+          minimum: 0.25
+          maximum: 4
+    TodayMeals:
+      type: object
+      required: [dayKey, entries, totals]
+      properties:
+        dayKey:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealEntry"
+        totals:
+          $ref: "#/components/schemas/Nutrition"
     HealthStatus:
       type: object
       properties:
@@ -371,6 +830,7 @@ components:
           enum: [male, female, other, unspecified]
         birthYear:
           type: integer
+          multipleOf: 1
           minimum: 1900
           maximum: 2025
         heightCm:

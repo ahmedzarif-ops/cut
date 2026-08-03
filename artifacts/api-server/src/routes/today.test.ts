@@ -58,6 +58,11 @@ describe("Today weigh-in API", () => {
       .set(headers);
     expect(history.status).toBe(200);
     expect(history.body).toHaveLength(1);
+
+    const fractionalLimit = await request(ctx.app)
+      .get("/api/me/weight-entries?limit=1.5")
+      .set(headers);
+    expect(fractionalLimit.status).toBe(400);
   });
 
   it("does not expose another user's weigh-in", async () => {

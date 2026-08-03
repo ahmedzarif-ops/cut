@@ -43,11 +43,8 @@ describe("auth gate", () => {
   it("rejects unauthenticated /me/profile reads and writes", async () => {
     expect((await request(ctx.app).get("/api/me/profile")).status).toBe(401);
     expect(
-      (
-        await request(ctx.app)
-          .put("/api/me/profile")
-          .send({ goal: "cut" })
-      ).status,
+      (await request(ctx.app).put("/api/me/profile").send({ goal: "cut" }))
+        .status,
     ).toBe(401);
   });
 });
@@ -115,13 +112,10 @@ describe("GET /api/me — JIT provisioning", () => {
 describe("PATCH /api/me", () => {
   it("updates timezone and units", async () => {
     const headers = asUser("clerk_patch_1");
-    const res = await request(ctx.app)
-      .patch("/api/me")
-      .set(headers)
-      .send({
-        timezone: "America/Chicago",
-        units: "imperial",
-      });
+    const res = await request(ctx.app).patch("/api/me").set(headers).send({
+      timezone: "America/Chicago",
+      units: "imperial",
+    });
     expect(res.status).toBe(200);
     expect(res.body.timezone).toBe("America/Chicago");
     expect(res.body.units).toBe("imperial");
@@ -213,7 +207,10 @@ describe("PATCH /api/me", () => {
   it("treats an empty-body PATCH as a no-op returning the current user", async () => {
     const headers = asUser("clerk_patch_6");
     // Seed a known value, then PATCH {} — nothing should change, status 200.
-    await request(ctx.app).patch("/api/me").set(headers).send({ units: "imperial" });
+    await request(ctx.app)
+      .patch("/api/me")
+      .set(headers)
+      .send({ units: "imperial" });
 
     const res = await request(ctx.app).patch("/api/me").set(headers).send({});
     expect(res.status).toBe(200);
@@ -318,6 +315,14 @@ describe("profile lifecycle", () => {
         await request(ctx.app)
           .put("/api/me/profile")
           .set(headers)
+          .send({ goal: "cut", birthYear: 1995.5 })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await request(ctx.app)
+          .put("/api/me/profile")
+          .set(headers)
           .send({ goal: "cut", targetDate: "September 26" })
       ).status,
     ).toBe(400);
@@ -358,9 +363,7 @@ describe("cross-user isolation", () => {
       .set(bob)
       .send({ goal: "gain", startWeightKg: 70, displayName: "Bob" });
 
-    const aliceAfter = await request(ctx.app)
-      .get("/api/me/profile")
-      .set(alice);
+    const aliceAfter = await request(ctx.app).get("/api/me/profile").set(alice);
     expect(aliceAfter.body.displayName).toBe("Alice");
     expect(aliceAfter.body.goal).toBe("cut");
     expect(aliceAfter.body.startWeightKg).toBeCloseTo(95);

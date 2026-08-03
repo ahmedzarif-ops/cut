@@ -132,6 +132,10 @@ export async function upsertProfile(
   userId: string,
   input: UpsertProfileInput,
 ): Promise<Profile | undefined> {
+  if (input.birthYear !== undefined && !Number.isInteger(input.birthYear)) {
+    throw new HttpError(400, "Birth year must be a whole number");
+  }
+
   const values = {
     userId,
     goal: input.goal,
@@ -173,7 +177,10 @@ export async function upsertProfile(
       .update(usersTable)
       .set({ onboardingComplete: true })
       .where(
-        and(eq(usersTable.id, userId), eq(usersTable.onboardingComplete, false)),
+        and(
+          eq(usersTable.id, userId),
+          eq(usersTable.onboardingComplete, false),
+        ),
       );
     return profile;
   });

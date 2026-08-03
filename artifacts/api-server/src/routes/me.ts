@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import {
+  GetAccountDeletionStatusResponse,
   GetMeResponse,
   UpdateMeBody,
   UpdateMeResponse,
@@ -8,7 +9,13 @@ import {
   UpsertMyProfileResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
-import { updateUser, getProfile, upsertProfile } from "../services/userService";
+import { getProfile, updateUser, upsertProfile } from "../services/userService";
+import {
+  getAccountDeletionIdentity,
+  getAccountDeletionStatus,
+  hashClerkIdentity,
+  requestAccountDeletion,
+} from "../services/accountDeletionService";
 
 const router: IRouter = Router();
 
@@ -35,6 +42,70 @@ router.patch("/me", requireAuth, async (req, res): Promise<void> => {
   res.json(UpdateMeResponse.parse(user));
 });
 
+// GET /api/me/account-deletion — special auth with no JIT provisioning. This
+// remains available to a tombstoned identity while its token is still valid.
+router.get("/me/account-deletion", async (req, res): Promise<void> => {
+  const clerkUserId = getAccountDeletionIdentity(req);
+  if (!clerkUserId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    res.json(
+      GetAccountDeletionStatusResponse.parse({
+        status: await getAccountDeletionStatus(clerkUserId),
+      }),
+    );
+  } catch {
+    req.log.error(
+      {
+        identityHash: hashClerkIdentity(clerkUserId),
+        errorCode: "account_deletion_status_failed",
+      },
+      "Account deletion status could not be loaded",
+    );
+    res.status(503).json({
+      error: "Account deletion status is temporarily unavailable",
+    });
+  }
+});
+
+// DELETE /api/me — special auth bypasses normal account resolution so pending
+// and completed tombstones can retry idempotently. A 204 means both Clerk and
+// local cascade deletion are terminal; a 503 means durable retry remains.
+router.delete("/me", async (req, res): Promise<void> => {
+  const clerkUserId = getAccountDeletionIdentity(req);
+  if (!clerkUserId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  let result;
+  try {
+    result = await requestAccountDeletion(clerkUserId);
+  } catch {
+    req.log.error(
+      {
+        identityHash: hashClerkIdentity(clerkUserId),
+        errorCode: "account_deletion_stage_failed",
+      },
+      "Account deletion could not be staged",
+    );
+    res.status(503).json({
+      error: "Account deletion is temporarily unavailable",
+    });
+    return;
+  }
+
+  if (result.status === "pending") {
+    res.status(503).json({
+      error: "Account deletion is pending and will be retried",
+    });
+    return;
+  }
+  res.status(204).send();
+});
+
 // GET /api/me/profile — the current user's onboarding profile.
 router.get("/me/profile", requireAuth, async (req, res): Promise<void> => {
   const profile = await getProfile(req.userId!);
@@ -50,6 +121,13 @@ router.put("/me/profile", requireAuth, async (req, res): Promise<void> => {
   const parsed = UpsertMyProfileBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  if (
+    parsed.data.birthYear !== undefined &&
+    !Number.isInteger(parsed.data.birthYear)
+  ) {
+    res.status(400).json({ error: "Birth year must be a whole number" });
     return;
   }
   const profile = await upsertProfile(req.userId!, parsed.data);
