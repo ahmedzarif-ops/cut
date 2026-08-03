@@ -71,6 +71,13 @@
       "when": 1785787420265,
       "tag": "0009_silly_thunderbolts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785790800000,
+      "tag": "0010_minimize_v1_profile",
+      "breakpoints": true
     }
   ]
 }

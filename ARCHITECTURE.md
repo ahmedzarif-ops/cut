@@ -124,30 +124,38 @@ identity tombstone under a retention policy that must be approved before launch.
   existing profile (`artifacts/cut-os/lib/profile-form.ts` — unit tested).
 - Display units (`users.units`) are a presentation concern; storage is always
   metric (kg/cm).
-- Curated meal nutrition and the canonical calendar day are server-owned. The
-  client echoes the `dayKey` and `catalogVersion` it reviewed alongside a
-  stable template ID, servings, and an idempotency UUID. The server rejects a
-  new stale-day or stale-catalog request with `412`; it never accepts calories
-  or macros from the client. An identical request UUID is resolved before the
+- Curated meal nutrition and the canonical calendar day are server-owned. Each
+  daily request carries a validated request-scoped device IANA timezone; this
+  lets two devices use different local days without racing on one mutable
+  account setting. Responses are `no-store` and vary by that header. The client
+  echoes the `dayKey` and `catalogVersion` it reviewed alongside a stable
+  template ID, servings, and an idempotency UUID. The server rejects a new
+  stale-day or stale-catalog request with `412`; it never accepts calories or
+  macros from the client. An identical request UUID is resolved before the
   current-day/version checks so an uncertain retry can still return its
   original historical snapshot after midnight or a catalog release.
 
 ## Database schema
 
 - `users` — internal identity: `clerk_user_id` (unique), `email`, `timezone`
-  (IANA, drives future user-local daily rollups), `units`,
+  (IANA account preference synchronized for continuity; request-scoped device
+  context is authoritative for daily keys), `units`,
   `onboarding_complete`, `deletion_status` (`active` or `pending`), adult
   eligibility status (`unverified`, `eligible`, or `ineligible`), eligibility
   policy version, and eligibility decision timestamp. New and migrated rows
   default to `unverified`; policy-version mismatch also fails closed.
-- `profiles` — one row per user (unique FK, cascade delete): goal, sex, height,
-  start/goal weight, target date, activity level, and training experience. The
-  adult-eligibility migration deletes the legacy birth-year column rather than
+- `profiles` — one row per user (unique FK, cascade delete). Paid v1 accepts and
+  returns only display name, goal, and start/goal weight. Older sex, height,
+  target-date, activity, and training-experience columns remain neutral for
+  schema compatibility, but the API rejects those inputs and migration
+  `0010_minimize_v1_profile.sql` clears legacy user-supplied values. The adult-
+  eligibility migration deletes the legacy birth-year column rather than
   promote it into evidence. The transient full DOB is not a database column.
 - `weight_entries` — one canonical weigh-in per internal user and user-local
   calendar day. The `(user_id, recorded_on)` unique index makes repeated taps
-  an update, not a duplicate. Physical values are stored in kilograms and
-  converted only for display.
+  an update, not a duplicate. The write must echo the Today `dayKey`; a stale
+  midnight/travel retry is rejected before writing. Physical values are stored
+  in kilograms and converted only for display.
 - `meal_entries` — user-owned logged meals with the server-validated local day,
   catalog version, a per-user client-request idempotency key, template copy,
   serving amount, and per-serving nutrition snapshot. Historical totals

@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { eq } from "drizzle-orm";
-import { usersTable } from "@workspace/db/schema";
+import { profilesTable, usersTable } from "@workspace/db/schema";
 import { createTestContext, type TestContext } from "../test/helpers";
 import {
   provisionUser,
@@ -66,8 +66,8 @@ describe("provisionUser — select-first idempotency", () => {
   });
 });
 
-describe("upsertProfile full-replace", () => {
-  it("resets omitted optional fields to null on re-save", async () => {
+describe("upsertProfile paid-v1 minimization", () => {
+  it("clears unused legacy profile data on save", async () => {
     ctx = await createTestContext();
     const decision = await decideAdultEligibility({
       clerkUserId: "clerk_p",
@@ -76,13 +76,17 @@ describe("upsertProfile full-replace", () => {
       policyVersion: "adult-18-v1",
     });
 
-    await upsertProfile(decision.userId, {
+    await ctx.db.insert(profilesTable).values({
+      userId: decision.userId,
       goal: "cut",
+      sex: "male",
       heightCm: 180,
       startWeightKg: 90,
       targetDate: "2026-09-01",
+      activityLevel: "active",
+      trainingExperience: "advanced",
     });
-    // Second save omits height/weight/targetDate — full replace nulls them.
+
     await upsertProfile(decision.userId, { goal: "maintain" });
 
     const profile = await getProfile(decision.userId);
@@ -90,6 +94,9 @@ describe("upsertProfile full-replace", () => {
     expect(profile?.heightCm).toBeNull();
     expect(profile?.startWeightKg).toBeNull();
     expect(profile?.targetDate).toBeNull();
+    expect(profile?.sex).toBe("unspecified");
+    expect(profile?.activityLevel).toBe("moderate");
+    expect(profile?.trainingExperience).toBe("beginner");
   });
 });
 

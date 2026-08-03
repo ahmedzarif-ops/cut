@@ -14,28 +14,30 @@ generated-code drift check and commit SHA are recorded separately.
 | Gate item                           | Result            | Evidence                                                                                                                                                                           |
 | ----------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | TypeScript gate                     | PASS              | Root `pnpm run typecheck` passed across libraries, API, mobile, mockup sandbox, and scripts.                                                                                       |
-| Automated tests                     | PASS              | 269 tests: domain 31, database 4, mobile 123, API 111.                                                                                                                             |
+| Automated tests                     | PASS              | 431 tests across 45 files: domain 33, database 4, mobile 193, API 201.                                                                                                             |
 | Generated API contract              | PASS              | Generated React Query/zod output matches OpenAPI; bearer authentication is global for private operations and `/healthz` is explicitly public.                                      |
 | Expo dependency compatibility       | PASS              | `expo install --check` passes after aligning Expo to `54.0.36`.                                                                                                                    |
 | Expo Doctor                         | PASS              | Expo Doctor `1.20.1` passes all 18/18 checks.                                                                                                                                      |
 | Frozen dependency install           | PASS              | pnpm `10.34.5` accepts the committed lockfile with `--frozen-lockfile`; required esbuild postinstall succeeds.                                                                     |
-| Production-style iOS export         | PASS              | Expo/Metro bundled 1,733 modules and emitted a 6.1 MB iOS Hermes bundle plus assets.                                                                                               |
+| Production-style iOS export         | PASS              | Expo/Metro bundled 1,767 modules and emitted a 7.39 MB iOS Hermes bundle plus assets in a 17 MB disposable export.                                                                 |
 | Release environment preflight       | PASS (automated)  | Production requires all six public values, a structurally valid live Clerk key, public DNS/HTTPS resources, and the exact same-origin `/api/__clerk` proxy without logging values. |
 | Native release config introspection | PASS (generated)  | Bundle ID resolves; arbitrary loads are disabled; exempt-only encryption is declared; the app privacy-manifest baseline resolves with expected collection and API-reason entries.  |
 | Auth transport origin isolation     | PASS (automated)  | Getter-supplied and caller-supplied bearer headers are refused before fetch unless the final target matches the configured HTTPS API origin.                                       |
 | Legal and support controls          | PASS (automated)  | Privacy, Terms, and Support destinations reject unsafe URLs; accessible controls are wired into sign-up, eligibility, normal Settings, and restricted Settings.                    |
 | Clerk launch loading/error states   | PASS (compiled)   | Clerk startup is wrapped by an outer boundary and an explicit loading screen; native visual behavior remains part of the device script.                                            |
-| Database migration                  | PASS              | Blank PGlite builds all current tables; deletion lifecycle/hash, finite nutrition, replay tombstone, retry-index, and baseline reapply checks pass.                                |
-| Today state                         | PASS (automated)  | User-local day and deterministic Next Action fixtures.                                                                                                                             |
-| Daily weigh-in create/update        | PASS (automated)  | API/service tests save and replace today's weight.                                                                                                                                 |
+| Database migration                  | PASS              | Blank PGlite builds all current tables; profile minimization, deletion lifecycle/hash, finite nutrition, replay tombstone, retry-index, and baseline reapply checks pass.          |
+| Today state                         | PASS (automated)  | Request-scoped device-local day, two-device separation, private no-store/vary headers, and deterministic Next Action fixtures.                                                     |
+| Device timezone synchronization     | PASS (automated)  | Valid IANA resolution, serialized writes, foreground/one-minute rechecks, retry-loop prevention, response validation, account-switch fencing, and pre-purchase settings are covered. |
+| Timezone/local-midnight behavior    | PENDING NATIVE QA | A real release build must prove first sync, relaunch persistence, travel/device-zone resync, and correct local-midnight rollover before daily screens unlock.                      |
+| Daily weigh-in create/update        | PASS (automated)  | API/service tests save and replace today's weight; the client-reviewed day is required and a stale midnight/travel retry fails before writing.                                    |
 | Double-tap duplicate protection     | PASS (automated)  | Repeated same-day writes return the same ID and one row.                                                                                                                           |
 | Cross-user weight isolation         | PASS (automated)  | User B's history remains empty after User A logs weight.                                                                                                                           |
 | Metric/imperial conversion          | PASS (automated)  | Shared domain conversion round-trip and display rounding tests.                                                                                                                    |
-| Curated meal catalog                | PASS (automated)  | Six durable templates; Bengali/Desi presence, ingredients, nutrition, ranking, and ID uniqueness tested.                                                                           |
+| Curated meal catalog                | PASS (automated)  | Six fixed recipes; exact FDC calculation synchronization, Bengali/Desi presence, ingredients, nutrition, ranking, and ID uniqueness tested. Professional review remains open.      |
 | Meal create/retry                   | PASS (automated)  | Identical and simultaneous retries return one snapshot; cross-midnight recovery preserves its day; stale preconditions fail closed.                                                |
 | Meal edit/delete/totals             | PASS (automated)  | Serving updates rescale snapshots; repeat delete is safe; a delayed create cannot resurrect a deleted row; totals return to first-meal state.                                      |
 | Cross-user meal isolation           | PASS (automated)  | Another authenticated user cannot list, edit, or delete the owner's entry.                                                                                                         |
-| Meal local-day ownership            | PASS (automated)  | Server validates the echoed reviewed day against the user's IANA timezone and rejects a new stale-day request.                                                                     |
+| Meal local-day ownership            | PASS (automated)  | Server validates the echoed reviewed day against the request device's IANA timezone and rejects a new stale-day request.                                                           |
 | Nutrition snapshot stability        | PASS (automated)  | Logged per-serving values are stored in the entry and daily totals derive from saved snapshots.                                                                                    |
 | Native meal helper tests            | PASS              | Serving/preview helpers plus durable owner/session-bound meal intent parsing, persistence ordering, and principal-switch guards pass.                                              |
 | Native app typecheck                | PASS              | Generated hooks, weight/meal flows, legal links, release-config gate, Clerk launch states, Settings, deletion gate, retry states, and principal isolation compile together.        |
@@ -63,6 +65,41 @@ generated-code drift check and commit SHA are recorded separately.
 5. Kill/relaunch and confirm the saved weight and new Next Action remain.
 6. Update the same day's weight and confirm it replaces rather than duplicates.
 7. Sign out and confirm protected data is inaccessible.
+
+### Required device-timezone and local-day script
+
+1. On a supported physical iPhone set to a non-UTC zone, sign in with a fresh
+   eligible account whose server timezone is still `UTC` and has no
+   subscription. Confirm the app synchronizes the named device timezone before
+   exposing any daily paid screen; the account-settings PATCH must work without
+   consulting RevenueCat or exposing paid data.
+2. With the timezone PATCH delayed, offline, or failed, confirm Today, weigh-in,
+   and meals remain locked behind **Local day needed** while Settings, retry,
+   sign-out, deletion, and legal/support controls remain reachable.
+3. Restore connectivity and tap retry. Confirm the successful response matches
+   the current internal account and target timezone, then verify the correct
+   purchase/daily gate opens. Kill and relaunch; confirm the server value
+   persists and no unnecessary write loop occurs.
+4. Change the device to a different real IANA zone as a travel simulation,
+   keep the app foregrounded for at least one minute, then background/foreground
+   and relaunch it. Confirm each path detects the new zone, locks daily data,
+   synchronizes, and reopens only with the new request context. Repeat during a
+   deliberately slow prior request and confirm an older response cannot
+   overwrite the newer target.
+5. Switch accounts while a timezone request is in flight. Confirm the late
+   prior-account response cannot update the new account's cache or unlock its
+   private screens.
+6. Sign in to the same synthetic account on two devices set to zones on opposite
+   calendar days. Confirm each device reads and saves only its own local day,
+   even while both remain active and the account preference changes.
+7. Exercise both sides of local midnight in a zone with daylight-saving rules.
+   Confirm Today, weigh-ins, meal creation/recovery, and daily totals read and
+   write the same correct local calendar day, then roll to exactly one new day
+   after local midnight.
+8. Simulate a lost weigh-in response immediately before midnight or a device-
+   zone change. Retry the unchanged screen and confirm the server rejects the
+   stale reviewed day, refreshes Today, and never creates a second-day entry
+   without a new review/save.
 
 ### Required balanced-meal native script
 

@@ -143,6 +143,8 @@ export interface WeightEntry {
 }
 
 export interface WeightEntryInput {
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  dayKey: string;
   /**
      * @minimum 20
      * @maximum 500
@@ -308,56 +310,16 @@ export const ProfileGoal = {
   gain: 'gain',
 } as const;
 
-export type ProfileSex = typeof ProfileSex[keyof typeof ProfileSex];
-
-
-export const ProfileSex = {
-  male: 'male',
-  female: 'female',
-  other: 'other',
-  unspecified: 'unspecified',
-} as const;
-
-export type ProfileActivityLevel = typeof ProfileActivityLevel[keyof typeof ProfileActivityLevel];
-
-
-export const ProfileActivityLevel = {
-  sedentary: 'sedentary',
-  light: 'light',
-  moderate: 'moderate',
-  active: 'active',
-  very_active: 'very_active',
-} as const;
-
-export type ProfileTrainingExperience = typeof ProfileTrainingExperience[keyof typeof ProfileTrainingExperience];
-
-
-export const ProfileTrainingExperience = {
-  beginner: 'beginner',
-  intermediate: 'intermediate',
-  advanced: 'advanced',
-} as const;
-
 export interface Profile {
   id: string;
   userId: string;
   /** @nullable */
   displayName?: string | null;
   goal: ProfileGoal;
-  sex: ProfileSex;
-  /** @nullable */
-  heightCm?: number | null;
   /** @nullable */
   startWeightKg?: number | null;
   /** @nullable */
   goalWeightKg?: number | null;
-  /**
-     * Calendar date in YYYY-MM-DD form (no time component).
-     * @nullable
-     */
-  targetDate?: string | null;
-  activityLevel: ProfileActivityLevel;
-  trainingExperience: ProfileTrainingExperience;
   createdAt: string;
   updatedAt: string;
 }
@@ -372,45 +334,9 @@ export const ProfileInputGoal = {
   gain: 'gain',
 } as const;
 
-export type ProfileInputSex = typeof ProfileInputSex[keyof typeof ProfileInputSex];
-
-
-export const ProfileInputSex = {
-  male: 'male',
-  female: 'female',
-  other: 'other',
-  unspecified: 'unspecified',
-} as const;
-
-export type ProfileInputActivityLevel = typeof ProfileInputActivityLevel[keyof typeof ProfileInputActivityLevel];
-
-
-export const ProfileInputActivityLevel = {
-  sedentary: 'sedentary',
-  light: 'light',
-  moderate: 'moderate',
-  active: 'active',
-  very_active: 'very_active',
-} as const;
-
-export type ProfileInputTrainingExperience = typeof ProfileInputTrainingExperience[keyof typeof ProfileInputTrainingExperience];
-
-
-export const ProfileInputTrainingExperience = {
-  beginner: 'beginner',
-  intermediate: 'intermediate',
-  advanced: 'advanced',
-} as const;
-
 export interface ProfileInput {
   displayName?: string;
   goal: ProfileInputGoal;
-  sex?: ProfileInputSex;
-  /**
-     * @minimum 50
-     * @maximum 300
-     */
-  heightCm?: number;
   /**
      * @minimum 20
      * @maximum 500
@@ -421,13 +347,6 @@ export interface ProfileInput {
      * @maximum 500
      */
   goalWeightKg?: number;
-  /**
-     * Calendar date in YYYY-MM-DD form (no time component).
-     * @pattern ^\d{4}-\d{2}-\d{2}$
-     */
-  targetDate?: string;
-  activityLevel?: ProfileInputActivityLevel;
-  trainingExperience?: ProfileInputTrainingExperience;
 }
 
 /**
@@ -454,6 +373,11 @@ export type SubscriptionRequiredResponse = SubscriptionRequiredError;
  * Subscription status could not be safely verified
  */
 export type SubscriptionStatusUnavailableResponse = SubscriptionStatusUnavailableError;
+
+/**
+ * Current validated IANA timezone reported by this device. Daily endpoints use this request-scoped context directly instead of a shared mutable account timezone.
+ */
+export type DeviceTimezoneParameter = string;
 
 export type ListMyWeightEntriesParams = {
 /**

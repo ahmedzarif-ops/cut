@@ -61,6 +61,10 @@ paths:
       operationId: updateMe
       tags: [me]
       summary: Update the current user's account settings
+      description: >-
+        Updates non-paid account settings such as the IANA timezone used to
+        establish the user's local day. Available before purchase so the app
+        can configure daily boundaries without exposing paid data.
       requestBody:
         required: true
         content:
@@ -90,12 +94,8 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
-        "402":
-          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
-        "503":
-          $ref: "#/components/responses/SubscriptionStatusUnavailable"
     delete:
       operationId: deleteMe
       tags: [me]
@@ -358,6 +358,12 @@ paths:
       operationId: getToday
       tags: [me]
       summary: Get the current user's Today state
+      description: >-
+        Uses the required device timezone request context directly for the
+        local calendar day. The context is request-scoped so two signed-in
+        devices cannot overwrite one shared daily boundary.
+      parameters:
+        - $ref: "#/components/parameters/DeviceTimezone"
       responses:
         "200":
           description: Today's next action and weigh-in state
@@ -365,6 +371,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TodayState"
+        "400":
+          description: Missing or invalid device timezone context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           description: Unauthorized
           content:
@@ -420,6 +432,11 @@ paths:
       operationId: getTodayMeals
       tags: [me]
       summary: Get today's logged meals and nutrition totals
+      description: >-
+        Uses the required request-scoped device timezone to select the local
+        calendar day.
+      parameters:
+        - $ref: "#/components/parameters/DeviceTimezone"
       responses:
         "200":
           description: Meals for the user's current local calendar day
@@ -427,6 +444,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TodayMeals"
+        "400":
+          description: Missing or invalid device timezone context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           description: Unauthorized
           content:
@@ -457,6 +480,8 @@ paths:
         superseded. A request UUID remains consumed if its meal is later
         deleted, preventing a delayed replay from recreating it. A new entry
         must match both the current server day and the current catalog version.
+      parameters:
+        - $ref: "#/components/parameters/DeviceTimezone"
       requestBody:
         required: true
         content:
@@ -644,6 +669,14 @@ paths:
       operationId: upsertTodayWeight
       tags: [me]
       summary: Create or replace today's weigh-in
+      description: >-
+        The client echoes the dayKey it reviewed. The server compares that key
+        with the current local calendar day derived from the required
+        request-scoped device timezone before writing. A stale day returns 412
+        so the client can refresh and require another review instead of moving
+        an ambiguous retry onto a different day.
+      parameters:
+        - $ref: "#/components/parameters/DeviceTimezone"
       requestBody:
         required: true
         content:
@@ -677,6 +710,14 @@ paths:
           $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "412":
+          description: >-
+            The reviewed day no longer matches the current local day; refresh
+            Today and require review before saving
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "503":
           $ref: "#/components/responses/SubscriptionStatusUnavailable"
 components:
@@ -685,6 +726,19 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  parameters:
+    DeviceTimezone:
+      name: X-CUT-Device-Timezone
+      in: header
+      required: true
+      description: >-
+        Current validated IANA timezone reported by this device. Daily
+        endpoints use this request-scoped context directly instead of a shared
+        mutable account timezone.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
   responses:
     AccountDeletionBlocked:
       description: Account deletion is pending or complete; private access is blocked
@@ -837,8 +891,11 @@ components:
           format: date-time
     WeightEntryInput:
       type: object
-      required: [weightKg]
+      required: [dayKey, weightKg]
       properties:
+        dayKey:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
         weightKg:
           type: number
           minimum: 20
@@ -1091,6 +1148,7 @@ components:
           format: date-time
     UserUpdate:
       type: object
+      additionalProperties: false
       properties:
         timezone:
           type: string
@@ -1106,9 +1164,6 @@ components:
         - id
         - userId
         - goal
-        - sex
-        - activityLevel
-        - trainingExperience
         - createdAt
         - updatedAt
       properties:
@@ -1123,24 +1178,10 @@ components:
         goal:
           type: string
           enum: [cut, maintain, recomp, gain]
-        sex:
-          type: string
-          enum: [male, female, other, unspecified]
-        heightCm:
-          type: ["number", "null"]
         startWeightKg:
           type: ["number", "null"]
         goalWeightKg:
           type: ["number", "null"]
-        targetDate:
-          type: ["string", "null"]
-          description: Calendar date in YYYY-MM-DD form (no time component).
-        activityLevel:
-          type: string
-          enum: [sedentary, light, moderate, active, very_active]
-        trainingExperience:
-          type: string
-          enum: [beginner, intermediate, advanced]
         createdAt:
           type: string
           format: date-time
@@ -1149,6 +1190,7 @@ components:
           format: date-time
     ProfileInput:
       type: object
+      additionalProperties: false
       required:
         - goal
       properties:
@@ -1157,13 +1199,6 @@ components:
         goal:
           type: string
           enum: [cut, maintain, recomp, gain]
-        sex:
-          type: string
-          enum: [male, female, other, unspecified]
-        heightCm:
-          type: number
-          minimum: 50
-          maximum: 300
         startWeightKg:
           type: number
           minimum: 20
@@ -1172,13 +1207,3 @@ components:
           type: number
           minimum: 20
           maximum: 500
-        targetDate:
-          type: string
-          pattern: '^\d{4}-\d{2}-\d{2}$'
-          description: Calendar date in YYYY-MM-DD form (no time component).
-        activityLevel:
-          type: string
-          enum: [sedentary, light, moderate, active, very_active]
-        trainingExperience:
-          type: string
-          enum: [beginner, intermediate, advanced]

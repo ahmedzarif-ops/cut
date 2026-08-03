@@ -112,19 +112,15 @@ export async function getProfile(userId: string): Promise<Profile | undefined> {
 export interface UpsertProfileInput {
   goal: Profile["goal"];
   displayName?: string;
-  sex?: Profile["sex"];
-  heightCm?: number;
   startWeightKg?: number;
   goalWeightKg?: number;
-  targetDate?: string;
-  activityLevel?: Profile["activityLevel"];
-  trainingExperience?: Profile["trainingExperience"];
 }
 
 /**
- * Create or replace the user's profile. PUT is a full replace: every optional
- * field the client omits is reset to its null/default rather than retaining a
- * stale value (the P0 edit-plan data-loss contract). Only `goal` is required.
+ * Create or replace the user's paid-v1 profile. Only fields used by the shipped
+ * daily experience are accepted. Deprecated unused fields are reset to neutral
+ * values on every save so legacy clients cannot preserve sensitive data that
+ * v1 no longer needs. Only `goal` is required.
  *
  * Atomic onboarding (P1-4): the profile write and the `users.onboardingComplete`
  * flag flip happen in ONE transaction, so the flag and profile-existence can
@@ -143,14 +139,14 @@ export async function upsertProfile(
   const values = {
     userId,
     goal: input.goal,
-    sex: input.sex ?? "unspecified",
-    activityLevel: input.activityLevel ?? "moderate",
-    trainingExperience: input.trainingExperience ?? "beginner",
+    sex: "unspecified",
+    activityLevel: "moderate",
+    trainingExperience: "beginner",
     displayName: input.displayName ?? null,
-    heightCm: input.heightCm ?? null,
+    heightCm: null,
     startWeightKg: input.startWeightKg ?? null,
     goalWeightKg: input.goalWeightKg ?? null,
-    targetDate: input.targetDate ?? null,
+    targetDate: null,
   };
   return db.transaction(async (tx) => {
     const [user] = await tx

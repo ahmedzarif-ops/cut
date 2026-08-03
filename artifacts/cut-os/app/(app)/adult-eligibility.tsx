@@ -290,11 +290,11 @@ export default function AdultEligibilityScreen() {
     }
     return (
       <MessageScreen
-        title={meQuery.isError ? "Couldn't open your plan" : "Age confirmed"}
+        title={meQuery.isError ? "Couldn't open CUT OS" : "Age confirmed"}
         message={
           meQuery.isError
-            ? "Your age is confirmed, but CUT OS couldn't load your plan. Check your connection and try again."
-            : "Opening your plan…"
+            ? "Your age is confirmed, but CUT OS couldn't load your account. Check your connection and try again."
+            : "Opening CUT OS…"
         }
         loading={!meQuery.isError}
         primaryLabel={meQuery.isError ? "Try again" : undefined}

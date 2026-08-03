@@ -10,6 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "validate:legal-site": "node server/validate-legal-site.mjs --draft",
+    "validate:legal-site:release": "node server/validate-legal-site.mjs --release",
     "validate:release-config": "node scripts/validate-release-config.mjs",
     "eas-build-pre-install": "node scripts/validate-release-config.mjs"
   },

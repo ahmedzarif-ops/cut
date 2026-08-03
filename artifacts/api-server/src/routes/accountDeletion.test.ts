@@ -36,7 +36,10 @@ import {
 } from "../test/helpers";
 
 let ctx: TestContext;
-const asUser = (id: string) => ({ [TEST_USER_HEADER]: id });
+const asUser = (id: string) => ({
+  [TEST_USER_HEADER]: id,
+  "X-CUT-Device-Timezone": "UTC",
+});
 
 beforeEach(async () => {
   ctx = await createTestContext();
@@ -68,10 +71,14 @@ async function seedAccount(
     .send({ goal: "cut" });
   expect(profile.status).toBe(200);
 
+  const reviewedToday = await request(ctx.app)
+    .get("/api/me/today")
+    .set(headers);
+  expect(reviewedToday.status).toBe(200);
   const weight = await request(ctx.app)
     .put("/api/me/weight-entries/today")
     .set(headers)
-    .send({ weightKg: 88.4 });
+    .send({ dayKey: reviewedToday.body.dayKey, weightKg: 88.4 });
   expect(weight.status).toBe(200);
 
   const options = await request(ctx.app)

@@ -41,6 +41,17 @@ const ADULT_ELIGIBILITY_INPUT_KEYS = new Set([
   "policyVersion",
   "adultAttestation",
 ]);
+const USER_UPDATE_INPUT_KEYS = new Set([
+  "timezone",
+  "units",
+  "onboardingComplete",
+]);
+const PROFILE_INPUT_KEYS = new Set([
+  "displayName",
+  "goal",
+  "startWeightKg",
+  "goalWeightKg",
+]);
 
 function hasOnlyAdultEligibilityKeys(value: unknown): boolean {
   return (
@@ -48,6 +59,24 @@ function hasOnlyAdultEligibilityKeys(value: unknown): boolean {
     value !== null &&
     !Array.isArray(value) &&
     Object.keys(value).every((key) => ADULT_ELIGIBILITY_INPUT_KEYS.has(key))
+  );
+}
+
+function hasOnlyUserUpdateKeys(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).every((key) => USER_UPDATE_INPUT_KEYS.has(key))
+  );
+}
+
+function hasOnlyProfileInputKeys(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).every((key) => PROFILE_INPUT_KEYS.has(key))
   );
 }
 
@@ -113,27 +142,32 @@ router.post(
   },
 );
 
-// PATCH /api/me — update account settings (timezone, units). The onboarding
-// flag is server-owned, not a free setting: updateUser validates it against
-// profile existence (see PRODUCT_RULES "Onboarding completion", P1-4).
-router.patch(
-  "/me",
-  requireAuth,
-  requireSubscription,
-  async (req, res): Promise<void> => {
-    const parsed = UpdateMeBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.message });
-      return;
-    }
-    const user = await updateUser(req.userId!, parsed.data);
-    if (!user) {
-      res.status(401).json({ error: "Unauthorized" });
-      return;
-    }
-    res.json(UpdateMeResponse.parse(user));
-  },
-);
+// PATCH /api/me — update account settings (timezone, units). This route is
+// intentionally available before purchase so the app can establish its named
+// local-day boundary before showing paid daily flows. It exposes no paid data.
+// The onboarding flag remains server-owned, not a free setting: updateUser
+// validates it against profile existence (see PRODUCT_RULES "Onboarding
+// completion", P1-4).
+router.patch("/me", requireAuth, async (req, res): Promise<void> => {
+  // Generated Zod objects strip unknown keys by default. Enforce the closed
+  // OpenAPI shape explicitly so this pre-purchase endpoint cannot become a
+  // tunnel for profile, nutrition, or other paid-domain fields.
+  if (!hasOnlyUserUpdateKeys(req.body)) {
+    res.status(400).json({ error: "Invalid account settings input" });
+    return;
+  }
+  const parsed = UpdateMeBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const user = await updateUser(req.userId!, parsed.data);
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  res.json(UpdateMeResponse.parse(user));
+});
 
 // GET /api/me/account-deletion — special auth with no JIT provisioning. This
 // remains available to a tombstoned identity while its token is still valid.
@@ -301,6 +335,12 @@ router.put(
   requireAuth,
   requireSubscription,
   async (req, res): Promise<void> => {
+    // Reject rather than silently strip deprecated/unknown profile fields. The
+    // paid v1 API collects only values directly used by its daily experience.
+    if (!hasOnlyProfileInputKeys(req.body)) {
+      res.status(400).json({ error: "Invalid profile input" });
+      return;
+    }
     const parsed = UpsertMyProfileBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });

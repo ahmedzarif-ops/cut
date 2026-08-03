@@ -3,16 +3,17 @@ import {
   BALANCED_MEAL_CATALOG,
   BALANCED_MEAL_CATALOG_VERSION,
   getBalancedMealTemplate,
+  scaleNutrition,
   type Clock,
 } from "@workspace/domain";
 import { db, mealEntriesTable } from "@workspace/db";
 
 import { createTestContext, type TestContext } from "../test/helpers";
 import {
-  createMyMealEntry,
+  createMyMealEntry as createMyMealEntryForDevice,
   deleteMyMealEntry,
   getMealEntriesForDay,
-  getTodayMeals,
+  getTodayMeals as getTodayMealsForDevice,
   listMyMealOptions,
   updateMyMealEntry,
 } from "./mealService";
@@ -31,6 +32,18 @@ afterEach(async () => {
 const clock = (iso: string): Clock => ({ now: () => new Date(iso) });
 const chicagoEvening = clock("2026-08-04T04:30:00.000Z");
 const firstTemplate = BALANCED_MEAL_CATALOG[0];
+
+type MealUser = Parameters<typeof createMyMealEntryForDevice>[0];
+type MealInput = Parameters<typeof createMyMealEntryForDevice>[1];
+
+const createMyMealEntry = (
+  user: MealUser,
+  input: MealInput,
+  testClock: Clock,
+) => createMyMealEntryForDevice(user, input, user.timezone, testClock);
+
+const getTodayMeals = (user: MealUser, testClock: Clock) =>
+  getTodayMealsForDevice(user, user.timezone, testClock);
 
 async function user(clerkUserId: string) {
   const provisioned = await provisionUser({ clerkUserId, email: null });
@@ -52,6 +65,39 @@ describe("Balanced meal service", () => {
       fitReason: expect.stringContaining("per serving"),
     });
     expect(options.every((option) => option.description.length > 0)).toBe(true);
+    expect(
+      options
+        .flatMap((option) => option.dietaryTags)
+        .filter((tag, index, tags) => tags.indexOf(tag) === index)
+        .sort(),
+    ).toEqual(["pescatarian", "vegan", "vegetarian"]);
+    expect(
+      options.every(
+        (option) =>
+          option.fitReason ===
+          `${option.proteinG} g protein and ${option.fiberG} g fiber per serving.`,
+      ),
+    ).toBe(true);
+
+    expect(
+      options.find(({ id }) => id === "bengali-chicken-curry-plate"),
+    ).toMatchObject({
+      catalogVersion: "2026-08-03.2",
+      servingDescription:
+        "Entire recipe: 150 g chicken, 160 g rice, curry vegetables, spinach and cucumber",
+      ingredients: expect.arrayContaining([
+        "150 g cooked stewed chicken breast",
+        "8 g olive oil",
+        "1 g iodized salt",
+      ]),
+      dietaryTags: [],
+      allergens: [],
+      caloriesKcal: 600,
+      proteinG: 53.5,
+      carbsG: 64.7,
+      fatG: 13.9,
+      fiberG: 6.1,
+    });
   });
 
   it("uses the user's local day and scales immutable nutrition snapshots", async () => {
@@ -73,12 +119,10 @@ describe("Balanced meal service", () => {
       chicagoEvening,
     );
     const template = getBalancedMealTemplate(firstTemplate.id)!;
+    const expectedNutrition = scaleNutrition(template.nutritionPerServing, 1.5);
 
     expect(entry.loggedOn).toBe("2026-08-03");
-    expect(entry.caloriesKcal).toBe(
-      template.nutritionPerServing.caloriesKcal * 1.5,
-    );
-    expect(entry.proteinG).toBe(template.nutritionPerServing.proteinG * 1.5);
+    expect(entry).toMatchObject(expectedNutrition);
 
     const today = await getTodayMeals(configured, chicagoEvening);
     expect(today.dayKey).toBe("2026-08-03");

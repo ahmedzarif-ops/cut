@@ -33,6 +33,7 @@ export const GetMeResponse = zod.object({
 
 
 /**
+ * Updates non-paid account settings such as the IANA timezone used to establish the user's local day. Available before purchase so the app can configure daily boundaries without exposing paid data.
  * @summary Update the current user's account settings
  */
 
@@ -135,13 +136,8 @@ export const GetMyProfileResponse = zod.object({
   "userId": zod.uuid(),
   "displayName": zod.string().nullish(),
   "goal": zod.enum(['cut', 'maintain', 'recomp', 'gain']),
-  "sex": zod.enum(['male', 'female', 'other', 'unspecified']),
-  "heightCm": zod.number().nullish(),
   "startWeightKg": zod.number().nullish(),
   "goalWeightKg": zod.number().nullish(),
-  "targetDate": zod.string().nullish().describe('Calendar date in YYYY-MM-DD form (no time component).'),
-  "activityLevel": zod.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']),
-  "trainingExperience": zod.enum(['beginner', 'intermediate', 'advanced']),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -150,28 +146,19 @@ export const GetMyProfileResponse = zod.object({
 /**
  * @summary Create or replace the current user's profile
  */
-export const upsertMyProfileBodyHeightCmMin = 50;
-export const upsertMyProfileBodyHeightCmMax = 300;
-
 export const upsertMyProfileBodyStartWeightKgMin = 20;
 export const upsertMyProfileBodyStartWeightKgMax = 500;
 
 export const upsertMyProfileBodyGoalWeightKgMin = 20;
 export const upsertMyProfileBodyGoalWeightKgMax = 500;
 
-export const upsertMyProfileBodyTargetDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 
 
 export const UpsertMyProfileBody = zod.object({
   "displayName": zod.string().optional(),
   "goal": zod.enum(['cut', 'maintain', 'recomp', 'gain']),
-  "sex": zod.enum(['male', 'female', 'other', 'unspecified']).optional(),
-  "heightCm": zod.number().min(upsertMyProfileBodyHeightCmMin).max(upsertMyProfileBodyHeightCmMax).optional(),
   "startWeightKg": zod.number().min(upsertMyProfileBodyStartWeightKgMin).max(upsertMyProfileBodyStartWeightKgMax).optional(),
-  "goalWeightKg": zod.number().min(upsertMyProfileBodyGoalWeightKgMin).max(upsertMyProfileBodyGoalWeightKgMax).optional(),
-  "targetDate": zod.string().regex(upsertMyProfileBodyTargetDateRegExp).optional().describe('Calendar date in YYYY-MM-DD form (no time component).'),
-  "activityLevel": zod.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']).optional(),
-  "trainingExperience": zod.enum(['beginner', 'intermediate', 'advanced']).optional()
+  "goalWeightKg": zod.number().min(upsertMyProfileBodyGoalWeightKgMin).max(upsertMyProfileBodyGoalWeightKgMax).optional()
 })
 
 export const UpsertMyProfileResponse = zod.object({
@@ -179,21 +166,25 @@ export const UpsertMyProfileResponse = zod.object({
   "userId": zod.uuid(),
   "displayName": zod.string().nullish(),
   "goal": zod.enum(['cut', 'maintain', 'recomp', 'gain']),
-  "sex": zod.enum(['male', 'female', 'other', 'unspecified']),
-  "heightCm": zod.number().nullish(),
   "startWeightKg": zod.number().nullish(),
   "goalWeightKg": zod.number().nullish(),
-  "targetDate": zod.string().nullish().describe('Calendar date in YYYY-MM-DD form (no time component).'),
-  "activityLevel": zod.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']),
-  "trainingExperience": zod.enum(['beginner', 'intermediate', 'advanced']),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
 
 
 /**
+ * Uses the required device timezone request context directly for the local calendar day. The context is request-scoped so two signed-in devices cannot overwrite one shared daily boundary.
  * @summary Get the current user's Today state
  */
+export const getTodayHeaderXCUTDeviceTimezoneMax = 100;
+
+
+
+export const GetTodayHeader = zod.object({
+  "X-CUT-Device-Timezone": zod.string().min(1).max(getTodayHeaderXCUTDeviceTimezoneMax).describe('Current validated IANA timezone reported by this device. Daily endpoints use this request-scoped context directly instead of a shared mutable account timezone.')
+})
+
 export const getTodayResponseDayKeyRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const getTodayResponseWeightEntryOneRecordedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const getTodayResponseMealCountMin = 0;
@@ -274,8 +265,17 @@ export const ListMyMealOptionsResponse = zod.array(ListMyMealOptionsResponseItem
 
 
 /**
+ * Uses the required request-scoped device timezone to select the local calendar day.
  * @summary Get today's logged meals and nutrition totals
  */
+export const getTodayMealsHeaderXCUTDeviceTimezoneMax = 100;
+
+
+
+export const GetTodayMealsHeader = zod.object({
+  "X-CUT-Device-Timezone": zod.string().min(1).max(getTodayMealsHeaderXCUTDeviceTimezoneMax).describe('Current validated IANA timezone reported by this device. Daily endpoints use this request-scoped context directly instead of a shared mutable account timezone.')
+})
+
 export const getTodayMealsResponseDayKeyRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 
 export const getTodayMealsResponseEntriesItemLoggedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
@@ -337,6 +337,14 @@ export const GetTodayMealsResponse = zod.object({
  * The client echoes the dayKey and catalogVersion it reviewed, while the server remains authoritative for the user's local calendar day and copies the selected template's per-serving nutrition into the historical entry. Repeating the same clientRequestId and payload returns the original entry, even after that day or catalog release is superseded. A request UUID remains consumed if its meal is later deleted, preventing a delayed replay from recreating it. A new entry must match both the current server day and the current catalog version.
  * @summary Log a catalog meal for today
  */
+export const createMyMealEntryHeaderXCUTDeviceTimezoneMax = 100;
+
+
+
+export const CreateMyMealEntryHeader = zod.object({
+  "X-CUT-Device-Timezone": zod.string().min(1).max(createMyMealEntryHeaderXCUTDeviceTimezoneMax).describe('Current validated IANA timezone reported by this device. Daily endpoints use this request-scoped context directly instead of a shared mutable account timezone.')
+})
+
 
 export const createMyMealEntryBodyDayKeyRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 
@@ -479,14 +487,25 @@ export const ListMyWeightEntriesResponse = zod.array(ListMyWeightEntriesResponse
 
 
 /**
+ * The client echoes the dayKey it reviewed. The server compares that key with the current local calendar day derived from the required request-scoped device timezone before writing. A stale day returns 412 so the client can refresh and require another review instead of moving an ambiguous retry onto a different day.
  * @summary Create or replace today's weigh-in
  */
+export const upsertTodayWeightHeaderXCUTDeviceTimezoneMax = 100;
+
+
+
+export const UpsertTodayWeightHeader = zod.object({
+  "X-CUT-Device-Timezone": zod.string().min(1).max(upsertTodayWeightHeaderXCUTDeviceTimezoneMax).describe('Current validated IANA timezone reported by this device. Daily endpoints use this request-scoped context directly instead of a shared mutable account timezone.')
+})
+
+export const upsertTodayWeightBodyDayKeyRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
 export const upsertTodayWeightBodyWeightKgMin = 20;
 export const upsertTodayWeightBodyWeightKgMax = 500;
 
 
 
 export const UpsertTodayWeightBody = zod.object({
+  "dayKey": zod.string().regex(upsertTodayWeightBodyDayKeyRegExp),
   "weightKg": zod.number().min(upsertTodayWeightBodyWeightKgMin).max(upsertTodayWeightBodyWeightKgMax)
 })
 

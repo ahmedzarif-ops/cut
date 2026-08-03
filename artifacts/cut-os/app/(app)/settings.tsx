@@ -402,8 +402,8 @@ export default function SettingsScreen() {
               ? "CUT OS couldn't verify Pro access. Retry before opening paid features."
               : subscription?.server.state === "ready" &&
                   subscription.server.entitled
-                ? "Your paid daily plan, weigh-ins, and nutrition features are available."
-                : "Upgrade to unlock the paid daily plan, weigh-ins, and nutrition features."}
+                ? "Your paid daily check-in, weigh-ins, and nutrition features are available."
+                : "Upgrade to unlock the paid daily check-in, weigh-ins, and nutrition features."}
         </Text>
         <Text style={s.cardBody}>
           Deleting CUT OS does not cancel billing through Apple. Manage or

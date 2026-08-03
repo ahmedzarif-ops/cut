@@ -21,8 +21,9 @@ export function selectNextAction(input: NextActionInput): NextAction {
   if (!input.onboardingComplete) {
     return {
       kind: "complete_onboarding",
-      title: "Build your cut plan",
-      detail: "Set your goal and baseline so CUT OS can guide the day.",
+      title: "Set up your profile",
+      detail:
+        "Add your profile details to finish setup and start your daily check-in.",
     };
   }
 

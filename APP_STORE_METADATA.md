@@ -11,25 +11,27 @@ here is a substitute for owner, legal, or App Review approval.
 
 ## Product and audience
 
-| Field               | Working position                                                                                          | Release gate                                                                              |
-| ------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Product             | CUT OS                                                                                                    | Name clearance and owner approval remain open.                                            |
-| Primary audience    | Adults age 18 and older who lift; owner confirmed the 18+ launch position                                 | Must appear consistently in product copy, Terms/EULA, support material, and review notes. |
-| Eligibility policy  | `adult-18-v1`                                                                                             | Server and release-build bypass tests must pass.                                          |
-| Primary category    | Health & Fitness                                                                                          | Owner must confirm against the final feature set.                                         |
-| Made for Kids       | No                                                                                                        | Do not select the Kids category.                                                          |
-| Public description  | Must state that CUT OS is for adults 18+ and provides general wellness/fitness guidance, not medical care | Final copy requires owner, legal, and qualified health/nutrition review.                  |
-| Support URL         | Pending; validated in-app configuration is implemented                                                    | Owner must supply and verify a public, functional HTTPS page before submission.           |
-| Privacy Policy URL  | Pending; validated in-app configuration is implemented                                                    | Owner/counsel must publish and verify the required HTTPS policy before submission.        |
-| Terms/EULA          | Pending; validated in-app Terms link is implemented                                                       | Owner/counsel must choose and publish the final 18+ terms/EULA position.                  |
-| Age Suitability URL | Optional; pending owner decision                                                                          | If supplied, it must explain the adults-only policy and self-declared gate accurately.    |
+| Field                 | Working position                                                                                          | Release gate                                                                                       |
+| --------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Product               | CUT OS                                                                                                    | Name clearance and owner approval remain open.                                                     |
+| Seller/legal operator | Undecided; no entity is currently confirmed                                                               | Counsel must resolve Apple's sensitive-data/legal-entity guidance before enrollment or submission. |
+| Primary audience      | Adults age 18 and older who lift; owner confirmed the 18+ launch position                                 | Must appear consistently in product copy, Terms/EULA, support material, and review notes.          |
+| Eligibility policy    | `adult-18-v1`                                                                                             | Server and release-build bypass tests must pass.                                                   |
+| Primary category      | Health & Fitness                                                                                          | Owner must confirm against the final feature set.                                                  |
+| Made for Kids         | No                                                                                                        | Do not select the Kids category.                                                                   |
+| Public description    | Must state that CUT OS is for adults 18+ and provides general wellness/fitness guidance, not medical care | Final copy requires owner, legal, and qualified health/nutrition review.                           |
+| Support URL           | Pending; validated in-app configuration is implemented                                                    | Owner must supply and verify a public, functional HTTPS page before submission.                    |
+| Privacy Policy URL    | Pending; validated in-app configuration is implemented                                                    | Owner/counsel must publish and verify the required HTTPS policy before submission.                 |
+| Terms/EULA            | Pending; validated in-app Terms link is implemented                                                       | Owner/counsel must choose and publish the final 18+ terms/EULA position.                           |
+| Age Suitability URL   | Optional; pending owner decision                                                                          | If supplied, it must explain the adults-only policy and self-declared gate accurately.             |
 
 ## Focused v1 listing copy
 
-This is the only launch positioning approved by current binary scope. Do not
-add adaptive coaching, personalized targets, trends, workouts, reminders,
-progress, closeout, or weekly review to the listing or screenshots until those
-features ship and are verified.
+This is the only launch positioning supported by the current repository scope;
+it remains pending verification in the submitted binary. Do not add adaptive
+coaching, personalized targets, trends, workouts, reminders, progress,
+closeout, or weekly review to the listing or screenshots until those features
+ship and are verified.
 
 **Subtitle draft:** Your daily cut check-in
 
@@ -118,8 +120,9 @@ support tools, and every embedded SDK:
 - Health & Fitness — profile, body, weight, nutrition, and workout data that
   actually ships; linked to the user; App Functionality and any truthful Product
   Personalization use.
-- Other Data Types — adult eligibility status, policy version, and decision
-  timestamp; linked to the user; App Functionality.
+- Other Data Types — adult eligibility status, policy version, decision
+  timestamp, timezone, and unit preference; linked to the user; App
+  Functionality, subject to the then-current questionnaire mapping.
 - Purchases — linked subscription/purchase history used for App Functionality
   and Analytics by the shipped RevenueCat/App Store implementation; tracking No.
 - Diagnostics/Usage Data — only if the final SDK and production configuration
@@ -143,6 +146,10 @@ advertising audiences.
   cannot correct/retry DOB in app; future adult access requires deleting that
   identity/account and creating a new account.
 - Provide a current `eligible` adult review account and exact full-access steps.
+- Put that primary account's single username/password pair in App Store
+  Connect's Sign-in Information. Put any additional purpose-built synthetic
+  path-specific accounts in App Review Notes, because Apple exposes only one
+  Sign-in Information pair.
 - Explain the `unverified` (`428`) and `ineligible` (`403`) server behavior and
   provide a controlled under-18 test path without exposing real personal data.
 - Explain account deletion, subscription management, and any review-only setup.
@@ -157,8 +164,14 @@ advertising audiences.
 
 ## Submission approvals still required
 
-- **Owner/App Store role:** metadata, category, questionnaire, 18+ override,
-  privacy answers, review account, and Submit for Review.
+- **Owner/App Store role:** legal seller choice, metadata, category,
+  questionnaire, 18+ override, privacy answers, review account, and Submit for
+  Review.
+- **Qualified business/App Store counsel:** resolve Guideline 5.1.1(ix), which
+  says apps requiring sensitive user information should be submitted by a
+  legal entity rather than an individual developer. CUT OS requires linked
+  weight, body, fitness, and nutrition information, so an individual seller is
+  a material review risk even though rejection is not certain.
 - **Qualified privacy/legal counsel:** Terms/EULA, Privacy Policy,
   notice-at-collection, jurisdictions, retention/underage handling, and
   sufficiency of the self-declared assurance method, including permanent
@@ -178,4 +191,7 @@ advertising audiences.
 - [Manage app privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/)
 - [App Privacy Details](https://developer.apple.com/app-store/app-privacy-details/)
 - [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
+- [Apple Developer Program enrollment](https://developer.apple.com/programs/enroll/)
 - [July 2026 social-media questionnaire update](https://developer.apple.com/news/?id=tlur8uvi)
+- [Platform-version information and App Review fields](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information)
+- [Auto-renewable subscription information fields](https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/auto-renewable-subscription-information)

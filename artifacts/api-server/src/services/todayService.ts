@@ -25,6 +25,11 @@ export interface TodayState {
   nutritionTotals: NutritionFacts;
 }
 
+export interface ReviewedWeightEntryInput {
+  dayKey: string;
+  weightKg: number;
+}
+
 export async function getWeightEntryForDay(
   userId: string,
   recordedOn: string,
@@ -43,9 +48,10 @@ export async function getWeightEntryForDay(
 
 export async function getTodayState(
   user: User,
+  deviceTimeZone: string,
   clock: Clock = systemClock,
 ): Promise<TodayState> {
-  const dayKey = todayKey(clock, user.timezone);
+  const dayKey = todayKey(clock, deviceTimeZone);
   const [weightEntry, mealEntries] = await Promise.all([
     getWeightEntryForDay(user.id, dayKey),
     getMealEntriesForDay(user.id, dayKey),
@@ -65,16 +71,24 @@ export async function getTodayState(
 
 export async function upsertTodayWeight(
   user: User,
-  weightKg: number,
+  input: ReviewedWeightEntryInput,
+  deviceTimeZone: string,
   clock: Clock = systemClock,
 ): Promise<WeightEntry | undefined> {
-  const recordedOn = todayKey(clock, user.timezone);
+  const recordedOn = todayKey(clock, deviceTimeZone);
+  if (input.dayKey !== recordedOn) {
+    throw new HttpError(
+      412,
+      "Today changed. Refresh and review your weigh-in before saving",
+    );
+  }
+
   const [entry] = await db
     .insert(weightEntriesTable)
-    .values({ userId: user.id, recordedOn, weightKg })
+    .values({ userId: user.id, recordedOn, weightKg: input.weightKg })
     .onConflictDoUpdate({
       target: [weightEntriesTable.userId, weightEntriesTable.recordedOn],
-      set: { weightKg, updatedAt: clock.now() },
+      set: { weightKg: input.weightKg, updatedAt: clock.now() },
     })
     .returning();
   return entry;

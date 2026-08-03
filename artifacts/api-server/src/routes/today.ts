@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-zod";
 
 import { HttpError } from "../lib/httpError";
+import { requireDeviceTimeZone } from "../middlewares/requireDeviceTimeZone";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireSubscription } from "../middlewares/requireSubscription";
 import {
@@ -22,8 +23,9 @@ router.get(
   "/me/today",
   requireAuth,
   requireSubscription,
+  requireDeviceTimeZone,
   async (req, res): Promise<void> => {
-    const state = await getTodayState(req.user!);
+    const state = await getTodayState(req.user!, req.deviceTimeZone!);
     res.json(GetTodayResponse.parse(state));
   },
 );
@@ -46,12 +48,20 @@ router.put(
   "/me/weight-entries/today",
   requireAuth,
   requireSubscription,
+  requireDeviceTimeZone,
   async (req, res): Promise<void> => {
     const parsed = UpsertTodayWeightBody.safeParse(req.body);
     if (!parsed.success) {
-      throw new HttpError(400, "Weight must be between 20 and 500 kg");
+      throw new HttpError(
+        400,
+        "A reviewed day and weight between 20 and 500 kg are required",
+      );
     }
-    const entry = await upsertTodayWeight(req.user!, parsed.data.weightKg);
+    const entry = await upsertTodayWeight(
+      req.user!,
+      parsed.data,
+      req.deviceTimeZone!,
+    );
     if (!entry) throw new HttpError(500, "Unable to save weigh-in");
     res.json(UpsertTodayWeightResponse.parse(entry));
   },

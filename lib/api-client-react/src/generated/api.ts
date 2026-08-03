@@ -239,6 +239,7 @@ export const getUpdateMeUrl = () => {
 }
 
 /**
+ * Updates non-paid account settings such as the IANA timezone used to establish the user's local day. Available before purchase so the app can configure daily boundaries without exposing paid data.
  * @summary Update the current user's account settings
  */
 export const updateMe = async (userUpdate: UserUpdate, options?: RequestInit): Promise<User> => {
@@ -256,7 +257,7 @@ export const updateMe = async (userUpdate: UserUpdate, options?: RequestInit): P
 
 
 
-export const getUpdateMeMutationOptions = <TError = ErrorType<Error | SubscriptionRequiredResponse | AdultEligibilityDeniedResponse | AccountDeletionBlockedResponse | AdultEligibilityRequiredResponse | SubscriptionStatusUnavailableResponse>,
+export const getUpdateMeMutationOptions = <TError = ErrorType<Error | AdultEligibilityDeniedResponse | AccountDeletionBlockedResponse | AdultEligibilityRequiredResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMe>>, TError,{data: BodyType<UserUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateMe>>, TError,{data: BodyType<UserUpdate>}, TContext> => {
 
@@ -285,12 +286,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdateMeMutationResult = NonNullable<Awaited<ReturnType<typeof updateMe>>>
     export type UpdateMeMutationBody = BodyType<UserUpdate>
-    export type UpdateMeMutationError = ErrorType<Error | SubscriptionRequiredResponse | AdultEligibilityDeniedResponse | AccountDeletionBlockedResponse | AdultEligibilityRequiredResponse | SubscriptionStatusUnavailableResponse>
+    export type UpdateMeMutationError = ErrorType<Error | AdultEligibilityDeniedResponse | AccountDeletionBlockedResponse | AdultEligibilityRequiredResponse>
 
     /**
  * @summary Update the current user's account settings
  */
-export const useUpdateMe = <TError = ErrorType<Error | SubscriptionRequiredResponse | AdultEligibilityDeniedResponse | AccountDeletionBlockedResponse | AdultEligibilityRequiredResponse | SubscriptionStatusUnavailableResponse>,
+export const useUpdateMe = <TError = ErrorType<Error | AdultEligibilityDeniedResponse | AccountDeletionBlockedResponse | AdultEligibilityRequiredResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMe>>, TError,{data: BodyType<UserUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateMe>>,
@@ -908,6 +909,7 @@ export const getGetTodayUrl = () => {
 }
 
 /**
+ * Uses the required device timezone request context directly for the local calendar day. The context is request-scoped so two signed-in devices cannot overwrite one shared daily boundary.
  * @summary Get the current user's Today state
  */
 export const getToday = async ( options?: RequestInit): Promise<TodayState> => {
@@ -1063,6 +1065,7 @@ export const getGetTodayMealsUrl = () => {
 }
 
 /**
+ * Uses the required request-scoped device timezone to select the local calendar day.
  * @summary Get today's logged meals and nutrition totals
  */
 export const getTodayMeals = async ( options?: RequestInit): Promise<TodayMeals> => {
@@ -1439,6 +1442,7 @@ export const getUpsertTodayWeightUrl = () => {
 }
 
 /**
+ * The client echoes the dayKey it reviewed. The server compares that key with the current local calendar day derived from the required request-scoped device timezone before writing. A stale day returns 412 so the client can refresh and require another review instead of moving an ambiguous retry onto a different day.
  * @summary Create or replace today's weigh-in
  */
 export const upsertTodayWeight = async (weightEntryInput: WeightEntryInput, options?: RequestInit): Promise<WeightEntry> => {

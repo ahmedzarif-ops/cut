@@ -30,6 +30,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 import {
+  dailyDeviceTimeZoneQueryKey,
+  DEVICE_TIME_ZONE_HEADER,
+  useDeviceTimeZoneGate,
+} from "@/lib/device-time-zone-gate";
+import {
   createPendingMealIntent,
   executeOwnedMealCreate,
   MealCreatePrincipalChangedError,
@@ -75,14 +80,19 @@ export default function MealOneScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const s = makeStyles(c);
+  const dailyTimeZone = useDeviceTimeZoneGate();
 
   const optionsQuery = useListMyMealOptions();
   const mealsQuery = useGetTodayMeals({
     query: {
-      queryKey: getGetTodayMealsQueryKey(),
+      queryKey: dailyDeviceTimeZoneQueryKey(
+        getGetTodayMealsQueryKey(),
+        dailyTimeZone,
+      ),
       // Refresh the authoritative day while this screen remains foregrounded.
       refetchInterval: 60_000,
     },
+    request: dailyTimeZone.request,
   });
   const updateMeal = useUpdateMyMealEntry();
   const deleteMeal = useDeleteMyMealEntry();
@@ -119,6 +129,10 @@ export default function MealOneScreen() {
     userId: userId ?? null,
     sessionId: sessionId ?? null,
   };
+
+  React.useEffect(() => {
+    if (mealsQuery.error) dailyTimeZone.reject(mealsQuery.error);
+  }, [dailyTimeZone, mealsQuery.error]);
 
   const options = optionsQuery.data ?? [];
   const loggedMeals = mealsQuery.data?.entries ?? [];
@@ -182,6 +196,7 @@ export default function MealOneScreen() {
   React.useEffect(() => {
     if (
       !userId ||
+      dailyTimeZone.ownerClerkUserId !== userId ||
       !pendingIntent ||
       reconciledRequestId.current === pendingIntent.clientRequestId ||
       !mealsQuery.data?.entries.some(
@@ -213,7 +228,12 @@ export default function MealOneScreen() {
     return () => {
       active = false;
     };
-  }, [mealsQuery.data?.entries, pendingIntent, userId]);
+  }, [
+    dailyTimeZone.ownerClerkUserId,
+    mealsQuery.data?.entries,
+    pendingIntent,
+    userId,
+  ]);
 
   React.useEffect(() => {
     setSelectedId((current) => {
@@ -252,6 +272,7 @@ export default function MealOneScreen() {
   const handleCreate = async () => {
     if (
       !userId ||
+      dailyTimeZone.ownerClerkUserId !== userId ||
       !sessionId ||
       !session ||
       session.id !== sessionId ||
@@ -315,7 +336,12 @@ export default function MealOneScreen() {
               mealTemplateId: intent.mealTemplateId,
               servings: intent.servings,
             },
-            { headers: { Authorization: `Bearer ${token}` } },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                [DEVICE_TIME_ZONE_HEADER]: dailyTimeZone.timeZone,
+              },
+            },
           );
         },
       });
@@ -346,6 +372,8 @@ export default function MealOneScreen() {
       ) {
         return;
       }
+
+      if (dailyTimeZone.reject(error)) return;
 
       if (isMealCreatePreconditionFailed(error)) {
         // The selected snapshot is no longer current. Never auto-submit
@@ -836,16 +864,17 @@ export default function MealOneScreen() {
         <View style={s.section}>
           <Text style={s.sectionTitle}>Balanced options</Text>
           <Text style={s.sectionDetail}>
-            Curated defaults—not personalized allergy or medical advice.
+            Fixed single-serving recipe estimates—not personalized medical or
+            allergy advice.
           </Text>
           <View accessibilityRole="radiogroup" style={s.optionStack}>
-            {options.map((option, index) => {
+            {options.map((option) => {
               const selected = option.id === selectedId;
               const optionNutrition = nutritionFromOption(option);
               const allergenText =
                 option.allergens.length > 0
-                  ? `Declared common allergens: ${option.allergens.join(", ")}`
-                  : "No common allergens are listed for this estimate; review every ingredient and package label";
+                  ? `Recipe ingredients include these common allergens: ${option.allergens.join(", ")}. Cross-contact is not assessed; review every ingredient and package label`
+                  : "No common allergens are identified from this recipe. This is not an allergen-free or cross-contact claim; review every ingredient and package label";
               return (
                 <Pressable
                   key={option.id}
@@ -864,11 +893,6 @@ export default function MealOneScreen() {
                 >
                   <View style={s.optionHeader}>
                     <View style={s.optionTitleWrap}>
-                      {index === 0 ? (
-                        <Text style={s.recommendedLabel}>
-                          RECOMMENDED DEFAULT
-                        </Text>
-                      ) : null}
                       <Text style={s.cardTitle}>{option.name}</Text>
                     </View>
                     <View
@@ -889,7 +913,7 @@ export default function MealOneScreen() {
                     {compactNumber(option.fiberG)}g fiber
                   </Text>
                   <Text style={s.ingredients}>
-                    Includes: {option.ingredients.join(", ")}
+                    Per 1× recipe: {option.ingredients.join(", ")}
                   </Text>
                   <Text style={s.allergens}>{allergenText}</Text>
                   <Text style={s.fitReason}>{option.fitReason}</Text>
@@ -957,7 +981,8 @@ export default function MealOneScreen() {
           </View>
 
           <Text style={s.estimateDisclosure}>
-            Estimated nutrition. Review ingredients for your dietary needs.
+            Estimated nutrition. Review every ingredient and package label;
+            cross-contact is not assessed.
           </Text>
 
           <Pressable
@@ -1175,13 +1200,6 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       gap: 12,
     },
     optionTitleWrap: { flex: 1 },
-    recommendedLabel: {
-      color: c.primary,
-      fontFamily: "Inter_700Bold",
-      fontSize: 11,
-      letterSpacing: 1.1,
-      marginBottom: 6,
-    },
     radioMark: {
       width: 24,
       height: 24,

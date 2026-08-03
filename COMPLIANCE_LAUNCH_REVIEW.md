@@ -1,0 +1,120 @@
+# Compliance Check: CUT OS paid iPhone launch
+
+**Assessment:** Proceed with conditions — do not submit for App Review or begin
+public sales yet.
+
+**Review date:** August 3, 2026
+**Working launch position:** United States; adults age 18 and older
+**Scope reviewed:** The current paid-v1 repository/source, backend design,
+subscription design, nutrition catalog, privacy data map, and App Store launch
+plan. This review does not cover a final iOS archive, production configuration,
+or native-device/TestFlight acceptance, none of which is established yet.
+
+> This is a product-compliance working review, not legal advice. Qualified
+> privacy, consumer-protection, health/nutrition, and business counsel must
+> verify the current law, launch jurisdictions, contracts, public policies, and
+> final product before release.
+
+## Summary
+
+CUT OS has a strong engineering baseline for account isolation, adults-only
+gating, server-authoritative paid access, subscription restoration, and account
+deletion. Public launch remains conditional because the app collects linked
+weight, body, fitness, and nutrition information; its reproducible meal
+calculations, allergen statements, dietary tags, and cultural naming have no
+qualified final approval; it lacks approved public legal/support pages; and it
+has no confirmed legal operator or Apple seller type.
+
+The highest-risk business decision is the Apple seller account. Apple's App
+Review Guidelines say apps that require sensitive user information should be
+submitted by a legal entity rather than an individual developer. CUT OS asks
+users for weight, body, fitness, and nutrition information. This is not a
+guaranteed rejection of an individual submission, but it creates a material
+review risk. The owner should obtain counsel's written recommendation and, if
+appropriate, form and enroll an organization before App Review.
+
+## Applicable regulations and policies
+
+| Regulation or policy                                                                                                                             | Relevance                                                                                                                                   | Key requirement or open question                                                                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Apple App Review Guidelines 3.1.2](https://developer.apple.com/app-store/review/guidelines/)                                                    | Auto-renewable subscription                                                                                                                 | Provide ongoing value; show the StoreKit-localized offer and required subscription information; support restore and account management; submit the first subscription with the app build.                                                            |
+| [Apple App Review Guidelines 5.1.1](https://developer.apple.com/app-store/review/guidelines/)                                                    | Linked account, body, weight, fitness, nutrition, and purchase data                                                                         | Publish an accurate Privacy Policy; minimize collection; provide in-app account deletion; and resolve Apple's legal-entity guidance for apps requiring sensitive user information.                                                                   |
+| [Apple account-deletion guidance](https://developer.apple.com/support/offering-account-deletion-in-your-app/)                                    | CUT OS supports account creation                                                                                                            | Make complete account deletion easy to find. Do not require subscription cancellation before deletion, and explain that Apple billing is managed separately.                                                                                         |
+| [Apple App Privacy Details](https://developer.apple.com/app-store/app-privacy-details/)                                                          | Contact, identifiers, Health & Fitness, other eligibility data, and purchase history                                                        | Reconcile disclosures against the final archive, backend, vendors, logs, and retention behavior.                                                                                                                                                     |
+| [Apple age-rating guidance](https://developer.apple.com/help/app-store-connect/manage-app-information/set-an-app-age-rating/)                    | Owner chose an adults-only 18+ product position                                                                                             | Answer the current questionnaire from the final binary and use the higher-age override if the final EULA minimum age requires it. The rating does not replace in-app eligibility controls.                                                           |
+| [FTC Health Products Compliance Guidance](https://www.ftc.gov/business-guidance/resources/health-products-compliance-guidance)                   | Meal, nutrition, fitness, safety, and outcome claims in the app and marketing                                                               | Express and implied objective claims must be truthful, not misleading, and supported before publication. A disclaimer does not cure an unsupported claim.                                                                                            |
+| FTC Act Section 5                                                                                                                                | Product promises, privacy statements, subscription disclosures, and cancellation/deletion representations                                   | Product behavior and public statements must match. Avoid deceptive omissions, unsupported health outcomes, hidden material terms, or inaccurate deletion/privacy promises. Counsel must verify the final implementation and copy.                    |
+| [FTC Health Breach Notification Rule guidance](https://www.ftc.gov/business-guidance/resources/complying-ftcs-health-breach-notification-rule-0) | CUT OS is a consumer app handling identifiable weight and nutrition-related information; the repository does not establish its HIPAA status | Counsel must determine whether CUT OS is a vendor of personal health records, related entity, or service provider under the current rule; document an incident-response and notification plan if covered. Do not assume HIPAA coverage or exemption. |
+| U.S. federal and state privacy, consumer-health-data, auto-renewal, breach-notification, and consumer-protection laws                            | Launch jurisdiction is only a working “US” label; user residency, business nexus, thresholds, and product flow are not finalized            | Qualified counsel must create the actual jurisdiction matrix, applicability analysis, notices, rights workflow, contracts, and retention schedule before launch.                                                                                     |
+
+## Requirements
+
+| #   | Requirement                                                          | Status     | Action needed                                                                                                                                                                                                                                          |
+| --- | -------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Confirm the legal operator and Apple seller type                     | Not met    | Obtain counsel's recommendation on Apple's sensitive-data/legal-entity guidance. Form and enroll the entity if advised; otherwise document the rationale and accepted review risk.                                                                     |
+| 2   | Confirm Apple Developer Program and App Store Connect authority      | Not met    | Account Holder verifies active membership, seller identity, contracts, tax/banking, and role access. Financial acceptance remains owner-only.                                                                                                          |
+| 3   | Publish accurate Privacy, Terms/EULA, and Support pages              | Not met    | Resolve all owner/counsel placeholders, publish at stable HTTPS URLs, link them in-app and in App Store Connect, and keep them live during review.                                                                                                     |
+| 3A  | Implement approved Terms assent and Privacy acknowledgment           | Not met    | Sign-up currently confirms only that the user is at least 18. Counsel must choose the acceptance/acknowledgment language and evidence; engineering then implements and tests that exact design.                                                        |
+| 4   | Complete a final data inventory and privacy notice                   | Partly met | Reconcile `PRIVACY_DATA_MAP.md` with the production archive, server, Clerk, RevenueCat, hosting/database logs, backups, support tooling, and any crash reporting.                                                                                      |
+| 5   | Establish retention and deletion rules                               | Not met    | Approve retention for deletion tombstones, backups, logs, RevenueCat records, identity-provider data, support records, and security evidence; confirm deletion completion language.                                                                    |
+| 6   | Complete vendor and security review                                  | Not met    | Review contracts, DPAs, subprocessors, processing locations, security controls, breach notice terms, deletion behavior, and international transfers for every production provider.                                                                     |
+| 7   | Determine FTC Health Breach Notification Rule applicability          | Unknown    | Counsel applies the current rule to the final data sources and integrations; prepare an incident classification, escalation, and notification playbook if covered.                                                                                     |
+| 8   | Substantiate every public nutrition, allergen, and dietary statement | Partly met | Technical fixed recipes and calculations are complete. Obtain the qualified nutrition, allergen, dietary-label, cultural, and legal signoffs in `NUTRITION_CATALOG_EVIDENCE.md`, correct and version the catalog, or remove affected claims/templates. |
+| 9   | Keep the product inside a general-wellness boundary                  | Partly met | Qualified health/nutrition and legal reviewers approve the final binary, App Store copy, screenshots, accessibility text, and support content. Do not imply diagnosis, treatment, guaranteed outcomes, allergy safety, or medical personalization.     |
+| 10  | Finalize the adults-only policy                                      | Partly met | Counsel approves the notice, transient-DOB processing, permanent per-identity ineligibility behavior, later-new-account path, support process, and adequacy of self-declaration for every launch jurisdiction.                                         |
+| 11  | Finalize subscription disclosures and QA                             | Partly met | Owner approves product terms; verify localized price/period, renewal/cancellation disclosure, purchase, restore, refund/expiry, account switching, subscription management, and deletion behavior in Apple Sandbox and TestFlight.                     |
+| 12  | Complete final App Store privacy and age answers                     | Not met    | Answer from the shipped archive and then-current questionnaires; retain dated evidence and approvals.                                                                                                                                                  |
+| 13  | Clear the product name and public branding                           | Unknown    | Conduct an appropriate trademark/name clearance for the intended regions before committing to listing, domain, and paid marketing. Search-engine checks alone are insufficient.                                                                        |
+
+## Risk areas
+
+| Risk                                                                                                      | Severity | Mitigation                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Individual Apple seller conflicts with Apple's sensitive-data submission guidance                         | High     | Counsel decision before enrollment/submission; prefer a qualified organization if advised. Do not treat faster enrollment as the only criterion.      |
+| Professionally unapproved meal nutrition, allergen, dietary-label, or cultural claims                     | High     | Complete the qualified reviews and signed ledger, correct/version affected content, or remove those catalog claims from public launch.                |
+| Privacy notice or App Privacy answers do not match production behavior                                    | High     | Freeze the release candidate, inventory the archive and vendors, then reconcile policy, in-app notice, and App Store answers.                         |
+| Health-data breach obligations are not recognized or operationalized                                      | High     | Complete HBNR/state-law applicability review and a tested incident-response/notification plan before production data collection.                      |
+| Deletion promise exceeds actual vendor, backup, or tombstone behavior                                     | High     | Approve a precise retention schedule, test each provider, and use accurate timing/exceptions in public copy.                                          |
+| Adults-only self-declaration or permanent ineligibility path is insufficient or unfair in a launch region | High     | Counsel and support review; limit launch regions until approved; preserve immediate deletion and a clear support path.                                |
+| Subscription terms, product mapping, or access state diverge                                              | High     | One product at launch, StoreKit-localized copy, server reconciliation, Sandbox/TestFlight matrix, and manual release.                                 |
+| CUT OS name is unavailable or conflicts with another rightsholder                                         | Medium   | Professional clearance before store record, domain purchase, and campaign spend.                                                                      |
+| Public policies are published with unresolved placeholders                                                | High     | Make validation fail on placeholders and require owner/counsel signoff before deployment.                                                             |
+| Account creation lacks counsel-approved Terms assent/privacy acknowledgment                               | High     | Choose the legal acceptance design, show the relevant links and notice at the right time, record only the approved evidence, and test the final flow. |
+
+## Recommended actions
+
+1. Pause the Apple seller-type decision until counsel reviews the sensitive-data
+   legal-entity issue. If organization enrollment is chosen, form the entity,
+   obtain its D-U-N-S record, use a domain-based work email, and publish a
+   functional company website before enrollment.
+2. Resolve the legal operator name, public contact, domain, launch states, and
+   retention decisions; then have counsel approve and publish the legal/support
+   pages.
+3. Complete or remove the six-meal nutrition catalog using
+   `NUTRITION_CATALOG_EVIDENCE.md` as the release gate.
+4. Complete the privacy/vendor/HBNR analysis and incident-response plan from
+   the final production architecture.
+5. After those decisions, configure the real Apple subscription and
+   RevenueCat mapping, run Apple Sandbox and TestFlight QA, and obtain explicit
+   owner approval before Submit for Review.
+
+## Approvals needed
+
+| Approver                                           | Why                                                                                                                       | Status  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Owner / Apple Account Holder                       | Seller type, entity formation, subscription price/terms, agreements, tax/banking, submission, and release                 | Pending |
+| Qualified business and App Store counsel           | Seller/entity structure, Apple policy risk, name clearance, Terms/EULA, subscriptions, and launch jurisdictions           | Pending |
+| Qualified privacy and consumer-health-data counsel | Privacy notices, rights, retention, vendors/transfers, HBNR/state-law applicability, incident response, and age assurance | Pending |
+| Qualified nutrition/health reviewer                | Recipes, methods, calculated values, portion definitions, and health/wellness wording                                     | Pending |
+| Qualified allergen/food-label reviewer or counsel  | Ingredient, allergen, cross-contact, and dietary-label claims for intended jurisdictions                                  | Pending |
+| Engineering and security owner                     | Final archive inventory, environment controls, vendor configuration, deletion evidence, and incident-response testing     | Pending |
+| Support owner                                      | Public contact channel, age/deletion/subscription procedures, response process, and escalation                            | Pending |
+
+## Further review recommended
+
+Counsel should verify the current federal and state rules immediately before
+launch because applicability depends on the final legal operator, user
+locations, product data sources, integrations, revenue/volume thresholds, and
+public statements. Nothing in this review establishes HIPAA status, FTC Health
+Breach Notification Rule coverage, exemption from either, or authorization to
+launch in every U.S. state.

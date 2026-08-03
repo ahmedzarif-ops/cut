@@ -76,15 +76,6 @@ function mealDescription(template: BalancedMealTemplate): string {
 
 function fitReason(template: BalancedMealTemplate): string {
   const nutrition = templateNutrition(template);
-  if (nutrition.proteinG >= 40 && nutrition.fiberG >= 10) {
-    return `${nutrition.proteinG} g protein and ${nutrition.fiberG} g fiber per serving.`;
-  }
-  if (nutrition.proteinG >= 40) {
-    return `${nutrition.proteinG} g protein per serving with a practical mix of foods.`;
-  }
-  if (nutrition.fiberG >= 10) {
-    return `${nutrition.fiberG} g fiber per serving with protein and produce.`;
-  }
   return `${nutrition.proteinG} g protein and ${nutrition.fiberG} g fiber per serving.`;
 }
 
@@ -169,9 +160,10 @@ export function nutritionTotals(entries: MealEntry[]): NutritionFacts {
 
 export async function getTodayMeals(
   user: User,
+  deviceTimeZone: string,
   clock: Clock = systemClock,
 ): Promise<TodayMealsResponse> {
-  const dayKey = todayKey(clock, user.timezone);
+  const dayKey = todayKey(clock, deviceTimeZone);
   const rows = await getMealEntriesForDay(user.id, dayKey);
   return {
     dayKey,
@@ -247,6 +239,7 @@ function ensureServings(servings: number): void {
 export async function createMyMealEntry(
   user: User,
   input: CreateMealEntryInput,
+  deviceTimeZone: string,
   clock: Clock = systemClock,
 ): Promise<MealEntryResponse> {
   const existing = await getMealByClientRequestId(
@@ -274,7 +267,7 @@ export async function createMyMealEntry(
     );
   }
 
-  const authoritativeDayKey = todayKey(clock, user.timezone);
+  const authoritativeDayKey = todayKey(clock, deviceTimeZone);
   if (input.dayKey !== authoritativeDayKey) {
     throw new HttpError(
       412,

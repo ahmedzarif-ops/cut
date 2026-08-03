@@ -4,49 +4,27 @@ import type { Profile, ProfileInput } from "@workspace/api-client-react";
  * Pure mapping between the onboarding form's string-based state and the
  * Profile / ProfileInput API contracts.
  *
- * PUT /api/me/profile is a FULL REPLACE: any optional field omitted from the
- * request body is reset to null/default on the server. That contract makes it
- * critical that the form is seeded from the existing profile when editing —
- * otherwise saving would silently wipe every previously entered value. These
- * functions are the single source of that mapping so it can be unit tested.
+ * PUT /api/me/profile is a FULL REPLACE. The paid v1 form intentionally keeps
+ * only fields used by the shipped experience; legacy unused profile inputs are
+ * cleared server-side instead of being carried forward.
  */
 
 export const GOALS = ["cut", "maintain", "recomp", "gain"] as const;
-export const SEXES = ["male", "female", "other", "unspecified"] as const;
-export const ACTIVITY = [
-  "sedentary",
-  "light",
-  "moderate",
-  "active",
-  "very_active",
-] as const;
-export const EXPERIENCE = ["beginner", "intermediate", "advanced"] as const;
 
 export type Goal = (typeof GOALS)[number];
-export type Sex = (typeof SEXES)[number];
-export type Activity = (typeof ACTIVITY)[number];
-export type Experience = (typeof EXPERIENCE)[number];
 
 export interface ProfileFormState {
   displayName: string;
   goal: Goal;
-  sex: Sex;
-  heightCm: string;
   startWeightKg: string;
   goalWeightKg: string;
-  activityLevel: Activity;
-  trainingExperience: Experience;
 }
 
 export const EMPTY_FORM_STATE: ProfileFormState = {
   displayName: "",
   goal: "cut",
-  sex: "unspecified",
-  heightCm: "",
   startWeightKg: "",
   goalWeightKg: "",
-  activityLevel: "moderate",
-  trainingExperience: "beginner",
 };
 
 /** Numeric field → text-input value ("" for absent). */
@@ -71,33 +49,17 @@ export function profileToFormState(
   return {
     displayName: profile.displayName ?? "",
     goal: profile.goal,
-    sex: profile.sex,
-    heightCm: numberToField(profile.heightCm),
     startWeightKg: numberToField(profile.startWeightKg),
     goalWeightKg: numberToField(profile.goalWeightKg),
-    activityLevel: profile.activityLevel,
-    trainingExperience: profile.trainingExperience,
   };
 }
 
-/**
- * Build the PUT body from form state. `targetDate` is not collected by the
- * current form, so it must be carried over from the existing profile or it
- * would be wiped by the full-replace PUT.
- */
-export function formStateToProfileInput(
-  form: ProfileFormState,
-  existing?: Pick<Profile, "targetDate"> | null,
-): ProfileInput {
+/** Build the minimal paid-v1 PUT body from form state. */
+export function formStateToProfileInput(form: ProfileFormState): ProfileInput {
   return {
     goal: form.goal,
-    sex: form.sex,
-    activityLevel: form.activityLevel,
-    trainingExperience: form.trainingExperience,
     displayName: form.displayName.trim() || undefined,
-    heightCm: toNumber(form.heightCm),
     startWeightKg: toNumber(form.startWeightKg),
     goalWeightKg: toNumber(form.goalWeightKg),
-    targetDate: existing?.targetDate ?? undefined,
   };
 }

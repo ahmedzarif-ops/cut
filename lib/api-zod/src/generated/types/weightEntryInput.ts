@@ -7,6 +7,8 @@
  */
 
 export interface WeightEntryInput {
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  dayKey: string;
   /**
      * @minimum 20
      * @maximum 500

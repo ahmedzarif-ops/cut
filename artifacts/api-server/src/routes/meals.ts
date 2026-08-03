@@ -11,6 +11,7 @@ import {
 } from "@workspace/api-zod";
 
 import { HttpError } from "../lib/httpError";
+import { requireDeviceTimeZone } from "../middlewares/requireDeviceTimeZone";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireSubscription } from "../middlewares/requireSubscription";
 import {
@@ -56,8 +57,9 @@ router.get(
   "/me/meals/today",
   requireAuth,
   requireSubscription,
+  requireDeviceTimeZone,
   async (req, res): Promise<void> => {
-    const meals = await getTodayMeals(req.user!);
+    const meals = await getTodayMeals(req.user!, req.deviceTimeZone!);
     res.json(GetTodayMealsResponse.parse(meals));
   },
 );
@@ -66,6 +68,7 @@ router.post(
   "/me/meal-entries",
   requireAuth,
   requireSubscription,
+  requireDeviceTimeZone,
   async (req, res): Promise<void> => {
     if (!containsOnlyKnownKeys(req.body, CREATE_MEAL_ENTRY_KEYS)) {
       throw new HttpError(400, "Invalid meal entry");
@@ -73,7 +76,11 @@ router.post(
     const parsed = CreateMyMealEntryBody.safeParse(req.body);
     if (!parsed.success) throw new HttpError(400, "Invalid meal entry");
 
-    const entry = await createMyMealEntry(req.user!, parsed.data);
+    const entry = await createMyMealEntry(
+      req.user!,
+      parsed.data,
+      req.deviceTimeZone!,
+    );
     res.status(201).json(CreateMyMealEntryResponse.parse(entry));
   },
 );

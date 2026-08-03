@@ -26,8 +26,16 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import {
+  dailyDeviceTimeZoneQueryKey,
+  useDeviceTimeZoneGate,
+} from "@/lib/device-time-zone-gate";
 import { useSubscriptionGate } from "@/lib/subscription-gate";
 import { runSignOutWithFeedback } from "@/lib/subscription-provider-state";
+import {
+  isWeightEntryPreconditionFailed,
+  shouldResetReviewedWeightDay,
+} from "@/lib/weight-form";
 
 const GOAL_LABELS: Record<string, string> = {
   cut: "Cut",
@@ -55,13 +63,18 @@ export default function TodayScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const s = makeStyles(c);
+  const dailyTimeZone = useDeviceTimeZoneGate();
 
   const [weightText, setWeightText] = React.useState("");
   const [editingWeight, setEditingWeight] = React.useState(false);
+  const [reviewedWeightDayKey, setReviewedWeightDayKey] = React.useState<
+    string | null
+  >(null);
   const [weightError, setWeightError] = React.useState<string | null>(null);
   const [signOutBusy, setSignOutBusy] = React.useState(false);
   const [signOutError, setSignOutError] = React.useState<string | null>(null);
   const signOutLock = React.useRef(false);
+  const authoritativeWeightDayKey = React.useRef<string | null>(null);
 
   const meQuery = useGetMe();
   const profileQuery = useGetMyProfile({
@@ -74,13 +87,23 @@ export default function TodayScreen() {
   });
   const todayQuery = useGetToday({
     query: {
-      queryKey: getGetTodayQueryKey(),
+      queryKey: dailyDeviceTimeZoneQueryKey(
+        getGetTodayQueryKey(),
+        dailyTimeZone,
+      ),
       enabled: meQuery.data?.onboardingComplete === true,
       // Keep a foreground screen from showing yesterday after local midnight.
       refetchInterval: 60_000,
     },
+    request: dailyTimeZone.request,
   });
-  const saveWeightMutation = useUpsertTodayWeight();
+  const saveWeightMutation = useUpsertTodayWeight({
+    request: dailyTimeZone.request,
+  });
+
+  React.useEffect(() => {
+    if (todayQuery.error) dailyTimeZone.reject(todayQuery.error);
+  }, [dailyTimeZone, todayQuery.error]);
 
   const me = meQuery.data;
   const profile = profileQuery.data;
@@ -89,13 +112,62 @@ export default function TodayScreen() {
   const unitLabel = units === "imperial" ? "lb" : "kg";
 
   React.useEffect(() => {
-    if (today?.weightEntry && !editingWeight) {
-      setWeightText(displayWeight(today.weightEntry.weightKg, units));
+    const dayKey = today?.dayKey ?? null;
+    if (!dayKey) return;
+
+    const priorDayKey = authoritativeWeightDayKey.current;
+    authoritativeWeightDayKey.current = dayKey;
+    if (
+      shouldResetReviewedWeightDay({
+        priorAuthoritativeDayKey: priorDayKey,
+        currentAuthoritativeDayKey: dayKey,
+        reviewedDayKey: reviewedWeightDayKey,
+      })
+    ) {
+      // Never carry an entered or prefilled value across a local-day change.
+      // A fresh keystroke/tap must explicitly bind the next save to the new
+      // authoritative Today snapshot.
+      setWeightText("");
+      setReviewedWeightDayKey(null);
+      setEditingWeight(false);
+      setWeightError(
+        "A new local day started. Enter today's weight again before saving.",
+      );
+      return;
     }
-  }, [editingWeight, today?.weightEntry, units]);
+
+    const weightEntry = today?.weightEntry;
+    if (weightEntry && !editingWeight) {
+      setWeightText(displayWeight(weightEntry.weightKg, units));
+      setReviewedWeightDayKey(null);
+    }
+  }, [
+    editingWeight,
+    reviewedWeightDayKey,
+    today?.dayKey,
+    today?.weightEntry,
+    units,
+  ]);
 
   const saveWeight = async () => {
     setWeightError(null);
+    if (!today?.dayKey || !reviewedWeightDayKey) {
+      setWeightError(
+        "Enter or review today's weight before saving it for this local day.",
+      );
+      await todayQuery.refetch().catch(() => undefined);
+      return;
+    }
+    if (reviewedWeightDayKey !== today.dayKey) {
+      setWeightText("");
+      setReviewedWeightDayKey(null);
+      setEditingWeight(false);
+      setWeightError(
+        "Today changed. Enter today's weight again before saving.",
+      );
+      await todayQuery.refetch().catch(() => undefined);
+      return;
+    }
     const entered = Number(weightText.trim().replace(",", "."));
     const weightKg =
       units === "imperial" ? poundsToKilograms(entered) : entered;
@@ -105,13 +177,36 @@ export default function TodayScreen() {
     }
 
     try {
+      const reviewedDayKey = reviewedWeightDayKey;
       const saved = await saveWeightMutation.mutateAsync({
-        data: { weightKg },
+        data: { dayKey: reviewedDayKey, weightKg },
       });
+      if (authoritativeWeightDayKey.current !== reviewedDayKey) {
+        setWeightText("");
+        setReviewedWeightDayKey(null);
+        setEditingWeight(false);
+        setWeightError(
+          "The weigh-in was saved for the prior local day. Enter today's weight again if you want a new-day entry.",
+        );
+        await qc.invalidateQueries({ queryKey: getGetTodayQueryKey() });
+        return;
+      }
       setWeightText(displayWeight(saved.weightKg, units));
+      setReviewedWeightDayKey(null);
       setEditingWeight(false);
       await qc.invalidateQueries({ queryKey: getGetTodayQueryKey() });
-    } catch {
+    } catch (error) {
+      if (dailyTimeZone.reject(error)) return;
+      if (isWeightEntryPreconditionFailed(error)) {
+        await todayQuery.refetch().catch(() => undefined);
+        setWeightText("");
+        setReviewedWeightDayKey(null);
+        setEditingWeight(false);
+        setWeightError(
+          "Today changed. An earlier save may have completed on the prior day; this stale retry did not create a new-day entry. Enter today's weight again before saving.",
+        );
+        return;
+      }
       setWeightError(
         "Couldn't save your weigh-in. Check your connection and retry.",
       );
@@ -137,7 +232,11 @@ export default function TodayScreen() {
           placeholder={units === "imperial" ? "210.0" : "95.3"}
           placeholderTextColor={c.mutedForeground}
           value={weightText}
-          onChangeText={setWeightText}
+          onChangeText={(value) => {
+            setWeightText(value);
+            setReviewedWeightDayKey(today?.dayKey ?? null);
+            setWeightError(null);
+          }}
           editable={!saveWeightMutation.isPending}
         />
         <Text style={s.unitLabel}>{unitLabel}</Text>
@@ -166,6 +265,7 @@ export default function TodayScreen() {
           style={s.cancelButton}
           onPress={() => {
             setEditingWeight(false);
+            setReviewedWeightDayKey(null);
             setWeightError(null);
             setWeightText(displayWeight(today.weightEntry!.weightKg, units));
           }}
@@ -201,9 +301,10 @@ export default function TodayScreen() {
       return (
         <View style={s.card}>
           <Text style={s.overline}>NEXT</Text>
-          <Text style={s.cardTitle}>Build your cut plan</Text>
+          <Text style={s.cardTitle}>Set up your profile</Text>
           <Text style={s.cardBody}>
-            Tell us your goal and stats so CUT OS can guide the day.
+            Add your profile details to finish setup and start your daily
+            check-in.
           </Text>
           <Pressable
             style={s.button}
@@ -292,7 +393,14 @@ export default function TodayScreen() {
             ) : (
               <Pressable
                 style={s.secondaryButton}
-                onPress={() => setEditingWeight(true)}
+                onPress={() => {
+                  setWeightText(
+                    displayWeight(today.weightEntry!.weightKg, units),
+                  );
+                  setReviewedWeightDayKey(today.dayKey);
+                  setWeightError(null);
+                  setEditingWeight(true);
+                }}
               >
                 <Text style={s.secondaryButtonText}>
                   Update today&apos;s weigh-in
@@ -339,7 +447,7 @@ export default function TodayScreen() {
         ) : null}
 
         <View style={s.card}>
-          <Text style={s.cardTitle}>Your plan</Text>
+          <Text style={s.cardTitle}>Your profile</Text>
           <View style={s.statRow}>
             <Text style={s.statLabel}>Goal</Text>
             <Text style={s.statValue}>
@@ -366,7 +474,7 @@ export default function TodayScreen() {
             style={s.secondaryButton}
             onPress={() => router.push("/onboarding")}
           >
-            <Text style={s.secondaryButtonText}>Edit plan</Text>
+            <Text style={s.secondaryButtonText}>Edit profile</Text>
           </Pressable>
         </View>
       </View>

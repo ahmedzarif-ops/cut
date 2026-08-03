@@ -34,6 +34,10 @@ social features. Those are backlog, not submission truth.
       cascade, retry worker, and device recovery marker.
 - [x] Daily Next Action, weigh-in, six-meal catalog, retry-safe meal logging,
       editing/deletion, and nutrition totals.
+- [x] Paid-v1 profile data is minimized to the fields the shipped experience
+      displays; unused sex, height, activity, training-experience, and target-
+      date inputs are rejected and legacy stored values have a prelaunch purge
+      migration.
 - [x] EAS development/preview/production profiles, production environment
       preflight, Xcode 26 image pin, and baseline app privacy manifest.
 - [x] RevenueCat client purchase/restore/listener/principal-isolation flow and
@@ -54,13 +58,20 @@ social features. Those are backlog, not submission truth.
 ### Owner financial/store decisions
 
 - [ ] Confirm Apple Developer Program membership and Account Holder access.
+- [ ] Resolve the Apple seller type with qualified counsel before enrollment or
+      submission. CUT OS requires linked weight, body, fitness, and nutrition
+      information, and App Review Guideline 5.1.1(ix) says apps requiring
+      sensitive user information should be submitted by a legal entity rather
+      than an individual developer. An individual submission is not documented
+      here as prohibited, but it is a material review risk.
 - [ ] Accept the Paid Apps Agreement and complete tax/banking. These are
       sensitive financial actions and remain owner-only.
-- [ ] Choose the first product's immutable Product ID, duration, price, and
-      whether to offer a trial. Source code does not assume any of them.
-- [ ] Approve the subscription group name/localizations and the final StoreKit
-      offer. No-trial is the shortest path to the first paid transaction, but
-      it is still an owner decision.
+- [ ] Approve the first product's immutable Product ID, duration, price, and
+      trial decision. Source code does not assume any of them.
+- [ ] Separately approve the Subscription Group Reference Name, Subscription
+      Product Reference Name, and each localized group display name,
+      subscription display name, and description. No-trial is the shortest
+      path to the first paid transaction, but it is still an owner decision.
 - [ ] Approve App Review submission and later public release.
 
 ### External services
@@ -84,8 +95,13 @@ social features. Those are backlog, not submission truth.
 
 ### Legal, privacy, and content
 
-- [ ] Form/confirm the selling legal entity and public contact information.
+- [ ] Form/confirm the selling legal entity and public contact information, or
+      obtain counsel's written rationale for accepting the Apple review risk of
+      an individual seller for this sensitive-data app.
 - [ ] Publish functional HTTPS Privacy Policy, Terms/EULA, and Support pages.
+- [ ] Counsel approves the sign-up Terms assent and Privacy acknowledgment
+      design; the current age confirmation alone is not documented consent to
+      the Terms.
 - [ ] Qualified counsel approves adults-only eligibility, notice, retention,
       account deletion, subscriptions, launch jurisdictions, and store copy.
 - [ ] Privacy Policy names RevenueCat and explains linked User ID and Purchase
@@ -120,6 +136,13 @@ social features. Those are backlog, not submission truth.
 ### Native purchase and release evidence
 
 - [ ] Fresh EAS development build installs on a real supported iPhone.
+- [ ] On a non-UTC physical iPhone, a fresh eligible account synchronizes the
+      named device timezone before any daily screen unlocks; unpaid accounts can
+      complete the settings write without a RevenueCat check.
+- [ ] Relaunch persistence, foreground and one-minute device-zone/travel
+      rechecks, two-device different-zone behavior, slow-request/account-switch
+      fencing, and local-midnight/daylight-saving rollover all pass the exact
+      script in `QA_REPORT.md`.
 - [ ] Apple Sandbox matrix in `PURCHASE_QA_REPORT.md` passes: product loading,
       localized price/period, success, user cancellation, error/interruption,
       restore active/none, renewal, cancellation, expiration, refund, billing
@@ -145,6 +168,10 @@ social features. Those are backlog, not submission truth.
 - Hardcoded or mismatched price, currency, duration, or trial.
 - Missing Restore, subscription management, auto-renew/cancel disclosure,
   Privacy, Terms, Support, or account deletion.
+- Daily data unlocked before the current device timezone is established, or a
+  stale timezone response/cache changes another account/day.
+- An ambiguous weigh-in retry can move to a new local day without an explicit
+  stale-day review.
 - RevenueCat/Apple/Clerk/server secret embedded in the app, repository, logs, or
   responses.
 - Account deletion failure or a claim that deleting CUT cancels Apple billing.
@@ -157,25 +184,31 @@ social features. Those are backlog, not submission truth.
 
 1. Finish subscription client, server gate, and vendor deletion; pass automated
    tests from a clean commit.
-2. Owner completes sign-in, financial/store decisions, and service credentials.
-3. Publish legal/support pages and deploy the production backend.
-4. Configure App Store products, RevenueCat, EAS, and Apple notifications.
-5. Build a native development client; pass Apple Sandbox purchase QA.
-6. Upload internal TestFlight; pass the critical matrix on real devices.
-7. Finish privacy, nutrition, legal, icon, screenshots, metadata, and review
+2. Owner and counsel resolve the legal operator and Apple seller type, including
+   Guideline 5.1.1(ix), before Developer Program enrollment or submission.
+3. Owner completes financial/store decisions and service credentials.
+4. Publish approved legal/support pages and deploy the production backend.
+5. Configure App Store products, RevenueCat, EAS, and Apple notifications.
+6. Build a native development client; pass Apple Sandbox purchase QA.
+7. Upload internal TestFlight; pass the critical matrix on real devices.
+8. Finish privacy, nutrition, legal, icon, screenshots, metadata, and review
    account evidence.
-8. Attach the first subscription and release build; owner approves Submit for
+9. Attach the first subscription and release build; owner approves Submit for
    Review.
-9. Fix only review blockers, re-run critical tests, and release manually after
-   final owner approval.
-10. Monitor purchases, restore failures, auth, writes, deletion, crashes, and
+10. Fix only review blockers, re-run critical tests, and release manually after
+    final owner approval.
+11. Monitor purchases, restore failures, auth, writes, deletion, crashes, and
     support closely after launch.
 
 ## Official references
 
 - [Apple App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
+- [Apple Developer Program enrollment](https://developer.apple.com/programs/enroll/)
 - [Offer auto-renewable subscriptions](https://developer.apple.com/help/app-store-connect/manage-subscriptions/offer-auto-renewable-subscriptions/)
+- [Auto-renewable subscription information fields](https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/auto-renewable-subscription-information)
 - [Submit an in-app purchase](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/)
 - [Offering account deletion](https://developer.apple.com/support/offering-account-deletion-in-your-app/)
 - [RevenueCat Expo installation](https://www.revenuecat.com/docs/getting-started/installation/expo)
 - [RevenueCat Apple App Privacy](https://www.revenuecat.com/docs/platform-resources/apple-platform-resources/apple-app-privacy)
+- [FTC Health Breach Notification Rule guidance](https://www.ftc.gov/business-guidance/resources/complying-ftcs-health-breach-notification-rule-0)
+- [FTC Health Products Compliance Guidance](https://www.ftc.gov/business-guidance/resources/health-products-compliance-guidance)

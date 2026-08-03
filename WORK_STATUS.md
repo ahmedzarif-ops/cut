@@ -20,9 +20,21 @@ not a public-launch readiness claim.
 - Local Apple Silicon development no longer excludes esbuild's required native binary.
 - Vitest and Orval configurations load without the previous TypeScript-config runner hang.
 - The onboarding client no longer makes the redundant second PATCH after saving a profile.
+- Paid-v1 onboarding and its API now collect only the profile fields the current
+  Today experience displays: display name, goal, and start/goal weight. Unused
+  sex, height, activity, training-experience, and target-date inputs are
+  rejected, and a committed prelaunch migration clears legacy values.
 - A real daily weigh-in vertical slice is implemented:
+  - a signed-in eligible account synchronizes a validated named device timezone
+    before daily screens unlock, including before purchase; writes are
+    serialized and fenced across retries, zone changes, and account switches;
+  - every daily read/write also carries a validated request-scoped device
+    timezone, so concurrent devices cannot overwrite one shared calendar-day
+    boundary; foreground and 60-second rechecks lock the flow during changes;
   - one server-owned weigh-in per user-local day;
-  - duplicate-safe update on repeated taps;
+  - duplicate-safe update on repeated taps, with the displayed day echoed and
+    stale-day retries rejected before a midnight/travel retry can create a
+    second historical entry;
   - authenticated weight history scoped to the current user;
   - Today endpoint with deterministic Next Action;
   - Today advances from **Log your morning weigh-in** to **Build your first balanced meal** immediately after save;
@@ -112,18 +124,20 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 383 tests** (domain 31, database 4, mobile 155, API 193).
+- `pnpm run test`: **PASS — 431 tests across 45 files** (domain 33, database 4,
+  mobile 193, API 201).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
-- Production-style Expo export for iOS: **PASS — 1,764 modules; 7.38 MB Hermes bundle**.
+- Production-style Expo export for iOS: **PASS — 1,767 modules; 7.39 MB Hermes bundle; 17 MB disposable export**.
 - Production release-environment preflight: **PASS** with representative
   non-secret values; missing, malformed, private, reserved, cross-origin, and
   insecure configurations fail closed in automated coverage.
 - Expo native-config introspection: **PASS** for bundle ID, privacy-manifest
   baseline, exempt-only encryption declaration, and disabled arbitrary loads.
-- Blank-database migrations, including deletion lifecycle/hash constraints,
-  finite nutrition checks, retry index, and meal deletion tombstones: **PASS**.
+- Blank-database migrations, including paid-v1 profile minimization, deletion
+  lifecycle/hash constraints, finite nutrition checks, retry index, and meal
+  deletion tombstones: **PASS**.
 - Baseline adoption-safe migration test: **PASS**.
 - Cross-user weight isolation: **PASS**.
 - Cross-user meal read/edit/delete isolation: **PASS**.
@@ -140,7 +154,9 @@ native/App Store acceptance.
   `428`/`403` private authorization, existing-account recheck, birth-year
   removal, email minimization, and native fail-closed helper regressions:
   **PASS (automated)**.
-- User-local day calculation: **PASS**.
+- User-local day calculation, concurrent-device separation, private-cache
+  controls, and device-timezone synchronization races: **PASS (automated);
+  native local-midnight/travel acceptance pending**.
 - Native iOS simulator interaction: **not yet verified in this environment**.
 - Real-device interaction: **not yet verified**.
 - Account deletion against a real Clerk identity: **not yet verified**.
@@ -160,8 +176,12 @@ more sensitive preference data:
 1. Approve the first real App Store subscription Product ID, monthly price,
    no-trial/trial choice, subscription group, and localization; then create and
    map the Apple product in RevenueCat.
-2. Confirm Apple Developer Program membership/seller type and Account Holder
-   access, then create the App Store Connect record for `com.zarifahmed.cut`.
+2. Have qualified counsel resolve Apple's sensitive-data/legal-entity guidance
+   before selecting the Apple seller type. If organization enrollment is
+   chosen, form/confirm the entity, D-U-N-S record, domain-based work email,
+   functional website, Account Holder authority, and Developer Program
+   membership before creating the App Store Connect record for
+   `com.zarifahmed.cut`.
 3. Publish owner/counsel-approved Privacy, Terms, and Support pages and supply
    their final HTTPS destinations to the production EAS environment.
 4. Complete RevenueCat email verification, create a least-privilege server v2
@@ -194,8 +214,11 @@ more sensitive preference data:
 
 ## Owner actions required for the next external step
 
-The local paid-v1 checkpoint is complete. Apple enrollment/seller type, paid
-product terms, financial agreements/tax/banking, production credentials,
+The local paid-v1 engineering checkpoint is complete. The Apple seller decision
+now requires counsel because the app asks for linked weight, body, fitness, and
+nutrition information and Guideline 5.1.1(ix) directs sensitive-data apps
+toward legal-entity submission. Apple enrollment, paid product terms, financial
+agreements/tax/banking, production credentials,
 RevenueCat secret-key authorization, EAS/Apple authentication, TestFlight
 distribution, App Store questionnaire/privacy publication, Submit for Review,
 and public release remain owner-controlled gates. The owner has confirmed an

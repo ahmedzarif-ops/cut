@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "publicationStatus": "draft",
+  "approvalScope": "Exact rendered privacy, terms, support, and legal stylesheet contents recorded by SHA-256.",
+  "counselApproval": {
+    "approvedBy": null,
+    "approvedAt": null,
+    "evidenceReference": null
+  },
+  "rendering": {
+    "appName": "CUT OS",
+    "basePath": ""
+  },
+  "sha256": {
+    "/privacy": null,
+    "/terms": null,
+    "/support": null,
+    "/legal.css": null
+  }
+}

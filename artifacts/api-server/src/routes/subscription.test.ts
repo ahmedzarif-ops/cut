@@ -120,10 +120,6 @@ describe("subscription status endpoints", () => {
 describe("paid route boundary", () => {
   const paidRequests: Array<[string, () => request.Test]> = [
     [
-      "PATCH /me",
-      () => request(ctx.app).patch("/api/me").set(headers).send({}),
-    ],
-    [
       "GET /me/profile",
       () => request(ctx.app).get("/api/me/profile").set(headers),
     ],
@@ -185,8 +181,13 @@ describe("paid route boundary", () => {
     },
   );
 
-  it("keeps GET /me and adult/deletion status available", async () => {
+  it("keeps account identity/settings and adult/deletion status available", async () => {
+    getStatus.mockClear();
     const me = await request(ctx.app).get("/api/me").set(headers);
+    const settings = await request(ctx.app)
+      .patch("/api/me")
+      .set(headers)
+      .send({ timezone: "America/Chicago" });
     const eligibility = await request(ctx.app)
       .get("/api/me/adult-eligibility")
       .set(headers);
@@ -195,8 +196,24 @@ describe("paid route boundary", () => {
       .set(headers);
 
     expect(me.status).toBe(200);
+    expect(settings.status).toBe(200);
+    expect(settings.body.timezone).toBe("America/Chicago");
+    expect(Object.keys(settings.body).sort()).toEqual(
+      [
+        "createdAt",
+        "email",
+        "id",
+        "onboardingComplete",
+        "timezone",
+        "units",
+        "updatedAt",
+      ].sort(),
+    );
+    expect(settings.body).not.toHaveProperty("profile");
+    expect(settings.body).not.toHaveProperty("nutrition");
     expect(eligibility.status).toBe(200);
     expect(deletion.status).toBe(200);
+    expect(getStatus).not.toHaveBeenCalled();
   });
 
   it("keeps DELETE /me available without checking subscription status", async () => {

@@ -10,12 +10,14 @@ import {
   useGetAccountDeletionStatus,
   useGetMyAdultEligibility,
   useGetMe,
+  useUpdateMe,
 } from "@workspace/api-client-react";
 import * as SecureStore from "expo-secure-store";
 import { Redirect, Stack, usePathname } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
+  AppState,
   Pressable,
   StyleSheet,
   Text,
@@ -40,6 +42,16 @@ import {
 } from "@/lib/adult-eligibility";
 import { AdultEligibilityGateProvider } from "@/lib/adult-eligibility-gate";
 import { parseRevenueCatIosApiKey } from "@/lib/runtime-config";
+import {
+  DeviceTimeZoneSyncCoordinator,
+  isExpectedDeviceTimeZoneUpdateResponse,
+  needsDeviceTimeZoneUpdate,
+  resolveDeviceTimeZone,
+} from "@/lib/device-time-zone";
+import {
+  DeviceTimeZoneGateProvider,
+  isDailyDeviceTimeZoneQueryKey,
+} from "@/lib/device-time-zone-gate";
 import {
   decideSubscriptionRoute,
   isInternalUserUuid,
@@ -68,6 +80,7 @@ const ACCOUNT_DELETION_STATUS_PATH = getGetAccountDeletionStatusQueryKey()[0];
 const ADULT_ELIGIBILITY_STATUS_PATH = getGetMyAdultEligibilityQueryKey()[0];
 const ME_PATH = getGetMeQueryKey()[0];
 const SUBSCRIPTION_STATUS_PATH = getGetMySubscriptionQueryKey()[0];
+const DEVICE_TIME_ZONE_REFRESH_MS = 60_000;
 const parsedRevenueCatIosApiKey = parseRevenueCatIosApiKey(
   process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
 );
@@ -504,6 +517,7 @@ export default function AppLayout() {
         {!deletionRequired &&
         adultEligibilityResponse?.status === "eligible" ? (
           <EligibleSubscriptionShell
+            key={userId}
             clerkUserId={userId}
             onSignOut={leaveAccount}
           />
@@ -523,7 +537,29 @@ function EligibleSubscriptionShell({
   onSignOut: () => void | Promise<void>;
 }) {
   const pathname = usePathname();
+  const qc = useQueryClient();
   const onSettings = pathname === "/settings" || pathname.endsWith("/settings");
+  const updateMe = useUpdateMe();
+  const updateMeAsync = React.useRef(updateMe.mutateAsync);
+  updateMeAsync.current = updateMe.mutateAsync;
+  const [timeZoneSyncRetry, setTimeZoneSyncRetry] = React.useState(0);
+  const [deviceTimeZoneRefresh, setDeviceTimeZoneRefresh] = React.useState(0);
+  const deviceTimeZone = React.useMemo(
+    () => resolveDeviceTimeZone(),
+    [deviceTimeZoneRefresh, timeZoneSyncRetry],
+  );
+  const deviceTimeZoneValue = deviceTimeZone.ok
+    ? deviceTimeZone.timeZone
+    : null;
+  const timeZoneSyncCoordinator = React.useRef(
+    new DeviceTimeZoneSyncCoordinator(),
+  );
+  const [timeZoneSyncError, setTimeZoneSyncError] = React.useState<
+    string | null
+  >(null);
+  const [timeZoneSyncBusy, setTimeZoneSyncBusy] = React.useState(false);
+  const [dailyTimeZoneRejected, setDailyTimeZoneRejected] =
+    React.useState(false);
   const meQuery = useGetMe({
     query: {
       queryKey: [...getGetMeQueryKey(), clerkUserId],
@@ -533,6 +569,102 @@ function EligibleSubscriptionShell({
       refetchOnReconnect: "always",
     },
   });
+
+  React.useEffect(() => {
+    const refreshDeviceTimeZone = () => {
+      setDeviceTimeZoneRefresh((value) => value + 1);
+    };
+    const interval = setInterval(
+      refreshDeviceTimeZone,
+      DEVICE_TIME_ZONE_REFRESH_MS,
+    );
+    const appStateSubscription = AppState.addEventListener(
+      "change",
+      (state) => {
+        if (state === "active") refreshDeviceTimeZone();
+      },
+    );
+
+    return () => {
+      clearInterval(interval);
+      appStateSubscription.remove();
+    };
+  }, []);
+
+  React.useEffect(
+    () => () => {
+      timeZoneSyncCoordinator.current.dispose();
+    },
+    [],
+  );
+
+  React.useEffect(() => {
+    setDailyTimeZoneRejected(false);
+  }, [clerkUserId, deviceTimeZoneValue]);
+
+  const rejectDailyTimeZone = React.useCallback(() => {
+    setDailyTimeZoneRejected(true);
+    const dailyQueryFilter = {
+      predicate: (query: { queryKey: readonly unknown[] }) =>
+        isDailyDeviceTimeZoneQueryKey(query.queryKey),
+    };
+    void qc.cancelQueries(dailyQueryFilter);
+    // Canceling alone retains the last successful health-data payload. Remove
+    // it before the gate can ever retry so remounted hooks cannot render a
+    // stale day while their replacement request is still pending or failing.
+    qc.removeQueries(dailyQueryFilter);
+  }, [qc]);
+
+  React.useEffect(() => {
+    const user = meQuery.data;
+    if (!user || !deviceTimeZoneValue) return;
+    // A failed PATCH can be ambiguous (for example, the client may time out
+    // just after the server commits). Retry the idempotent target even if the
+    // cached pre-request timezone now happens to match the device.
+    if (user.timezone === deviceTimeZoneValue && !timeZoneSyncError) return;
+
+    const attempt = timeZoneSyncCoordinator.current.begin({
+      ownerUserId: clerkUserId,
+      serverTimeZone: user.timezone,
+      deviceTimeZone: deviceTimeZoneValue,
+      retry: timeZoneSyncRetry,
+    });
+    if (!attempt) return;
+    setTimeZoneSyncBusy(true);
+
+    void updateMeAsync
+      .current({ data: { timezone: deviceTimeZoneValue } })
+      .then((updatedUser) => {
+        if (!timeZoneSyncCoordinator.current.isCurrent(attempt)) return;
+        if (
+          !isExpectedDeviceTimeZoneUpdateResponse(updatedUser, user.id, attempt)
+        ) {
+          throw new Error("Unexpected timezone update response");
+        }
+        qc.setQueryData(
+          [...getGetMeQueryKey(), attempt.ownerUserId],
+          updatedUser,
+        );
+        if (!timeZoneSyncCoordinator.current.succeed(attempt)) return;
+        setTimeZoneSyncError(null);
+        setTimeZoneSyncBusy(false);
+      })
+      .catch(() => {
+        if (!timeZoneSyncCoordinator.current.fail(attempt)) return;
+        setTimeZoneSyncBusy(false);
+        setTimeZoneSyncError(
+          "CUT OS couldn't set the local day for this device. Check your connection and try again.",
+        );
+      });
+  }, [
+    clerkUserId,
+    deviceTimeZoneValue,
+    meQuery.data?.id,
+    meQuery.data?.timezone,
+    qc,
+    timeZoneSyncRetry,
+    timeZoneSyncError,
+  ]);
 
   if (meQuery.isError) {
     if (onSettings) return <AppStack />;
@@ -547,6 +679,58 @@ function EligibleSubscriptionShell({
   }
   if (meQuery.isLoading || !meQuery.data) {
     return onSettings ? <AppStack /> : <GateLoading />;
+  }
+
+  if (!deviceTimeZone.ok) {
+    if (onSettings) return <AppStack />;
+    return (
+      <GateError
+        title="Local day needed"
+        message="CUT OS couldn't read this device's time zone, so daily entries remain locked to prevent the wrong date. Check the device date and time settings, then retry."
+        onRetry={() => setTimeZoneSyncRetry((value) => value + 1)}
+        onSignOut={onSignOut}
+      />
+    );
+  }
+
+  if (
+    timeZoneSyncBusy ||
+    timeZoneSyncCoordinator.current.hasActiveAttempt(clerkUserId)
+  ) {
+    return onSettings ? <AppStack /> : <GateLoading />;
+  }
+
+  if (timeZoneSyncError) {
+    if (onSettings) return <AppStack />;
+    return (
+      <GateError
+        title="Local day needed"
+        message={timeZoneSyncError}
+        onRetry={() => setTimeZoneSyncRetry((value) => value + 1)}
+        onSignOut={onSignOut}
+      />
+    );
+  }
+
+  if (dailyTimeZoneRejected) {
+    if (onSettings) return <AppStack />;
+    return (
+      <GateError
+        title="Local day needed"
+        message="CUT OS rejected an outdated local-day context, so daily data remains locked. Retry to verify this device's current time zone."
+        onRetry={() => {
+          setDailyTimeZoneRejected(false);
+          setTimeZoneSyncRetry((value) => value + 1);
+          void meQuery.refetch();
+        }}
+        onSignOut={onSignOut}
+      />
+    );
+  }
+
+  if (needsDeviceTimeZoneUpdate(meQuery.data.timezone, deviceTimeZone)) {
+    if (onSettings) return <AppStack />;
+    return <GateLoading />;
   }
 
   // RevenueCat receives only this server-created UUID. Clerk identifiers,
@@ -564,17 +748,24 @@ function EligibleSubscriptionShell({
   }
 
   return (
-    <SubscriptionGateProvider
-      key={meQuery.data.id}
-      internalUserId={meQuery.data.id}
-      apiKey={revenueCatIosApiKey}
-      onSignOut={onSignOut}
+    <DeviceTimeZoneGateProvider
+      key={`${clerkUserId}:${deviceTimeZone.timeZone}`}
+      ownerClerkUserId={clerkUserId}
+      timeZone={deviceTimeZone.timeZone}
+      onRejected={rejectDailyTimeZone}
     >
-      <SubscriptionRouteBoundary
-        onboardingComplete={meQuery.data.onboardingComplete}
+      <SubscriptionGateProvider
+        key={meQuery.data.id}
+        internalUserId={meQuery.data.id}
+        apiKey={revenueCatIosApiKey}
         onSignOut={onSignOut}
-      />
-    </SubscriptionGateProvider>
+      >
+        <SubscriptionRouteBoundary
+          onboardingComplete={meQuery.data.onboardingComplete}
+          onSignOut={onSignOut}
+        />
+      </SubscriptionGateProvider>
+    </DeviceTimeZoneGateProvider>
   );
 }
 

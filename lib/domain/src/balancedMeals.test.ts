@@ -13,6 +13,7 @@ import {
 
 describe("balanced meal catalog", () => {
   it("ships six durable, unique options with Bengali and Desi choices", () => {
+    expect(BALANCED_MEAL_CATALOG_VERSION).toBe("2026-08-03.2");
     expect(BALANCED_MEAL_CATALOG_VERSION).toMatch(/^\d{4}-\d{2}-\d{2}\.\d+$/);
     expect(
       isCurrentBalancedMealCatalogVersion(BALANCED_MEAL_CATALOG_VERSION),
@@ -32,6 +33,179 @@ describe("balanced meal catalog", () => {
         Object.values(template.nutritionPerServing).every((n) => n > 0),
       ).toBe(true);
     }
+  });
+
+  it("matches the fixed recipe quantities and USDA-based calculation record", () => {
+    expect(
+      BALANCED_MEAL_CATALOG.map(
+        ({
+          id,
+          servingDescription,
+          ingredients,
+          dietaryTags,
+          commonAllergens,
+          nutritionPerServing,
+        }) => ({
+          id,
+          servingDescription,
+          ingredients,
+          dietaryTags,
+          commonAllergens,
+          nutritionPerServing,
+        }),
+      ),
+    ).toEqual([
+      {
+        id: "bengali-chicken-curry-plate",
+        servingDescription:
+          "Entire recipe: 150 g chicken, 160 g rice, curry vegetables, spinach and cucumber",
+        ingredients: [
+          "150 g cooked stewed chicken breast",
+          "160 g cooked long-grain white rice",
+          "100 g cooked drained spinach",
+          "100 g raw cucumber with peel",
+          "100 g raw tomato",
+          "50 g raw onion",
+          "8 g olive oil",
+          "5 g raw garlic",
+          "5 g raw ginger",
+          "1 g ground cumin seed",
+          "1 g ground turmeric",
+          "1 g iodized salt",
+        ],
+        dietaryTags: [],
+        commonAllergens: [],
+        nutritionPerServing: {
+          caloriesKcal: 600,
+          proteinG: 53.5,
+          carbsG: 64.7,
+          fatG: 13.9,
+          fiberG: 6.1,
+        },
+      },
+      {
+        id: "desi-masoor-dal-egg-bowl",
+        servingDescription:
+          "Entire recipe: 180 g lentils, 100 g egg, 120 g brown rice, spinach and tomato",
+        ingredients: [
+          "180 g cooked drained red lentils",
+          "100 g peeled hard-boiled egg",
+          "120 g cooked long-grain brown rice",
+          "75 g cooked drained spinach",
+          "100 g raw tomato",
+          "50 g raw onion",
+          "5 g olive oil",
+          "5 g raw garlic",
+          "1 g ground cumin seed",
+          "1 g ground turmeric",
+          "1 g iodized salt",
+        ],
+        dietaryTags: ["vegetarian"],
+        commonAllergens: ["egg"],
+        nutritionPerServing: {
+          caloriesKcal: 625,
+          proteinG: 36.4,
+          carbsG: 82.2,
+          fatG: 18.2,
+          fiberG: 20.4,
+        },
+      },
+      {
+        id: "lemon-herb-chicken-grain-bowl",
+        servingDescription:
+          "Entire recipe: 150 g chicken, 160 g quinoa, zucchini, pepper and lemon herbs",
+        ingredients: [
+          "150 g cooked roasted chicken breast",
+          "160 g cooked quinoa",
+          "120 g cooked drained zucchini",
+          "100 g raw red bell pepper",
+          "10 g olive oil",
+          "30 g raw lemon juice",
+          "5 g raw garlic",
+          "10 g fresh parsley",
+          "1 g iodized salt",
+        ],
+        dietaryTags: [],
+        commonAllergens: [],
+        nutritionPerServing: {
+          caloriesKcal: 590,
+          proteinG: 56.6,
+          carbsG: 47.7,
+          fatG: 19.3,
+          fiberG: 8.3,
+        },
+      },
+      {
+        id: "salmon-sweet-potato-plate",
+        servingDescription:
+          "Entire recipe: 150 g salmon, 220 g sweet potato, broccoli and romaine",
+        ingredients: [
+          "150 g dry-heat cooked Atlantic salmon",
+          "220 g baked sweet potato flesh",
+          "150 g cooked drained broccoli",
+          "75 g raw romaine lettuce",
+          "5 g olive oil",
+          "15 g raw lemon juice",
+          "1 g iodized salt",
+        ],
+        dietaryTags: ["pescatarian"],
+        commonAllergens: ["fish"],
+        nutritionPerServing: {
+          caloriesKcal: 620,
+          proteinG: 42.1,
+          carbsG: 59.8,
+          fatG: 24.7,
+          fiberG: 13.8,
+        },
+      },
+      {
+        id: "tofu-edamame-rice-bowl",
+        servingDescription:
+          "Entire recipe: 150 g tofu, 100 g edamame, 120 g brown rice and vegetables",
+        ingredients: [
+          "150 g firm calcium-set tofu",
+          "100 g prepared edamame",
+          "120 g cooked long-grain brown rice",
+          "100 g cooked drained broccoli",
+          "75 g raw red cabbage",
+          "10 g whole dried sesame seeds",
+          "5 g sesame oil",
+          "5 g raw ginger",
+          "1 g iodized salt",
+        ],
+        dietaryTags: ["vegan"],
+        commonAllergens: ["soy", "sesame"],
+        nutritionPerServing: {
+          caloriesKcal: 648,
+          proteinG: 46.4,
+          carbsG: 59.7,
+          fatG: 30,
+          fiberG: 16.7,
+        },
+      },
+      {
+        id: "greek-yogurt-oat-berry-bowl",
+        servingDescription:
+          "Entire recipe: 250 g Greek yogurt, 40 g oats, berries, banana and chia",
+        ingredients: [
+          "250 g plain nonfat Greek yogurt",
+          "40 g dry rolled oats",
+          "80 g raw strawberries",
+          "50 g raw blueberries",
+          "80 g raw banana",
+          "10 g dried chia seeds",
+        ],
+        dietaryTags: ["vegetarian"],
+        commonAllergens: ["milk"],
+        nutritionPerServing: {
+          caloriesKcal: 473,
+          proteinG: 34.2,
+          carbsG: 72,
+          fatG: 7.3,
+          fiberG: 12.4,
+        },
+      },
+    ]);
   });
 
   it("looks up a template by stable ID", () => {

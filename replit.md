@@ -46,16 +46,18 @@ PostgreSQL as the source of truth.
 ## Architecture decisions
 
 - Clerk (not Replit Auth) for the native artifact; internal `users.id` uuid is the identity every table references — never the raw Clerk id (see ARCHITECTURE.md).
-- `PUT /api/me/profile` is a full replace; clients must seed edit forms from the existing profile (enforced via `lib/profile-form.ts`).
+- `PUT /api/me/profile` is a full replace of the minimized paid-v1 profile;
+  clients seed display name, goal, and start/goal weight from the current
+  profile. Deprecated unused inputs are rejected and cleared from legacy rows.
 - Storage is metric (kg/cm); `users.units` is a display preference.
 - The api-server never trusts a client-supplied user id; all queries scope by server-resolved `req.userId`.
 - Deterministic product rules (next-action, streaks, e1RM…) must land in a shared, unit-tested package when built — not inline in routes/screens (spec §29).
 
 ## Product
 
-Phase 0 foundation: Clerk email/password auth, JIT-provisioned internal user,
-onboarding that captures the cut profile (goal, sex, height, weights, activity,
-experience), and a Today screen showing the saved plan. The five-tab product
+Phase 0 foundation: Clerk email/password auth, server-provisioned internal user,
+onboarding that captures only the paid-v1 profile fields used on Today (display
+name, goal, start/goal weight), and a Today screen showing the saved profile. The five-tab product
 (Today/Food/Train/Calendar/Progress) arrives in later phases.
 
 ## User preferences

@@ -10,7 +10,10 @@ import {
 } from "../test/helpers";
 
 let ctx: TestContext;
-const asUser = (id: string) => ({ [TEST_USER_HEADER]: id });
+const asUser = (id: string, deviceTimeZone = "UTC") => ({
+  [TEST_USER_HEADER]: id,
+  "X-CUT-Device-Timezone": deviceTimeZone,
+});
 
 beforeAll(async () => {
   ctx = await createTestContext();
@@ -21,6 +24,89 @@ afterAll(async () => {
 });
 
 describe("Balanced meal API", () => {
+  it("fails closed when meal-day timezone context is missing or invalid", async () => {
+    const clerkUserId = "meal_route_timezone_required";
+    const authenticatedOnly = { [TEST_USER_HEADER]: clerkUserId };
+    await makeTestUserEligible(ctx, clerkUserId);
+
+    const missingRead = await request(ctx.app)
+      .get("/api/me/meals/today")
+      .set(authenticatedOnly);
+    const invalidRead = await request(ctx.app)
+      .get("/api/me/meals/today")
+      .set(authenticatedOnly)
+      .set("X-CUT-Device-Timezone", "Not/AZone");
+    const missingCreate = await request(ctx.app)
+      .post("/api/me/meal-entries")
+      .set(authenticatedOnly)
+      .send({});
+
+    for (const response of [missingRead, invalidRead, missingCreate]) {
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe("device_timezone_required");
+      expect(response.headers["cache-control"]).toBe("no-store");
+      expect(response.headers.vary).toContain("X-CUT-Device-Timezone");
+    }
+  });
+
+  it("keeps concurrent devices on independent meal days during account timezone churn", async () => {
+    const clerkUserId = "meal_route_two_devices";
+    await makeTestUserEligible(ctx, clerkUserId);
+    const west = asUser(clerkUserId, "Etc/GMT+12");
+    const east = asUser(clerkUserId, "Pacific/Kiritimati");
+    const options = await request(ctx.app)
+      .get("/api/me/meal-options")
+      .set(west);
+    const [westDay, eastDay] = await Promise.all([
+      request(ctx.app).get("/api/me/meals/today").set(west),
+      request(ctx.app).get("/api/me/meals/today").set(east),
+    ]);
+    expect(westDay.body.dayKey).not.toBe(eastDay.body.dayKey);
+
+    const baseInput = {
+      catalogVersion: options.body[0].catalogVersion,
+      mealTemplateId: options.body[0].id,
+      servings: 1,
+    };
+    const [westCreate, _accountUpdate, eastCreate] = await Promise.all([
+      request(ctx.app)
+        .post("/api/me/meal-entries")
+        .set(west)
+        .send({
+          ...baseInput,
+          clientRequestId: "144c9db7-f29c-46c1-b65c-7e4091215797",
+          dayKey: westDay.body.dayKey,
+        }),
+      request(ctx.app)
+        .patch("/api/me")
+        .set(asUser(clerkUserId, "Asia/Dhaka"))
+        .send({ timezone: "Asia/Dhaka" }),
+      request(ctx.app)
+        .post("/api/me/meal-entries")
+        .set(east)
+        .send({
+          ...baseInput,
+          clientRequestId: "51c6b0d3-aa01-478c-ae61-796ce991184a",
+          dayKey: eastDay.body.dayKey,
+        }),
+    ]);
+    expect(westCreate.status).toBe(201);
+    expect(eastCreate.status).toBe(201);
+    expect(westCreate.headers["cache-control"]).toBe("no-store");
+    expect(westCreate.headers.vary).toContain("X-CUT-Device-Timezone");
+
+    const [westAfter, eastAfter] = await Promise.all([
+      request(ctx.app).get("/api/me/meals/today").set(west),
+      request(ctx.app).get("/api/me/meals/today").set(east),
+    ]);
+    expect(
+      westAfter.body.entries.map((entry: { id: string }) => entry.id),
+    ).toEqual([westCreate.body.id]);
+    expect(
+      eastAfter.body.entries.map((entry: { id: string }) => entry.id),
+    ).toEqual([eastCreate.body.id]);
+  });
+
   it("requires authentication for every meal endpoint", async () => {
     const responses = await Promise.all([
       request(ctx.app).get("/api/me/meal-options"),
@@ -111,10 +197,13 @@ describe("Balanced meal API", () => {
       .put("/api/me/profile")
       .set(ownerHeaders)
       .send({ goal: "cut" });
+    const reviewedToday = await request(ctx.app)
+      .get("/api/me/today")
+      .set(ownerHeaders);
     await request(ctx.app)
       .put("/api/me/weight-entries/today")
       .set(ownerHeaders)
-      .send({ weightKg: 91.2 });
+      .send({ dayKey: reviewedToday.body.dayKey, weightKg: 91.2 });
 
     const options = await request(ctx.app)
       .get("/api/me/meal-options")

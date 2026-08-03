@@ -162,6 +162,62 @@ describe("committed migrations", () => {
     await client.close();
   });
 
+  it("purges profile fields that paid v1 no longer collects or uses", async () => {
+    const client = new PGlite();
+    const migrations = migrationSqlInOrder();
+    const minimizationMigrationIndex = migrations.findIndex((sql) =>
+      sql.includes("Paid v1 does not use these legacy profile attributes"),
+    );
+    expect(minimizationMigrationIndex).toBeGreaterThan(0);
+    for (const sql of migrations.slice(0, minimizationMigrationIndex)) {
+      await client.exec(sql);
+    }
+
+    const userId = "d559217f-7e19-47e8-b2f3-bb99945438d2";
+    await client.query(
+      `insert into users (id, clerk_user_id) values ($1, 'legacy_profile_user')`,
+      [userId],
+    );
+    await client.query(
+      `insert into profiles (
+        user_id, goal, sex, height_cm, start_weight_kg, goal_weight_kg,
+        target_date, activity_level, training_experience
+      ) values ($1, 'cut', 'female', 170, 80, 70, '2026-12-01', 'active', 'advanced')`,
+      [userId],
+    );
+
+    await client.exec(migrations[minimizationMigrationIndex]!);
+
+    const result = await client.query<{
+      goal: string;
+      sex: string;
+      height_cm: number | null;
+      start_weight_kg: number | null;
+      goal_weight_kg: number | null;
+      target_date: string | null;
+      activity_level: string;
+      training_experience: string;
+    }>(
+      `select goal, sex, height_cm, start_weight_kg, goal_weight_kg,
+              target_date, activity_level, training_experience
+       from profiles where user_id = $1`,
+      [userId],
+    );
+    expect(result.rows).toEqual([
+      {
+        goal: "cut",
+        sex: "unspecified",
+        height_cm: null,
+        start_weight_kg: 80,
+        goal_weight_kg: 70,
+        target_date: null,
+        activity_level: "moderate",
+        training_experience: "beginner",
+      },
+    ]);
+    await client.close();
+  });
+
   it("enforces adult-eligibility status and lifecycle invariants", async () => {
     const client = new PGlite();
     for (const sql of migrationSqlInOrder()) await client.exec(sql);

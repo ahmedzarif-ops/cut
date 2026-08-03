@@ -5,7 +5,6 @@ import {
   useGetMe,
   useGetMyProfile,
   useUpsertMyProfile,
-  type Profile,
 } from "@workspace/api-client-react";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -24,10 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 import {
-  ACTIVITY,
-  EXPERIENCE,
   GOALS,
-  SEXES,
   formStateToProfileInput,
   profileToFormState,
   type ProfileFormState,
@@ -38,25 +34,13 @@ const LABELS: Record<string, string> = {
   maintain: "Maintain",
   recomp: "Recomp",
   gain: "Gain",
-  male: "Male",
-  female: "Female",
-  other: "Other",
-  unspecified: "Prefer not to say",
-  sedentary: "Sedentary",
-  light: "Light",
-  moderate: "Moderate",
-  active: "Active",
-  very_active: "Very active",
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
 };
 
 /**
  * Loads the current account + profile before showing the form so editing an
- * existing plan starts from the saved values. PUT /api/me/profile is a full
- * replace — rendering this form blank for a user who already has a profile
- * and letting them save would silently null every omitted field.
+ * existing profile starts from the saved values. PUT /api/me/profile is a full
+ * replace of the minimal paid-v1 profile; unused legacy fields are deliberately
+ * cleared rather than collected or carried forward.
  */
 export default function OnboardingScreen() {
   const c = useColors();
@@ -108,9 +92,7 @@ export default function OnboardingScreen() {
   }
 
   const profile = profileQuery.data ?? null;
-  return (
-    <OnboardingForm initial={profileToFormState(profile)} existing={profile} />
-  );
+  return <OnboardingForm initial={profileToFormState(profile)} />;
 }
 
 function LoadErrorView({ onRetry }: { onRetry: () => void }) {
@@ -129,7 +111,7 @@ function LoadErrorView({ onRetry }: { onRetry: () => void }) {
         },
       ]}
     >
-      <Text style={s.title}>Couldn&apos;t load your plan</Text>
+      <Text style={s.title}>Couldn&apos;t load your profile</Text>
       <Text style={s.subtitle}>
         Check your connection and try again before editing.
       </Text>
@@ -143,13 +125,7 @@ function LoadErrorView({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-function OnboardingForm({
-  initial,
-  existing,
-}: {
-  initial: ProfileFormState;
-  existing: Profile | null;
-}) {
+function OnboardingForm({ initial }: { initial: ProfileFormState }) {
   const c = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -172,13 +148,15 @@ function OnboardingForm({
     setSubmitError(null);
     try {
       await upsertProfile.mutateAsync({
-        data: formStateToProfileInput(form, existing),
+        data: formStateToProfileInput(form),
       });
       await qc.invalidateQueries({ queryKey: getGetMyProfileQueryKey() });
       await qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
       router.replace("/today");
     } catch {
-      setSubmitError("Couldn't save your plan. Check your entries and retry.");
+      setSubmitError(
+        "Couldn't save your profile. Check your entries and retry.",
+      );
     }
   };
 
@@ -217,10 +195,8 @@ function OnboardingForm({
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={s.title}>Build your plan</Text>
-        <Text style={s.subtitle}>
-          These drive your daily calorie and training targets.
-        </Text>
+        <Text style={s.title}>Set up your profile</Text>
+        <Text style={s.subtitle}>Save the basics for your CUT OS profile.</Text>
 
         <Text style={s.label}>Display name</Text>
         <TextInput
@@ -233,20 +209,6 @@ function OnboardingForm({
 
         <Text style={s.label}>Goal</Text>
         {renderChips(GOALS, form.goal, (v) => set("goal", v))}
-
-        <Text style={s.label}>Sex</Text>
-        {renderChips(SEXES, form.sex, (v) => set("sex", v))}
-
-        <Text style={s.label}>Height (cm)</Text>
-        <TextInput
-          accessibilityLabel="Height in centimeters"
-          style={s.input}
-          keyboardType="decimal-pad"
-          placeholder="180"
-          placeholderTextColor={c.mutedForeground}
-          value={form.heightCm}
-          onChangeText={(v) => set("heightCm", v)}
-        />
 
         <View style={s.twoCol}>
           <View style={s.col}>
@@ -273,16 +235,6 @@ function OnboardingForm({
           </View>
         </View>
 
-        <Text style={s.label}>Activity level</Text>
-        {renderChips(ACTIVITY, form.activityLevel, (v) =>
-          set("activityLevel", v),
-        )}
-
-        <Text style={s.label}>Training experience</Text>
-        {renderChips(EXPERIENCE, form.trainingExperience, (v) =>
-          set("trainingExperience", v),
-        )}
-
         {submitError && <Text style={s.error}>{submitError}</Text>}
 
         <Pressable
@@ -297,7 +249,7 @@ function OnboardingForm({
           {busy ? (
             <ActivityIndicator color={c.primaryForeground} />
           ) : (
-            <Text style={s.buttonText}>Save plan</Text>
+            <Text style={s.buttonText}>Save profile</Text>
           )}
         </Pressable>
 

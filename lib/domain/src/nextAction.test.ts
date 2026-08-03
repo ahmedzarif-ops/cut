@@ -9,8 +9,13 @@ describe("selectNextAction", () => {
         onboardingComplete: false,
         hasWeightToday: false,
         hasMealToday: false,
-      }).kind,
-    ).toBe("complete_onboarding");
+      }),
+    ).toEqual({
+      kind: "complete_onboarding",
+      title: "Set up your profile",
+      detail:
+        "Add your profile details to finish setup and start your daily check-in.",
+    });
   });
 
   it("asks for today's weigh-in after onboarding", () => {

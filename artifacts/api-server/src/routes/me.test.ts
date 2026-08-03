@@ -41,6 +41,14 @@ describe("auth gate", () => {
     expect(res.body).toEqual({ error: "Unauthorized" });
   });
 
+  it("rejects unauthenticated account-setting updates", async () => {
+    const res = await request(ctx.app)
+      .patch("/api/me")
+      .send({ timezone: "America/Chicago" });
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Unauthorized" });
+  });
+
   it("rejects unauthenticated /me/profile reads and writes", async () => {
     expect((await request(ctx.app).get("/api/me/profile")).status).toBe(401);
     expect(
@@ -184,6 +192,22 @@ describe("PATCH /api/me", () => {
     expect(res.status).toBe(400);
   });
 
+  it("rejects unknown fields instead of silently accepting paid-domain input", async () => {
+    const headers = asUser("clerk_patch_unknown");
+    await makeTestUserEligible(ctx, "clerk_patch_unknown");
+
+    const res = await request(ctx.app).patch("/api/me").set(headers).send({
+      timezone: "Asia/Dhaka",
+      goal: "cut",
+      startWeightKg: 90,
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "Invalid account settings input" });
+    const readBack = await request(ctx.app).get("/api/me").set(headers);
+    expect(readBack.body.timezone).toBe("UTC");
+  });
+
   it("rejects an empty timezone", async () => {
     await makeTestUserEligible(ctx, "clerk_patch_3");
     const res = await request(ctx.app)
@@ -249,19 +273,18 @@ describe("profile lifecycle", () => {
       .set(headers)
       .send({
         goal: "cut",
-        sex: "male",
         displayName: "Test Lifter",
-        heightCm: 180,
         startWeightKg: 95.5,
         goalWeightKg: 86.2,
-        targetDate: "2026-09-26",
-        activityLevel: "active",
-        trainingExperience: "advanced",
       });
     expect(put.status).toBe(200);
     expect(put.body.goal).toBe("cut");
     expect(put.body.startWeightKg).toBeCloseTo(95.5);
-    expect(put.body.targetDate).toBe("2026-09-26");
+    expect(put.body).not.toHaveProperty("sex");
+    expect(put.body).not.toHaveProperty("heightCm");
+    expect(put.body).not.toHaveProperty("targetDate");
+    expect(put.body).not.toHaveProperty("activityLevel");
+    expect(put.body).not.toHaveProperty("trainingExperience");
 
     const me = await request(ctx.app).get("/api/me").set(headers);
     expect(put.body.userId).toBe(me.body.id);
@@ -269,7 +292,7 @@ describe("profile lifecycle", () => {
     const get = await request(ctx.app).get("/api/me/profile").set(headers);
     expect(get.status).toBe(200);
     expect(get.body.displayName).toBe("Test Lifter");
-    expect(get.body.heightCm).toBeCloseTo(180);
+    expect(get.body.goalWeightKg).toBeCloseTo(86.2);
   });
 
   it("PUT /me/profile atomically marks onboarding complete (P1-4)", async () => {
@@ -289,7 +312,7 @@ describe("profile lifecycle", () => {
     expect(after.body.onboardingComplete).toBe(true);
   });
 
-  it("PUT is a full replace — omitted optional fields reset to null", async () => {
+  it("PUT is a full replace of the minimal paid-v1 profile", async () => {
     const headers = asUser("clerk_prof_1");
     const put = await request(ctx.app)
       .put("/api/me/profile")
@@ -297,21 +320,18 @@ describe("profile lifecycle", () => {
       .send({ goal: "maintain" });
     expect(put.status).toBe(200);
     expect(put.body.goal).toBe("maintain");
-    // This is the documented server contract that makes client-side prefill
-    // mandatory (see the onboarding Edit-plan data-loss fix in cut-os).
     expect(put.body.displayName).toBeNull();
-    expect(put.body.heightCm).toBeNull();
     expect(put.body.startWeightKg).toBeNull();
     expect(put.body.goalWeightKg).toBeNull();
     expect(put.body).not.toHaveProperty("birthYear");
-    expect(put.body.targetDate).toBeNull();
-    // Enum fields fall back to their defaults rather than null.
-    expect(put.body.sex).toBe("unspecified");
-    expect(put.body.activityLevel).toBe("moderate");
-    expect(put.body.trainingExperience).toBe("beginner");
+    expect(put.body).not.toHaveProperty("heightCm");
+    expect(put.body).not.toHaveProperty("targetDate");
+    expect(put.body).not.toHaveProperty("sex");
+    expect(put.body).not.toHaveProperty("activityLevel");
+    expect(put.body).not.toHaveProperty("trainingExperience");
   });
 
-  it("validates the body: missing goal and out-of-range values are 400", async () => {
+  it("validates the body and rejects deprecated or unknown profile fields", async () => {
     const headers = asUser("clerk_prof_2");
     await makeTestUserEligible(ctx, "clerk_prof_2");
     expect(
@@ -323,7 +343,7 @@ describe("profile lifecycle", () => {
         await request(ctx.app)
           .put("/api/me/profile")
           .set(headers)
-          .send({ goal: "cut", heightCm: 10 })
+          .send({ goal: "cut", heightCm: 180 })
       ).status,
     ).toBe(400);
     expect(
@@ -331,7 +351,7 @@ describe("profile lifecycle", () => {
         await request(ctx.app)
           .put("/api/me/profile")
           .set(headers)
-          .send({ goal: "cut", targetDate: "September 26" })
+          .send({ goal: "cut", targetDate: "2026-09-26" })
       ).status,
     ).toBe(400);
     expect(
