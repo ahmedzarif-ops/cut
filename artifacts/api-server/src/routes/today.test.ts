@@ -4,6 +4,7 @@ import request from "supertest";
 import {
   TEST_USER_HEADER,
   createTestContext,
+  makeTestUserEligible,
   type TestContext,
 } from "../test/helpers";
 
@@ -21,6 +22,7 @@ afterAll(async () => {
 describe("Today weigh-in API", () => {
   it("moves Next Action forward and makes repeated saves idempotent", async () => {
     const headers = asUser("clerk_today_route");
+    await makeTestUserEligible(ctx, "clerk_today_route");
     await request(ctx.app).get("/api/me").set(headers);
     await request(ctx.app)
       .put("/api/me/profile")
@@ -66,6 +68,7 @@ describe("Today weigh-in API", () => {
   });
 
   it("does not expose another user's weigh-in", async () => {
+    await makeTestUserEligible(ctx, "clerk_today_other");
     const other = await request(ctx.app)
       .get("/api/me/weight-entries")
       .set(asUser("clerk_today_other"));

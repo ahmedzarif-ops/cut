@@ -8,6 +8,7 @@ import {
   upsertProfile,
   getProfile,
 } from "./userService";
+import { decideAdultEligibility } from "./adultEligibilityService";
 
 let ctx: TestContext;
 afterEach(async () => {
@@ -30,10 +31,12 @@ describe("provisionUser", () => {
     expect(first?.id).toBeDefined();
     expect(second?.id).toBe(first?.id);
     expect(first?.clerkUserId).toBe("clerk_abc");
+    expect(first?.email).toBeNull();
+    expect(first?.adultEligibilityStatus).toBe("unverified");
   });
 });
 
-describe("provisionUser — no hot-path write", () => {
+describe("provisionUser — select-first idempotency", () => {
   it("does not modify the row on a returning user's request", async () => {
     ctx = await createTestContext();
     await provisionUser({ clerkUserId: "clerk_nowrite", email: "n@w.com" });
@@ -64,36 +67,25 @@ describe("provisionUser — no hot-path write", () => {
 });
 
 describe("upsertProfile full-replace", () => {
-  it("rejects a fractional birth year before writing", async () => {
-    ctx = await createTestContext();
-    const user = await provisionUser({
-      clerkUserId: "clerk_fractional_birth_year",
-      email: null,
-    });
-
-    await expect(
-      upsertProfile(user!.id, { goal: "cut", birthYear: 1995.5 }),
-    ).rejects.toMatchObject({
-      statusCode: 400,
-      message: "Birth year must be a whole number",
-    });
-    expect(await getProfile(user!.id)).toBeUndefined();
-  });
-
   it("resets omitted optional fields to null on re-save", async () => {
     ctx = await createTestContext();
-    const user = await provisionUser({ clerkUserId: "clerk_p", email: null });
+    const decision = await decideAdultEligibility({
+      clerkUserId: "clerk_p",
+      email: null,
+      dateOfBirth: "1990-01-01",
+      policyVersion: "adult-18-v1",
+    });
 
-    await upsertProfile(user!.id, {
+    await upsertProfile(decision.userId, {
       goal: "cut",
       heightCm: 180,
       startWeightKg: 90,
       targetDate: "2026-09-01",
     });
     // Second save omits height/weight/targetDate — full replace nulls them.
-    await upsertProfile(user!.id, { goal: "maintain" });
+    await upsertProfile(decision.userId, { goal: "maintain" });
 
-    const profile = await getProfile(user!.id);
+    const profile = await getProfile(decision.userId);
     expect(profile?.goal).toBe("maintain");
     expect(profile?.heightCm).toBeNull();
     expect(profile?.startWeightKg).toBeNull();
@@ -104,21 +96,43 @@ describe("upsertProfile full-replace", () => {
 describe("upsertProfile — atomic onboarding (P1-4)", () => {
   it("marks the user onboarded in the same transaction as the profile write", async () => {
     ctx = await createTestContext();
-    const user = await provisionUser({
+    const decision = await decideAdultEligibility({
       clerkUserId: "clerk_atomic",
       email: null,
+      dateOfBirth: "1990-01-01",
+      policyVersion: "adult-18-v1",
     });
-    expect(user?.onboardingComplete).toBe(false);
+    const before = await getUserByClerkId("clerk_atomic");
+    expect(before?.onboardingComplete).toBe(false);
 
-    await upsertProfile(user!.id, { goal: "cut" });
+    await upsertProfile(decision.userId, { goal: "cut" });
 
     const [after] = await ctx.db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.id, user!.id));
+      .where(eq(usersTable.id, decision.userId));
     // Flag flips true alongside the profile row — never a second, separable write.
     expect(after.onboardingComplete).toBe(true);
     // A profile row exists for that user — the flag now reflects reality.
-    expect(await getProfile(user!.id)).toBeDefined();
+    expect(await getProfile(decision.userId)).toBeDefined();
+  });
+
+  it("rejects an unverified direct service call without creating a profile", async () => {
+    ctx = await createTestContext();
+    const user = await provisionUser({
+      clerkUserId: "clerk_unverified_profile",
+      email: null,
+    });
+
+    await expect(
+      upsertProfile(user!.id, { goal: "cut" }),
+    ).rejects.toMatchObject({
+      statusCode: 428,
+      code: "adult_eligibility_required",
+    });
+
+    expect(await getProfile(user!.id)).toBeUndefined();
+    const after = await getUserByClerkId("clerk_unverified_profile");
+    expect(after?.onboardingComplete).toBe(false);
   });
 });

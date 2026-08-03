@@ -5,6 +5,58 @@
  * CUT OS API specification
  * OpenAPI spec version: 0.1.0
  */
+export type AdultEligibilityStatusStatus = typeof AdultEligibilityStatusStatus[keyof typeof AdultEligibilityStatusStatus];
+
+
+export const AdultEligibilityStatusStatus = {
+  unverified: 'unverified',
+  eligible: 'eligible',
+  ineligible: 'ineligible',
+  review_required: 'review_required',
+} as const;
+
+export type AdultEligibilityStatusMinimumAge = typeof AdultEligibilityStatusMinimumAge[keyof typeof AdultEligibilityStatusMinimumAge];
+
+
+export const AdultEligibilityStatusMinimumAge = {
+  NUMBER_18: 18,
+} as const;
+
+export type AdultEligibilityStatusPolicyVersion = typeof AdultEligibilityStatusPolicyVersion[keyof typeof AdultEligibilityStatusPolicyVersion];
+
+
+export const AdultEligibilityStatusPolicyVersion = {
+  'adult-18-v1': 'adult-18-v1',
+} as const;
+
+export interface AdultEligibilityStatus {
+  status: AdultEligibilityStatusStatus;
+  minimumAge: AdultEligibilityStatusMinimumAge;
+  policyVersion: AdultEligibilityStatusPolicyVersion;
+}
+
+export interface AdultEligibilityInput {
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  dateOfBirth: string;
+  /** @minLength 1 */
+  policyVersion: string;
+  adultAttestation: true;
+}
+
+export type AdultEligibilityBlockedErrorCode = typeof AdultEligibilityBlockedErrorCode[keyof typeof AdultEligibilityBlockedErrorCode];
+
+
+export const AdultEligibilityBlockedErrorCode = {
+  adult_eligibility_required: 'adult_eligibility_required',
+  adult_eligibility_denied: 'adult_eligibility_denied',
+  adult_eligibility_policy_changed: 'adult_eligibility_policy_changed',
+} as const;
+
+export interface AdultEligibilityBlockedError {
+  error: string;
+  code: AdultEligibilityBlockedErrorCode;
+}
+
 export type AccountDeletionStatusStatus = typeof AccountDeletionStatusStatus[keyof typeof AccountDeletionStatusStatus];
 
 
@@ -248,8 +300,6 @@ export interface Profile {
   goal: ProfileGoal;
   sex: ProfileSex;
   /** @nullable */
-  birthYear?: number | null;
-  /** @nullable */
   heightCm?: number | null;
   /** @nullable */
   startWeightKg?: number | null;
@@ -311,11 +361,6 @@ export interface ProfileInput {
   goal: ProfileInputGoal;
   sex?: ProfileInputSex;
   /**
-     * @minimum 1900
-     * @maximum 2025
-     */
-  birthYear?: number;
-  /**
      * @minimum 50
      * @maximum 300
      */
@@ -343,6 +388,16 @@ export interface ProfileInput {
  * Account deletion is pending or complete; private access is blocked
  */
 export type AccountDeletionBlockedResponse = Error;
+
+/**
+ * A current-policy adult-eligibility decision is required
+ */
+export type AdultEligibilityRequiredResponse = AdultEligibilityBlockedError;
+
+/**
+ * The authenticated identity is not eligible for adult access
+ */
+export type AdultEligibilityDeniedResponse = AdultEligibilityBlockedError;
 
 export type ListMyWeightEntriesParams = {
 /**

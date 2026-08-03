@@ -29,6 +29,7 @@ import {
   type AccountDeletionMarker,
 } from "@/lib/account-deletion";
 import { useAccountDeletionGate } from "@/lib/account-deletion-gate";
+import { useAdultEligibilityGate } from "@/lib/adult-eligibility-gate";
 import { pendingMealCreateKey } from "@/lib/meal-create-intent";
 
 const APP_STORE_SUBSCRIPTIONS_URL =
@@ -43,6 +44,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const s = makeStyles(c);
   const { marker, serverStatus, setMarker } = useAccountDeletionGate();
+  const adultEligibility = useAdultEligibilityGate();
 
   const [actionError, setActionError] = React.useState<string | null>(null);
   const [subscriptionError, setSubscriptionError] = React.useState<
@@ -62,7 +64,17 @@ export default function SettingsScreen() {
   );
 
   const recoveryRequired = marker !== null || serverStatus !== "none";
+  const ageRequirementRequired =
+    !recoveryRequired && adultEligibility.isRequired;
   const busy = operationBusy;
+
+  const leaveSettings = () => {
+    if (ageRequirementRequired) {
+      router.replace("/adult-eligibility");
+    } else {
+      router.back();
+    }
+  };
 
   const openSubscriptions = async () => {
     setSubscriptionError(null);
@@ -295,7 +307,11 @@ export default function SettingsScreen() {
         {!recoveryRequired ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Back to Today"
+            accessibilityLabel={
+              ageRequirementRequired
+                ? "Back to age requirement"
+                : "Back to Today"
+            }
             disabled={busy}
             hitSlop={8}
             style={({ pressed }) => [
@@ -303,7 +319,7 @@ export default function SettingsScreen() {
               busy && s.disabled,
               pressed && !busy && s.pressed,
             ]}
-            onPress={() => router.back()}
+            onPress={leaveSettings}
           >
             <Text style={s.backButtonText}>‹</Text>
           </Pressable>
@@ -311,7 +327,11 @@ export default function SettingsScreen() {
           <View style={s.backButtonPlaceholder} />
         )}
         <Text style={s.headerContext}>
-          {recoveryRequired ? "ACCOUNT RECOVERY" : "TODAY"}
+          {recoveryRequired
+            ? "ACCOUNT RECOVERY"
+            : ageRequirementRequired
+              ? "AGE REQUIREMENT"
+              : "TODAY"}
         </Text>
       </View>
 
@@ -319,7 +339,9 @@ export default function SettingsScreen() {
         Settings
       </Text>
       <Text style={s.subtitle}>
-        Manage your subscription and CUT OS account.
+        {ageRequirementRequired
+          ? "Manage your CUT OS account while health and nutrition features remain locked."
+          : "Manage your subscription and CUT OS account."}
       </Text>
 
       <View style={s.card}>
@@ -386,10 +408,15 @@ export default function SettingsScreen() {
       {!recoveryRequired ? (
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={
+            ageRequirementRequired ? "Back to age requirement" : "Done"
+          }
           style={s.doneButton}
-          onPress={() => router.back()}
+          onPress={leaveSettings}
         >
-          <Text style={s.doneText}>Done</Text>
+          <Text style={s.doneText}>
+            {ageRequirementRequired ? "Back to age requirement" : "Done"}
+          </Text>
         </Pressable>
       ) : null}
     </ScrollView>

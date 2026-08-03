@@ -13,7 +13,6 @@ const fullProfile: Profile = {
   displayName: "Zarif",
   goal: "cut",
   sex: "male",
-  birthYear: 1996,
   heightCm: 162.6,
   startWeightKg: 95.25,
   goalWeightKg: 86.18,
@@ -55,7 +54,6 @@ describe("profileToFormState", () => {
       displayName: "Zarif",
       goal: "cut",
       sex: "male",
-      birthYear: "1996",
       heightCm: "162.6",
       startWeightKg: "95.25",
       goalWeightKg: "86.18",
@@ -68,7 +66,6 @@ describe("profileToFormState", () => {
     const sparse: Profile = {
       ...fullProfile,
       displayName: null,
-      birthYear: null,
       heightCm: null,
       startWeightKg: null,
       goalWeightKg: null,
@@ -76,7 +73,6 @@ describe("profileToFormState", () => {
     };
     const form = profileToFormState(sparse);
     expect(form.displayName).toBe("");
-    expect(form.birthYear).toBe("");
     expect(form.heightCm).toBe("");
     expect(form.startWeightKg).toBe("");
     expect(form.goalWeightKg).toBe("");
@@ -97,7 +93,6 @@ describe("edit round-trip (the data-loss regression)", () => {
       activityLevel: "active",
       trainingExperience: "advanced",
       displayName: "Zarif",
-      birthYear: 1996,
       heightCm: 162.6,
       startWeightKg: 95.25,
       goalWeightKg: 86.18,
@@ -121,7 +116,6 @@ describe("edit round-trip (the data-loss regression)", () => {
       activityLevel: "moderate",
       trainingExperience: "beginner",
       displayName: undefined,
-      birthYear: undefined,
       heightCm: undefined,
       startWeightKg: undefined,
       goalWeightKg: undefined,
@@ -131,6 +125,8 @@ describe("edit round-trip (the data-loss regression)", () => {
 
   it("trims whitespace-only display names to undefined", () => {
     const form = { ...profileToFormState(fullProfile), displayName: "   " };
-    expect(formStateToProfileInput(form, fullProfile).displayName).toBeUndefined();
+    expect(
+      formStateToProfileInput(form, fullProfile).displayName,
+    ).toBeUndefined();
   });
 });

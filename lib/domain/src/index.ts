@@ -5,3 +5,4 @@ export * from "./timeZone";
 export * from "./nextAction";
 export * from "./weightUnits";
 export * from "./balancedMeals";
+export * from "./adultEligibility";

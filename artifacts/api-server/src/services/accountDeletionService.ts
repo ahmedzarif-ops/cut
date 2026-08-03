@@ -107,10 +107,10 @@ export async function getDurableDeletionStatus(
 }
 
 /**
- * Close the JIT race after user provisioning. A pending request locks access
- * but preserves retained data for retry. A completed tombstone atomically
- * removes only the exact re-provisioned identity/user pair before access is
- * denied, so a stale token can never leave a new active row behind.
+ * Close the deletion race after resolving or creating a user. A pending
+ * request locks access but preserves retained data for retry. A completed
+ * tombstone atomically removes only the exact identity/user pair before access
+ * is denied, so a stale token can never leave a new active row behind.
  */
 export async function enforcePostProvisionDeletionGuard(input: {
   identityHash: string;
@@ -223,8 +223,8 @@ async function stageAccountDeletion(
       throw new Error("Account deletion request has an invalid state");
     }
 
-    // The unique Clerk ID constraint is the race guard against a normal JIT
-    // provision happening between the durable-request check and this stage.
+    // The unique Clerk ID constraint is the race guard against an eligibility
+    // decision creating the row between the durable-request check and staging.
     await tx
       .insert(usersTable)
       .values({ clerkUserId, deletionStatus: "pending" })

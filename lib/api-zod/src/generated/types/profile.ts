@@ -18,8 +18,6 @@ export interface Profile {
   goal: ProfileGoal;
   sex: ProfileSex;
   /** @nullable */
-  birthYear?: number | null;
-  /** @nullable */
   heightCm?: number | null;
   /** @nullable */
   startWeightKg?: number | null;

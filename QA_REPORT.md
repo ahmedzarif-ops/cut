@@ -6,43 +6,48 @@
 
 ## Codex continuation — August 3, 2026
 
-This is the final local automated checkpoint for the balanced-meal and durable
-account-deletion foundations. It is not native/App Store acceptance. The
-post-commit generated-code drift check and commit SHA are recorded separately.
+This is the current local automated checkpoint for the balanced-meal,
+durable-account-deletion, and `adult-18-v1` eligibility foundations. It is not
+native/App Store acceptance. The post-commit generated-code drift check and
+commit SHA are recorded separately.
 
-| Gate item                           | Result            | Evidence                                                                                                                                               |
-| ----------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| TypeScript gate                     | PASS              | Root `pnpm run typecheck` passed across libraries, API, mobile, mockup sandbox, and scripts.                                                           |
-| Automated tests                     | PASS              | 173 tests: domain 25, database 4, mobile 42, API 102.                                                                                                  |
-| Generated API contract              | PASS (compiled)   | Deletion status/delete and normal-endpoint `410` responses, generated React Query client, and zod validators compile; post-commit drift check pending. |
-| Expo dependency compatibility       | PASS              | `expo install --check` passes after aligning Expo to `54.0.36`.                                                                                        |
-| Expo Doctor                         | PASS              | Expo Doctor `1.20.1` passes all 18/18 checks.                                                                                                          |
-| Frozen dependency install           | PASS              | pnpm `10.34.5` accepts the committed lockfile with `--frozen-lockfile`; required esbuild postinstall succeeds.                                         |
-| Production-style iOS export         | PASS              | Expo/Metro bundled 1,726 modules and emitted a 6.05 MB iOS Hermes bundle plus assets.                                                                  |
-| Database migration                  | PASS              | Blank PGlite builds all current tables; deletion lifecycle/hash, finite nutrition, replay tombstone, retry-index, and baseline reapply checks pass.    |
-| Today state                         | PASS (automated)  | User-local day and deterministic Next Action fixtures.                                                                                                 |
-| Daily weigh-in create/update        | PASS (automated)  | API/service tests save and replace today's weight.                                                                                                     |
-| Double-tap duplicate protection     | PASS (automated)  | Repeated same-day writes return the same ID and one row.                                                                                               |
-| Cross-user weight isolation         | PASS (automated)  | User B's history remains empty after User A logs weight.                                                                                               |
-| Metric/imperial conversion          | PASS (automated)  | Shared domain conversion round-trip and display rounding tests.                                                                                        |
-| Curated meal catalog                | PASS (automated)  | Six durable templates; Bengali/Desi presence, ingredients, nutrition, ranking, and ID uniqueness tested.                                               |
-| Meal create/retry                   | PASS (automated)  | Identical and simultaneous retries return one snapshot; cross-midnight recovery preserves its day; stale preconditions fail closed.                    |
-| Meal edit/delete/totals             | PASS (automated)  | Serving updates rescale snapshots; repeat delete is safe; a delayed create cannot resurrect a deleted row; totals return to first-meal state.          |
-| Cross-user meal isolation           | PASS (automated)  | Another authenticated user cannot list, edit, or delete the owner's entry.                                                                             |
-| Meal local-day ownership            | PASS (automated)  | Server validates the echoed reviewed day against the user's IANA timezone and rejects a new stale-day request.                                         |
-| Nutrition snapshot stability        | PASS (automated)  | Logged per-serving values are stored in the entry and daily totals derive from saved snapshots.                                                        |
-| Native meal helper tests            | PASS              | Serving/preview helpers plus durable owner/session-bound meal intent parsing, persistence ordering, and principal-switch guards pass.                  |
-| Native app typecheck                | PASS              | Generated hooks, weight/meal flows, Settings, deletion gate, retry states, and principal cache isolation compile together.                             |
-| Deletion cascade and isolation      | PASS (automated)  | Profile, weight, and meal rows cascade while another user's rows remain intact.                                                                        |
-| Tombstone/JIT guard                 | PASS (automated)  | Pre/post-provision checks return `410`; a completed-delete race cannot leave a replacement user or reach the handler.                                  |
-| Clerk failure and worker retry      | PASS (automated)  | Only a verified Clerk API `404` is terminal; raw-ID/hash mismatches never call Clerk; bounded retry remains durable.                                   |
-| Deletion concurrency/idempotency    | PASS (automated)  | Concurrent/repeated staging is monotonic, never regresses completed state, and avoids false success.                                                   |
-| Mobile deletion marker/gate helpers | PASS (automated)  | Owner-scoped markers fail closed; captured auth and snapshotted `410` handlers prevent late user-A work affecting user B.                              |
-| Second-session deletion propagation | PASS (automated)  | Normal-endpoint `410` removes private cache immediately; status refreshes on mount, foreground focus, and every 60 active seconds.                     |
-| Principal cache lifecycle           | PENDING NATIVE QA | The layout implementation compiles; shared-device account switching and query-cache clearing require native exercise.                                  |
-| Native simulator tap-through        | BLOCKED           | Full Xcode/Simulator is not installed on this Mac; a configured Clerk development build is also required.                                              |
-| Real iPhone interaction             | BLOCKED           | Device, development build, and owner authentication required.                                                                                          |
-| Real Clerk account deletion         | BLOCKED           | Requires a configured development tenant/server key plus native app-kill, retry, and second-device exercise.                                           |
+| Gate item                           | Result            | Evidence                                                                                                                                                                            |
+| ----------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TypeScript gate                     | PASS              | Root `pnpm run typecheck` passed across libraries, API, mobile, mockup sandbox, and scripts.                                                                                        |
+| Automated tests                     | PASS              | 199 tests: domain 31, database 4, mobile 53, API 111.                                                                                                                               |
+| Generated API contract              | PASS (compiled)   | Adult eligibility, deletion status/delete, private-endpoint `428`/`403`/`410` responses, generated React Query client, and zod validators compile; post-commit drift check pending. |
+| Expo dependency compatibility       | PASS              | `expo install --check` passes after aligning Expo to `54.0.36`.                                                                                                                     |
+| Expo Doctor                         | PASS              | Expo Doctor `1.20.1` passes all 18/18 checks.                                                                                                                                       |
+| Frozen dependency install           | PASS              | pnpm `10.34.5` accepts the committed lockfile with `--frozen-lockfile`; required esbuild postinstall succeeds.                                                                      |
+| Production-style iOS export         | PASS              | Expo/Metro bundled 1,730 modules and emitted a 6.08 MB iOS Hermes bundle plus assets.                                                                                               |
+| Database migration                  | PASS              | Blank PGlite builds all current tables; deletion lifecycle/hash, finite nutrition, replay tombstone, retry-index, and baseline reapply checks pass.                                 |
+| Today state                         | PASS (automated)  | User-local day and deterministic Next Action fixtures.                                                                                                                              |
+| Daily weigh-in create/update        | PASS (automated)  | API/service tests save and replace today's weight.                                                                                                                                  |
+| Double-tap duplicate protection     | PASS (automated)  | Repeated same-day writes return the same ID and one row.                                                                                                                            |
+| Cross-user weight isolation         | PASS (automated)  | User B's history remains empty after User A logs weight.                                                                                                                            |
+| Metric/imperial conversion          | PASS (automated)  | Shared domain conversion round-trip and display rounding tests.                                                                                                                     |
+| Curated meal catalog                | PASS (automated)  | Six durable templates; Bengali/Desi presence, ingredients, nutrition, ranking, and ID uniqueness tested.                                                                            |
+| Meal create/retry                   | PASS (automated)  | Identical and simultaneous retries return one snapshot; cross-midnight recovery preserves its day; stale preconditions fail closed.                                                 |
+| Meal edit/delete/totals             | PASS (automated)  | Serving updates rescale snapshots; repeat delete is safe; a delayed create cannot resurrect a deleted row; totals return to first-meal state.                                       |
+| Cross-user meal isolation           | PASS (automated)  | Another authenticated user cannot list, edit, or delete the owner's entry.                                                                                                          |
+| Meal local-day ownership            | PASS (automated)  | Server validates the echoed reviewed day against the user's IANA timezone and rejects a new stale-day request.                                                                      |
+| Nutrition snapshot stability        | PASS (automated)  | Logged per-serving values are stored in the entry and daily totals derive from saved snapshots.                                                                                     |
+| Native meal helper tests            | PASS              | Serving/preview helpers plus durable owner/session-bound meal intent parsing, persistence ordering, and principal-switch guards pass.                                               |
+| Native app typecheck                | PASS              | Generated hooks, weight/meal flows, Settings, deletion gate, retry states, and principal cache isolation compile together.                                                          |
+| Deletion cascade and isolation      | PASS (automated)  | Profile, weight, and meal rows cascade while another user's rows remain intact.                                                                                                     |
+| Tombstone/JIT guard                 | PASS (automated)  | Pre/post-provision checks return `410`; a completed-delete race cannot leave a replacement user or reach the handler.                                                               |
+| Clerk failure and worker retry      | PASS (automated)  | Only a verified Clerk API `404` is terminal; raw-ID/hash mismatches never call Clerk; bounded retry remains durable.                                                                |
+| Deletion concurrency/idempotency    | PASS (automated)  | Concurrent/repeated staging is monotonic, never regresses completed state, and avoids false success.                                                                                |
+| Mobile deletion marker/gate helpers | PASS (automated)  | Owner-scoped markers fail closed; captured auth and snapshotted `410` handlers prevent late user-A work affecting user B.                                                           |
+| Second-session deletion propagation | PASS (automated)  | Normal-endpoint `410` removes private cache immediately; status refreshes on mount, foreground focus, and every 60 active seconds.                                                  |
+| Adult UTC date rule                 | PASS (automated)  | Controlled-clock domain tests cover exact 18th birthday, one day short, malformed/future dates, and March 1 treatment of a February 29 birth.                                       |
+| Adult API authorization             | PASS (automated)  | API tests prove fail-closed `428` for unverified/stale state, `403` for ineligible, monotonic decisions, and continued deletion/status access.                                      |
+| Adult migration and minimization    | PASS (automated)  | Migration/service tests cover existing-user recheck, birth-year removal, email clearing/eligible restore, and schemas without raw-DOB persistence.                                  |
+| Adult native eligibility gate       | PENDING NATIVE QA | Must fail closed before private queries/screens, across offline/relaunch/deep-link/account-switch paths, while preserving deletion/settings access.                                 |
+| Principal cache lifecycle           | PENDING NATIVE QA | The layout implementation compiles; shared-device account switching and query-cache clearing require native exercise.                                                               |
+| Native simulator tap-through        | BLOCKED           | Full Xcode/Simulator is not installed on this Mac; a configured Clerk development build is also required.                                                                           |
+| Real iPhone interaction             | BLOCKED           | Device, development build, and owner authentication required.                                                                                                                       |
+| Real Clerk account deletion         | BLOCKED           | Requires a configured development tenant/server key plus native app-kill, retry, and second-device exercise.                                                                        |
 
 ### Required next native script
 
@@ -94,6 +99,44 @@ post-commit generated-code drift check and commit SHA are recorded separately.
 8. Verify deleting CUT OS did not silently cancel an App Store subscription and
    the Apple subscription-management path remains available.
 
+### Required adults-only native script
+
+1. Before sign-up, confirm the adults-18+ notice/local precheck appears if that
+   defense-in-depth flow ships. Confirm it does not claim to verify identity or
+   authorize server access.
+2. Create/sign in to a new account. Before entering DOB, deep-link to Today,
+   profile, weight, and meal screens and exercise offline/relaunch paths. Confirm
+   no private screen, cached health data, guidance, paywall, trial, or purchase
+   path appears; private APIs return `428`.
+3. Submit a malformed, impossible, missing, and future DOB. Confirm each fails
+   without echoing or retaining the input and the account remains unverified.
+4. Using controlled synthetic dates and a test server clock, confirm one day
+   short returns/stays ineligible (`403`) and the exact UTC 18th birthday becomes
+   eligible. Confirm a February 29 birth becomes eligible March 1 in a non-leap
+   18th year.
+5. For an ineligible account, confirm only the adults-only stop screen,
+   restricted Settings, Terms, Privacy, Support, sign out, account-deletion
+   status, and Delete Account remain available. Confirm there is no DOB
+   correction/retry, guidance, private data, or subscription path. After a later
+   synthetic 18th birthday, confirm the identity remains ineligible; deletion
+   plus a new account/identity is the only v1 adult-access path.
+6. Inspect device storage, network responses, server/database state, Clerk
+   metadata, logs, analytics/crash tooling, and support payloads. Raw DOB must
+   not appear anywhere after the transient decision; only status, policy
+   version, and decision time may persist.
+7. Start with a pre-policy existing account whose profile has birth year and
+   whose onboarding flag is true. Confirm migration drops birth year, clears the
+   local email copy, and forces a recheck; no grandfathering is allowed. Confirm
+   an eligible decision restores email from Clerk while unverified/ineligible
+   local rows retain no email.
+8. Switch among eligible, unverified, and ineligible users on one device. Confirm
+   private query state and transient form memory never cross principals. Repeat
+   after kill/relaunch, offline launch, foregrounding, and reinstall.
+9. Complete eligible onboarding and the normal Today/weight/meal happy path.
+   Confirm account deletion still works in every eligibility state.
+10. Repeat the full flow with VoiceOver, large text, light/dark mode, poor
+    network, and the exact release build supplied to App Review.
+
 ## Historical Phase 0 audit
 
 Historical Phase 0 findings remain in `PHASE_0_CLAUDE_AUDIT.md`. The current
@@ -107,5 +150,9 @@ not use the historical snapshot as release evidence.
   P1-2 in PHASE_0_CLAUDE_AUDIT.md).
 - No simulator/device or real-Clerk deletion QA has been performed in this
   continuation; automated evidence is limited to rows explicitly marked PASS.
-- Public launch remains blocked until minimum-age enforcement and qualified,
-  reproducible nutrition/allergen review are complete.
+- The owner approved adults-only policy `adult-18-v1`, and automated
+  server/domain/mobile enforcement is implemented and passing. Public launch
+  remains blocked until native-device and live-Clerk acceptance pass; Terms,
+  Privacy, public support/legal URLs, jurisdictional age-assurance, and Apple
+  metadata receive qualified review; live RevenueCat purchase flows pass; and
+  reproducible nutrition/allergen professional review is complete.

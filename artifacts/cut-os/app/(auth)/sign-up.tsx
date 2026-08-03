@@ -26,12 +26,15 @@ export default function SignUpScreen() {
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [code, setCode] = React.useState("");
+  const [adultConfirmed, setAdultConfirmed] = React.useState(false);
   const [pendingVerification, setPendingVerification] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
 
   const busy = fetchStatus === "fetching";
+  const createDisabled = !emailAddress || !password || !adultConfirmed || busy;
 
   const handleSubmit = async () => {
+    if (createDisabled) return;
     setSubmitError(null);
     const { error } = await signUp.password({ emailAddress, password });
     if (error) {
@@ -117,7 +120,9 @@ export default function SignUpScreen() {
         ) : (
           <>
             <Text style={s.title}>Create your account</Text>
-            <Text style={s.subtitle}>Start your cut in under a minute.</Text>
+            <Text style={s.subtitle}>
+              CUT OS is available only to people age 18 or older.
+            </Text>
 
             <Text style={s.label}>Email</Text>
             <TextInput
@@ -146,20 +151,41 @@ export default function SignUpScreen() {
             {errors.fields.password && (
               <Text style={s.error}>{errors.fields.password.message}</Text>
             )}
+
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityLabel="I confirm I am at least 18 years old"
+              accessibilityState={{ checked: adultConfirmed, disabled: busy }}
+              disabled={busy}
+              style={({ pressed }) => [
+                s.confirmationRow,
+                busy && s.buttonDisabled,
+                pressed && !busy && s.buttonPressed,
+              ]}
+              onPress={() => setAdultConfirmed((current) => !current)}
+            >
+              <View
+                importantForAccessibility="no-hide-descendants"
+                style={[s.checkbox, adultConfirmed && s.checkboxSelected]}
+              >
+                {adultConfirmed ? <Text style={s.checkmark}>✓</Text> : null}
+              </View>
+              <Text style={s.confirmationText}>
+                I confirm I am at least 18 years old.
+              </Text>
+            </Pressable>
             {submitError && <Text style={s.error}>{submitError}</Text>}
 
             <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: createDisabled, busy }}
               style={({ pressed }) => [
                 s.button,
-                (!emailAddress || !password || busy) && s.buttonDisabled,
-                pressed &&
-                  !!emailAddress &&
-                  !!password &&
-                  !busy &&
-                  s.buttonPressed,
+                createDisabled && s.buttonDisabled,
+                pressed && !createDisabled && s.buttonPressed,
               ]}
               onPress={handleSubmit}
-              disabled={!emailAddress || !password || busy}
+              disabled={createDisabled}
             >
               {busy ? (
                 <ActivityIndicator color={c.primaryForeground} />
@@ -239,6 +265,40 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontSize: 13,
       marginTop: 8,
     },
+    confirmationRow: {
+      minHeight: 48,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginTop: 22,
+      paddingVertical: 4,
+    },
+    checkbox: {
+      width: 26,
+      height: 26,
+      borderRadius: 7,
+      borderWidth: 2,
+      borderColor: c.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    checkboxSelected: {
+      backgroundColor: c.primary,
+      borderColor: c.primary,
+    },
+    checkmark: {
+      color: c.primaryForeground,
+      fontFamily: "Inter_700Bold",
+      fontSize: 17,
+      lineHeight: 20,
+    },
+    confirmationText: {
+      flex: 1,
+      color: c.foreground,
+      fontFamily: "Inter_500Medium",
+      fontSize: 15,
+      lineHeight: 21,
+    },
     button: {
       backgroundColor: c.primary,
       borderRadius: c.radius,
@@ -255,7 +315,11 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontFamily: "Inter_600SemiBold",
       fontSize: 16,
     },
-    secondaryButton: { alignItems: "center", paddingVertical: 16, marginTop: 8 },
+    secondaryButton: {
+      alignItems: "center",
+      paddingVertical: 16,
+      marginTop: 8,
+    },
     secondaryButtonText: {
       color: c.primary,
       fontFamily: "Inter_600SemiBold",

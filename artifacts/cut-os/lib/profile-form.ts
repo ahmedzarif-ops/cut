@@ -31,7 +31,6 @@ export interface ProfileFormState {
   displayName: string;
   goal: Goal;
   sex: Sex;
-  birthYear: string;
   heightCm: string;
   startWeightKg: string;
   goalWeightKg: string;
@@ -43,7 +42,6 @@ export const EMPTY_FORM_STATE: ProfileFormState = {
   displayName: "",
   goal: "cut",
   sex: "unspecified",
-  birthYear: "",
   heightCm: "",
   startWeightKg: "",
   goalWeightKg: "",
@@ -74,7 +72,6 @@ export function profileToFormState(
     displayName: profile.displayName ?? "",
     goal: profile.goal,
     sex: profile.sex,
-    birthYear: numberToField(profile.birthYear),
     heightCm: numberToField(profile.heightCm),
     startWeightKg: numberToField(profile.startWeightKg),
     goalWeightKg: numberToField(profile.goalWeightKg),
@@ -98,7 +95,6 @@ export function formStateToProfileInput(
     activityLevel: form.activityLevel,
     trainingExperience: form.trainingExperience,
     displayName: form.displayName.trim() || undefined,
-    birthYear: toNumber(form.birthYear),
     heightCm: toNumber(form.heightCm),
     startWeightKg: toNumber(form.startWeightKg),
     goalWeightKg: toNumber(form.goalWeightKg),

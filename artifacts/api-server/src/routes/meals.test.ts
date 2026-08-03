@@ -5,6 +5,7 @@ import { BALANCED_MEAL_CATALOG_VERSION } from "@workspace/domain";
 import {
   TEST_USER_HEADER,
   createTestContext,
+  makeTestUserEligible,
   type TestContext,
 } from "../test/helpers";
 
@@ -40,6 +41,7 @@ describe("Balanced meal API", () => {
 
   it("validates create and update inputs and rejects an unknown template", async () => {
     const headers = asUser("meal_route_invalid");
+    await makeTestUserEligible(ctx, "meal_route_invalid");
     const malformed = await request(ctx.app)
       .post("/api/me/meal-entries")
       .set(headers)
@@ -77,6 +79,7 @@ describe("Balanced meal API", () => {
 
   it("rejects unknown create and update fields instead of stripping them", async () => {
     const headers = asUser("meal_route_unknown_fields");
+    await makeTestUserEligible(ctx, "meal_route_unknown_fields");
     const createWithUnknownKey = await request(ctx.app)
       .post("/api/me/meal-entries")
       .set(headers)
@@ -100,6 +103,8 @@ describe("Balanced meal API", () => {
   it("supports an isolated create, retry, update, total, and delete lifecycle", async () => {
     const ownerHeaders = asUser("meal_route_owner");
     const otherHeaders = asUser("meal_route_other");
+    await makeTestUserEligible(ctx, "meal_route_owner");
+    await makeTestUserEligible(ctx, "meal_route_other");
 
     await request(ctx.app).get("/api/me").set(ownerHeaders);
     await request(ctx.app)

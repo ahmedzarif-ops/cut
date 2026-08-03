@@ -28,6 +28,13 @@ export const usersTable = pgTable(
     // "metric" | "imperial" — display units only; storage is always metric (kg/cm).
     units: text("units").notNull().default("metric"),
     onboardingComplete: boolean("onboarding_complete").notNull().default(false),
+    adultEligibilityStatus: text("adult_eligibility_status")
+      .notNull()
+      .default("unverified"),
+    adultEligibilityPolicyVersion: text("adult_eligibility_policy_version"),
+    adultEligibilityDecidedAt: timestamp("adult_eligibility_decided_at", {
+      withTimezone: true,
+    }),
     /** Blocks ordinary account access while durable deletion is in progress. */
     deletionStatus: text("deletion_status").notNull().default("active"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -42,6 +49,18 @@ export const usersTable = pgTable(
     check(
       "users_deletion_status_check",
       sql`${table.deletionStatus} IN ('active', 'pending')`,
+    ),
+    check(
+      "users_adult_eligibility_status_check",
+      sql`${table.adultEligibilityStatus} IN ('unverified', 'eligible', 'ineligible')`,
+    ),
+    check(
+      "users_adult_eligibility_lifecycle_check",
+      sql`(${table.adultEligibilityStatus} = 'unverified' AND ${table.adultEligibilityPolicyVersion} IS NULL AND ${table.adultEligibilityDecidedAt} IS NULL) OR (${table.adultEligibilityStatus} IN ('eligible', 'ineligible') AND NULLIF(BTRIM(${table.adultEligibilityPolicyVersion}), '') IS NOT NULL AND ${table.adultEligibilityDecidedAt} IS NOT NULL)`,
+    ),
+    check(
+      "users_email_requires_adult_eligibility_check",
+      sql`${table.adultEligibilityStatus} = 'eligible' OR ${table.email} IS NULL`,
     ),
   ],
 );

@@ -56,13 +56,36 @@ Flow:
    via the auth-token getter registered in `app/(app)/_layout.tsx`
    (see `.agents/memory/clerk-expo-token-getter.md` for the defensive
    timeout/catch rationale).
-3. `clerkMiddleware` on the server verifies the JWT; `requireAuth`
-   (`src/middlewares/requireAuth.ts`) first checks the durable deletion
-   tombstone and returns `410` for a pending/completed identity. Only an active
-   identity is resolved to the **internal user id**: the server provisions a
-   `users` row keyed by unique `clerk_user_id` on the first request and attaches
-   `req.userId` (internal uuid).
-4. In production, the Clerk Frontend API is reached through a same-origin
+3. `clerkMiddleware` on the server verifies the JWT. Special deletion and adult
+   eligibility routes authenticate the Clerk identity without normal private
+   access or automatic user provisioning. Eligibility status lookup does not
+   create a row; the decision route may create one minimal `users` row.
+4. `requireAuth` (`src/middlewares/requireAuth.ts`) checks the durable deletion
+   tombstone first, returns `410` for a pending/completed identity, and performs
+   a lookup-only resolution of the internal user. A missing row returns `428`;
+   normal private endpoints never JIT-provision an unverified user.
+5. The eligibility status/submission route remains available after auth. A full
+   DOB is accepted only as transient request data; the server applies the
+   injected-clock UTC `adult-18-v1` rule and persists only
+   `unverified`/`eligible`/`ineligible`, policy version, and decision timestamp.
+   Raw DOB is never stored, logged, cached, returned, or written to Clerk.
+   The public status projection uses `review_required` for an eligible row whose
+   stored policy version is stale; it is not a database status.
+6. The first valid decision is monotonic for the Clerk identity under v1. An
+   ineligible person may open restricted Settings, sign out, or delete the
+   account, but cannot correct/retry DOB. Later adult access requires deleting
+   that identity/account and creating a new account.
+7. Adult authorization runs after authentication/deletion guards and before
+   private handlers. It returns `428` for an unverified/stale eligible policy
+   decision and `403` for ineligible. Eligibility status/submission and account
+   deletion status/deletion are the restricted server allowlist; native
+   restricted Settings and sign-out remain reachable. Terms/Privacy/Support
+   links remain a pre-launch Settings requirement.
+8. The native layout resolves deletion and eligibility state before private
+   screens or queries mount. Offline/unknown state fails closed and cannot show
+   cached health data. A pre-signup notice/local precheck, if present, is only
+   data-minimization defense in depth.
+9. In production, the Clerk Frontend API is reached through a same-origin
    proxy mounted at `/api/__clerk` (`clerkProxyMiddleware.ts`) so custom
    domains work without CNAME setup.
 
@@ -84,6 +107,13 @@ identity tombstone under a retention policy that must be approved before launch.
   responses through them before sending. Thin route/service checks enforce
   integer-only fields and strict meal-object keys that the current generator
   does not emit from OpenAPI automatically.
+- `ADR_003_ADULT_ELIGIBILITY.md` defines the adults-only authorization boundary.
+  The server, not navigation or `onboardingComplete`, owns the decision. A full
+  DOB is consumed in memory and excluded from responses; every legacy account
+  begins the active policy as `unverified` regardless of birth year or prior
+  onboarding state. The migration drops the legacy profile birth-year column
+  and clears local user email; only a later eligible decision repopulates email
+  from the Clerk claim.
 - `PUT /api/me/profile` is a **full replace**: omitted optional fields reset
   to null/defaults. The client therefore always seeds the edit form from the
   existing profile (`artifacts/cut-os/lib/profile-form.ts` — unit tested).
@@ -101,10 +131,14 @@ identity tombstone under a retention policy that must be approved before launch.
 
 - `users` — internal identity: `clerk_user_id` (unique), `email`, `timezone`
   (IANA, drives future user-local daily rollups), `units`,
-  `onboarding_complete`, and `deletion_status` (`active` or `pending`).
-- `profiles` — one row per user (unique FK, cascade delete): goal, sex,
-  birth year, height, start/goal weight, target date, activity level,
-  training experience.
+  `onboarding_complete`, `deletion_status` (`active` or `pending`), adult
+  eligibility status (`unverified`, `eligible`, or `ineligible`), eligibility
+  policy version, and eligibility decision timestamp. New and migrated rows
+  default to `unverified`; policy-version mismatch also fails closed.
+- `profiles` — one row per user (unique FK, cascade delete): goal, sex, height,
+  start/goal weight, target date, activity level, and training experience. The
+  adult-eligibility migration deletes the legacy birth-year column rather than
+  promote it into evidence. The transient full DOB is not a database column.
 - `weight_entries` — one canonical weigh-in per internal user and user-local
   calendar day. The `(user_id, recorded_on)` unique index makes repeated taps
   an update, not a duplicate. Physical values are stored in kilograms and
@@ -141,8 +175,10 @@ database from the committed migrations, so schema/migration drift fails CI.
 ## Where future logic must live (spec §28)
 
 Deterministic product rules live in `lib/domain`. The active Next Action rule is
-onboarding → daily weigh-in → first balanced meal → neutral review of today’s
-logged meals. The same package owns the versioned six-meal launch catalog, nutrition
+available only after current adult eligibility, then onboarding → daily
+weigh-in → first balanced meal → neutral review of today’s logged meals. The
+same package owns the UTC `adult-18-v1` date rule (including March 1 for a
+February 29 birth in a non-leap 18th year), versioned six-meal launch catalog, nutrition
 scaling/summing, and transparent general ranking. Future daily status, streak,
 adaptive-review, and personalized fits-today rules follow the same boundary:
 
@@ -218,7 +254,8 @@ Not built. The committed direction: RevenueCat entitlements
 in an **EAS development build** (Expo Go only ever shows mock paywall UI).
 The internal `users.id` uuid is the stable candidate for the RevenueCat
 `appUserID`. The backend may mirror entitlement state for queries but must
-not create an independent subscription truth.
+not create an independent subscription truth. No paywall, trial, purchase, or
+entitlement activation is available until adult authorization succeeds.
 
 ## Test architecture
 
@@ -228,11 +265,15 @@ not create an independent subscription truth.
   committed migrations. Covers the auth gate, JIT provisioning idempotency,
   account updates, profile lifecycle + full-replace contract, meal logging,
   deletion coordination/cascades/provider-error boundaries/races/retries, and
-  cross-user isolation (change order §5). Final deletion verification is
-  tracked in `QA_REPORT.md`.
+  cross-user isolation (change order §5). The adult-eligibility suite must cover
+  migrated/unverified state, `428`/`403` enforcement on every private route,
+  allowlisted deletion/settings behavior, transient-DOB absence, and atomic
+  onboarding. Current counts are recorded only after the merged suite runs;
+  final native verification is tracked in `QA_REPORT.md`.
 - `artifacts/cut-os`: vitest unit tests for pure logic in `lib/`, including
   profile↔form mapping, the meal serving editor, durable/cross-principal meal
-  recovery, and account-deletion marker/gate/transport ownership helpers.
+  recovery, account-deletion marker/gate/transport ownership helpers, and the
+  eligibility route/cache decision helpers once integrated.
   Screens and native cache transitions are
   exercised through simulator QA (spec §2), not vitest.
 - Run everything: `pnpm run test` (root). Typecheck: `pnpm run typecheck`.

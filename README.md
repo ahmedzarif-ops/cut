@@ -1,7 +1,13 @@
 # CUT OS
 
-The adaptive cut operating system for people who lift. Native mobile app
-(React Native + Expo) + Express API + PostgreSQL.
+The adaptive cut operating system for adults age 18 and older who lift. Native
+mobile app (React Native + Expo) + Express API + PostgreSQL.
+
+The owner-approved eligibility policy is `adult-18-v1`. A self-declared full
+DOB is evaluated transiently by the server against the UTC calendar; raw DOB is
+never stored. This engineering policy is not age verification and does not make
+the product public-launch ready. See `ADR_003_ADULT_ELIGIBILITY.md` and
+`APP_STORE_READINESS.md` for enforcement and outstanding review gates.
 
 ## What's here
 
@@ -74,6 +80,8 @@ database from the committed migrations, so drift fails tests.
 - `APP_STORE_READINESS.md` — focused v1 scope and release gates
 - `ADR_001_BALANCED_MEALS.md` — meal catalog, snapshot, and safety decision
 - `ADR_002_ACCOUNT_DELETION.md` — resumable local-data and Clerk deletion
+- `ADR_003_ADULT_ELIGIBILITY.md` — adults-only eligibility and data-minimization boundary
+- `APP_STORE_METADATA.md` — working App Store answers, evidence, and approvals
 - `PRIVACY_DATA_MAP.md` — current data inventory and App Store privacy gates
 - `PHASE_0_CLAUDE_AUDIT.md` — post-Phase-0 architecture audit findings
 - `replit.md` — operational quick reference

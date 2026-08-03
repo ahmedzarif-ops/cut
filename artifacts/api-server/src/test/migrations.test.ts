@@ -109,6 +109,105 @@ describe("committed migrations", () => {
     await client.close();
   });
 
+  it("migrates legacy users to unverified without retaining email or birth year", async () => {
+    const client = new PGlite();
+    const migrations = migrationSqlInOrder();
+    const adultEligibilityMigrationIndex = migrations.findIndex((sql) =>
+      sql.includes('ADD COLUMN "adult_eligibility_status"'),
+    );
+    expect(adultEligibilityMigrationIndex).toBeGreaterThan(0);
+    for (const sql of migrations.slice(0, adultEligibilityMigrationIndex)) {
+      await client.exec(sql);
+    }
+
+    const userId = "eb6052f5-7c51-4de8-a8f4-95c69c385ad8";
+    await client.query(
+      `insert into users (id, clerk_user_id, email) values ($1, 'legacy_adult_user', 'legacy@example.com')`,
+      [userId],
+    );
+    await client.query(
+      `insert into profiles (user_id, birth_year) values ($1, 1990)`,
+      [userId],
+    );
+
+    await client.exec(migrations[adultEligibilityMigrationIndex]!);
+
+    const migrated = await client.query<{
+      email: string | null;
+      adult_eligibility_status: string;
+      adult_eligibility_policy_version: string | null;
+      adult_eligibility_decided_at: Date | null;
+    }>(
+      `select email, adult_eligibility_status, adult_eligibility_policy_version,
+              adult_eligibility_decided_at
+       from users where id = $1`,
+      [userId],
+    );
+    expect(migrated.rows).toEqual([
+      {
+        email: null,
+        adult_eligibility_status: "unverified",
+        adult_eligibility_policy_version: null,
+        adult_eligibility_decided_at: null,
+      },
+    ]);
+
+    const birthYearColumn = await client.query<{ column_name: string }>(
+      `select column_name from information_schema.columns
+       where table_schema = 'public'
+         and table_name = 'profiles'
+         and column_name = 'birth_year'`,
+    );
+    expect(birthYearColumn.rows).toEqual([]);
+    await client.close();
+  });
+
+  it("enforces adult-eligibility status and lifecycle invariants", async () => {
+    const client = new PGlite();
+    for (const sql of migrationSqlInOrder()) await client.exec(sql);
+
+    await client.exec(
+      `insert into users (clerk_user_id) values ('adult_default_unverified')`,
+    );
+    await client.exec(
+      `insert into users (
+        clerk_user_id, adult_eligibility_status,
+        adult_eligibility_policy_version, adult_eligibility_decided_at
+      ) values (
+        'adult_valid_eligible', 'eligible', 'adult-18-v1', now()
+      ), (
+        'adult_valid_ineligible', 'ineligible', 'adult-18-v1', now()
+      )`,
+    );
+
+    const validRows = await client.query<{ adult_eligibility_status: string }>(
+      `select adult_eligibility_status from users
+       where clerk_user_id like 'adult_%'
+       order by clerk_user_id`,
+    );
+    expect(validRows.rows.map((row) => row.adult_eligibility_status)).toEqual([
+      "unverified",
+      "eligible",
+      "ineligible",
+    ]);
+
+    const invalidStatements = [
+      `insert into users (clerk_user_id, adult_eligibility_status) values ('adult_invalid_status', 'unknown')`,
+      `insert into users (clerk_user_id, adult_eligibility_policy_version) values ('adult_unverified_with_policy', 'adult-18-v1')`,
+      `insert into users (clerk_user_id, adult_eligibility_decided_at) values ('adult_unverified_with_date', now())`,
+      `insert into users (clerk_user_id, adult_eligibility_status) values ('adult_eligible_without_metadata', 'eligible')`,
+      `insert into users (clerk_user_id, adult_eligibility_status, adult_eligibility_policy_version, adult_eligibility_decided_at) values ('adult_empty_policy', 'eligible', '   ', now())`,
+      `insert into users (clerk_user_id, adult_eligibility_status, adult_eligibility_policy_version) values ('adult_ineligible_without_date', 'ineligible', 'adult-18-v1')`,
+      `insert into users (clerk_user_id, email) values ('adult_unverified_with_email', 'not-allowed@example.com')`,
+      `insert into users (clerk_user_id, email, adult_eligibility_status, adult_eligibility_policy_version, adult_eligibility_decided_at) values ('adult_ineligible_with_email', 'not-allowed@example.com', 'ineligible', 'adult-18-v1', now())`,
+    ];
+    for (const sql of invalidStatements) {
+      await expect(client.exec(sql)).rejects.toThrow();
+    }
+
+    await client.close();
+  });
+
   it("rejects non-finite nutrition snapshots at the database boundary", async () => {
     const client = new PGlite();
     for (const sql of migrationSqlInOrder()) await client.exec(sql);

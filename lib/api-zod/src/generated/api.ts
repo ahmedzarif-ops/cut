@@ -18,7 +18,7 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * Returns the internal user record for the authenticated Clerk identity, creating it on first access (just-in-time provisioning).
+ * Returns the existing eligible internal user record for the authenticated Clerk identity. Normal private endpoints never create an unverified user.
  * @summary Get the current authenticated user
  */
 export const GetMeResponse = zod.object({
@@ -72,6 +72,38 @@ export const GetAccountDeletionStatusResponse = zod.object({
 
 
 /**
+ * Checks the versioned 18+ eligibility boundary without creating an internal user. This route remains available before normal private access is allowed.
+ * @summary Get the current identity's adult-eligibility status
+ */
+export const GetMyAdultEligibilityResponse = zod.object({
+  "status": zod.enum(['unverified', 'eligible', 'ineligible', 'review_required']),
+  "minimumAge": zod.literal(18),
+  "policyVersion": zod.enum(['adult-18-v1'])
+})
+
+
+/**
+ * Uses the server UTC date to evaluate the submitted birth date under the current policy. The birth date is transient and is never persisted or returned. The first decision for the current policy is monotonic.
+ * @summary Evaluate and persist the current identity's adult eligibility
+ */
+export const decideMyAdultEligibilityBodyDateOfBirthRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+
+export const DecideMyAdultEligibilityBody = zod.object({
+  "dateOfBirth": zod.string().regex(decideMyAdultEligibilityBodyDateOfBirthRegExp),
+  "policyVersion": zod.string().min(1),
+  "adultAttestation": zod.literal(true)
+})
+
+export const DecideMyAdultEligibilityResponse = zod.object({
+  "status": zod.enum(['unverified', 'eligible', 'ineligible', 'review_required']),
+  "minimumAge": zod.literal(18),
+  "policyVersion": zod.enum(['adult-18-v1'])
+})
+
+
+/**
  * @summary Get the current user's profile
  */
 export const GetMyProfileResponse = zod.object({
@@ -80,7 +112,6 @@ export const GetMyProfileResponse = zod.object({
   "displayName": zod.string().nullish(),
   "goal": zod.enum(['cut', 'maintain', 'recomp', 'gain']),
   "sex": zod.enum(['male', 'female', 'other', 'unspecified']),
-  "birthYear": zod.number().nullish(),
   "heightCm": zod.number().nullish(),
   "startWeightKg": zod.number().nullish(),
   "goalWeightKg": zod.number().nullish(),
@@ -95,10 +126,6 @@ export const GetMyProfileResponse = zod.object({
 /**
  * @summary Create or replace the current user's profile
  */
-export const upsertMyProfileBodyBirthYearMin = 1900;
-export const upsertMyProfileBodyBirthYearMax = 2025;
-export const upsertMyProfileBodyBirthYearMultipleOf = 1;
-
 export const upsertMyProfileBodyHeightCmMin = 50;
 export const upsertMyProfileBodyHeightCmMax = 300;
 
@@ -115,7 +142,6 @@ export const UpsertMyProfileBody = zod.object({
   "displayName": zod.string().optional(),
   "goal": zod.enum(['cut', 'maintain', 'recomp', 'gain']),
   "sex": zod.enum(['male', 'female', 'other', 'unspecified']).optional(),
-  "birthYear": zod.number().min(upsertMyProfileBodyBirthYearMin).max(upsertMyProfileBodyBirthYearMax).multipleOf(upsertMyProfileBodyBirthYearMultipleOf).optional(),
   "heightCm": zod.number().min(upsertMyProfileBodyHeightCmMin).max(upsertMyProfileBodyHeightCmMax).optional(),
   "startWeightKg": zod.number().min(upsertMyProfileBodyStartWeightKgMin).max(upsertMyProfileBodyStartWeightKgMax).optional(),
   "goalWeightKg": zod.number().min(upsertMyProfileBodyGoalWeightKgMin).max(upsertMyProfileBodyGoalWeightKgMax).optional(),
@@ -130,7 +156,6 @@ export const UpsertMyProfileResponse = zod.object({
   "displayName": zod.string().nullish(),
   "goal": zod.enum(['cut', 'maintain', 'recomp', 'gain']),
   "sex": zod.enum(['male', 'female', 'other', 'unspecified']),
-  "birthYear": zod.number().nullish(),
   "heightCm": zod.number().nullish(),
   "startWeightKg": zod.number().nullish(),
   "goalWeightKg": zod.number().nullish(),

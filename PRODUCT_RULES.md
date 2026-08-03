@@ -4,9 +4,9 @@ All **deterministic product rules** live in `lib/domain` (`@workspace/domain`):
 pure, I/O-free functions with an injected clock/timezone. Examples today:
 `localDayKey`/`todayKey` (user-local calendar day for daily rollups) and
 `estimateOneRepMax`. The first live Today rule is `selectNextAction`, which
-advances from onboarding to the daily weigh-in and then to the first balanced
-meal, followed by a neutral review of today’s logged meals after a successful
-log. Nutrition
+operates only after the server has established current adult eligibility, then
+advances from onboarding to the daily weigh-in and first balanced meal, followed
+by a neutral review of today’s logged meals after a successful log. Nutrition
 scaling, summing, and the general balanced-meal score also live here. Weight
 conversion stays shared so the database remains metric while the client honors
 the user's display units.
@@ -82,12 +82,49 @@ the user's display units.
 - Private screens remain gated until local and server deletion status is known,
   and shared query state is cleared before a different Clerk principal renders.
 
-## Unresolved public-launch safety gates
+## Adult-eligibility invariant
 
-- The minimum-age policy is not yet approved. Product/legal owners must choose
-  it, align the Terms and App Store age-rating answers, and require and enforce
-  it server-side before public cut, weight, or meal guidance is available. The
-  current optional birth year is not age enforcement.
+- The owner-approved product policy is adults 18 and older, versioned as
+  `adult-18-v1`. `ADR_003_ADULT_ELIGIBILITY.md` is the decision record.
+- The client submits a full DOB only for the current decision. The server
+  validates strict `YYYY-MM-DD` input and compares the 18th calendar birthday
+  to the server's injected **UTC** date. A February 29 birth reaches 18 on March
+  1 in a non-leap 18th year under this policy.
+- Raw DOB is transient. It must never be stored, logged, cached, included in a
+  URL or response, attached to Clerk, or sent to analytics/crash reporting.
+- The user record stores only `unverified`, `eligible`, or `ineligible`, the
+  decision's policy version, and decision timestamp. `eligible` means a
+  self-declared DOB passed the rule; it is not identity or document verification.
+- A valid server decision is monotonic for the Clerk identity under v1.
+  `ineligible` cannot correct or retry DOB in app. The restricted screen offers
+  Settings/account deletion and sign out; later adult access requires deleting
+  that identity/account and creating a new account. Legal and Support must
+  approve this behavior and its user-facing instructions before launch.
+- A new user or existing user migrated from the pre-policy system fails closed
+  as `unverified`; a stale eligible policy version is exposed as
+  `review_required` and receives the same `428` block. A permanent ineligible
+  identity remains `403` unless a future approved policy/migration changes it.
+  Legacy optional birth year is deleted, not promoted into eligibility evidence.
+- The server is the authorization authority. Normal private APIs return `428`
+  for unverified/stale policy state and `403` for ineligible state. This covers
+  profiles, Today/Next Action, weights, meals, nutrition/training guidance, and
+  all future paywall, trial, purchase, and entitlement activation paths.
+- The server allowlist remains usable: eligibility status and unverified
+  submission, deletion status, and account deletion. Restricted Settings and
+  sign out remain reachable in the native app. Public Terms, Privacy, and
+  Support links are still a pre-launch restricted-screen requirement. A signup
+  notice/local precheck may reduce minor account creation but never substitutes
+  for the server gate.
+- The native app resolves eligibility before mounting/querying private screens,
+  fails closed offline, hides private cached data, and clears transient DOB and
+  account-scoped state on decision, sign-out, principal change, and deletion.
+
+## Remaining public-launch safety gates
+
+- Terms/Privacy wording, notice and retention, underage-account handling,
+  launch jurisdictions, and the sufficiency of this self-declared assurance
+  require qualified legal/privacy review. The App Store rating/questionnaire is
+  a separate storefront control and must match, not replace, server enforcement.
 - Every public meal template needs a reproducible recipe with ingredient
   quantities and yield, nutrition source/methodology, allergen substantiation,
   qualified reviewer, and review date. Estimated copy and a package-label
@@ -114,27 +151,31 @@ Today-aggregate service.
 These keep the API server correct and stable under load; don't undo them
 while touching auth, `db`, or the Express app.
 
-- **JIT user provisioning is select-first, never a per-request write.**
-  `requireAuth` first performs a durable deletion-tombstone lookup, then
-  `provisionUser` (`userService.ts`) selects on `clerk_user_id`; it only
-  inserts on a miss, with `onConflictDoNothing` + a re-select to cover the
-  race where a concurrent request wins the insert. A returning active user
-  costs a tombstone lookup plus a user lookup and zero writes. `updated_at` on
-  `users` therefore means "last settings/profile or deletion-state change,"
-  not "last seen" — don't repurpose it as a last-login timestamp. `requireAuth`
-  attaches the resolved row as `req.user`; `GET /me` returns it directly and
-  must not re-select.
-- **Onboarding completion is atomic and means "a profile exists."**
-  `upsertProfile` (`userService.ts`) writes the profile row and flips
-  `users.onboardingComplete` true in ONE transaction, so the flag and
-  profile-existence can never disagree — a partial failure rolls both back.
+- **Normal private access is lookup-only; eligibility owns first provisioning.**
+  `requireAuth` first performs a durable deletion-tombstone lookup, then selects
+  on `clerk_user_id`. A missing row receives `428`; it is never created by a
+  normal private request. The special adult-eligibility status route also never
+  creates a row. Only the decision transaction may insert one minimal row, using
+  `onConflictDoNothing` plus a row lock/re-select so concurrent decisions have a
+  single monotonic winner. A returning private request costs a tombstone lookup
+  plus user lookup and zero writes. `updated_at` means "last settings/profile,
+  eligibility/email, or deletion-state change," not "last seen." `requireAuth`
+  attaches the resolved eligible row as `req.user`; `GET /me` returns it directly.
+- **Onboarding completion is atomic and requires current adult eligibility plus
+  a profile.** `upsertProfile` (`userService.ts`) may write the profile row and
+  flip `users.onboardingComplete` true in ONE transaction only for a user whose
+  stored status is `eligible` under the active `adult-18-v1` policy. The flag,
+  profile existence, and eligibility precondition cannot disagree — a partial
+  failure rolls the profile/onboarding write back.
   The flag is therefore not a client-settable bit: `PATCH /me` may CONFIRM
   `onboardingComplete: true` only when a profile already exists (else `400`) and
   rejects `false` outright — un-onboarding is not a settings operation, and
   refusing it also removes any check-then-act window against a concurrent
-  profile write (P1-4). The only way the flag turns on is `PUT /me/profile`,
-  which sets it atomically; don't reintroduce a client- or route-level path that
-  sets it independently of the profile write.
+  profile write (P1-4). The only way the flag turns on is an adult-authorized
+  `PUT /me/profile`, which sets it atomically; don't reintroduce a client- or
+  route-level path that sets it independently of the profile write or bypasses
+  the active eligibility-policy check. A legacy true flag never bypasses adult
+  authorization.
 - **The pg pool has a budget and an error handler.** `poolConfig()`
   (`lib/db`) caps pool size via `PG_POOL_MAX` (default 5) — conservative for
   a single autoscale instance against a pooled endpoint — and the pool
@@ -176,11 +217,11 @@ while touching auth, `db`, or the Express app.
 
 **Deferred (not built here):**
 
-- Email refresh via a Clerk `user.updated` webhook or a Clerk token
-  template — today `email` is captured only at first provisioning
-  (`requireAuth` reads it off the initial session claims) and never
-  refreshed on subsequent logins, so a user who changes their email in Clerk
-  keeps the stale value in `users.email` until this lands.
+- Ongoing email refresh via a Clerk `user.updated` webhook or approved token
+  template. The adult-eligibility migration clears every local email. A
+  successful eligible decision may restore/update it from the Clerk session
+  claim; unverified/ineligible rows retain null, and ordinary later logins do
+  not refresh it.
 - A shared (Redis) rate-limit store, to make `API_RATE_LIMIT`/
   `CLERK_RATE_LIMIT` correct across more than one autoscale instance.
 - An approved retention/cleanup policy for completed identity tombstones and

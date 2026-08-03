@@ -6,8 +6,10 @@
 
 Ship:
 
-- Account and onboarding. Public guidance remains blocked until an
-  owner/legal-approved minimum-age policy is required and enforced server-side.
+- Adults-only account and onboarding under policy `adult-18-v1`. Public
+  guidance and purchases are protected by the implemented server-enforced
+  eligibility gate, existing-account recheck, and generated contract. Native
+  acceptance and release/legal review remain incomplete.
 - Separate profile and time-bounded cut-cycle data.
 - Today / Next Action.
 - Daily weigh-in and trend.
@@ -51,6 +53,12 @@ Defer until v1.1+:
       contract drift, typecheck, and automated tests.
 - [x] Engineering privacy data-map draft covering current fitness/nutrition data.
 - [x] Unused native location and photo-picker packages removed from the launch dependency set.
+- [x] Owner approved an adults-only 18+ product policy and the
+      `adult-18-v1` engineering design in `ADR_003_ADULT_ELIGIBILITY.md`.
+- [x] Adult eligibility is implemented across domain, database, API/generated
+      contract, and mobile with automated verification.
+- [ ] Adult eligibility passes native-device, live-Clerk, offline/relaunch,
+      deep-link, shared-device, accessibility, and release-build acceptance.
 - [ ] Verified iOS Simulator boot on the current release branch.
 - [ ] Seven-day founder dogfood.
 - [ ] Full launch feature scope.
@@ -84,7 +92,8 @@ Apple has required iOS uploads to use the iOS 26 SDK or later since April 28, 20
 
 ### Account and authentication
 
-- [ ] Review account or full demo mode supplied to App Review.
+- [ ] A current `eligible` adult review account, full-access steps, and a
+      controlled under-18 gate test path are supplied to App Review.
 - [ ] Backend stays live during review.
 - [ ] Sign in with Apple added if the final primary login mix requires it under Guideline 4.8.
 - [ ] Delete Account is easy to find in Settings.
@@ -110,9 +119,26 @@ Reference: [Offering account deletion in your app](https://developer.apple.com/s
 - [ ] Health/fitness data never enters advertising audiences or marketing data mining.
 - [ ] Logs and analytics contain no raw weight, measurements, macros, workouts, allergies, or health conditions.
 - [ ] Wellness/medical age-rating and regulated-device declarations are answered accurately.
-- [ ] Product/legal owners approve the minimum-age policy; onboarding requires
-      the necessary data and the server blocks cut, weight, and meal guidance
-      when the policy is not satisfied. Terms and age-rating answers match.
+- [x] Owner approved adults-only policy `adult-18-v1`.
+- [x] A transient full DOB is evaluated only by the server against the UTC
+      calendar; raw DOB is never stored, logged, cached, returned, added to
+      Clerk, or sent to analytics. Only `unverified`/`eligible`/`ineligible`,
+      policy version, and decision time are retained in the implemented and
+      automated design.
+- [x] Every new and existing account fails closed until it has a current
+      `adult-18-v1` result. Normal private APIs return `428` for unverified or
+      stale policy state and `403` for ineligible state; deletion/status,
+      restricted Settings, and sign-out remain usable in automated coverage.
+- [ ] The preceding transient-DOB and fail-closed controls pass native-device,
+      live-Clerk, archive inspection, and production observability verification.
+- [ ] Public Terms, Privacy, and Support links are reachable from both normal and
+      adult-restricted Settings without opening private guidance.
+- [ ] The permanent v1 ineligible-identity behavior is reviewed: no in-app DOB
+      correction/retry; later adult access requires account/identity deletion
+      and a new account. Settings/deletion/sign-out and support instructions work.
+- [ ] Terms/EULA and Privacy Policy wording, notice-at-collection, retention,
+      underage handling, launch jurisdictions, and sufficiency of self-declared
+      age assurance receive qualified legal/privacy review.
 - [ ] Every public meal template has reproducible ingredient quantities and
       yield, nutrition source/methodology, substantiated allergen/dietary
       labels, a qualified reviewer, and a review date.
@@ -136,7 +162,15 @@ RevenueCat's Expo SDK requires a development build for real purchases: [RevenueC
 
 - [ ] Name clearance complete.
 - [ ] App icon, subtitle, description, keywords, screenshots, support URL, and privacy URL final.
-- [ ] Updated age-rating questionnaire complete.
+- [ ] `APP_STORE_METADATA.md` is reconciled against the final binary and approved.
+- [ ] The current age-rating questionnaire is completed truthfully: health or
+      wellness topics, medical/treatment content, age-assurance behavior,
+      social-media capability, and every other descriptor match the shipped app.
+- [ ] The app is not marked Made for Kids. Once the Terms/EULA minimum is 18,
+      a higher-age override to 18+ is applied if Apple's calculated rating is
+      lower, with region/OS-specific results recorded.
+- [ ] The App Store description and review notes say CUT OS is for adults 18+
+      and distinguish the storefront rating from in-app self-declared eligibility.
 - [ ] Screenshots show real shipped UI: Next Action, balanced food, workouts, weekly review, progress.
 - [ ] Review notes explain adaptive guidance, subscriptions, account deletion, and full-access steps.
 - [ ] Correct build and subscription products added to the review submission.
@@ -147,7 +181,8 @@ RevenueCat's Expo SDK requires a development build for real purchases: [RevenueC
 
 Internal beta:
 
-- 5–10 trusted testers.
+- 5–10 trusted adult testers. Controlled under-18 test identities are used only
+  to verify the restricted path and contain no real minor data.
 - Current iOS plus the oldest supported iOS version.
 - At least two iPhone sizes.
 - Purchase lifecycle and poor-network scenarios.
@@ -155,7 +190,7 @@ Internal beta:
 
 External beta:
 
-- 25–50 target users.
+- 25–50 adult target users.
 - First external build passes TestFlight review.
 - Activation and seven-day retention measured with privacy-safe events only.
 
@@ -169,6 +204,13 @@ External beta:
 - Authentication failures affecting a meaningful share of users.
 - Recommendation behavior that could plausibly create health risk.
 - Missing or bypassable minimum-age enforcement.
+- Raw DOB stored, logged, cached, returned, added to Clerk/analytics, or
+  otherwise retained beyond the transient eligibility decision.
+- Guidance, private cached data, or a purchase path visible while eligibility
+  is unverified, stale, ineligible, offline, or unavailable.
+- Terms/Privacy/App Store age statements that do not match `adult-18-v1`.
+- Ineligible users offered DOB correction/retry, or unable to reach Settings,
+  sign out, account deletion, or the approved later-adult support instructions.
 - Unreviewed nutrition, allergen, or dietary claims in the public catalog.
 
 ## Release sequence

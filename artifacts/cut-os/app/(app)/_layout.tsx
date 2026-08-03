@@ -2,9 +2,11 @@ import { useAuth } from "@clerk/expo";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetAccountDeletionStatusQueryKey,
+  getGetMyAdultEligibilityQueryKey,
   setAuthTokenGetter,
   setGoneResponseHandler,
   useGetAccountDeletionStatus,
+  useGetMyAdultEligibility,
 } from "@workspace/api-client-react";
 import * as SecureStore from "expo-secure-store";
 import { Redirect, Stack, usePathname } from "expo-router";
@@ -28,6 +30,12 @@ import {
   type AccountDeletionServerStatus,
 } from "@/lib/account-deletion";
 import { AccountDeletionGateProvider } from "@/lib/account-deletion-gate";
+import {
+  decideAdultEligibilityRoute,
+  resolveAdultEligibilityQuery,
+  type AdultEligibilityRoute,
+} from "@/lib/adult-eligibility";
+import { AdultEligibilityGateProvider } from "@/lib/adult-eligibility-gate";
 
 interface MarkerLoadState {
   ownerClerkUserId: string | null;
@@ -44,9 +52,17 @@ const EMPTY_MARKER_STATE: MarkerLoadState = {
 };
 
 const ACCOUNT_DELETION_STATUS_PATH = getGetAccountDeletionStatusQueryKey()[0];
+const ADULT_ELIGIBILITY_STATUS_PATH = getGetMyAdultEligibilityQueryKey()[0];
 
 function isAccountDeletionStatusQuery(queryKey: readonly unknown[]): boolean {
   return queryKey[0] === ACCOUNT_DELETION_STATUS_PATH;
+}
+
+function isSecurityGateQuery(queryKey: readonly unknown[]): boolean {
+  return (
+    queryKey[0] === ACCOUNT_DELETION_STATUS_PATH ||
+    queryKey[0] === ADULT_ELIGIBILITY_STATUS_PATH
+  );
 }
 
 export default function AppLayout() {
@@ -236,6 +252,39 @@ export default function AppLayout() {
     },
   });
 
+  // Verify the adult-only policy before mounting any route that can issue a
+  // normal /me request. Account deletion is intentionally checked first and
+  // disables this query so deletion recovery can remain terminal and isolated.
+  const adultEligibilityReady = Boolean(
+    prerequisitesReady &&
+    deletionStatusQuery.isSuccess &&
+    deletionStatusQuery.data?.status === "none" &&
+    markerState.marker === null &&
+    forcedGateOwnerUserId !== userId,
+  );
+  const adultEligibilityQuery = useGetMyAdultEligibility({
+    query: {
+      queryKey: [...getGetMyAdultEligibilityQueryKey(), userId],
+      enabled: adultEligibilityReady,
+      retry: false,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: "always",
+      refetchOnReconnect: "always",
+    },
+  });
+  const adultEligibilityResolution = resolveAdultEligibilityQuery(
+    adultEligibilityQuery.data,
+    adultEligibilityQuery.isError,
+  );
+  const resolvedAdultEligibilityStatus =
+    adultEligibilityResolution.response?.status ?? null;
+  const adultEligibilityMustFailClosed = Boolean(
+    adultEligibilityReady &&
+    (adultEligibilityResolution.error ||
+      (adultEligibilityResolution.response &&
+        resolvedAdultEligibilityStatus !== "eligible")),
+  );
+
   // A status poll can learn about deletion before any normal endpoint emits a
   // 410. Purge the same private in-memory state as the 410 path as soon as the
   // authoritative status is pending/completed; keep only the status query
@@ -259,6 +308,27 @@ export default function AppLayout() {
     });
     qc.getMutationCache().clear();
   }, [deletionStatusQuery.data?.status, prerequisitesReady, qc, userId]);
+
+  // An unavailable/invalid status or a non-eligible result immediately
+  // unmounts private routes below and purges their retained query/mutation
+  // state. In particular, a failed refetch must never keep older eligible
+  // data authoritative just because React Query retained it.
+  React.useEffect(() => {
+    if (
+      !adultEligibilityMustFailClosed ||
+      currentPrincipalUserId.current !== userId
+    ) {
+      return;
+    }
+
+    void qc.cancelQueries({
+      predicate: (query) => !isSecurityGateQuery(query.queryKey),
+    });
+    qc.removeQueries({
+      predicate: (query) => !isSecurityGateQuery(query.queryKey),
+    });
+    qc.getMutationCache().clear();
+  }, [adultEligibilityMustFailClosed, qc, userId]);
 
   if (!isLoaded) return <GateLoading />;
   if (!isSignedIn || !userId) return <Redirect href="/sign-in" />;
@@ -343,10 +413,46 @@ export default function AppLayout() {
     effectiveServerStatus,
   );
   const onSettings = pathname === "/settings" || pathname.endsWith("/settings");
+  const onAdultEligibility =
+    pathname === "/adult-eligibility" ||
+    pathname.endsWith("/adult-eligibility");
+  const route: AdultEligibilityRoute = onSettings
+    ? "settings"
+    : onAdultEligibility
+      ? "adult_eligibility"
+      : "private";
+  const deletionRequired = gateDecision === "require_settings";
 
-  if (gateDecision === "require_settings" && !onSettings) {
+  let adultEligibilityResponse = adultEligibilityResolution.response;
+  let adultEligibilityError: string | null = null;
+  if (deletionRequired) {
+    adultEligibilityResponse = null;
+  } else if (adultEligibilityResolution.error === "unavailable") {
+    adultEligibilityError =
+      "CUT OS couldn't verify the age requirement. Check your connection and try again. Health and nutrition features remain locked.";
+  } else if (adultEligibilityResolution.error === "invalid") {
+    adultEligibilityError =
+      "CUT OS received an age requirement status it could not safely verify.";
+  }
+
+  const adultRouteDecision = decideAdultEligibilityRoute({
+    deletionRequired,
+    route,
+    status: adultEligibilityResponse?.status ?? null,
+  });
+  if (adultRouteDecision === "redirect_settings") {
     return <Redirect href="/settings" />;
   }
+  if (adultRouteDecision === "redirect_adult_eligibility") {
+    return <Redirect href="/adult-eligibility" />;
+  }
+
+  const adultEligibilityLoading = Boolean(
+    !deletionRequired &&
+    adultEligibilityReady &&
+    !adultEligibilityResponse &&
+    !adultEligibilityError,
+  );
 
   return (
     <AccountDeletionGateProvider
@@ -356,12 +462,25 @@ export default function AppLayout() {
         setMarker,
       }}
     >
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: c.background },
+      <AdultEligibilityGateProvider
+        value={{
+          response: adultEligibilityResponse,
+          status: adultEligibilityResponse?.status ?? null,
+          isLoading: adultEligibilityLoading,
+          error: adultEligibilityError,
+          isRequired:
+            !deletionRequired &&
+            adultEligibilityResponse?.status !== "eligible",
+          retry: () => void adultEligibilityQuery.refetch(),
         }}
-      />
+      >
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: c.background },
+          }}
+        />
+      </AdultEligibilityGateProvider>
     </AccountDeletionGateProvider>
   );
 }

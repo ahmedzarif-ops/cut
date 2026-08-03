@@ -3,6 +3,7 @@ import type { Clock } from "@workspace/domain";
 
 import { createTestContext, type TestContext } from "../test/helpers";
 import { provisionUser, updateUser, upsertProfile } from "./userService";
+import { decideAdultEligibility } from "./adultEligibilityService";
 import {
   getTodayState,
   listWeightEntries,
@@ -23,12 +24,14 @@ const clock = (iso: string): Clock => ({ now: () => new Date(iso) });
 
 describe("Today state and weigh-ins", () => {
   it("uses the user's local day and advances after the weigh-in", async () => {
-    const user = await provisionUser({
+    const decision = await decideAdultEligibility({
       clerkUserId: "today_user",
       email: null,
+      dateOfBirth: "1990-01-01",
+      policyVersion: "adult-18-v1",
     });
-    await upsertProfile(user!.id, { goal: "cut" });
-    const configured = await updateUser(user!.id, {
+    await upsertProfile(decision.userId, { goal: "cut" });
+    const configured = await updateUser(decision.userId, {
       timezone: "America/Chicago",
     });
     const lateEvening = clock("2026-08-04T04:30:00.000Z");

@@ -14,7 +14,13 @@ import { HttpError } from "../lib/httpError";
  */
 export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof HttpError) {
-    res.status(err.statusCode).json({ error: err.message });
+    res
+      .status(err.statusCode)
+      .json(
+        err.code
+          ? { error: err.message, code: err.code }
+          : { error: err.message },
+      );
     return;
   }
   const parserType = (err as { type?: unknown } | null)?.type;

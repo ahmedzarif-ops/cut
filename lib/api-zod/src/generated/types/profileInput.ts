@@ -15,11 +15,6 @@ export interface ProfileInput {
   goal: ProfileInputGoal;
   sex?: ProfileInputSex;
   /**
-     * @minimum 1900
-     * @maximum 2025
-     */
-  birthYear?: number;
-  /**
      * @minimum 50
      * @maximum 300
      */

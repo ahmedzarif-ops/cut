@@ -12,7 +12,9 @@ This inventory describes the current repository, not a completed legal disclosur
 | ----------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------ | --------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | Account identifiers     | Internal user UUID, Clerk user ID                                                                          | Clerk/server           | Authentication and account linking                     | Clerk + `users` + `account_deletion_requests` | Never log tokens; identifier-only operational logs must be minimized               | Delete Clerk identity and local user row; completed identity tombstone follows the approved retention policy         |
 | Contact information     | Email                                                                                                      | Clerk session claim    | Sign-in/account support                                | Clerk + nullable `users.email`                | Do not include in routine request logs                                             | Delete with account unless legally retained                                                                          |
-| Profile information     | Display name, birth year, sex, activity level, training experience                                         | User                   | Onboarding and plan personalization                    | `profiles`                                    | Never log request bodies                                                           | Cascade with user                                                                                                    |
+| Profile information     | Display name, sex, activity level, training experience                                                     | User                   | Onboarding and plan personalization                    | `profiles`                                    | Never log request bodies                                                           | Cascade with user                                                                                                    |
+| Transient age evidence  | Full DOB in strict `YYYY-MM-DD` form                                                                       | User                   | One real-time `adult-18-v1` eligibility decision       | Memory only; no system of record              | Never log, cache, place in URLs/errors, add to Clerk, or send to analytics         | Destroy immediately after the response decision; never persist                                                       |
+| Adult eligibility       | `unverified`/`eligible`/`ineligible`, policy version, decision timestamp                                   | Server decision        | Fail-closed authorization for adults-only features     | `users`                                       | Status-only operational logging must be minimized; never log DOB                   | Delete with user; exact backups/operational retention requires policy and legal approval                             |
 | Body and fitness data   | Height, start/goal weight, daily weigh-ins                                                                 | User                   | Progress and fitness guidance                          | `profiles`, `weight_entries`                  | Never log values or include them in URLs                                           | Cascade with user                                                                                                    |
 | Nutrition data          | Chosen meal, serving amount, calories, protein, carbohydrates, fat, fiber                                  | User + curated catalog | Daily meal tracking and Next Action                    | `meal_entries`                                | Never log values or include them in URLs                                           | Cascade with user                                                                                                    |
 | Deleted-write safeguard | Opaque meal request UUID and deletion timestamp                                                            | Server                 | Prevent a delayed retry from recreating a deleted meal | `meal_entry_deletion_tombstones`              | Never log or send to analytics                                                     | Cascade with user; stores no template, serving, or nutrition values                                                  |
@@ -31,6 +33,15 @@ Apple's final questionnaire should be answered from the shipped behavior and eve
 - User Content or Other User Content: user-entered fitness and nutrition records, if the current questionnaire maps them there.
 - Health & Fitness: body measurements, weight, activity/training profile, and nutrition-related fitness data currently implemented. Add workouts only if workout collection ships.
 - Identifiers: user/account identifiers used for authentication and app functionality.
+- Other Data Types: the stored adult-eligibility status, policy version, and
+  decision timestamp, linked to the account and used for App Functionality,
+  subject to confirmation in the live questionnaire.
+
+Raw DOB is transmitted only to service the real-time decision and is discarded
+immediately. Apple's current App Privacy definition focuses on data retained
+beyond servicing a request; counsel and the App Store owner must confirm the
+live questionnaire treatment. Public notice must explain the transient
+processing even if raw DOB is not a Privacy Nutrition Label data type.
 
 Do not mark data as used for tracking. Do not use health, fitness, meal, weight, allergy, or workout data for advertising audiences, third-party marketing, or data mining.
 
@@ -97,14 +108,43 @@ Apple reference: [Offering account deletion in your app](https://developer.apple
   date. Estimated copy does not replace this evidence.
 - Qualified nutrition and legal review remains a pre-release gate for public recommendation claims.
 
-## Minimum-age boundary
+## Adults-only boundary
 
-The repository does not yet enforce an approved minimum age. Birth year is
-optional and must not be represented as an age gate. Before public cut, weight,
-or meal guidance is enabled, product/legal owners must approve a policy, align
-the Terms and App Store age-rating answers, and require and enforce that policy
-server-side. The data inventory and retention rules must then be reviewed for
-the chosen age/consent model.
+The owner-approved policy is adults age 18 and older, versioned
+`adult-18-v1`; the complete decision is in `ADR_003_ADULT_ELIGIBILITY.md`.
+
+- A full DOB is submitted transiently to the server. The server uses its UTC
+  calendar and an injected clock; a February 29 birth reaches 18 on March 1 in
+  a non-leap 18th year. Raw DOB is never persisted, logged, cached, returned,
+  placed in Clerk metadata, or sent to analytics/crash reporting.
+- Only the self-declared eligibility outcome, policy version, and decision time
+  are linked to the user. `eligible` must not be described as verified age.
+- New and existing users are `unverified` until they complete the current
+  policy. Legacy birth year is not evidence. Private APIs fail with `428` for
+  unverified/stale eligible state and `403` for ineligible state;
+  deletion/status, restricted Settings, and sign-out remain available. Public
+  Terms, Privacy, and Support links still need to be added before launch.
+- If an ineligible person created a Clerk/CUT OS account, they receive no
+  guidance or purchase path and can open restricted Settings, sign out, or
+  delete the account. The first decision is permanent for that Clerk identity
+  under v1; there is no DOB correction/retry path. Later adult access requires
+  deleting that identity/account and creating a new account. A notice and local
+  precheck may appear before sign-up to minimize unnecessary collection, but
+  only the server decision authorizes access.
+- The adult-eligibility migration drops every legacy profile birth year and
+  clears the nullable local `users.email` copy. Email is restored from the Clerk
+  claim only after an eligible recheck; unverified/ineligible local rows retain
+  no email. A policy-version change makes stale eligible accounts fail closed for
+  review/recheck; permanent ineligibility changes only through a separately
+  approved policy and migration.
+
+Before public launch, qualified privacy/legal counsel must approve the Terms and
+Privacy wording, notice timing, lawful basis, account/status retention,
+underage-attempt handling, launch jurisdictions, vendor treatment, and whether
+self-declaration provides sufficient age assurance. Counsel and Support must
+also approve the permanent per-identity decision and later-new-account path.
+App Store rating and questionnaire answers must match the shipped app but do
+not replace this gate.
 
 ## Engineering regression gates
 
@@ -122,3 +162,11 @@ the chosen age/consent model.
   pending/completed lifecycle. The retry path verifies that the raw pending
   Clerk ID hashes to the same key before any external deletion call.
 - No health or nutrition values appear in analytics event properties without explicit privacy review.
+- Raw DOB never appears in a database row, migration backfill, generated
+  response, query cache, device store, Clerk metadata, log/error/URL, analytics
+  event, support payload, or crash report. Automated redaction/absence checks
+  and native inspection are required release evidence.
+- Existing users begin the active policy as `unverified`; neither a legacy
+  birth year nor `onboardingComplete` can bypass the server decision. Migration
+  tests prove legacy birth year is dropped and local email is cleared until an
+  eligible recheck restores it from Clerk.

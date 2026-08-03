@@ -1,17 +1,18 @@
 import { getAuth } from "@clerk/express";
 import type { NextFunction, Request, Response } from "express";
 import type { User } from "@workspace/db";
+import { ADULT_ELIGIBILITY_POLICY_VERSION } from "@workspace/domain";
 import {
   enforcePostProvisionDeletionGuard,
   getDurableDeletionStatus,
   hashClerkIdentity,
 } from "../services/accountDeletionService";
-import { provisionUser } from "../services/userService";
+import { getUserByClerkId } from "../services/userService";
 
 type AfterDeletionPrecheckHook = () => Promise<void>;
 let afterDeletionPrecheckHook: AfterDeletionPrecheckHook | null = null;
 
-/** Test-only barrier for the pre-check → JIT-provision race window. */
+/** Test-only barrier for the deletion pre-check to user-resolution race window. */
 export function setRequireAuthAfterDeletionPrecheckHook(
   hook: AfterDeletionPrecheckHook | null,
 ): void {
@@ -34,11 +35,11 @@ declare global {
 }
 
 /**
- * Authentication gate + just-in-time (JIT) user provisioning.
+ * Authentication, deletion, and server-authoritative adult-eligibility gate.
  *
- * Verifies the Clerk session, resolves (or creates on first access) the
- * internal `users` row, and attaches the internal uuid to `req.userId`. All DB
- * work lives in userService.
+ * Normal private endpoints never create an internal user. Only the special
+ * adult-eligibility decision route may create a minimal row, and access is
+ * allowed here only after that row has a current-policy eligible decision.
  */
 export async function requireAuth(
   req: Request,
@@ -74,54 +75,87 @@ export async function requireAuth(
 
   await afterDeletionPrecheckHook?.();
 
-  const claims = auth.sessionClaims as { email?: string } | undefined;
-  const email = typeof claims?.email === "string" ? claims.email : null;
-
   let user;
   try {
-    user = await provisionUser({ clerkUserId, email });
+    user = await getUserByClerkId(clerkUserId);
   } catch {
     req.log.error(
-      { identityHash, errorCode: "user_provision_failed" },
-      "Failed to provision internal user",
+      { identityHash, errorCode: "user_resolve_failed" },
+      "Failed to resolve internal user",
     );
     res.status(500).json({ error: "Failed to resolve user" });
     return;
   }
 
   if (!user) {
-    req.log.error({ identityHash }, "Failed to provision internal user");
-    res.status(500).json({ error: "Failed to resolve user" });
+    // A deletion may have completed between the first tombstone read and the
+    // user lookup. Preserve deletion's 410 precedence before reporting the
+    // eligibility precondition.
+    try {
+      deletionStatus = await getDurableDeletionStatus(identityHash);
+    } catch {
+      res.status(500).json({ error: "Failed to resolve user" });
+      return;
+    }
+    if (deletionStatus !== "none") {
+      res.status(410).json({
+        error: "Account deletion is in progress or completed",
+      });
+      return;
+    }
+    res.status(428).json({
+      error: "Adult eligibility must be confirmed before private access",
+      code: "adult_eligibility_required",
+    });
     return;
   }
 
-  let postProvisionDeletionStatus;
+  let postResolutionDeletionStatus;
   try {
-    postProvisionDeletionStatus = await enforcePostProvisionDeletionGuard({
+    postResolutionDeletionStatus = await enforcePostProvisionDeletionGuard({
       identityHash,
       clerkUserId,
       userId: user.id,
     });
   } catch {
     req.log.error(
-      { identityHash, errorCode: "post_provision_deletion_guard_failed" },
+      { identityHash, errorCode: "post_resolution_deletion_guard_failed" },
       "Unable to recheck account deletion state",
     );
     res.status(500).json({ error: "Failed to resolve user" });
     return;
   }
-  if (postProvisionDeletionStatus !== "none") {
+  if (postResolutionDeletionStatus !== "none") {
     res.status(410).json({
       error: "Account deletion is in progress or completed",
     });
     return;
   }
 
-  // A deletion transaction can win the unique Clerk-ID race after the durable
-  // check but before JIT provisioning. Never allow its pending row through.
+  // A deletion transaction can win after the durable check but before user
+  // resolution completes. Never allow its pending row through.
   if (user.deletionStatus === "pending") {
     res.status(410).json({
       error: "Account deletion is in progress or completed",
+    });
+    return;
+  }
+
+  if (user.adultEligibilityStatus === "ineligible") {
+    res.status(403).json({
+      error: "CUT OS is available only to adults age 18 or older",
+      code: "adult_eligibility_denied",
+    });
+    return;
+  }
+
+  if (
+    user.adultEligibilityStatus !== "eligible" ||
+    user.adultEligibilityPolicyVersion !== ADULT_ELIGIBILITY_POLICY_VERSION
+  ) {
+    res.status(428).json({
+      error: "Adult eligibility must be confirmed before private access",
+      code: "adult_eligibility_required",
     });
     return;
   }

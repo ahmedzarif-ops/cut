@@ -237,30 +237,16 @@ function OnboardingForm({
         <Text style={s.label}>Sex</Text>
         {renderChips(SEXES, form.sex, (v) => set("sex", v))}
 
-        <View style={s.twoCol}>
-          <View style={s.col}>
-            <Text style={s.label}>Birth year</Text>
-            <TextInput
-              style={s.input}
-              keyboardType="number-pad"
-              placeholder="1995"
-              placeholderTextColor={c.mutedForeground}
-              value={form.birthYear}
-              onChangeText={(v) => set("birthYear", v)}
-            />
-          </View>
-          <View style={s.col}>
-            <Text style={s.label}>Height (cm)</Text>
-            <TextInput
-              style={s.input}
-              keyboardType="decimal-pad"
-              placeholder="180"
-              placeholderTextColor={c.mutedForeground}
-              value={form.heightCm}
-              onChangeText={(v) => set("heightCm", v)}
-            />
-          </View>
-        </View>
+        <Text style={s.label}>Height (cm)</Text>
+        <TextInput
+          accessibilityLabel="Height in centimeters"
+          style={s.input}
+          keyboardType="decimal-pad"
+          placeholder="180"
+          placeholderTextColor={c.mutedForeground}
+          value={form.heightCm}
+          onChangeText={(v) => set("heightCm", v)}
+        />
 
         <View style={s.twoCol}>
           <View style={s.col}>

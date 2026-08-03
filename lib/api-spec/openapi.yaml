@@ -32,8 +32,9 @@ paths:
       tags: [me]
       summary: Get the current authenticated user
       description: >-
-        Returns the internal user record for the authenticated Clerk identity,
-        creating it on first access (just-in-time provisioning).
+        Returns the existing eligible internal user record for the
+        authenticated Clerk identity. Normal private endpoints never create an
+        unverified user.
       responses:
         "200":
           description: The current user
@@ -47,6 +48,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
     patch:
@@ -78,6 +83,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
     delete:
@@ -134,6 +143,73 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /me/adult-eligibility:
+    get:
+      operationId: getMyAdultEligibility
+      tags: [me]
+      summary: Get the current identity's adult-eligibility status
+      description: >-
+        Checks the versioned 18+ eligibility boundary without creating an
+        internal user. This route remains available before normal private
+        access is allowed.
+      responses:
+        "200":
+          description: Current adult-eligibility status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdultEligibilityStatus"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+    put:
+      operationId: decideMyAdultEligibility
+      tags: [me]
+      summary: Evaluate and persist the current identity's adult eligibility
+      description: >-
+        Uses the server UTC date to evaluate the submitted birth date under the
+        current policy. The birth date is transient and is never persisted or
+        returned. The first decision for the current policy is monotonic.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdultEligibilityInput"
+      responses:
+        "200":
+          description: Adult eligibility confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdultEligibilityStatus"
+        "400":
+          description: Invalid or impossible birth date or missing attestation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "409":
+          description: The submitted eligibility policy version is stale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdultEligibilityBlockedError"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
   /me/profile:
     get:
       operationId: getMyProfile
@@ -158,6 +234,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
     put:
@@ -189,6 +269,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
   /me/today:
@@ -209,6 +293,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
   /me/meal-options:
@@ -235,6 +323,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
   /me/meals/today:
@@ -255,6 +347,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
   /me/meal-entries:
@@ -296,6 +392,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "404":
           description: Meal template not found
           content:
@@ -355,6 +455,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "404":
           description: Meal entry not found
           content:
@@ -382,6 +486,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
   /me/weight-entries:
@@ -419,6 +527,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
   /me/weight-entries/today:
@@ -451,6 +563,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
 components:
@@ -461,7 +577,60 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    AdultEligibilityRequired:
+      description: A current-policy adult-eligibility decision is required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AdultEligibilityBlockedError"
+    AdultEligibilityDenied:
+      description: The authenticated identity is not eligible for adult access
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AdultEligibilityBlockedError"
   schemas:
+    AdultEligibilityStatus:
+      type: object
+      additionalProperties: false
+      required: [status, minimumAge, policyVersion]
+      properties:
+        status:
+          type: string
+          enum: [unverified, eligible, ineligible, review_required]
+        minimumAge:
+          type: integer
+          enum: [18]
+        policyVersion:
+          type: string
+          enum: [adult-18-v1]
+    AdultEligibilityInput:
+      type: object
+      additionalProperties: false
+      required: [dateOfBirth, policyVersion, adultAttestation]
+      properties:
+        dateOfBirth:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        policyVersion:
+          type: string
+          minLength: 1
+        adultAttestation:
+          type: boolean
+          enum: [true]
+    AdultEligibilityBlockedError:
+      type: object
+      additionalProperties: false
+      required: [error, code]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+          enum:
+            - adult_eligibility_required
+            - adult_eligibility_denied
+            - adult_eligibility_policy_changed
     AccountDeletionStatus:
       type: object
       required: [status]
@@ -792,8 +961,6 @@ components:
         sex:
           type: string
           enum: [male, female, other, unspecified]
-        birthYear:
-          type: ["integer", "null"]
         heightCm:
           type: ["number", "null"]
         startWeightKg:
@@ -828,11 +995,6 @@ components:
         sex:
           type: string
           enum: [male, female, other, unspecified]
-        birthYear:
-          type: integer
-          multipleOf: 1
-          minimum: 1900
-          maximum: 2025
         heightCm:
           type: number
           minimum: 50

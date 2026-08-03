@@ -24,6 +24,7 @@ import { setRequireAuthAfterDeletionPrecheckHook } from "../middlewares/requireA
 import {
   TEST_USER_HEADER,
   createTestContext,
+  makeTestUserEligible,
   type TestContext,
 } from "../test/helpers";
 
@@ -48,6 +49,7 @@ async function seedAccount(
   clientRequestId: string,
 ): Promise<string> {
   const headers = asUser(clerkUserId);
+  await makeTestUserEligible(ctx, clerkUserId);
   const me = await request(ctx.app).get("/api/me").set(headers);
   expect(me.status).toBe(200);
 
@@ -173,8 +175,9 @@ describe("durable account deletion", () => {
     expect(await usersForIdentity(clerkUserId)).toEqual([]);
   });
 
-  it("post-provision guard closes a completed-delete race without running the handler", async () => {
+  it("post-resolution guard closes a completed-delete race without running the handler", async () => {
     const clerkUserId = "jit_completed_race_identity";
+    await makeTestUserEligible(ctx, clerkUserId);
     const deleteIdentity = vi.fn().mockResolvedValue(undefined);
     setAccountIdentityDeleter(deleteIdentity);
 
@@ -270,7 +273,7 @@ describe("durable account deletion", () => {
       .set(asUser(ownerClerkId));
     expect(specialStatus.body).toEqual({ status: "completed" });
 
-    // A still-valid token is tombstoned before normal auth can JIT-provision.
+    // A still-valid token is tombstoned before normal auth can resolve the user.
     const staleGet = await request(ctx.app)
       .get("/api/me")
       .set(asUser(ownerClerkId));
@@ -488,6 +491,7 @@ describe("durable account deletion", () => {
   it("monotonic staging cannot regress a completion at the refresh barrier", async () => {
     const clerkUserId = "monotonic_stage_identity";
     const identityHash = hashClerkIdentity(clerkUserId);
+    await makeTestUserEligible(ctx, clerkUserId);
     const initial = await request(ctx.app)
       .get("/api/me")
       .set(asUser(clerkUserId));

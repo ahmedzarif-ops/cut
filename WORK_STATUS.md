@@ -6,6 +6,11 @@
 
 **Base:** `origin/main` at `70dc1cf`
 
+**Adult policy:** Owner-approved adults-only 18+ policy `adult-18-v1`.
+Automated server/domain/mobile implementation is complete. Legal/privacy,
+native-device and live-service QA, and App Store completion remain open; this is
+not a public-launch readiness claim.
+
 ## What now works
 
 - The previously reviewed P1-9/10 and P1-4 branches are integrated locally:
@@ -54,6 +59,18 @@
   - authenticated-route gating, immediate private-cache removal on `410`,
     foreground refresh plus 60-second active polling, and React Query cache
     clearing across Clerk principal transitions.
+- A server-authoritative adults-only eligibility foundation is implemented and
+  automated under policy `adult-18-v1`; native acceptance remains pending:
+  - strict transient full-DOB input evaluated against an injected UTC clock,
+    including the conservative March 1 rule for February 29 births;
+  - no raw-DOB database field or API response, with only eligibility status,
+    policy version, and decision timestamp retained;
+  - monotonic eligible/ineligible decisions, existing-account recheck, legacy
+    birth-year removal, and email clearing until an eligible recheck;
+  - typed fail-closed `428`/`403` private-API enforcement while deletion/status,
+    restricted Settings, and sign-out remain available;
+  - owner-scoped native query state, an eligibility form/restricted screen, and
+    cache-clearing guards for stale data and Clerk principal transitions.
 - Malformed and oversized JSON requests now return sanitized `400`/`413`
   responses rather than becoming generic server errors.
 - pnpm is pinned to `10.34.5`, and GitHub CI now runs frozen install, generated
@@ -61,15 +78,16 @@
 
 ## Verification
 
-The final local automated checkpoint includes the balanced-meal and durable
-account-deletion foundations. It is not native/App Store acceptance.
+The current local automated checkpoint includes the balanced-meal,
+durable-account-deletion, and adults-only eligibility foundations. It is not
+native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 173 tests** (domain 25, database 4, mobile 42, API 102).
+- `pnpm run test`: **PASS — 199 tests** (domain 31, database 4, mobile 53, API 111).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
-- Production-style Expo export for iOS: **PASS — 1,726 modules; 6.05 MB Hermes bundle**.
+- Production-style Expo export for iOS: **PASS — 1,730 modules; 6.08 MB Hermes bundle**.
 - Blank-database migrations, including deletion lifecycle/hash constraints,
   finite nutrition checks, retry index, and meal deletion tombstones: **PASS**.
 - Baseline adoption-safe migration test: **PASS**.
@@ -84,10 +102,16 @@ account-deletion foundations. It is not native/App Store acceptance.
   rejection, failure recovery, and bounded-worker retry: **PASS (automated)**.
 - Owner-scoped deletion marker, fail-closed status-gate helpers, captured auth,
   and late-response principal isolation: **PASS (automated)**.
+- Adult UTC calendar evaluation, monotonic eligibility decisions,
+  `428`/`403` private authorization, existing-account recheck, birth-year
+  removal, email minimization, and native fail-closed helper regressions:
+  **PASS (automated)**.
 - User-local day calculation: **PASS**.
 - Native iOS simulator interaction: **not yet verified in this environment**.
 - Real-device interaction: **not yet verified**.
 - Account deletion against a real Clerk identity: **not yet verified**.
+- RevenueCat purchase and entitlement behavior: **not yet implemented or
+  verified against live sandbox services**.
 
 ## Known environment fact
 
@@ -98,22 +122,36 @@ The Desktop folder originally provided was an incomplete export: it lacked Git o
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
-1. Approve a minimum-age policy, require the necessary onboarding data, enforce
-   it server-side, and align Terms/App Store age-rating answers.
+1. Complete native-device acceptance for `adult-18-v1`, including deep links,
+   offline/relaunch, shared-device account switching, stale-cache clearing,
+   deletion in every eligibility state, and VoiceOver. Add public
+   Terms/Privacy/Support links to normal and restricted Settings.
 2. Produce reproducible recipes, nutrition methodology/sources, allergen
    substantiation, and qualified review records for every public meal template.
 3. Exercise success, cancellation, timeout, app-kill, retry, second-device, and
    shared-device account-switch scenarios with a real Clerk development identity
    in an iOS development build.
-4. Add public Privacy Policy, Terms, and support links to Settings.
+4. Have qualified counsel approve adults-18+ Terms/EULA, Privacy Policy,
+   notice-at-collection, retention/underage handling, launch jurisdictions, and
+   sufficiency of the self-declared assurance method and permanent
+   ineligible-identity workflow.
 5. Define tombstone/backups retention—including the maximum accepted lifetime
    of stale Clerk sessions/tokens—deletion completion expectations, production
    monitoring, alerting, and manual reconciliation.
-6. Inventory privacy manifests and required-reason APIs in the generated iOS archive.
+6. Inventory privacy manifests and required-reason APIs in the generated iOS
+   archive; reconcile `APP_STORE_METADATA.md`, complete the current Apple
+   questionnaire truthfully, and apply the higher 18+ override once the
+   Terms/EULA minimum is final.
 7. Add dietary preferences/allergy exclusions only after the deletion and privacy paths exist.
 8. Add authoritative calorie/protein targets and deterministic hard filters before using the product name **Best Balanced Fit**.
 9. Then advance Today to training and closeout actions.
 
 ## Owner actions not yet required for local development
 
-Apple enrollment, EAS authentication, production credentials, subscription product creation, TestFlight distribution, App Store submission, and public release remain owner-controlled gates.
+Apple enrollment, EAS authentication, production credentials, subscription
+product creation, TestFlight distribution, App Store questionnaire/privacy
+publication, the higher 18+ rating override, Submit for Review, and public
+release remain owner-controlled gates. Terms/Privacy and jurisdictional
+age-assurance approval remain qualified-counsel gates; nutrition and health
+claims remain qualified professional/legal review gates. Legal and Support must
+also approve the permanent ineligible-identity and later-new-account workflow.
