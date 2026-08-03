@@ -90,22 +90,28 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
     delete:
       operationId: deleteMe
       tags: [me]
       summary: Permanently delete the current user's account
       description: >-
-        Durably tombstones the account, deletes the Clerk identity through the
+        Durably tombstones the account, deletes the RevenueCat customer linked
+        by the internal user UUID, deletes the Clerk identity through the
         server, and then removes the local user, profile, weigh-ins, and meal
-        history. A 204 is returned only after identity deletion and the local
-        cascade are terminal. A 503 means terminal completion could not be
-        confirmed; retry/status recovery is required, and any request that was
-        successfully staged remains durable for server retry.
+        history. This does not cancel a separately managed Apple subscription.
+        A 204 is returned only after the external deletions and local cascade
+        are terminal. A 503 means terminal completion could not be confirmed;
+        retry/status recovery is required, and any request that was successfully
+        staged remains durable for server retry.
       responses:
         "204":
-          description: Identity and local CUT OS account data are deleted
+          description: RevenueCat customer, identity, and local CUT OS account data are deleted
         "401":
           description: Unauthorized
           content:
@@ -118,6 +124,67 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /me/subscription:
+    get:
+      operationId: getMySubscription
+      tags: [me]
+      summary: Get the current user's CUT OS Pro access status
+      description: >-
+        Reconciles the authenticated internal user UUID with RevenueCat. This
+        route remains available without paid access so the app can decide
+        whether to show the subscription screen. RevenueCat remains the
+        subscription source of truth.
+      responses:
+        "200":
+          description: Current CUT OS Pro access status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionStatus"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
+  /me/subscription/refresh:
+    post:
+      operationId: refreshMySubscription
+      tags: [me]
+      summary: Refresh the current user's CUT OS Pro access status
+      description: >-
+        Bypasses the short server cache after a purchase or restore. The
+        authenticated internal user UUID is always authoritative; the client
+        cannot submit a different RevenueCat customer identifier.
+      responses:
+        "200":
+          description: Refreshed CUT OS Pro access status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionStatus"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/account-deletion:
     get:
       operationId: getAccountDeletionStatus
@@ -241,8 +308,12 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
     put:
       operationId: upsertMyProfile
       tags: [me]
@@ -276,8 +347,12 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/today:
     get:
       operationId: getToday
@@ -300,8 +375,12 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/meal-options:
     get:
       operationId: listMyMealOptions
@@ -330,8 +409,12 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/meals/today:
     get:
       operationId: getTodayMeals
@@ -354,8 +437,12 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/meal-entries:
     post:
       operationId: createMyMealEntry
@@ -399,6 +486,8 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
         "404":
           description: Meal template not found
           content:
@@ -421,6 +510,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/meal-entries/{mealEntryId}:
     parameters:
       - in: path
@@ -462,6 +553,8 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
         "404":
           description: Meal entry not found
           content:
@@ -470,6 +563,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
     delete:
       operationId: deleteMyMealEntry
       tags: [me]
@@ -493,8 +588,12 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/weight-entries:
     get:
       operationId: listMyWeightEntries
@@ -534,8 +633,12 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/weight-entries/today:
     put:
       operationId: upsertTodayWeight
@@ -570,8 +673,12 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
 components:
   securitySchemes:
     bearerAuth:
@@ -597,7 +704,57 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/AdultEligibilityBlockedError"
+    SubscriptionRequired:
+      description: An active CUT OS Pro subscription is required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SubscriptionRequiredError"
+    SubscriptionStatusUnavailable:
+      description: Subscription status could not be safely verified
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SubscriptionStatusUnavailableError"
   schemas:
+    SubscriptionStatus:
+      type: object
+      additionalProperties: false
+      required: [entitled, entitlementId, expiresAt, managementUrl]
+      properties:
+        entitled:
+          type: boolean
+        entitlementId:
+          type: string
+          enum: [CUT_OS_PRO]
+        expiresAt:
+          type: ["string", "null"]
+          format: date-time
+          description: Null only for lifetime access or when no access exists.
+        managementUrl:
+          type: ["string", "null"]
+          format: uri
+          description: Provider-supplied subscription management URL when available.
+    SubscriptionRequiredError:
+      type: object
+      additionalProperties: false
+      required: [error, code]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+          enum: [subscription_required]
+    SubscriptionStatusUnavailableError:
+      type: object
+      additionalProperties: false
+      required: [error, code]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+          enum: [subscription_status_unavailable]
     AdultEligibilityStatus:
       type: object
       additionalProperties: false

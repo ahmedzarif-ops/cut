@@ -14,7 +14,7 @@ here is a substitute for owner, legal, or App Review approval.
 | Field               | Working position                                                                                          | Release gate                                                                              |
 | ------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | Product             | CUT OS                                                                                                    | Name clearance and owner approval remain open.                                            |
-| Primary audience    | Adults age 18 and older who lift                                                                          | Must appear consistently in product copy, Terms/EULA, support material, and review notes. |
+| Primary audience    | Adults age 18 and older who lift; owner confirmed the 18+ launch position                                 | Must appear consistently in product copy, Terms/EULA, support material, and review notes. |
 | Eligibility policy  | `adult-18-v1`                                                                                             | Server and release-build bypass tests must pass.                                          |
 | Primary category    | Health & Fitness                                                                                          | Owner must confirm against the final feature set.                                         |
 | Made for Kids       | No                                                                                                        | Do not select the Kids category.                                                          |
@@ -23,6 +23,44 @@ here is a substitute for owner, legal, or App Review approval.
 | Privacy Policy URL  | Pending; validated in-app configuration is implemented                                                    | Owner/counsel must publish and verify the required HTTPS policy before submission.        |
 | Terms/EULA          | Pending; validated in-app Terms link is implemented                                                       | Owner/counsel must choose and publish the final 18+ terms/EULA position.                  |
 | Age Suitability URL | Optional; pending owner decision                                                                          | If supplied, it must explain the adults-only policy and self-declared gate accurately.    |
+
+## Focused v1 listing copy
+
+This is the only launch positioning approved by current binary scope. Do not
+add adaptive coaching, personalized targets, trends, workouts, reminders,
+progress, closeout, or weekly review to the listing or screenshots until those
+features ship and are verified.
+
+**Subtitle draft:** Your daily cut check-in
+
+**Description draft:**
+
+CUT OS gives adults who lift a simple daily sequence for the fundamentals of a
+cut.
+
+- See one clear next action for today.
+- Log or update one daily weigh-in.
+- Choose from six curated balanced-meal options.
+- Review ingredients, common allergens, portions, and estimated nutrition.
+- Log, edit, or delete meals and see today's estimated nutrition totals.
+- Keep account data synced and delete the account in-app.
+
+CUT OS provides general fitness and nutrition information, not medical advice.
+Meal nutrition is estimated. Ingredient and common-allergen lists must be
+reviewed against the exact products you use and are not an allergen-safety
+guarantee.
+
+CUT OS is for adults age 18 and older. Paid access uses an auto-renewable Apple
+subscription. The exact localized price and billing period appear before you
+confirm purchase. You can restore purchases in the app and manage or cancel the
+subscription through Apple.
+
+**Keywords draft:** cut,weight,meal,protein,macros,lifting,nutrition,weigh-in,fitness
+
+The owner, counsel, and qualified nutrition reviewer must approve this copy
+after the final binary and catalog review. StoreKit-localized price and period
+must never be typed into this listing until the owner creates and approves the
+actual App Store product.
 
 ## Age rating and questionnaire
 
@@ -47,8 +85,9 @@ Working answers/evidence for the final questionnaire:
 - **User-Generated Content, Messaging/Chat, Advertising, Unrestricted Web
   Access:** No for the current v1 scope, subject to final-binary verification.
 - **Made for Kids:** No.
-- Once the final Terms/EULA requires age 18, choose **Override to Higher Age
-  Rating → 18+** if Apple's calculated rating is lower. Apple says an app whose
+- The owner has confirmed the intended **18+** launch position. Once the final
+  Terms/EULA requires age 18, choose **Override to Higher Age Rating → 18+** if
+  Apple's calculated rating is lower. Apple says an app whose
   EULA minimum exceeds the calculated rating must override to a rating that
   adheres to the EULA. Verify region- and OS-specific display values before
   submission.
@@ -81,8 +120,8 @@ support tools, and every embedded SDK:
   Personalization use.
 - Other Data Types — adult eligibility status, policy version, and decision
   timestamp; linked to the user; App Functionality.
-- Purchases — subscription/purchase history once the shipped RevenueCat/App
-  Store implementation makes it available to CUT OS.
+- Purchases — linked subscription/purchase history used for App Functionality
+  and Analytics by the shipped RevenueCat/App Store implementation; tracking No.
 - Diagnostics/Usage Data — only if the final SDK and production configuration
   collect them; declare the actual purpose and linkage.
 
@@ -107,6 +146,11 @@ advertising audiences.
 - Explain the `unverified` (`428`) and `ineligible` (`403`) server behavior and
   provide a controlled under-18 test path without exposing real personal data.
 - Explain account deletion, subscription management, and any review-only setup.
+- State the exact subscription group/product submitted with the build, where
+  the subscription screen appears, how to purchase/restore/manage it, and that
+  the app reads localized price and duration from StoreKit.
+- Describe paid scope narrowly: one daily next action, daily weigh-in, six
+  curated meal choices, meal logging, and daily nutrition totals.
 - Keep the production backend and required authentication services live.
 - Describe wellness/nutrition limitations accurately; do not imply medical or
   allergen-safety guarantees.

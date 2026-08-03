@@ -14,13 +14,16 @@ describe("selectNextAction", () => {
   });
 
   it("asks for today's weigh-in after onboarding", () => {
-    expect(
-      selectNextAction({
-        onboardingComplete: true,
-        hasWeightToday: false,
-        hasMealToday: false,
-      }).kind,
-    ).toBe("weigh_in");
+    const action = selectNextAction({
+      onboardingComplete: true,
+      hasWeightToday: false,
+      hasMealToday: false,
+    });
+
+    expect(action.kind).toBe("weigh_in");
+    expect(`${action.title} ${action.detail}`.toLowerCase()).not.toContain(
+      "trend",
+    );
   });
 
   it("advances immediately after the weigh-in exists", () => {

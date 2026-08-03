@@ -24,6 +24,17 @@ import { setDb, type Db } from "@workspace/db";
 import * as schema from "@workspace/db/schema";
 import router from "../routes";
 import { errorHandler } from "../middlewares/errorHandler";
+import {
+  REVENUECAT_ENTITLEMENT_ID,
+  setSubscriptionStatusProviderForTesting,
+  type SubscriptionStatusProvider,
+} from "../services/revenueCatSubscriptionService";
+import {
+  setAccountSubscriptionCustomerDeletionPoller,
+  setAccountSubscriptionCustomerDeleter,
+  type SubscriptionCustomerDeletionPoller,
+  type SubscriptionCustomerDeleter,
+} from "../services/accountDeletionService";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = path.resolve(__dirname, "../../../../lib/db/migrations");
@@ -40,6 +51,28 @@ export interface TestContext {
   client: PGlite;
   close: () => Promise<void>;
 }
+
+export interface CreateTestContextOptions {
+  subscriptionStatusProvider?: SubscriptionStatusProvider;
+  subscriptionCustomerDeleter?: SubscriptionCustomerDeleter;
+  subscriptionCustomerDeletionPoller?: SubscriptionCustomerDeletionPoller;
+}
+
+const entitledTestSubscriptionProvider: SubscriptionStatusProvider = {
+  async getStatus() {
+    return {
+      entitled: true,
+      entitlementId: REVENUECAT_ENTITLEMENT_ID,
+      expiresAt: null,
+      managementUrl: null,
+    };
+  },
+};
+
+const absentTestSubscriptionCustomer: SubscriptionCustomerDeleter = async () =>
+  undefined;
+const absentTestSubscriptionCustomerPoller: SubscriptionCustomerDeletionPoller =
+  async () => undefined;
 
 /** Establish the current 18+ policy through the real special API route. */
 export async function makeTestUserEligible(
@@ -95,7 +128,9 @@ function testClerkAuth(): RequestHandler {
   };
 }
 
-export async function createTestContext(): Promise<TestContext> {
+export async function createTestContext(
+  options: CreateTestContextOptions = {},
+): Promise<TestContext> {
   const client = new PGlite();
   for (const sql of readMigrationsInOrder()) {
     await client.exec(sql);
@@ -105,6 +140,16 @@ export async function createTestContext(): Promise<TestContext> {
   // PGlite's Drizzle instance is a different driver flavor than node-postgres
   // but exposes the identical query API the routes use.
   setDb(db as unknown as Db);
+  setSubscriptionStatusProviderForTesting(
+    options.subscriptionStatusProvider ?? entitledTestSubscriptionProvider,
+  );
+  setAccountSubscriptionCustomerDeleter(
+    options.subscriptionCustomerDeleter ?? absentTestSubscriptionCustomer,
+  );
+  setAccountSubscriptionCustomerDeletionPoller(
+    options.subscriptionCustomerDeletionPoller ??
+      absentTestSubscriptionCustomerPoller,
+  );
 
   const app = express();
   app.use(pinoHttp({ logger: pino({ level: "silent" }) }));
@@ -119,6 +164,9 @@ export async function createTestContext(): Promise<TestContext> {
     client,
     close: async () => {
       setDb(null);
+      setSubscriptionStatusProviderForTesting(null);
+      setAccountSubscriptionCustomerDeleter(null);
+      setAccountSubscriptionCustomerDeletionPoller(null);
       await client.close();
     },
   };

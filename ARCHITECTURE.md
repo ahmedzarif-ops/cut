@@ -254,13 +254,24 @@ tracking only. Nothing currently hard-wires a vendor.
 
 ## Purchases / entitlements (change order §4)
 
-Not built. The committed direction: RevenueCat entitlements
-(`CUT_OS_PRO`) as the subscription source of truth, `react-native-purchases`
-in an **EAS development build** (Expo Go only ever shows mock paywall UI).
-The internal `users.id` uuid is the stable candidate for the RevenueCat
-`appUserID`. The backend may mirror entitlement state for queries but must
-not create an independent subscription truth. No paywall, trial, purchase, or
-entitlement activation is available until adult authorization succeeds.
+RevenueCat's `CUT_OS_PRO` entitlement is the subscription source of truth.
+The native app uses `react-native-purchases` only after deletion and adult
+authorization succeed, and identifies customers exclusively with the internal
+`users.id` UUID. Custom-ID account switches call `logIn` directly; CUT never
+creates an anonymous intermediary with RevenueCat `logOut`. Expo Go cannot make
+real purchases and reports that limitation instead of simulating success.
+
+The server independently checks RevenueCat REST API v2 active entitlements for
+every paid operation. It compares the configured RevenueCat `entl...` resource
+ID and exposes the stable app-facing key `CUT_OS_PRO`; client state alone never
+unlocks API access. Provider failure returns a retryable `503`, inactive access
+returns `402`, and short status caching cannot outlive a finite entitlement
+expiration. A forced post-purchase/restore refresh is isolated from older
+reads. RevenueCat customer deletion is ordered before Clerk/local deletion,
+uses a database lease across server replicas, and persists queued-provider
+state so a `202` deletion is polled with noncreating GETs rather than repeated.
+Automated verification is implemented; Apple Sandbox, TestFlight, and final
+production-service acceptance remain open.
 
 ## Test architecture
 
@@ -269,7 +280,8 @@ entitlement activation is available until adult authorization succeeds.
   `req.auth`, no module mocks) against PGlite (WASM Postgres) built from the
   committed migrations. Covers the auth gate, JIT provisioning idempotency,
   account updates, profile lifecycle + full-replace contract, meal logging,
-  deletion coordination/cascades/provider-error boundaries/races/retries, and
+  deletion coordination/cascades/provider-error boundaries/races/retries,
+  RevenueCat v2 parsing/cache/refresh/deletion, paid-route enforcement, and
   cross-user isolation (change order §5). The adult-eligibility suite must cover
   migrated/unverified state, `428`/`403` enforcement on every private route,
   allowlisted deletion/settings behavior, transient-DOB absence, and atomic
@@ -278,7 +290,8 @@ entitlement activation is available until adult authorization succeeds.
 - `artifacts/cut-os`: vitest unit tests for pure logic in `lib/`, including
   profile↔form mapping, the meal serving editor, durable/cross-principal meal
   recovery, account-deletion marker/gate/transport ownership helpers, and the
-  eligibility route/cache decision helpers once integrated.
+  eligibility route/cache decision helpers, RevenueCat principal isolation,
+  pricing-copy rules, and purchase/restore verification state.
   Screens and native cache transitions are
   exercised through simulator QA (spec §2), not vitest.
 - Run everything: `pnpm run test` (root). Typecheck: `pnpm run typecheck`.

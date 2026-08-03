@@ -1,245 +1,181 @@
-# CUT OS — App Store Readiness
+# CUT OS — App Store readiness
 
-**Product promise:** CUT OS tells people who lift what to do next so they can actually finish their cut.
+**Status:** Automated paid-v1 checkpoint complete; not ready to submit
 
-## v1 launch scope
+**Updated:** August 3, 2026
 
-Ship:
+## Honest v1 scope
 
-- Adults-only account and onboarding under policy `adult-18-v1`. Public
-  guidance and purchases are protected by the implemented server-enforced
-  eligibility gate, existing-account recheck, and generated contract. Native
-  acceptance and release/legal review remain incomplete.
-- Separate profile and time-bounded cut-cycle data.
-- Today / Next Action.
-- Daily weigh-in and trend.
-- Curated balanced-meal logging and daily macro totals. Personalized **Best
-  Balanced Fit** ships only if authoritative targets, preference filters,
-  disclosures, and safety review land; otherwise defer it.
-- Workout plan, session/set logging, and PR detection.
-- Daily closeout and weekly review.
-- Calendar and local reminders.
-- Progress.
-- RevenueCat monthly/annual subscription, trial, restore, and manage subscription.
-- Settings, privacy, support, and in-app account deletion.
+CUT OS will launch as an adults-only daily cut check-in for people who lift.
+The paid binary may advertise only:
 
-Defer until v1.1+:
+- One deterministic next action for today.
+- One daily weigh-in create/update.
+- Six curated balanced-meal options with portions, ingredients, common
+  allergens, and estimated nutrition.
+- Meal log/edit/delete and today's estimated nutrition totals.
+- Cloud account persistence, Restore Purchases, subscription management,
+  legal/support links, and in-app account deletion.
 
-- HealthKit and wearables.
-- Meal-photo recognition.
-- AI chat coaching.
-- Live delivery-app inventory.
-- Social/community features.
-- Creator marketplace.
-- Android public release.
+Do not advertise adaptive coaching, personalized calorie/protein targets,
+weight trends, workouts, sets, PRs, reminders, calendar, progress, daily
+closeout, weekly review, restaurant guidance, photo recognition, AI chat, or
+social features. Those are backlog, not submission truth.
 
-## Current engineering position
+## Engineering position
 
-- [x] React Native + Expo native application.
-- [x] Express/PostgreSQL server architecture.
-- [x] Managed authentication and server-resolved internal user identity.
-- [x] Cross-user isolation tests.
-- [x] Committed migrations tested from a blank database.
-- [x] OpenAPI-generated client and response validators.
-- [x] EAS development/preview/production profiles.
-- [x] Profiles explicitly bind their matching EAS environments; production is
-      pinned to the Expo SDK 54-compatible Xcode 26 image and requires a clean
-      commit.
-- [x] Production release configuration fails before install when the public API,
-      live Clerk key, or required public legal/support URLs are missing or unsafe.
-- [x] Runtime configuration and the API transport fail closed; authorization is
-      never attached to an unresolved, non-HTTPS, or non-matching API origin.
-- [x] OpenAPI declares bearer authentication for all private operations and
-      explicitly keeps health public.
-- [x] Bundle identifier reserved in config: `com.zarifahmed.cut`.
-- [x] First server-backed Next Action and daily weigh-in slice.
-- [x] First server-backed curated balanced-meal engineering foundation with daily totals.
-- [x] Versioned day/catalog handshake plus durable owner-scoped recovery for
-      uncertain meal creates.
-- [x] Retry-safe meal deletion and replay tombstones that retain no nutrition
-      values and cascade with account deletion.
-- [x] pnpm version pin and GitHub CI gates for frozen install, generated
-      contract drift, typecheck, and automated tests.
-- [x] Engineering privacy data-map draft covering current fitness/nutrition data.
-- [x] Unused native location and photo-picker packages removed from the launch dependency set.
-- [x] Owner approved an adults-only 18+ product policy and the
-      `adult-18-v1` engineering design in `ADR_003_ADULT_ELIGIBILITY.md`.
-- [x] Adult eligibility is implemented across domain, database, API/generated
-      contract, and mobile with automated verification.
-- [ ] Adult eligibility passes native-device, live-Clerk, offline/relaunch,
-      deep-link, shared-device, accessibility, and release-build acceptance.
-- [ ] Verified iOS Simulator boot on the current release branch.
-- [ ] Seven-day founder dogfood.
-- [ ] Full launch feature scope.
-- [ ] RevenueCat integration.
-- [x] Account-deletion engineering flow passes the final automated verification run.
-- [ ] Account deletion passes real-Clerk, app-kill, poor-network, second-device,
-      shared-device, and iOS development-build validation.
-- [x] App-level privacy-manifest baseline and installed-package required-reason
-      API inventory; collection entries match the current engineering data map.
-- [ ] Final `.xcarchive` privacy report and embedded third-party SDK inventory.
-- [ ] App Privacy responses.
-- [ ] Legal URLs and store metadata.
-- [ ] TestFlight internal/external beta.
+- [x] Expo SDK 54 / React Native native application with bundle ID
+      `com.zarifahmed.cut`.
+- [x] Express/PostgreSQL API, generated OpenAPI client/validators, committed
+      migrations, internal UUID identity, and cross-user tests.
+- [x] Clerk authentication with safe native token transport.
+- [x] Server-enforced `adult-18-v1` eligibility before private guidance.
+- [x] Durable in-app account deletion foundation with Clerk deletion, local
+      cascade, retry worker, and device recovery marker.
+- [x] Daily Next Action, weigh-in, six-meal catalog, retry-safe meal logging,
+      editing/deletion, and nutrition totals.
+- [x] EAS development/preview/production profiles, production environment
+      preflight, Xcode 26 image pin, and baseline app privacy manifest.
+- [x] RevenueCat client purchase/restore/listener/principal-isolation flow and
+      truthful subscription screen pass automated verification.
+- [x] RevenueCat REST v2 server reconciliation independently protects every
+      paid API and passes outage, inactive, lifetime, grace, malformed,
+      refresh-race, cache, and cross-user tests.
+- [x] RevenueCat customer deletion is part of the durable account-deletion
+      provider workflow, including validated absence, queued-delete polling,
+      multi-worker leases, stale-worker fencing, and cache invalidation.
+- [x] Full repository typecheck/tests, pinned frozen install, Expo dependency
+      check, Expo Doctor, migration drift check, and production-style iOS
+      export pass after subscription integration. The clean-commit gate is
+      completed by the release checkpoint commit.
 
-## Apple submission gates
+## Submission blockers
 
-### Build and account
+### Owner financial/store decisions
 
-- [ ] Apple Developer Program membership active.
-- [ ] Legal entity, agreements, tax, and banking complete.
-- [ ] App record created in App Store Connect.
-- [ ] EAS project linked and production credentials verified.
-- [ ] Production EAS environment defines and verifies
-      `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, `EXPO_PUBLIC_DOMAIN`, and the public
-      Privacy, Terms, and Support URLs for the exact services used by the
-      submitted binary. The Clerk proxy must be the canonical same-origin
-      `/api/__clerk` route.
-- [ ] Meal-catalog deployments drain old API replicas and run one catalog
-      version at a time; mixed-version writers are not allowed by the current
-      release procedure.
-- [ ] Production upload built with Xcode 26+ and the iOS 26 SDK or later.
-- [ ] Valid privacy manifests included for the app and required third-party SDKs.
-- [x] Native config resolves with arbitrary network loads disabled and the
-      current exempt-only encryption declaration; both require final-archive
-      verification before submission.
+- [ ] Confirm Apple Developer Program membership and Account Holder access.
+- [ ] Accept the Paid Apps Agreement and complete tax/banking. These are
+      sensitive financial actions and remain owner-only.
+- [ ] Choose the first product's immutable Product ID, duration, price, and
+      whether to offer a trial. Source code does not assume any of them.
+- [ ] Approve the subscription group name/localizations and the final StoreKit
+      offer. No-trial is the shortest path to the first paid transaction, but
+      it is still an owner decision.
+- [ ] Approve App Review submission and later public release.
 
-Apple has required iOS uploads to use the iOS 26 SDK or later since April 28, 2026: [Upcoming Requirements](https://developer.apple.com/news/upcoming-requirements/).
+### External services
 
-### Account and authentication
+- [x] RevenueCat development Test Store has entitlement `CUT_OS_PRO`, a
+      clearly test-only monthly product (`cut_os_pro_monthly_test`, no trial),
+      and the current/default offering. Its public test key is scoped only to
+      Expo's development environment.
+- [ ] Create/verify the App Store Connect app for `com.zarifahmed.cut`.
+- [ ] Create the first auto-renewable subscription and group, then attach both
+      the product and build to the same first review submission.
+- [ ] Create/verify the RevenueCat iOS app, Apple credentials, product mapping,
+      exact `CUT_OS_PRO` entitlement, current/default offering, and Apple Server
+      Notifications v2 sandbox/production URLs.
+- [x] Link the app config to the existing `@zee-digipit/cut` Expo/EAS project.
+- [ ] Authenticate the local EAS CLI and verify Apple signing credentials.
+- [ ] Deploy the production API/database/Clerk combination and server-only
+      RevenueCat v2 secret, project resource ID, and entitlement resource ID.
+- [ ] Configure production EAS values for API domain, live Clerk key/proxy,
+      RevenueCat public Apple SDK key, Privacy, Terms, and Support.
 
-- [ ] A current `eligible` adult review account, full-access steps, and a
-      controlled under-18 gate test path are supplied to App Review.
-- [ ] Backend stays live during review.
-- [ ] Sign in with Apple added if the final primary login mix requires it under Guideline 4.8.
-- [ ] Delete Account is easy to find in Settings.
-- [ ] Deletion removes associated data not legally required to be retained.
-- [ ] A real Clerk development identity is deleted and cannot recreate an
-      internal account from a surviving session.
-- [ ] Pending deletion age, retry failures, alerts, and manual reconciliation
-      are operationally monitored.
-- [ ] Tombstone, backup, and legally required retention periods plus deletion
-      completion expectations are documented in the public Privacy Policy.
-- [ ] Apple sign-in tokens are revoked during deletion, if used.
-- [ ] User can manage the Apple subscription before or after deleting the CUT OS account.
+### Legal, privacy, and content
 
-Reference: [Offering account deletion in your app](https://developer.apple.com/support/offering-account-deletion-in-your-app/).
+- [ ] Form/confirm the selling legal entity and public contact information.
+- [ ] Publish functional HTTPS Privacy Policy, Terms/EULA, and Support pages.
+- [ ] Qualified counsel approves adults-only eligibility, notice, retention,
+      account deletion, subscriptions, launch jurisdictions, and store copy.
+- [ ] Privacy Policy names RevenueCat and explains linked User ID and Purchase
+      History, purposes, retention/deletion, and no tracking.
+- [ ] Final App Privacy answers match the production archive and backend.
+- [ ] Every meal has fixed ingredient quantities/yield, nutrition source and
+      calculation method, substantiated common-allergen/dietary labels,
+      qualified reviewer, and review date.
+- [ ] Qualified nutrition/health and legal reviewers approve catalog copy,
+      estimated-nutrition warning, and non-medical claims.
+- [ ] Completed identity tombstone, backups, RevenueCat, and support-record
+      retention/deletion policies are documented.
 
-### Privacy and health/fitness
+### App assets and metadata
 
-- [ ] Privacy Policy is public and accessible in-app.
-- [ ] Terms and support URLs are public.
-- [x] Validated Privacy, Terms, and Support controls are implemented in normal
-      and adult-restricted paths and fail closed when release values are absent.
-- [ ] Data inventory covers CUT OS and every third-party SDK.
-- [ ] Production data inventory is reconciled against `PRIVACY_DATA_MAP.md` and the final binary.
-- [ ] App Privacy label matches the production binary and backend.
-- [ ] Health/fitness data never enters advertising audiences or marketing data mining.
-- [ ] Logs and analytics contain no raw weight, measurements, macros, workouts, allergies, or health conditions.
-- [ ] Wellness/medical age-rating and regulated-device declarations are answered accurately.
-- [x] Owner approved adults-only policy `adult-18-v1`.
-- [x] A transient full DOB is evaluated only by the server against the UTC
-      calendar; raw DOB is never stored, logged, cached, returned, added to
-      Clerk, or sent to analytics. Only `unverified`/`eligible`/`ineligible`,
-      policy version, and decision time are retained in the implemented and
-      automated design.
-- [x] Every new and existing account fails closed until it has a current
-      `adult-18-v1` result. Normal private APIs return `428` for unverified or
-      stale policy state and `403` for ineligible state; deletion/status,
-      restricted Settings, and sign-out remain usable in automated coverage.
-- [ ] The preceding transient-DOB and fail-closed controls pass native-device,
-      live-Clerk, archive inspection, and production observability verification.
-- [ ] Owner-supplied public Terms, Privacy, and Support destinations are verified
-      from both normal and adult-restricted Settings in the submitted build.
-- [ ] The permanent v1 ineligible-identity behavior is reviewed: no in-app DOB
-      correction/retry; later adult access requires account/identity deletion
-      and a new account. Settings/deletion/sign-out and support instructions work.
-- [ ] Terms/EULA and Privacy Policy wording, notice-at-collection, retention,
-      underage handling, launch jurisdictions, and sufficiency of self-declared
-      age assurance receive qualified legal/privacy review.
-- [ ] Every public meal template has reproducible ingredient quantities and
-      yield, nutrition source/methodology, substantiated allergen/dietary
-      labels, a qualified reviewer, and a review date.
-- [ ] Recommendations and public claims receive qualified professional/legal review.
+- [x] Replace the construction-guide placeholder with an original 1024×1024
+      RGB icon candidate and use it for the app icon, splash, and favicon.
+- [ ] Verify the icon and splash on the native release build and obtain final
+      owner approval.
+- [ ] Capture screenshots from the actual release build: adult gate,
+      subscription screen, Today/next action, weigh-in, meal choices/log, and
+      Settings. Do not mock unbuilt screens.
+- [ ] Owner/reviewers approve the focused copy in `APP_STORE_METADATA.md`.
+- [ ] Complete the current age-rating questionnaire truthfully, choose Health &
+      Fitness if still accurate, do not mark Made for Kids, and apply the
+      owner/legal-approved 18+ override when required.
+- [ ] Provide an eligible adult review account, exact full-access/purchase
+      navigation, and a controlled restricted-path test with no real minor data.
+- [ ] Keep the production backend, Clerk, RevenueCat, and public pages live
+      throughout review.
 
-References: [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/) and [App Privacy Details](https://developer.apple.com/app-store/app-privacy-details/).
+### Native purchase and release evidence
 
-### Subscription
+- [ ] Fresh EAS development build installs on a real supported iPhone.
+- [ ] Apple Sandbox matrix in `PURCHASE_QA_REPORT.md` passes: product loading,
+      localized price/period, success, user cancellation, error/interruption,
+      restore active/none, renewal, cancellation, expiration, refund, billing
+      retry/grace, reinstall, second device, account switch, offline, and manage.
+- [ ] Charged-but-locked recovery works through Restore + server refresh.
+- [ ] Deletion with an active subscription warns that Apple billing is
+      separate, offers Manage Subscription, and still permits immediate delete.
+- [ ] TestFlight repeats the critical purchase, restore, account-switch,
+      deletion, poor-network, VoiceOver, and large-text paths.
+- [ ] Final `.xcarchive` privacy report, embedded SDK inventory, `Info.plist`,
+      export-compliance answer, and required-reason APIs are reconciled.
+- [ ] No P0/P1 issue remains; build and first subscription are submitted
+      together; release stays manual until final owner approval.
 
-- [ ] App Store subscription group created.
-- [ ] Working offer approved: $19.99 monthly / $99.99 annual / seven-day trial.
-- [ ] RevenueCat products map to one `CUT_OS_PRO` entitlement.
-- [ ] Paywall clearly states price, period, trial, auto-renewal, and cancellation.
-- [ ] Sandbox purchase, renew, cancel, expire, billing retry, refund, reinstall, and restore pass.
-- [ ] Manage Subscription works.
-- [ ] Entitlement remains correct on a second device.
+## Stop-the-line defects
 
-RevenueCat's Expo SDK requires a development build for real purchases: [RevenueCat Expo guide](https://www.revenuecat.com/docs/getting-started/installation/expo).
-
-### Store listing and review
-
-- [ ] Name clearance complete.
-- [ ] App icon, subtitle, description, keywords, screenshots, support URL, and privacy URL final.
-- [ ] `APP_STORE_METADATA.md` is reconciled against the final binary and approved.
-- [ ] The current age-rating questionnaire is completed truthfully: health or
-      wellness topics, medical/treatment content, age-assurance behavior,
-      social-media capability, and every other descriptor match the shipped app.
-- [ ] The app is not marked Made for Kids. Once the Terms/EULA minimum is 18,
-      a higher-age override to 18+ is applied if Apple's calculated rating is
-      lower, with region/OS-specific results recorded.
-- [ ] The App Store description and review notes say CUT OS is for adults 18+
-      and distinguish the storefront rating from in-app self-declared eligibility.
-- [ ] Screenshots show real shipped UI: Next Action, balanced food, workouts, weekly review, progress.
-- [ ] Review notes explain adaptive guidance, subscriptions, account deletion, and full-access steps.
-- [ ] Correct build and subscription products added to the review submission.
-- [ ] Owner approves Submit for Review.
-- [ ] Release remains manual until production readiness is rechecked.
-
-## TestFlight gates
-
-Internal beta:
-
-- 5–10 trusted adult testers. Controlled under-18 test identities are used only
-  to verify the restricted path and contain no real minor data.
-- Current iOS plus the oldest supported iOS version.
-- At least two iPhone sizes.
-- Purchase lifecycle and poor-network scenarios.
-- No P0 and no unresolved P1 in auth, purchase, logging, or deletion.
-
-External beta:
-
-- 25–50 adult target users.
-- First external build passes TestFlight review.
-- Activation and seven-day retention measured with privacy-safe events only.
-
-## Stop-the-line release triggers
-
-- Cross-user data exposure.
-- Charged purchase without entitlement.
-- Entitlement without valid purchase.
-- Account deletion failure.
-- Silent loss or duplication of food, weight, or workout writes.
-- Authentication failures affecting a meaningful share of users.
-- Recommendation behavior that could plausibly create health risk.
-- Missing or bypassable minimum-age enforcement.
-- Raw DOB stored, logged, cached, returned, added to Clerk/analytics, or
-  otherwise retained beyond the transient eligibility decision.
-- Guidance, private cached data, or a purchase path visible while eligibility
-  is unverified, stale, ineligible, offline, or unavailable.
-- Terms/Privacy/App Store age statements that do not match `adult-18-v1`.
-- Ineligible users offered DOB correction/retry, or unable to reach Settings,
-  sign out, account deletion, or the approved later-adult support instructions.
-- Unreviewed nutrition, allergen, or dietary claims in the public catalog.
+- Cross-user account, health, meal, or entitlement exposure.
+- Charge without recoverable entitlement, or entitlement without valid
+  RevenueCat/Apple status.
+- Client-only subscription protection or a paid API that omits the server gate.
+- Purchase UI before current adult eligibility, or private cached data visible
+  when deletion/eligibility/subscription state is unknown.
+- Hardcoded or mismatched price, currency, duration, or trial.
+- Missing Restore, subscription management, auto-renew/cancel disclosure,
+  Privacy, Terms, Support, or account deletion.
+- RevenueCat/Apple/Clerk/server secret embedded in the app, repository, logs, or
+  responses.
+- Account deletion failure or a claim that deleting CUT cancels Apple billing.
+- Raw DOB, weight, measurements, calories, macros, or meal details in URLs,
+  logs, analytics, crash metadata, or RevenueCat customer attributes.
+- App Store copy/screenshots advertising any unbuilt feature.
+- Unreviewed nutrition, allergen, medical, or outcome claim.
 
 ## Release sequence
 
-1. Complete core vertical slices.
-2. Seven-day founder dogfood.
-3. Internal TestFlight.
-4. External TestFlight.
-5. Freeze v1 scope.
-6. Complete privacy, subscription, listing, and review metadata.
-7. Submit for review.
-8. Fix only review blockers and P0/P1 defects.
-9. Owner approves manual release.
-10. Monitor purchases, auth, writes, crashes, and support closely for 24 hours.
+1. Finish subscription client, server gate, and vendor deletion; pass automated
+   tests from a clean commit.
+2. Owner completes sign-in, financial/store decisions, and service credentials.
+3. Publish legal/support pages and deploy the production backend.
+4. Configure App Store products, RevenueCat, EAS, and Apple notifications.
+5. Build a native development client; pass Apple Sandbox purchase QA.
+6. Upload internal TestFlight; pass the critical matrix on real devices.
+7. Finish privacy, nutrition, legal, icon, screenshots, metadata, and review
+   account evidence.
+8. Attach the first subscription and release build; owner approves Submit for
+   Review.
+9. Fix only review blockers, re-run critical tests, and release manually after
+   final owner approval.
+10. Monitor purchases, restore failures, auth, writes, deletion, crashes, and
+    support closely after launch.
+
+## Official references
+
+- [Apple App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
+- [Offer auto-renewable subscriptions](https://developer.apple.com/help/app-store-connect/manage-subscriptions/offer-auto-renewable-subscriptions/)
+- [Submit an in-app purchase](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/)
+- [Offering account deletion](https://developer.apple.com/support/offering-account-deletion-in-your-app/)
+- [RevenueCat Expo installation](https://www.revenuecat.com/docs/getting-started/installation/expo)
+- [RevenueCat Apple App Privacy](https://www.revenuecat.com/docs/platform-resources/apple-platform-resources/apple-app-privacy)

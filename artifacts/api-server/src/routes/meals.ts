@@ -12,6 +12,7 @@ import {
 
 import { HttpError } from "../lib/httpError";
 import { requireAuth } from "../middlewares/requireAuth";
+import { requireSubscription } from "../middlewares/requireSubscription";
 import {
   createMyMealEntry,
   deleteMyMealEntry,
@@ -42,18 +43,29 @@ function containsOnlyKnownKeys(
   );
 }
 
-router.get("/me/meal-options", requireAuth, (_req, res): void => {
-  res.json(ListMyMealOptionsResponse.parse(listMyMealOptions()));
-});
+router.get(
+  "/me/meal-options",
+  requireAuth,
+  requireSubscription,
+  (_req, res): void => {
+    res.json(ListMyMealOptionsResponse.parse(listMyMealOptions()));
+  },
+);
 
-router.get("/me/meals/today", requireAuth, async (req, res): Promise<void> => {
-  const meals = await getTodayMeals(req.user!);
-  res.json(GetTodayMealsResponse.parse(meals));
-});
+router.get(
+  "/me/meals/today",
+  requireAuth,
+  requireSubscription,
+  async (req, res): Promise<void> => {
+    const meals = await getTodayMeals(req.user!);
+    res.json(GetTodayMealsResponse.parse(meals));
+  },
+);
 
 router.post(
   "/me/meal-entries",
   requireAuth,
+  requireSubscription,
   async (req, res): Promise<void> => {
     if (!containsOnlyKnownKeys(req.body, CREATE_MEAL_ENTRY_KEYS)) {
       throw new HttpError(400, "Invalid meal entry");
@@ -69,6 +81,7 @@ router.post(
 router.patch(
   "/me/meal-entries/:mealEntryId",
   requireAuth,
+  requireSubscription,
   async (req, res): Promise<void> => {
     const params = UpdateMyMealEntryParams.safeParse(req.params);
     if (!containsOnlyKnownKeys(req.body, UPDATE_MEAL_ENTRY_KEYS)) {
@@ -92,6 +105,7 @@ router.patch(
 router.delete(
   "/me/meal-entries/:mealEntryId",
   requireAuth,
+  requireSubscription,
   async (req, res): Promise<void> => {
     const parsed = DeleteMyMealEntryParams.safeParse(req.params);
     if (!parsed.success) throw new HttpError(400, "Invalid meal entry ID");

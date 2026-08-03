@@ -9,6 +9,7 @@ import {
 
 import { HttpError } from "../lib/httpError";
 import { requireAuth } from "../middlewares/requireAuth";
+import { requireSubscription } from "../middlewares/requireSubscription";
 import {
   getTodayState,
   listWeightEntries,
@@ -17,14 +18,20 @@ import {
 
 const router: IRouter = Router();
 
-router.get("/me/today", requireAuth, async (req, res): Promise<void> => {
-  const state = await getTodayState(req.user!);
-  res.json(GetTodayResponse.parse(state));
-});
+router.get(
+  "/me/today",
+  requireAuth,
+  requireSubscription,
+  async (req, res): Promise<void> => {
+    const state = await getTodayState(req.user!);
+    res.json(GetTodayResponse.parse(state));
+  },
+);
 
 router.get(
   "/me/weight-entries",
   requireAuth,
+  requireSubscription,
   async (req, res): Promise<void> => {
     const parsed = ListMyWeightEntriesQueryParams.safeParse(req.query);
     if (!parsed.success || !Number.isInteger(parsed.data.limit)) {
@@ -38,6 +45,7 @@ router.get(
 router.put(
   "/me/weight-entries/today",
   requireAuth,
+  requireSubscription,
   async (req, res): Promise<void> => {
     const parsed = UpsertTodayWeightBody.safeParse(req.body);
     if (!parsed.success) {

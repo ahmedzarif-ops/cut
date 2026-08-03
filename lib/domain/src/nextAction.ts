@@ -31,7 +31,7 @@ export function selectNextAction(input: NextActionInput): NextAction {
       kind: "weigh_in",
       title: "Log your morning weigh-in",
       detail:
-        "Use the same conditions each day. CUT OS follows the trend, not one number.",
+        "Use the same conditions each day so your check-ins stay consistent.",
     };
   }
 

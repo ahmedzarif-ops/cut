@@ -1,6 +1,8 @@
 export * from "./generated/api";
 export * from "./generated/api.schemas";
 export {
+  API_REQUEST_TIMEOUT_MS,
+  ApiRequestTimeoutError,
   customFetch,
   setBaseUrl,
   setAuthTokenGetter,

@@ -1,4 +1,6 @@
 import {
+  API_REQUEST_TIMEOUT_MS,
+  ApiRequestTimeoutError,
   customFetch,
   deleteMe,
   getMe,
@@ -13,6 +15,7 @@ afterEach(() => {
   setAuthTokenGetter(null);
   setGoneResponseHandler(null);
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("API client principal isolation", () => {
@@ -137,6 +140,75 @@ describe("API client principal isolation", () => {
     ]);
 
     expect(outcome).toBe("rejected-410");
+  });
+
+  it("fails a stalled request at a bounded deadline without exposing its target", async () => {
+    vi.useFakeTimers();
+    let transportSignal: AbortSignal | null | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+        transportSignal = init?.signal;
+        return new Promise<Response>(() => undefined);
+      }),
+    );
+
+    const request = customFetch("https://api.example.com/private-value", {
+      responseType: "json",
+    });
+    const rejection = request.catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(API_REQUEST_TIMEOUT_MS);
+    const error = await rejection;
+
+    expect(error).toBeInstanceOf(ApiRequestTimeoutError);
+    expect((error as Error).message).toBe(
+      "The request timed out. Check your connection and try again.",
+    );
+    expect((error as Error).message).not.toContain("private-value");
+    expect(transportSignal?.aborted).toBe(true);
+  });
+
+  it("preserves caller cancellation even when the transport never settles", async () => {
+    let transportSignal: AbortSignal | null | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+        transportSignal = init?.signal;
+        return new Promise<Response>(() => undefined);
+      }),
+    );
+    const caller = new AbortController();
+
+    const request = customFetch("https://api.example.com/api/me", {
+      signal: caller.signal,
+    });
+    caller.abort();
+
+    await expect(request).rejects.toMatchObject({ name: "AbortError" });
+    expect(transportSignal?.aborted).toBe(true);
+  });
+
+  it("applies the same deadline while waiting for a stalled response body", async () => {
+    vi.useFakeTimers();
+    const body = new Promise<string>(() => undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        const response = new Response("{}", {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+        return Object.assign(response, { text: () => body });
+      }),
+    );
+
+    const request = customFetch("https://api.example.com/api/me", {
+      responseType: "json",
+    });
+    const rejection = request.catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(API_REQUEST_TIMEOUT_MS);
+
+    await expect(rejection).resolves.toBeInstanceOf(ApiRequestTimeoutError);
   });
 });
 

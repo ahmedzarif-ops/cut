@@ -11,6 +11,8 @@ export type GoneResponseHandler = (
   error: ApiError<unknown>,
 ) => Promise<void> | void;
 
+export const API_REQUEST_TIMEOUT_MS = 20_000;
+
 const NO_BODY_STATUS = new Set([204, 205, 304]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
@@ -21,6 +23,87 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
 let _goneResponseHandler: GoneResponseHandler | null = null;
+
+export class ApiRequestTimeoutError extends Error {
+  readonly name = "ApiRequestTimeoutError";
+
+  constructor() {
+    super("The request timed out. Check your connection and try again.");
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+interface RequestDeadline {
+  signal: AbortSignal;
+  race<T>(operation: PromiseLike<T>): Promise<T>;
+  dispose(): void;
+}
+
+function createAbortError(): Error {
+  const error = new Error("The request was cancelled.");
+  error.name = "AbortError";
+  return error;
+}
+
+/**
+ * React Native does not consistently expose AbortSignal.timeout/any. Build a
+ * small deadline that combines caller cancellation with an internal timeout,
+ * aborts the underlying fetch, and still settles when a transport ignores
+ * abort signals.
+ */
+function createRequestDeadline(
+  callerSignals: Array<AbortSignal | null | undefined>,
+): RequestDeadline {
+  const controller = new AbortController();
+  const watchedSignals = Array.from(
+    new Set(callerSignals.filter((signal): signal is AbortSignal => !!signal)),
+  );
+  let rejectBoundary!: (error: Error) => void;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let interrupted = false;
+  let disposed = false;
+  const boundary = new Promise<never>((_resolve, reject) => {
+    rejectBoundary = reject;
+  });
+
+  const interrupt = (error: Error) => {
+    if (interrupted || disposed) return;
+    interrupted = true;
+    // Reject first so a timeout remains distinguishable from the AbortError
+    // produced when aborting the underlying transport.
+    rejectBoundary(error);
+    controller.abort();
+  };
+  const onCallerAbort = () => interrupt(createAbortError());
+
+  for (const signal of watchedSignals) {
+    signal.addEventListener("abort", onCallerAbort, { once: true });
+  }
+
+  if (watchedSignals.some((signal) => signal.aborted)) {
+    onCallerAbort();
+  } else {
+    timer = setTimeout(
+      () => interrupt(new ApiRequestTimeoutError()),
+      API_REQUEST_TIMEOUT_MS,
+    );
+  }
+
+  return {
+    signal: controller.signal,
+    race<T>(operation: PromiseLike<T>): Promise<T> {
+      return Promise.race([Promise.resolve(operation), boundary]);
+    },
+    dispose(): void {
+      if (disposed) return;
+      disposed = true;
+      if (timer !== undefined) clearTimeout(timer);
+      for (const signal of watchedSignals) {
+        signal.removeEventListener("abort", onCallerAbort);
+      }
+    },
+  };
+}
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -381,6 +464,7 @@ export async function customFetch<T = unknown>(
   options: CustomFetchOptions = {},
 ): Promise<T> {
   const goneResponseHandler = _goneResponseHandler;
+  const authTokenGetter = _authTokenGetter;
   input = applyBaseUrl(input);
   const { responseType = "auto", headers: headersInit, ...init } = options;
 
@@ -409,32 +493,54 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  // Attach bearer token when an auth getter is configured and no
-  // Authorization header has been explicitly provided.
+  // Validate explicit authorization before starting any request work.
   if (headers.has("authorization")) {
     assertAllowedAuthenticatedTarget(requestInfo.url);
-  } else if (_authTokenGetter) {
-    const token = await _authTokenGetter();
-    if (token) {
-      assertAllowedAuthenticatedTarget(requestInfo.url);
-      headers.set("authorization", `Bearer ${token}`);
-    }
   }
 
-  const response = await fetch(input, { ...init, method, headers });
-
-  if (!response.ok) {
-    const errorData = await parseErrorBody(response, method);
-    const error = new ApiError(response, errorData, requestInfo);
-    if (response.status === 410 && goneResponseHandler) {
-      try {
-        void Promise.resolve(goneResponseHandler(error)).catch(() => undefined);
-      } catch {
-        // Response handling must never replace the transport's original error.
+  const deadline = createRequestDeadline([
+    init.signal,
+    isRequest(input) ? input.signal : undefined,
+  ]);
+  try {
+    // Attach bearer token when an auth getter is configured and no
+    // Authorization header has been explicitly provided. The deadline also
+    // bounds custom getters; the Expo getter retains its own shorter timeout.
+    if (!headers.has("authorization") && authTokenGetter) {
+      const token = await deadline.race(
+        Promise.resolve().then(() => authTokenGetter()),
+      );
+      if (token) {
+        assertAllowedAuthenticatedTarget(requestInfo.url);
+        headers.set("authorization", `Bearer ${token}`);
       }
     }
-    throw error;
-  }
 
-  return (await parseSuccessBody(response, responseType, requestInfo)) as T;
+    const response = await deadline.race(
+      Promise.resolve().then(() =>
+        fetch(input, { ...init, method, headers, signal: deadline.signal }),
+      ),
+    );
+
+    if (!response.ok) {
+      const errorData = await deadline.race(parseErrorBody(response, method));
+      const error = new ApiError(response, errorData, requestInfo);
+      if (response.status === 410 && goneResponseHandler) {
+        try {
+          void Promise.resolve(goneResponseHandler(error)).catch(
+            () => undefined,
+          );
+        } catch {
+          // Response handling must never replace the transport's original error.
+        }
+      }
+      throw error;
+    }
+
+    return (await deadline.race(
+      parseSuccessBody(response, responseType, requestInfo),
+    )) as T;
+  } finally {
+    deadline.dispose();
+  }
 }

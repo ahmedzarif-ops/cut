@@ -1,4 +1,3 @@
-import { useAuth } from "@clerk/expo";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetMyProfileQueryKey,
@@ -27,6 +26,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { useSubscriptionGate } from "@/lib/subscription-gate";
+import { runSignOutWithFeedback } from "@/lib/subscription-provider-state";
 
 const GOAL_LABELS: Record<string, string> = {
   cut: "Cut",
@@ -48,7 +49,7 @@ function displayWeight(weightKg: number, units: "metric" | "imperial"): string {
 }
 
 export default function TodayScreen() {
-  const { signOut } = useAuth();
+  const subscription = useSubscriptionGate();
   const router = useRouter();
   const qc = useQueryClient();
   const c = useColors();
@@ -58,6 +59,9 @@ export default function TodayScreen() {
   const [weightText, setWeightText] = React.useState("");
   const [editingWeight, setEditingWeight] = React.useState(false);
   const [weightError, setWeightError] = React.useState<string | null>(null);
+  const [signOutBusy, setSignOutBusy] = React.useState(false);
+  const [signOutError, setSignOutError] = React.useState<string | null>(null);
+  const signOutLock = React.useRef(false);
 
   const meQuery = useGetMe();
   const profileQuery = useGetMyProfile({
@@ -113,6 +117,14 @@ export default function TodayScreen() {
       );
     }
   };
+
+  const signOut = () =>
+    runSignOutWithFeedback(
+      signOutLock,
+      subscription.signOut,
+      { setBusy: setSignOutBusy, setError: setSignOutError },
+      "CUT OS couldn't sign out. Check your connection and try again.",
+    );
 
   const weightEditor = (
     <View style={s.weightEditor}>
@@ -392,8 +404,27 @@ export default function TodayScreen() {
 
       {renderContent()}
 
-      <Pressable style={s.signOut} onPress={() => signOut()}>
-        <Text style={s.signOutText}>Sign out</Text>
+      {signOutError ? (
+        <Text accessibilityRole="alert" style={[s.error, s.signOutError]}>
+          {signOutError}
+        </Text>
+      ) : null}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: signOutBusy, busy: signOutBusy }}
+        disabled={signOutBusy}
+        style={({ pressed }) => [
+          s.signOut,
+          signOutBusy && s.buttonDisabled,
+          pressed && !signOutBusy && s.buttonPressed,
+        ]}
+        onPress={() => void signOut()}
+      >
+        {signOutBusy ? (
+          <ActivityIndicator color={c.mutedForeground} />
+        ) : (
+          <Text style={s.signOutText}>Sign out</Text>
+        )}
       </Pressable>
     </ScrollView>
   );
@@ -602,6 +633,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontSize: 15,
     },
     signOut: { alignItems: "center", paddingVertical: 16, marginTop: 24 },
+    signOutError: { textAlign: "center", marginTop: 24 },
     signOutText: {
       color: c.mutedForeground,
       fontFamily: "Inter_500Medium",

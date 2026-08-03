@@ -159,6 +159,12 @@ function parseClerkPublishableKey(value) {
   return { type: parts[1] };
 }
 
+function parseRevenueCatIosApiKey(value) {
+  const candidate = value.trim();
+  if (!/^(?:appl|test)_[A-Za-z0-9]{8,}$/.test(candidate)) return null;
+  return { type: candidate.startsWith("appl_") ? "production" : "test" };
+}
+
 function isSafeHttpsUrl(value, { allowQueryAndFragment }) {
   try {
     const parsed = new URL(value);
@@ -229,6 +235,26 @@ export function validateReleaseEnvironment(environment) {
         "EXPO_PUBLIC_CLERK_PROXY_URL must use the API HTTPS origin and /api/__clerk path",
       );
     }
+  }
+
+  const revenueCatKey = production
+    ? requiredValue(environment, "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY", errors)
+    : environment.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY?.trim();
+  const parsedRevenueCatKey = revenueCatKey
+    ? parseRevenueCatIosApiKey(revenueCatKey)
+    : null;
+  if (revenueCatKey && !parsedRevenueCatKey) {
+    errors.push(
+      "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY must be a RevenueCat public iOS SDK key",
+    );
+  } else if (
+    production &&
+    revenueCatKey &&
+    parsedRevenueCatKey?.type !== "production"
+  ) {
+    errors.push(
+      "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY must be an appl_ key for production",
+    );
   }
 
   if (production) {

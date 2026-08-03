@@ -6,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -35,6 +36,14 @@ export const accountDeletionRequestsTable = pgTable(
     lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
     /** Stable operational code only; never store raw vendor errors. */
     lastErrorCode: text("last_error_code"),
+    /** Durable phase prevents a queued RevenueCat DELETE from being repeated. */
+    subscriptionDeletionStatus: text("subscription_deletion_status")
+      .notNull()
+      .default("not_started"),
+    /** Opaque fencing token for the one worker allowed to call vendors. */
+    leaseToken: uuid("lease_token"),
+    /** A crashed claimant may be replaced only after this database time. */
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
   },
   (table) => [
     check(
@@ -51,12 +60,24 @@ export const accountDeletionRequestsTable = pgTable(
     ),
     check(
       "account_deletion_requests_lifecycle_check",
-      sql`(${table.status} = 'pending' AND ${table.clerkUserId} IS NOT NULL AND ${table.completedAt} IS NULL) OR (${table.status} = 'completed' AND ${table.clerkUserId} IS NULL AND ${table.completedAt} IS NOT NULL AND ${table.lastErrorCode} IS NULL)`,
+      sql`(${table.status} = 'pending' AND ${table.clerkUserId} IS NOT NULL AND ${table.completedAt} IS NULL) OR (${table.status} = 'completed' AND ${table.clerkUserId} IS NULL AND ${table.completedAt} IS NOT NULL AND ${table.lastErrorCode} IS NULL AND ${table.subscriptionDeletionStatus} = 'confirmed')`,
+    ),
+    check(
+      "account_deletion_requests_lease_check",
+      sql`(${table.leaseToken} IS NULL AND ${table.leaseExpiresAt} IS NULL) OR (${table.status} = 'pending' AND ${table.leaseToken} IS NOT NULL AND ${table.leaseExpiresAt} IS NOT NULL)`,
+    ),
+    check(
+      "account_deletion_requests_subscription_deletion_status_check",
+      sql`${table.subscriptionDeletionStatus} IN ('not_started', 'queued', 'confirmed')`,
     ),
     index("account_deletion_requests_retry_index").on(
       table.status,
       table.lastAttemptAt,
       table.requestedAt,
+    ),
+    index("account_deletion_requests_lease_index").on(
+      table.status,
+      table.leaseExpiresAt,
     ),
   ],
 );

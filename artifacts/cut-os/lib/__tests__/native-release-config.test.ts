@@ -14,6 +14,21 @@ const packageConfig = JSON.parse(
 );
 
 describe("native release configuration", () => {
+  it("links the app to the existing CUT EAS project", () => {
+    expect(appConfig.expo.owner).toBe("zee-digipit");
+    expect(appConfig.expo.slug).toBe("cut");
+    expect(appConfig.expo.extra?.eas?.projectId).toBe(
+      "4851dda2-d27b-4756-8099-18f0cb7d257c",
+    );
+  });
+
+  it("pins the core RevenueCat SDK used by the custom paywall", () => {
+    expect(packageConfig.dependencies["react-native-purchases"]).toBe("10.6.0");
+    expect(
+      packageConfig.dependencies["react-native-purchases-ui"],
+    ).toBeUndefined();
+  });
+
   it("does not give Expo Router a generic production origin", () => {
     expect(appConfig.expo.plugins).toContain("expo-router");
     expect(
@@ -42,6 +57,7 @@ describe("native release configuration", () => {
       "NSPrivacyCollectedDataTypeFitness",
       "NSPrivacyCollectedDataTypeUserID",
       "NSPrivacyCollectedDataTypeOtherDataTypes",
+      "NSPrivacyCollectedDataTypePurchaseHistory",
     ]);
     for (const entry of collected) {
       expect(entry.NSPrivacyCollectedDataTypeLinked).toBe(true);
@@ -84,6 +100,10 @@ describe("native release configuration", () => {
       NSPrivacyCollectedDataTypeOtherDataTypes: [
         "NSPrivacyCollectedDataTypePurposeAppFunctionality",
         "NSPrivacyCollectedDataTypePurposeProductPersonalization",
+      ],
+      NSPrivacyCollectedDataTypePurchaseHistory: [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+        "NSPrivacyCollectedDataTypePurposeAnalytics",
       ],
     });
   });

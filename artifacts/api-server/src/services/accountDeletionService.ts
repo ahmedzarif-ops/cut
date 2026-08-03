@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { and, asc, eq, isNotNull, sql } from "drizzle-orm";
 import { clerkClient, getAuth } from "@clerk/express";
 import { isClerkAPIResponseError } from "@clerk/shared/error";
@@ -9,6 +9,12 @@ import {
   usersTable,
   type AccountDeletionRequest,
 } from "@workspace/db";
+import {
+  getRevenueCatCustomerDeletionProvider,
+  invalidateSubscriptionStatusForUser,
+  isValidRevenueCatAppUserId,
+  RevenueCatCustomerDeletionError,
+} from "./revenueCatSubscriptionService";
 
 export type AccountDeletionStatus = "none" | "pending" | "completed";
 
@@ -23,6 +29,13 @@ export interface AccountDeletionRetrySummary {
 }
 
 export type IdentityDeleter = (clerkUserId: string) => Promise<void>;
+export type SubscriptionCustomerDeleter = (
+  internalUserId: string,
+) => Promise<void>;
+export type SubscriptionCustomerDeletionPoller = (
+  internalUserId: string,
+) => Promise<void>;
+type SubscriptionDeletionStatus = "not_started" | "queued" | "confirmed";
 interface StageAfterInsertHookContext {
   identityHash: string;
   completeAtBarrier(): Promise<void>;
@@ -34,13 +47,33 @@ type StatusBeforeFallbackHook = (identityHash: string) => Promise<void>;
 type LocalDeletionFinalizer = (
   identityHash: string,
   clerkUserId: string,
+  leaseToken: string,
 ) => Promise<void>;
+
+const DELETION_LEASE_DURATION_SQL = sql`INTERVAL '2 minutes'`;
 
 const defaultIdentityDeleter: IdentityDeleter = async (clerkUserId) => {
   await clerkClient.users.deleteUser(clerkUserId);
 };
 
+const defaultSubscriptionCustomerDeleter: SubscriptionCustomerDeleter = async (
+  internalUserId,
+) => {
+  await getRevenueCatCustomerDeletionProvider().deleteCustomer(internalUserId);
+};
+
+const defaultSubscriptionCustomerDeletionPoller: SubscriptionCustomerDeletionPoller =
+  async (internalUserId) => {
+    await getRevenueCatCustomerDeletionProvider().confirmCustomerDeleted(
+      internalUserId,
+    );
+  };
+
 let identityDeleter: IdentityDeleter = defaultIdentityDeleter;
+let subscriptionCustomerDeleter: SubscriptionCustomerDeleter =
+  defaultSubscriptionCustomerDeleter;
+let subscriptionCustomerDeletionPoller: SubscriptionCustomerDeletionPoller =
+  defaultSubscriptionCustomerDeletionPoller;
 let stageAfterInsertHook: StageAfterInsertHook | null = null;
 let statusBeforeFallbackHook: StatusBeforeFallbackHook | null = null;
 let localDeletionFinalizer: LocalDeletionFinalizer;
@@ -50,6 +83,21 @@ export function setAccountIdentityDeleter(
   deleter: IdentityDeleter | null,
 ): void {
   identityDeleter = deleter ?? defaultIdentityDeleter;
+}
+
+/** Test seam for RevenueCat customer deletion; pass null to restore it. */
+export function setAccountSubscriptionCustomerDeleter(
+  deleter: SubscriptionCustomerDeleter | null,
+): void {
+  subscriptionCustomerDeleter = deleter ?? defaultSubscriptionCustomerDeleter;
+}
+
+/** Test seam for GET-only polling after RevenueCat accepts a queued delete. */
+export function setAccountSubscriptionCustomerDeletionPoller(
+  poller: SubscriptionCustomerDeletionPoller | null,
+): void {
+  subscriptionCustomerDeletionPoller =
+    poller ?? defaultSubscriptionCustomerDeletionPoller;
 }
 
 /** Test-only race seam after insert-do-nothing and before pending refresh. */
@@ -191,6 +239,9 @@ async function stageAccountDeletion(
             clerkUserId: null,
             status: "completed",
             completedAt,
+            subscriptionDeletionStatus: "confirmed",
+            leaseToken: null,
+            leaseExpiresAt: null,
             updatedAt: completedAt,
           })
           .where(eq(accountDeletionRequestsTable.identityHash, identityHash));
@@ -250,37 +301,141 @@ function sanitizedIdentityErrorCode(error: unknown): string {
   return "identity_transport_failed";
 }
 
-async function recordAttempt(identityHash: string): Promise<boolean> {
+function subscriptionCustomerAlreadyDeleted(error: unknown): boolean {
+  return (
+    error instanceof RevenueCatCustomerDeletionError &&
+    error.reason === "not_found"
+  );
+}
+
+function sanitizedSubscriptionErrorCode(error: unknown): string {
+  if (!(error instanceof RevenueCatCustomerDeletionError)) {
+    return "subscription_transport_failed";
+  }
+  switch (error.reason) {
+    case "invalid_app_user_id":
+      return "subscription_customer_id_invalid";
+    case "not_configured":
+    case "auth_error":
+      return "subscription_auth_failed";
+    case "invalid_configuration":
+      return "subscription_configuration_invalid";
+    case "rate_limited":
+      return "subscription_rate_limited";
+    case "timeout":
+    case "network_error":
+    case "provider_unavailable":
+      return "subscription_unavailable";
+    case "invalid_response":
+      return "subscription_response_invalid";
+    case "deletion_queued":
+      return "subscription_deletion_queued";
+    case "not_found":
+    case "provider_error":
+      return "subscription_request_failed";
+  }
+}
+
+async function resolveSubscriptionCustomerId(
+  clerkUserId: string,
+): Promise<string | null> {
+  const [user] = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.clerkUserId, clerkUserId))
+    .limit(1);
+  return user?.id ?? null;
+}
+
+interface DeletionAttemptClaim {
+  leaseToken: string;
+  subscriptionDeletionStatus: SubscriptionDeletionStatus;
+}
+
+async function claimDeletionAttempt(
+  identityHash: string,
+): Promise<DeletionAttemptClaim | null> {
+  const leaseToken = randomUUID();
   const [request] = await db
     .update(accountDeletionRequestsTable)
     .set({
+      leaseToken,
+      leaseExpiresAt: sql`CURRENT_TIMESTAMP + ${DELETION_LEASE_DURATION_SQL}`,
       attemptCount: sql`${accountDeletionRequestsTable.attemptCount} + 1`,
-      lastAttemptAt: new Date(),
+      lastAttemptAt: sql`CURRENT_TIMESTAMP`,
       lastErrorCode: null,
-      updatedAt: new Date(),
+      updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .where(
       and(
         eq(accountDeletionRequestsTable.identityHash, identityHash),
         eq(accountDeletionRequestsTable.status, "pending"),
+        sql`(${accountDeletionRequestsTable.leaseToken} IS NULL OR ${accountDeletionRequestsTable.leaseExpiresAt} <= CURRENT_TIMESTAMP)`,
       ),
     )
-    .returning({ identityHash: accountDeletionRequestsTable.identityHash });
-  return Boolean(request);
+    .returning({
+      leaseToken: accountDeletionRequestsTable.leaseToken,
+      subscriptionDeletionStatus:
+        accountDeletionRequestsTable.subscriptionDeletionStatus,
+    });
+  if (!request?.leaseToken) return null;
+  if (
+    request.subscriptionDeletionStatus !== "not_started" &&
+    request.subscriptionDeletionStatus !== "queued" &&
+    request.subscriptionDeletionStatus !== "confirmed"
+  ) {
+    return null;
+  }
+  return {
+    leaseToken: request.leaseToken,
+    subscriptionDeletionStatus: request.subscriptionDeletionStatus,
+  };
+}
+
+async function renewDeletionLease(
+  identityHash: string,
+  leaseToken: string,
+): Promise<boolean> {
+  const [renewed] = await db
+    .update(accountDeletionRequestsTable)
+    .set({
+      leaseExpiresAt: sql`CURRENT_TIMESTAMP + ${DELETION_LEASE_DURATION_SQL}`,
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .where(
+      and(
+        eq(accountDeletionRequestsTable.identityHash, identityHash),
+        eq(accountDeletionRequestsTable.status, "pending"),
+        eq(accountDeletionRequestsTable.leaseToken, leaseToken),
+        sql`${accountDeletionRequestsTable.leaseExpiresAt} > CURRENT_TIMESTAMP`,
+      ),
+    )
+    .returning({ leaseToken: accountDeletionRequestsTable.leaseToken });
+  return renewed?.leaseToken === leaseToken;
 }
 
 async function recordFailure(
   identityHash: string,
+  leaseToken: string,
   lastErrorCode: string,
+  subscriptionDeletionStatus?: SubscriptionDeletionStatus,
 ): Promise<void> {
   try {
     await db
       .update(accountDeletionRequestsTable)
-      .set({ lastErrorCode, lastAttemptAt: new Date(), updatedAt: new Date() })
+      .set({
+        lastErrorCode,
+        lastAttemptAt: sql`CURRENT_TIMESTAMP`,
+        ...(subscriptionDeletionStatus ? { subscriptionDeletionStatus } : {}),
+        leaseToken: null,
+        leaseExpiresAt: null,
+        updatedAt: sql`CURRENT_TIMESTAMP`,
+      })
       .where(
         and(
           eq(accountDeletionRequestsTable.identityHash, identityHash),
           eq(accountDeletionRequestsTable.status, "pending"),
+          eq(accountDeletionRequestsTable.leaseToken, leaseToken),
         ),
       );
   } catch {
@@ -289,9 +444,37 @@ async function recordFailure(
   }
 }
 
+async function markSubscriptionDeletionConfirmed(
+  identityHash: string,
+  leaseToken: string,
+): Promise<boolean> {
+  const [confirmed] = await db
+    .update(accountDeletionRequestsTable)
+    .set({
+      subscriptionDeletionStatus: "confirmed",
+      leaseExpiresAt: sql`CURRENT_TIMESTAMP + ${DELETION_LEASE_DURATION_SQL}`,
+      lastErrorCode: null,
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    })
+    .where(
+      and(
+        eq(accountDeletionRequestsTable.identityHash, identityHash),
+        eq(accountDeletionRequestsTable.status, "pending"),
+        eq(accountDeletionRequestsTable.leaseToken, leaseToken),
+        sql`${accountDeletionRequestsTable.leaseExpiresAt} > CURRENT_TIMESTAMP`,
+      ),
+    )
+    .returning({
+      subscriptionDeletionStatus:
+        accountDeletionRequestsTable.subscriptionDeletionStatus,
+    });
+  return confirmed?.subscriptionDeletionStatus === "confirmed";
+}
+
 async function finalizeAccountDeletion(
   identityHash: string,
   clerkUserId: string,
+  leaseToken: string,
 ): Promise<void> {
   await db.transaction(async (tx) => {
     const now = new Date();
@@ -302,9 +485,22 @@ async function finalizeAccountDeletion(
         status: "completed",
         completedAt: now,
         lastErrorCode: null,
+        leaseToken: null,
+        leaseExpiresAt: null,
         updatedAt: now,
       })
-      .where(eq(accountDeletionRequestsTable.identityHash, identityHash))
+      .where(
+        and(
+          eq(accountDeletionRequestsTable.identityHash, identityHash),
+          eq(accountDeletionRequestsTable.status, "pending"),
+          eq(
+            accountDeletionRequestsTable.subscriptionDeletionStatus,
+            "confirmed",
+          ),
+          eq(accountDeletionRequestsTable.leaseToken, leaseToken),
+          sql`${accountDeletionRequestsTable.leaseExpiresAt} > CURRENT_TIMESTAMP`,
+        ),
+      )
       .returning({ status: accountDeletionRequestsTable.status });
     if (completed?.status !== "completed") {
       throw new Error("Account deletion request was not finalized");
@@ -323,26 +519,94 @@ async function attemptPendingDeletion(
   identityHash: string,
   clerkUserId: string,
 ): Promise<AccountDeletionResult> {
+  let claim: DeletionAttemptClaim | null;
+  try {
+    claim = await claimDeletionAttempt(identityHash);
+  } catch {
+    return terminalAwarePendingResult(identityHash);
+  }
+  if (!claim) return terminalAwarePendingResult(identityHash);
+  const { leaseToken, subscriptionDeletionStatus } = claim;
+
   // Treat the durable hash/identity pair as a destructive-operation boundary.
   // Even if a row is corrupted or mis-migrated, never let the retry worker
   // send a deletion request for an identity that does not own this tombstone.
   if (hashClerkIdentity(clerkUserId) !== identityHash) {
-    await recordFailure(identityHash, "identity_binding_invalid");
+    await recordFailure(identityHash, leaseToken, "identity_binding_invalid");
+    return terminalAwarePendingResult(identityHash);
+  }
+
+  let subscriptionCustomerId: string | null;
+  try {
+    subscriptionCustomerId = await resolveSubscriptionCustomerId(clerkUserId);
+  } catch {
+    await recordFailure(
+      identityHash,
+      leaseToken,
+      "subscription_customer_resolve_failed",
+    );
+    return terminalAwarePendingResult(identityHash);
+  }
+  if (!subscriptionCustomerId) {
+    await recordFailure(
+      identityHash,
+      leaseToken,
+      "subscription_customer_id_unavailable",
+    );
+    return terminalAwarePendingResult(identityHash);
+  }
+  if (!isValidRevenueCatAppUserId(subscriptionCustomerId)) {
+    await recordFailure(
+      identityHash,
+      leaseToken,
+      "subscription_customer_id_invalid",
+    );
     return terminalAwarePendingResult(identityHash);
   }
 
   try {
-    const attempted = await recordAttempt(identityHash);
-    if (!attempted) {
-      return {
-        status:
-          (await getDurableDeletionStatus(identityHash)) === "completed"
-            ? "completed"
-            : "pending",
-      };
-    }
+    invalidateSubscriptionStatusForUser(subscriptionCustomerId);
   } catch {
-    await recordFailure(identityHash, "local_attempt_failed");
+    await recordFailure(
+      identityHash,
+      leaseToken,
+      "subscription_cache_invalidation_failed",
+    );
+    return terminalAwarePendingResult(identityHash);
+  }
+
+  if (subscriptionDeletionStatus !== "confirmed") {
+    try {
+      if (subscriptionDeletionStatus === "queued") {
+        // A queued v2 DELETE is nonterminal. Durable state guarantees every
+        // retry after it uses only RevenueCat's non-creating customer GET.
+        await subscriptionCustomerDeletionPoller(subscriptionCustomerId);
+      } else {
+        await subscriptionCustomerDeleter(subscriptionCustomerId);
+      }
+    } catch (error: unknown) {
+      // Only our typed RevenueCat 404 for the validated UUID is considered
+      // already absent. A plain/misleading 404 remains ambiguous and retryable.
+      if (!subscriptionCustomerAlreadyDeleted(error)) {
+        const queued =
+          error instanceof RevenueCatCustomerDeletionError &&
+          error.reason === "deletion_queued";
+        await recordFailure(
+          identityHash,
+          leaseToken,
+          sanitizedSubscriptionErrorCode(error),
+          queued ? "queued" : undefined,
+        );
+        return terminalAwarePendingResult(identityHash);
+      }
+    }
+
+    if (!(await markSubscriptionDeletionConfirmed(identityHash, leaseToken))) {
+      return terminalAwarePendingResult(identityHash);
+    }
+  }
+
+  if (!(await renewDeletionLease(identityHash, leaseToken))) {
     return terminalAwarePendingResult(identityHash);
   }
 
@@ -350,16 +614,37 @@ async function attemptPendingDeletion(
     await identityDeleter(clerkUserId);
   } catch (error: unknown) {
     if (!identityAlreadyDeleted(error)) {
-      await recordFailure(identityHash, sanitizedIdentityErrorCode(error));
+      await recordFailure(
+        identityHash,
+        leaseToken,
+        sanitizedIdentityErrorCode(error),
+      );
       return terminalAwarePendingResult(identityHash);
     }
   }
 
+  if (!(await renewDeletionLease(identityHash, leaseToken))) {
+    return terminalAwarePendingResult(identityHash);
+  }
+
+  // Fence any status read completed while either vendor deletion was in
+  // progress. Failure remains retryable rather than finalizing with stale data.
   try {
-    await localDeletionFinalizer(identityHash, clerkUserId);
+    invalidateSubscriptionStatusForUser(subscriptionCustomerId);
+  } catch {
+    await recordFailure(
+      identityHash,
+      leaseToken,
+      "subscription_cache_invalidation_failed",
+    );
+    return terminalAwarePendingResult(identityHash);
+  }
+
+  try {
+    await localDeletionFinalizer(identityHash, clerkUserId, leaseToken);
     return { status: "completed" };
   } catch {
-    await recordFailure(identityHash, "local_finalize_failed");
+    await recordFailure(identityHash, leaseToken, "local_finalize_failed");
     return terminalAwarePendingResult(identityHash);
   }
 }
@@ -380,8 +665,10 @@ async function terminalAwarePendingResult(
 }
 
 /**
- * Tombstone first, then delete the external identity, then atomically cascade
- * local data and preserve a completed tombstone. Safe to call repeatedly.
+ * Tombstone first, delete the RevenueCat customer, delete the external
+ * identity, then atomically cascade local data and preserve a completed
+ * tombstone. Safe to call repeatedly; none of these operations cancels the
+ * user's separately managed Apple subscription.
  */
 export async function requestAccountDeletion(
   clerkUserId: string,
@@ -389,6 +676,22 @@ export async function requestAccountDeletion(
   const identityHash = hashClerkIdentity(clerkUserId);
   const request = await stageAccountDeletion(clerkUserId, identityHash);
   if (request.status === "completed") return { status: "completed" };
+
+  // Invalidate immediately after the durable pending state exists, including
+  // when another worker already owns the lease and this request cannot claim.
+  try {
+    const subscriptionCustomerId =
+      await resolveSubscriptionCustomerId(clerkUserId);
+    if (
+      subscriptionCustomerId &&
+      isValidRevenueCatAppUserId(subscriptionCustomerId)
+    ) {
+      invalidateSubscriptionStatusForUser(subscriptionCustomerId);
+    }
+  } catch {
+    // The claimed attempt records a stable failure code if this condition is
+    // persistent. The durable pending guard already prevents app access.
+  }
   return attemptPendingDeletion(identityHash, clerkUserId);
 }
 
@@ -409,6 +712,7 @@ export async function retryPendingAccountDeletions(
       and(
         eq(accountDeletionRequestsTable.status, "pending"),
         isNotNull(accountDeletionRequestsTable.clerkUserId),
+        sql`(${accountDeletionRequestsTable.leaseToken} IS NULL OR ${accountDeletionRequestsTable.leaseExpiresAt} <= CURRENT_TIMESTAMP)`,
       ),
     )
     // Explicitly prioritize never-attempted work, then the least-recently

@@ -3,10 +3,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetAccountDeletionStatusQueryKey,
   getGetMyAdultEligibilityQueryKey,
+  getGetMeQueryKey,
+  getGetMySubscriptionQueryKey,
   setAuthTokenGetter,
   setGoneResponseHandler,
   useGetAccountDeletionStatus,
   useGetMyAdultEligibility,
+  useGetMe,
 } from "@workspace/api-client-react";
 import * as SecureStore from "expo-secure-store";
 import { Redirect, Stack, usePathname } from "expo-router";
@@ -36,6 +39,16 @@ import {
   type AdultEligibilityRoute,
 } from "@/lib/adult-eligibility";
 import { AdultEligibilityGateProvider } from "@/lib/adult-eligibility-gate";
+import { parseRevenueCatIosApiKey } from "@/lib/runtime-config";
+import {
+  decideSubscriptionRoute,
+  isInternalUserUuid,
+} from "@/lib/subscription";
+import {
+  SubscriptionGateProvider,
+  useSubscriptionGate,
+} from "@/lib/subscription-gate";
+import { runSignOutWithFeedback } from "@/lib/subscription-provider-state";
 
 interface MarkerLoadState {
   ownerClerkUserId: string | null;
@@ -53,6 +66,15 @@ const EMPTY_MARKER_STATE: MarkerLoadState = {
 
 const ACCOUNT_DELETION_STATUS_PATH = getGetAccountDeletionStatusQueryKey()[0];
 const ADULT_ELIGIBILITY_STATUS_PATH = getGetMyAdultEligibilityQueryKey()[0];
+const ME_PATH = getGetMeQueryKey()[0];
+const SUBSCRIPTION_STATUS_PATH = getGetMySubscriptionQueryKey()[0];
+const parsedRevenueCatIosApiKey = parseRevenueCatIosApiKey(
+  process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
+);
+const revenueCatIosApiKey =
+  typeof parsedRevenueCatIosApiKey === "string"
+    ? parsedRevenueCatIosApiKey
+    : undefined;
 
 function isAccountDeletionStatusQuery(queryKey: readonly unknown[]): boolean {
   return queryKey[0] === ACCOUNT_DELETION_STATUS_PATH;
@@ -66,10 +88,10 @@ function isSecurityGateQuery(queryKey: readonly unknown[]): boolean {
 }
 
 export default function AppLayout() {
-  const { isLoaded, isSignedIn, userId, getToken, signOut } = useAuth();
+  const { isLoaded, isSignedIn, userId, sessionId, getToken, signOut } =
+    useAuth();
   const qc = useQueryClient();
   const pathname = usePathname();
-  const c = useColors();
 
   const [authReadyUserId, setAuthReadyUserId] = React.useState<string | null>(
     null,
@@ -351,9 +373,14 @@ export default function AppLayout() {
     }
   };
 
-  const leaveAccount = () => {
+  const leaveAccount = async () => {
+    const ownerSessionId = sessionId;
     qc.clear();
-    void signOut().catch(() => undefined);
+    if (ownerSessionId) {
+      await signOut({ sessionId: ownerSessionId });
+      return;
+    }
+    await signOut();
   };
 
   if (markerState.error) {
@@ -474,14 +501,159 @@ export default function AppLayout() {
           retry: () => void adultEligibilityQuery.refetch(),
         }}
       >
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: c.background },
-          }}
-        />
+        {!deletionRequired &&
+        adultEligibilityResponse?.status === "eligible" ? (
+          <EligibleSubscriptionShell
+            clerkUserId={userId}
+            onSignOut={leaveAccount}
+          />
+        ) : (
+          <AppStack />
+        )}
       </AdultEligibilityGateProvider>
     </AccountDeletionGateProvider>
+  );
+}
+
+function EligibleSubscriptionShell({
+  clerkUserId,
+  onSignOut,
+}: {
+  clerkUserId: string;
+  onSignOut: () => void | Promise<void>;
+}) {
+  const pathname = usePathname();
+  const onSettings = pathname === "/settings" || pathname.endsWith("/settings");
+  const meQuery = useGetMe({
+    query: {
+      queryKey: [...getGetMeQueryKey(), clerkUserId],
+      retry: false,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: "always",
+      refetchOnReconnect: "always",
+    },
+  });
+
+  if (meQuery.isError) {
+    if (onSettings) return <AppStack />;
+    return (
+      <GateError
+        title="Account check needed"
+        message="CUT OS couldn't load the internal account needed to verify App Store access."
+        onRetry={() => void meQuery.refetch()}
+        onSignOut={onSignOut}
+      />
+    );
+  }
+  if (meQuery.isLoading || !meQuery.data) {
+    return onSettings ? <AppStack /> : <GateLoading />;
+  }
+
+  // RevenueCat receives only this server-created UUID. Clerk identifiers,
+  // email addresses, and health/profile attributes never enter the SDK.
+  if (!isInternalUserUuid(meQuery.data.id)) {
+    if (onSettings) return <AppStack />;
+    return (
+      <GateError
+        title="Account check needed"
+        message="CUT OS received an account identifier it could not safely use for App Store access."
+        onRetry={() => void meQuery.refetch()}
+        onSignOut={onSignOut}
+      />
+    );
+  }
+
+  return (
+    <SubscriptionGateProvider
+      key={meQuery.data.id}
+      internalUserId={meQuery.data.id}
+      apiKey={revenueCatIosApiKey}
+      onSignOut={onSignOut}
+    >
+      <SubscriptionRouteBoundary
+        onboardingComplete={meQuery.data.onboardingComplete}
+        onSignOut={onSignOut}
+      />
+    </SubscriptionGateProvider>
+  );
+}
+
+function SubscriptionRouteBoundary({
+  onboardingComplete,
+  onSignOut,
+}: {
+  onboardingComplete: boolean;
+  onSignOut: () => void | Promise<void>;
+}) {
+  const pathname = usePathname();
+  const qc = useQueryClient();
+  const subscription = useSubscriptionGate();
+  const onSettings = pathname === "/settings" || pathname.endsWith("/settings");
+  const onSubscription =
+    pathname === "/subscription" || pathname.endsWith("/subscription");
+  const route = onSettings
+    ? "settings"
+    : onSubscription
+      ? "subscription"
+      : "paid";
+  const decision = decideSubscriptionRoute({
+    route,
+    subscription: subscription.server,
+    onboardingComplete,
+  });
+
+  React.useEffect(() => {
+    const server = subscription.server;
+    if (
+      server.state === "loading" ||
+      (server.state === "ready" && server.entitled)
+    ) {
+      return;
+    }
+
+    const isGateQuery = (queryKey: readonly unknown[]) =>
+      queryKey[0] === ACCOUNT_DELETION_STATUS_PATH ||
+      queryKey[0] === ADULT_ELIGIBILITY_STATUS_PATH ||
+      queryKey[0] === ME_PATH ||
+      queryKey[0] === SUBSCRIPTION_STATUS_PATH;
+    void qc.cancelQueries({
+      predicate: (query) => !isGateQuery(query.queryKey),
+    });
+    qc.removeQueries({
+      predicate: (query) => !isGateQuery(query.queryKey),
+    });
+  }, [qc, subscription.server]);
+
+  if (decision === "loading") return <GateLoading />;
+  if (decision === "unavailable") {
+    return (
+      <GateError
+        title="Access check needed"
+        message="CUT OS couldn't verify CUT OS Pro access. Paid health and nutrition screens remain locked until the check succeeds."
+        onRetry={subscription.retryServer}
+        onSignOut={onSignOut}
+      />
+    );
+  }
+  if (decision === "redirect_subscription") {
+    return <Redirect href="/subscription" />;
+  }
+  if (decision === "redirect_onboarding") {
+    return <Redirect href="/onboarding" />;
+  }
+  if (decision === "redirect_today") return <Redirect href="/today" />;
+  return <AppStack />;
+}
+
+function AppStack() {
+  const c = useColors();
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: c.background },
+      }}
+    />
   );
 }
 
@@ -498,15 +670,29 @@ function GateLoading() {
 }
 
 function GateError({
+  title = "Account check needed",
   message,
   onRetry,
   onSignOut,
 }: {
+  title?: string;
   message: string;
   onRetry: () => void;
-  onSignOut: () => void;
+  onSignOut: () => void | Promise<void>;
 }) {
   const c = useColors();
+  const [signOutBusy, setSignOutBusy] = React.useState(false);
+  const [signOutError, setSignOutError] = React.useState<string | null>(null);
+  const signOutLock = React.useRef(false);
+
+  const signOut = () =>
+    runSignOutWithFeedback(
+      signOutLock,
+      onSignOut,
+      { setBusy: setSignOutBusy, setError: setSignOutError },
+      "CUT OS couldn't sign out. Check your connection and try again.",
+    );
+
   return (
     <View
       style={[
@@ -519,7 +705,7 @@ function GateError({
         accessibilityRole="header"
         style={[styles.title, { color: c.foreground }]}
       >
-        Account check needed
+        {title}
       </Text>
       <Text
         accessibilityRole="alert"
@@ -529,9 +715,14 @@ function GateError({
       </Text>
       <Pressable
         accessibilityRole="button"
+        accessibilityState={{ disabled: signOutBusy }}
+        disabled={signOutBusy}
         style={({ pressed }) => [
           styles.button,
-          { backgroundColor: c.primary, opacity: pressed ? 0.84 : 1 },
+          {
+            backgroundColor: c.primary,
+            opacity: signOutBusy ? 0.55 : pressed ? 0.84 : 1,
+          },
         ]}
         onPress={onRetry}
       >
@@ -539,14 +730,28 @@ function GateError({
           Retry
         </Text>
       </Pressable>
+      {signOutError ? (
+        <Text
+          accessibilityRole="alert"
+          style={[styles.signOutError, { color: c.destructive }]}
+        >
+          {signOutError}
+        </Text>
+      ) : null}
       <Pressable
         accessibilityRole="button"
-        style={styles.secondaryButton}
-        onPress={onSignOut}
+        accessibilityState={{ disabled: signOutBusy, busy: signOutBusy }}
+        disabled={signOutBusy}
+        style={[styles.secondaryButton, signOutBusy && styles.buttonDisabled]}
+        onPress={() => void signOut()}
       >
-        <Text style={[styles.secondaryText, { color: c.primary }]}>
-          Sign out
-        </Text>
+        {signOutBusy ? (
+          <ActivityIndicator color={c.primary} />
+        ) : (
+          <Text style={[styles.secondaryText, { color: c.primary }]}>
+            Sign out
+          </Text>
+        )}
       </Pressable>
     </View>
   );
@@ -591,6 +796,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
+  },
+  buttonDisabled: { opacity: 0.55 },
+  signOutError: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 14,
+    textAlign: "center",
   },
   secondaryText: { fontFamily: "Inter_600SemiBold", fontSize: 15 },
 });

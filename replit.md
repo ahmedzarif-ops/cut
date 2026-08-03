@@ -15,7 +15,11 @@ PostgreSQL as the source of truth.
 - `pnpm --filter @workspace/db run generate` — generate a Drizzle migration from schema changes
 - `pnpm --filter @workspace/db run migrate` — apply committed migrations (needs `DATABASE_URL`)
 - `pnpm --filter @workspace/db run push` — push DB schema changes (rapid dev only; production uses migrations)
-- Required env: `DATABASE_URL` — Postgres connection string; `CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` — Clerk auth
+- Required env: `DATABASE_URL` — Postgres connection string;
+  `CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` — Clerk auth;
+  `REVENUECAT_SECRET_API_KEY`, `REVENUECAT_PROJECT_ID`, and
+  `REVENUECAT_ENTITLEMENT_REST_ID` — server-only RevenueCat REST API v2
+  authorization/configuration
 
 ## Stack
 

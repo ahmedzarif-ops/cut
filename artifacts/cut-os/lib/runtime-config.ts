@@ -2,6 +2,7 @@ export type RuntimeConfig = {
   apiBaseUrl: string;
   clerkPublishableKey: string;
   clerkProxyUrl?: string;
+  revenueCatIosApiKey?: string;
 };
 
 export type RuntimeConfigIssue =
@@ -10,7 +11,8 @@ export type RuntimeConfigIssue =
   | "clerk_publishable_key_missing"
   | "clerk_publishable_key_invalid"
   | "clerk_proxy_url_missing"
-  | "clerk_proxy_url_invalid";
+  | "clerk_proxy_url_invalid"
+  | "revenuecat_ios_api_key_invalid";
 
 export type RuntimeConfigResult =
   | { ok: true; config: RuntimeConfig }
@@ -20,6 +22,7 @@ type RuntimeEnvironment = {
   EXPO_PUBLIC_DOMAIN?: string;
   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
   EXPO_PUBLIC_CLERK_PROXY_URL?: string;
+  EXPO_PUBLIC_REVENUECAT_IOS_API_KEY?: string;
 };
 
 const NON_PUBLIC_DNS_SUFFIXES = [
@@ -167,6 +170,21 @@ function parseClerkProxyUrl(
   }
 }
 
+/**
+ * RevenueCat iOS SDK keys are public application identifiers. Production keys
+ * use `appl_`; RevenueCat Test Store keys use `test_`. Rejecting whitespace,
+ * punctuation, and secret-key prefixes prevents a malformed or privileged key
+ * from being embedded in the native bundle.
+ */
+export function parseRevenueCatIosApiKey(
+  value: string | undefined,
+): string | null | undefined {
+  const candidate = value?.trim();
+  if (!candidate) return undefined;
+  if (!/^(?:appl|test)_[A-Za-z0-9]{8,}$/.test(candidate)) return null;
+  return candidate;
+}
+
 export function resolveRuntimeConfig(
   environment: RuntimeEnvironment,
 ): RuntimeConfigResult {
@@ -178,6 +196,9 @@ export function resolveRuntimeConfig(
   const proxyUrl = parseClerkProxyUrl(
     environment.EXPO_PUBLIC_CLERK_PROXY_URL,
     apiDomain,
+  );
+  const revenueCatIosApiKey = parseRevenueCatIosApiKey(
+    environment.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
   );
 
   if (!environment.EXPO_PUBLIC_DOMAIN?.trim()) {
@@ -206,6 +227,10 @@ export function resolveRuntimeConfig(
     issues.push("clerk_proxy_url_invalid");
   }
 
+  if (revenueCatIosApiKey === null) {
+    issues.push("revenuecat_ios_api_key_invalid");
+  }
+
   if (issues.length || !apiDomain || !publishableKey) {
     return { ok: false, issues };
   }
@@ -216,6 +241,7 @@ export function resolveRuntimeConfig(
       apiBaseUrl: `https://${apiDomain}`,
       clerkPublishableKey: publishableKey,
       clerkProxyUrl: proxyUrl ?? undefined,
+      ...(revenueCatIosApiKey ? { revenueCatIosApiKey } : {}),
     },
   };
 }

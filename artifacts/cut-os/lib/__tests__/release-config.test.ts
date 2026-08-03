@@ -20,6 +20,7 @@ const productionEnvironment = {
   EXPO_PUBLIC_DOMAIN: "api.example.com",
   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey("live"),
   EXPO_PUBLIC_CLERK_PROXY_URL: "https://api.example.com/api/__clerk",
+  EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: "appl_PublicIosKey1234",
   EXPO_PUBLIC_PRIVACY_POLICY_URL: "https://example.com/privacy",
   EXPO_PUBLIC_TERMS_URL: "https://example.com/terms",
   EXPO_PUBLIC_SUPPORT_URL: "https://example.com/support",
@@ -42,6 +43,9 @@ describe("release configuration validator", () => {
     expect(`${result.stdout}${result.stderr}`).not.toContain(
       productionEnvironment.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
     );
+    expect(`${result.stdout}${result.stderr}`).not.toContain(
+      productionEnvironment.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
+    );
   });
 
   it("reports all missing production variable names", () => {
@@ -52,6 +56,7 @@ describe("release configuration validator", () => {
       "EXPO_PUBLIC_DOMAIN",
       "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
       "EXPO_PUBLIC_CLERK_PROXY_URL",
+      "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY",
       "EXPO_PUBLIC_PRIVACY_POLICY_URL",
       "EXPO_PUBLIC_TERMS_URL",
       "EXPO_PUBLIC_SUPPORT_URL",
@@ -77,10 +82,22 @@ describe("release configuration validator", () => {
       EAS_BUILD_PROFILE: "preview",
       EXPO_PUBLIC_DOMAIN: "preview.example.com",
       EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey("test"),
+      EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: "test_PublicTestKey1234",
     });
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("valid for the preview build profile");
+  });
+
+  it("rejects a RevenueCat Test Store key in production", () => {
+    const result = runValidator({
+      ...productionEnvironment,
+      EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: "test_PublicTestKey1234",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("appl_ key for production");
+    expect(result.stderr).not.toContain("test_PublicTestKey1234");
   });
 
   it("requires the canonical proxy when preview embeds a live key", () => {

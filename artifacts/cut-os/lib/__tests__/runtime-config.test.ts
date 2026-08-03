@@ -34,6 +34,39 @@ describe("runtime configuration", () => {
     });
   });
 
+  it("accepts RevenueCat public iOS and Test Store SDK keys", () => {
+    for (const key of ["appl_PublicIosKey1234", "test_PublicTestKey1234"]) {
+      expect(
+        resolveRuntimeConfig({
+          EXPO_PUBLIC_DOMAIN: "api.example.com",
+          EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey("test"),
+          EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: key,
+        }),
+      ).toMatchObject({
+        ok: true,
+        config: { revenueCatIosApiKey: key },
+      });
+    }
+  });
+
+  it.each([
+    "sk_live_secret",
+    "appl_too-short",
+    "goog_PublicAndroidKey1234",
+    "appl_Public Key1234",
+  ])("rejects a malformed or non-iOS RevenueCat key: %s", (key) => {
+    expect(
+      resolveRuntimeConfig({
+        EXPO_PUBLIC_DOMAIN: "api.example.com",
+        EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey("test"),
+        EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: key,
+      }),
+    ).toMatchObject({
+      ok: false,
+      issues: ["revenuecat_ios_api_key_invalid"],
+    });
+  });
+
   it.each([
     "https://api.example.com",
     "api.example.com/path",

@@ -56,10 +56,34 @@ export const UpdateMeResponse = zod.object({
 
 
 /**
- * Durably tombstones the account, deletes the Clerk identity through the server, and then removes the local user, profile, weigh-ins, and meal history. A 204 is returned only after identity deletion and the local cascade are terminal. A 503 means terminal completion could not be confirmed; retry/status recovery is required, and any request that was successfully staged remains durable for server retry.
+ * Durably tombstones the account, deletes the RevenueCat customer linked by the internal user UUID, deletes the Clerk identity through the server, and then removes the local user, profile, weigh-ins, and meal history. This does not cancel a separately managed Apple subscription. A 204 is returned only after the external deletions and local cascade are terminal. A 503 means terminal completion could not be confirmed; retry/status recovery is required, and any request that was successfully staged remains durable for server retry.
  * @summary Permanently delete the current user's account
  */
 export const DeleteMeResponse = zod.void()
+
+
+/**
+ * Reconciles the authenticated internal user UUID with RevenueCat. This route remains available without paid access so the app can decide whether to show the subscription screen. RevenueCat remains the subscription source of truth.
+ * @summary Get the current user's CUT OS Pro access status
+ */
+export const GetMySubscriptionResponse = zod.object({
+  "entitled": zod.boolean(),
+  "entitlementId": zod.enum(['CUT_OS_PRO']),
+  "expiresAt": zod.coerce.date().nullable().describe('Null only for lifetime access or when no access exists.'),
+  "managementUrl": zod.url().nullable().describe('Provider-supplied subscription management URL when available.')
+})
+
+
+/**
+ * Bypasses the short server cache after a purchase or restore. The authenticated internal user UUID is always authoritative; the client cannot submit a different RevenueCat customer identifier.
+ * @summary Refresh the current user's CUT OS Pro access status
+ */
+export const RefreshMySubscriptionResponse = zod.object({
+  "entitled": zod.boolean(),
+  "entitlementId": zod.enum(['CUT_OS_PRO']),
+  "expiresAt": zod.coerce.date().nullable().describe('Null only for lifetime access or when no access exists.'),
+  "managementUrl": zod.url().nullable().describe('Provider-supplied subscription management URL when available.')
+})
 
 
 /**

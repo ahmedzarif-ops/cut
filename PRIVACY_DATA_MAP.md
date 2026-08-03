@@ -8,31 +8,37 @@ This inventory describes the current repository, not a completed legal disclosur
 
 ## Current data inventory
 
-| Data                    | Examples                                                                                                   | Source                 | Purpose                                                | Current system of record                      | Logging rule                                                                       | Deletion expectation                                                                                                 |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------ | --------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Account identifiers     | Internal user UUID, Clerk user ID                                                                          | Clerk/server           | Authentication and account linking                     | Clerk + `users` + `account_deletion_requests` | Never log tokens; identifier-only operational logs must be minimized               | Delete Clerk identity and local user row; completed identity tombstone follows the approved retention policy         |
-| Contact information     | Email                                                                                                      | Clerk session claim    | Sign-in/account support                                | Clerk + nullable `users.email`                | Do not include in routine request logs                                             | Delete with account unless legally retained                                                                          |
-| Profile information     | Display name, sex, activity level, training experience                                                     | User                   | Onboarding and plan personalization                    | `profiles`                                    | Never log request bodies                                                           | Cascade with user                                                                                                    |
-| Transient age evidence  | Full DOB in strict `YYYY-MM-DD` form                                                                       | User                   | One real-time `adult-18-v1` eligibility decision       | Memory only; no system of record              | Never log, cache, place in URLs/errors, add to Clerk, or send to analytics         | Destroy immediately after the response decision; never persist                                                       |
-| Adult eligibility       | `unverified`/`eligible`/`ineligible`, policy version, decision timestamp                                   | Server decision        | Fail-closed authorization for adults-only features     | `users`                                       | Status-only operational logging must be minimized; never log DOB                   | Delete with user; exact backups/operational retention requires policy and legal approval                             |
-| Body and fitness data   | Height, start/goal weight, daily weigh-ins                                                                 | User                   | Progress and fitness guidance                          | `profiles`, `weight_entries`                  | Never log values or include them in URLs                                           | Cascade with user                                                                                                    |
-| Nutrition data          | Chosen meal, serving amount, calories, protein, carbohydrates, fat, fiber                                  | User + curated catalog | Daily meal tracking and Next Action                    | `meal_entries`                                | Never log values or include them in URLs                                           | Cascade with user                                                                                                    |
-| Deleted-write safeguard | Opaque meal request UUID and deletion timestamp                                                            | Server                 | Prevent a delayed retry from recreating a deleted meal | `meal_entry_deletion_tombstones`              | Never log or send to analytics                                                     | Cascade with user; stores no template, serving, or nutrition values                                                  |
-| Device/session data     | Clerk session token in secure token cache                                                                  | Clerk SDK              | Maintain authenticated session                         | Device secure storage + Clerk                 | Never print, persist in app logs, or send to analytics                             | Expected to be cleared/revoked during deletion/sign-out; verify in native QA                                         |
-| Deletion coordination   | SHA-256 identity hash; raw Clerk ID while pending; status, timestamps, attempt count, sanitized error code | Server                 | Prevent account recreation and resume partial failures | `account_deletion_requests`                   | Never log the raw Clerk ID or vendor error; minimize hash-only operational logging | Raw Clerk ID is nulled at completion; tombstone/metadata retention is not yet approved                               |
-| Device recovery marker  | Owner Clerk ID, opaque request ID, requested timestamp                                                     | Native app             | Recover a pending deletion on the same device          | SecureStore                                   | Never print or send to analytics                                                   | Remove after terminal server completion; owner isolation and removal require native QA                               |
-| Meal write recovery     | Owner Clerk ID, request UUID, meal/template name, catalog version, local day, servings, timestamp          | Native app             | Resolve an uncertain meal create without duplication   | SecureStore                                   | Never print or send to analytics                                                   | Remove after confirmed/rejected recovery and during terminal account deletion; verify app-kill/shared-device cleanup |
+| Data                    | Examples                                                                                                   | Source                 | Purpose                                                     | Current system of record                             | Logging rule                                                                       | Deletion expectation                                                                                                 |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Account identifiers     | Internal user UUID, Clerk user ID                                                                          | Clerk/server           | Authentication and account linking                          | Clerk + `users` + `account_deletion_requests`        | Never log tokens; identifier-only operational logs must be minimized               | Delete Clerk identity and local user row; completed identity tombstone follows the approved retention policy         |
+| Contact information     | Email                                                                                                      | Clerk session claim    | Sign-in/account support                                     | Clerk + nullable `users.email`                       | Do not include in routine request logs                                             | Delete with account unless legally retained                                                                          |
+| Profile information     | Display name, sex, activity level, training experience                                                     | User                   | Account setup; fields do not yet drive personalized targets | `profiles`                                           | Never log request bodies                                                           | Cascade with user                                                                                                    |
+| Transient age evidence  | Full DOB in strict `YYYY-MM-DD` form                                                                       | User                   | One real-time `adult-18-v1` eligibility decision            | Memory only; no system of record                     | Never log, cache, place in URLs/errors, add to Clerk, or send to analytics         | Destroy immediately after the response decision; never persist                                                       |
+| Adult eligibility       | `unverified`/`eligible`/`ineligible`, policy version, decision timestamp                                   | Server decision        | Fail-closed authorization for adults-only features          | `users`                                              | Status-only operational logging must be minimized; never log DOB                   | Delete with user; exact backups/operational retention requires policy and legal approval                             |
+| Body and fitness data   | Height, start/goal weight, daily weigh-ins                                                                 | User                   | Daily weigh-in check-in and future user-directed context    | `profiles`, `weight_entries`                         | Never log values or include them in URLs                                           | Cascade with user                                                                                                    |
+| Nutrition data          | Chosen meal, serving amount, calories, protein, carbohydrates, fat, fiber                                  | User + curated catalog | Daily meal tracking and Next Action                         | `meal_entries`                                       | Never log values or include them in URLs                                           | Cascade with user                                                                                                    |
+| Deleted-write safeguard | Opaque meal request UUID and deletion timestamp                                                            | Server                 | Prevent a delayed retry from recreating a deleted meal      | `meal_entry_deletion_tombstones`                     | Never log or send to analytics                                                     | Cascade with user; stores no template, serving, or nutrition values                                                  |
+| Device/session data     | Clerk session token in secure token cache                                                                  | Clerk SDK              | Maintain authenticated session                              | Device secure storage + Clerk                        | Never print, persist in app logs, or send to analytics                             | Expected to be cleared/revoked during deletion/sign-out; verify in native QA                                         |
+| Deletion coordination   | SHA-256 identity hash; raw Clerk ID while pending; status, timestamps, attempt count, sanitized error code | Server                 | Prevent account recreation and resume partial failures      | `account_deletion_requests`                          | Never log the raw Clerk ID or vendor error; minimize hash-only operational logging | Raw Clerk ID is nulled at completion; tombstone/metadata retention is not yet approved                               |
+| Device recovery marker  | Owner Clerk ID, opaque request ID, requested timestamp                                                     | Native app             | Recover a pending deletion on the same device               | SecureStore                                          | Never print or send to analytics                                                   | Remove after terminal server completion; owner isolation and removal require native QA                               |
+| Meal write recovery     | Owner Clerk ID, request UUID, meal/template name, catalog version, local day, servings, timestamp          | Native app             | Resolve an uncertain meal create without duplication        | SecureStore                                          | Never print or send to analytics                                                   | Remove after confirmed/rejected recovery and during terminal account deletion; verify app-kill/shared-device cleanup |
+| Subscription identity   | Internal user UUID only                                                                                    | CUT OS server          | Link one account across Apple devices in RevenueCat         | RevenueCat customer                                  | Never send Clerk ID, email, DOB, or health/fitness attributes                      | Delete the RevenueCat customer during durable account deletion; does not cancel Apple's subscription                 |
+| Purchase history        | Product, purchase/renewal/expiry/refund state, entitlement and management URL                              | Apple + RevenueCat     | Paid access, restore, support, and subscription analytics   | Apple + RevenueCat; short status cache in API memory | Never log receipts, raw provider payloads, keys, or management URLs                | Delete CUT-linked RevenueCat customer data; Apple retains transaction records under its own obligations              |
 
-CUT OS currently has no advertising SDK and no product-analytics SDK in the application dependency list. That must be rechecked against the final production archive rather than assumed from this document.
+CUT OS currently has no advertising SDK or general product-analytics SDK in
+the application dependency list. RevenueCat provides purchase/subscription
+analytics and is disclosed separately above. The inventory must be rechecked
+against the final production archive rather than assumed from this document.
 
 ## App privacy manifest baseline
 
 The Expo iOS configuration now produces an app-level privacy manifest with
 tracking disabled and no tracking domains. Its current first-party collected
-data entries are Name, Email Address, Health, Fitness, User ID, and Other Data
-Types. Every entry is linked to the account, used for App Functionality, and not
-used for tracking; the entries involved in adapting the experience also declare
-Product Personalization.
+data entries are Name, Email Address, Health, Fitness, User ID, Other Data Types,
+and Purchase History. Every entry is linked to the account and not used for
+tracking. Purchase History is used for App Functionality and Analytics; the
+first-party fields involved in adapting the experience also declare Product
+Personalization.
 
 The root manifest also aggregates required-reason API declarations found in the
 installed native dependency set because static CocoaPod manifests may not all be
@@ -57,6 +63,8 @@ Apple's final questionnaire should be answered from the shipped behavior and eve
 - User Content or Other User Content: user-entered fitness and nutrition records, if the current questionnaire maps them there.
 - Health & Fitness: body measurements, weight, activity/training profile, and nutrition-related fitness data currently implemented. Add workouts only if workout collection ships.
 - Identifiers: user/account identifiers used for authentication and app functionality.
+- Purchases: linked Purchase History used for App Functionality and Analytics
+  by Apple/RevenueCat, with tracking set to No.
 - Other Data Types: the stored adult-eligibility status, policy version, and
   decision timestamp, linked to the account and used for App Functionality,
   subject to confirmation in the live questionnaire.
@@ -83,7 +91,10 @@ Before the first TestFlight upload:
 2. Verify every required privacy manifest and required-reason API declaration.
 3. Keep unused native packages out of the binary. `expo-location` and `expo-image-picker` were removed on August 3, 2026 because the current product does not use them.
 4. Confirm permissions shown in the built `Info.plist`; the app must not request location, camera, or photo access without a shipped feature and clear purpose string.
-5. Reconcile vendor data handling for Clerk, the hosting/database provider, RevenueCat when added, crash reporting when added, email/support tooling, and any analytics provider.
+5. Reconcile vendor data handling for Clerk, the hosting/database provider,
+   RevenueCat, crash reporting when added, email/support tooling, and any
+   analytics provider. Confirm CUT sends RevenueCat only the internal UUID and
+   no customer attributes containing health, fitness, DOB, name, or email.
 
 The current draft does not yet inventory database backups, hosting request
 logs, Clerk records/events, support tooling, crash reporting, or build/archive
@@ -103,12 +114,15 @@ workflow:
 
 1. Re-authenticates or clearly confirms the destructive action.
 2. Deletes/revokes the Clerk identity so a valid session cannot recreate the internal user through just-in-time provisioning.
-3. Deletes the internal `users` row so profile, weigh-in, meal, and future cascade-linked data are removed.
-4. Handles partial failure visibly and retryably across app restarts and devices.
-5. Explains that deleting a CUT OS account does not automatically cancel an App Store subscription and provides subscription-management access.
-6. Retains only the minimal non-sensitive evidence allowed by an approved tombstone/backups retention policy.
-7. Alerts on old pending requests and has an owner-approved manual reconciliation path.
-8. Clears the owner-scoped account-deletion marker and pending meal-write
+3. Deletes the RevenueCat customer linked by the internal UUID through a durable,
+   retryable provider step. This removes CUT-linked vendor data but does not
+   cancel or erase Apple's own subscription transaction record.
+4. Deletes the internal `users` row so profile, weigh-in, meal, and future cascade-linked data are removed.
+5. Handles partial failure visibly and retryably across app restarts and devices.
+6. Explains that deleting a CUT OS account does not automatically cancel an App Store subscription and provides subscription-management access.
+7. Retains only the minimal non-sensitive evidence allowed by an approved tombstone/backups retention policy.
+8. Alerts on old pending requests and has an owner-approved manual reconciliation path.
+9. Clears the owner-scoped account-deletion marker and pending meal-write
    recovery record, plus shared in-memory private data, before terminal signout.
 
 The completed tombstone cannot be cleaned up sooner than the maximum period in

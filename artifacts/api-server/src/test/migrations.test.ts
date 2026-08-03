@@ -253,17 +253,84 @@ describe("committed migrations", () => {
 
   it("enforces deletion-request lifecycle and hash invariants", async () => {
     const client = new PGlite();
-    for (const sql of migrationSqlInOrder()) await client.exec(sql);
+    const migrations = migrationSqlInOrder();
+    const phaseMigrationIndex = migrations.findIndex((sql) =>
+      sql.includes('ADD COLUMN "subscription_deletion_status"'),
+    );
+    expect(phaseMigrationIndex).toBeGreaterThanOrEqual(0);
+    for (const sql of migrations.slice(0, phaseMigrationIndex)) {
+      await client.exec(sql);
+    }
+
+    // Completed tombstones created before RevenueCat integration are adopted
+    // as confirmed before the stricter lifecycle constraint is installed.
+    const legacyCompletedHash = "9".repeat(64);
+    const legacyPendingHash = "12".repeat(32);
+    await client.query(
+      `insert into account_deletion_requests (identity_hash, status, completed_at) values ($1, 'completed', now())`,
+      [legacyCompletedHash],
+    );
+    await client.query(
+      `insert into account_deletion_requests (identity_hash, clerk_user_id) values ($1, 'clerk_legacy_pending')`,
+      [legacyPendingHash],
+    );
+    await client.exec(migrations[phaseMigrationIndex]!);
+    for (const sql of migrations.slice(phaseMigrationIndex + 1)) {
+      await client.exec(sql);
+    }
+    const adopted = await client.query<{
+      identity_hash: string;
+      subscription_deletion_status: string;
+    }>(
+      `select identity_hash, subscription_deletion_status from account_deletion_requests where identity_hash in ($1, $2) order by identity_hash`,
+      [legacyCompletedHash, legacyPendingHash],
+    );
+    expect(adopted.rows).toEqual(
+      expect.arrayContaining([
+        {
+          identity_hash: legacyCompletedHash,
+          subscription_deletion_status: "confirmed",
+        },
+        {
+          identity_hash: legacyPendingHash,
+          subscription_deletion_status: "not_started",
+        },
+      ]),
+    );
+    const phaseColumn = await client.query<{
+      is_nullable: string;
+      column_default: string | null;
+    }>(
+      `select is_nullable, column_default from information_schema.columns where table_schema = 'public' and table_name = 'account_deletion_requests' and column_name = 'subscription_deletion_status'`,
+    );
+    expect(phaseColumn.rows).toHaveLength(1);
+    expect(phaseColumn.rows[0]).toMatchObject({ is_nullable: "NO" });
+    expect(phaseColumn.rows[0]?.column_default).toContain("not_started");
 
     const pendingHash = "a".repeat(64);
     const completedHash = "b".repeat(64);
+    const leasedHash = "8".repeat(64);
+    const queuedHash = "34".repeat(32);
+    const confirmedPendingHash = "56".repeat(32);
     await client.query(
       `insert into account_deletion_requests (identity_hash, clerk_user_id) values ($1, $2)`,
       [pendingHash, "clerk_pending"],
     );
     await client.query(
-      `insert into account_deletion_requests (identity_hash, status, completed_at) values ($1, 'completed', now())`,
+      `insert into account_deletion_requests (identity_hash, status, completed_at, subscription_deletion_status) values ($1, 'completed', now(), 'confirmed')`,
       [completedHash],
+    );
+    await client.query(
+      `insert into account_deletion_requests (identity_hash, clerk_user_id, lease_token, lease_expires_at) values ($1, 'clerk_leased', '1046f55b-d2fc-4c39-8e93-d67e18056236', now() + interval '2 minutes')`,
+      [leasedHash],
+    );
+    await client.query(
+      `insert into account_deletion_requests (identity_hash, clerk_user_id, subscription_deletion_status) values ($1, 'clerk_queued', 'queued')`,
+      [queuedHash],
+    );
+    await client.query(
+      `insert into account_deletion_requests (identity_hash, clerk_user_id, subscription_deletion_status) values ($1, 'clerk_confirmed_pending', 'confirmed')`,
+      [confirmedPendingHash],
     );
 
     const validRows = await client.query<{
@@ -273,7 +340,7 @@ describe("committed migrations", () => {
     }>(
       `select status, clerk_user_id, completed_at from account_deletion_requests order by status`,
     );
-    expect(validRows.rows).toHaveLength(2);
+    expect(validRows.rows).toHaveLength(7);
     expect(validRows.rows).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -317,15 +384,51 @@ describe("committed migrations", () => {
         sql: `insert into account_deletion_requests (identity_hash, status, completed_at, last_error_code) values ($1, 'completed', now(), 'vendor_error')`,
         params: ["0".repeat(64)],
       },
+      {
+        sql: `insert into account_deletion_requests (identity_hash, status, completed_at) values ($1, 'completed', now())`,
+        params: ["1".repeat(64)],
+      },
+      {
+        sql: `insert into account_deletion_requests (identity_hash, clerk_user_id, subscription_deletion_status) values ($1, 'clerk_bad_phase', 'unknown')`,
+        params: ["2".repeat(64)],
+      },
+      {
+        sql: `insert into account_deletion_requests (identity_hash, clerk_user_id, lease_token) values ($1, 'clerk_half_lease', '2046f55b-d2fc-4c39-8e93-d67e18056236')`,
+        params: ["3".repeat(64)],
+      },
+      {
+        sql: `insert into account_deletion_requests (identity_hash, clerk_user_id, lease_expires_at) values ($1, 'clerk_half_lease_expiry', now())`,
+        params: ["4".repeat(64)],
+      },
+      {
+        sql: `insert into account_deletion_requests (identity_hash, status, completed_at, subscription_deletion_status, lease_token, lease_expires_at) values ($1, 'completed', now(), 'confirmed', '3046f55b-d2fc-4c39-8e93-d67e18056236', now())`,
+        params: ["5".repeat(64)],
+      },
     ];
     for (const invalid of invalidRows) {
       await expect(client.query(invalid.sql, invalid.params)).rejects.toThrow();
     }
 
-    const retryIndex = await client.query<{ indexname: string }>(
-      `select indexname from pg_indexes where schemaname = 'public' and indexname = 'account_deletion_requests_retry_index'`,
+    const retryIndex = await client.query<{
+      indexname: string;
+      indexdef: string;
+    }>(
+      `select indexname, indexdef from pg_indexes where schemaname = 'public' and indexname = 'account_deletion_requests_retry_index'`,
     );
     expect(retryIndex.rows).toHaveLength(1);
+    expect(retryIndex.rows[0]?.indexdef).toContain(
+      "(status, last_attempt_at, requested_at)",
+    );
+    const leaseIndex = await client.query<{
+      indexname: string;
+      indexdef: string;
+    }>(
+      `select indexname, indexdef from pg_indexes where schemaname = 'public' and indexname = 'account_deletion_requests_lease_index'`,
+    );
+    expect(leaseIndex.rows).toHaveLength(1);
+    expect(leaseIndex.rows[0]?.indexdef).toContain(
+      "(status, lease_expires_at)",
+    );
     await client.close();
   });
 });

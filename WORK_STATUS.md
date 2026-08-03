@@ -86,6 +86,20 @@ not a public-launch readiness claim.
     sign-up, adult eligibility, normal Settings, and restricted Settings;
   - the native privacy-manifest baseline, exempt-encryption declaration, and
     disabled arbitrary network loads resolve in Expo introspection.
+- A focused paid-v1 subscription foundation is implemented and automated:
+  - RevenueCat uses only the opaque internal user UUID and never receives Clerk
+    IDs, email, or health/profile attributes;
+  - the native purchase, restore, StoreKit-localized offer, listener, account
+    switch, and sign-out flows fail closed until the server confirms access;
+  - every paid API route independently verifies exact `CUT_OS_PRO` access via
+    RevenueCat REST v2 and returns typed `402`/`503` responses;
+  - provider pagination, response/body timeout, bounded cache, forced refresh,
+    ambiguous `404`, lifetime, grace, malformed, and outage paths are covered;
+  - account deletion persists RevenueCat `not_started`/`queued`/`confirmed`
+    phases, polls queued deletes with GET only, and uses database leases plus
+    stale-worker fencing before local completion;
+  - all API calls have a bounded whole-request deadline, and failed sign-out
+    actions provide visible retryable feedback.
 - Malformed and oversized JSON requests now return sanitized `400`/`413`
   responses rather than becoming generic server errors.
 - pnpm is pinned to `10.34.5`, and GitHub CI now runs frozen install, generated
@@ -98,11 +112,11 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 269 tests** (domain 31, database 4, mobile 123, API 111).
+- `pnpm run test`: **PASS — 383 tests** (domain 31, database 4, mobile 155, API 193).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
-- Production-style Expo export for iOS: **PASS — 1,733 modules; 6.1 MB Hermes bundle**.
+- Production-style Expo export for iOS: **PASS — 1,764 modules; 7.38 MB Hermes bundle**.
 - Production release-environment preflight: **PASS** with representative
   non-secret values; missing, malformed, private, reserved, cross-origin, and
   insecure configurations fail closed in automated coverage.
@@ -130,8 +144,9 @@ native/App Store acceptance.
 - Native iOS simulator interaction: **not yet verified in this environment**.
 - Real-device interaction: **not yet verified**.
 - Account deletion against a real Clerk identity: **not yet verified**.
-- RevenueCat purchase and entitlement behavior: **not yet implemented or
-  verified against live sandbox services**.
+- RevenueCat purchase, restore, entitlement, and customer-deletion behavior:
+  **implemented and automated; not yet verified with Apple Sandbox/TestFlight
+  and production service credentials**.
 
 ## Known environment fact
 
@@ -142,44 +157,49 @@ The Desktop folder originally provided was an incomplete export: it lacked Git o
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
-1. Decide whether v1 launches free or with the planned subscription. If paid,
-   implement RevenueCat and complete every sandbox entitlement path; if free,
-   remove subscription promises from the launch metadata and review script.
-2. Finalize the CUT OS icon/launch branding and the first App Store screenshot
-   set, then complete name clearance.
+1. Approve the first real App Store subscription Product ID, monthly price,
+   no-trial/trial choice, subscription group, and localization; then create and
+   map the Apple product in RevenueCat.
+2. Confirm Apple Developer Program membership/seller type and Account Holder
+   access, then create the App Store Connect record for `com.zarifahmed.cut`.
 3. Publish owner/counsel-approved Privacy, Terms, and Support pages and supply
    their final HTTPS destinations to the production EAS environment.
-4. Link the intended Apple and Expo/EAS projects, configure the six validated
+4. Complete RevenueCat email verification, create a least-privilege server v2
+   key, and configure the Apple public SDK key/notifications without exposing
+   secrets in the repository or binary.
+5. Link the intended Apple and Expo/EAS projects, configure the seven validated
    production values, and create an internal TestFlight build.
-5. Complete native-device acceptance for `adult-18-v1`, including deep links,
+6. Complete native-device acceptance for `adult-18-v1`, including deep links,
    offline/relaunch, shared-device account switching, stale-cache clearing,
    deletion in every eligibility state, legal/support links, and VoiceOver.
-6. Produce reproducible recipes, nutrition methodology/sources, allergen
+7. Produce reproducible recipes, nutrition methodology/sources, allergen
    substantiation, and qualified review records for every public meal template.
-7. Exercise success, cancellation, timeout, app-kill, retry, second-device, and
+8. Exercise success, cancellation, timeout, app-kill, retry, second-device, and
    shared-device account-switch scenarios with a real Clerk development identity
    in an iOS development build.
-8. Have qualified counsel approve adults-18+ Terms/EULA, Privacy Policy,
+9. Have qualified counsel approve adults-18+ Terms/EULA, Privacy Policy,
    notice-at-collection, retention/underage handling, launch jurisdictions, and
    sufficiency of the self-declared assurance method and permanent
    ineligible-identity workflow.
-9. Define tombstone/backups retention—including the maximum accepted lifetime
-   of stale Clerk sessions/tokens—deletion completion expectations, production
-   monitoring, alerting, and manual reconciliation.
-10. Inventory privacy manifests and required-reason APIs in the generated iOS
+10. Define tombstone/backups retention—including the maximum accepted lifetime
+    of stale Clerk sessions/tokens—deletion completion expectations, production
+    monitoring, alerting, and manual reconciliation.
+11. Inventory privacy manifests and required-reason APIs in the generated iOS
     archive; reconcile `APP_STORE_METADATA.md`, complete the current Apple
     questionnaire truthfully, and apply the higher 18+ override once the
     Terms/EULA minimum is final.
-11. Add dietary preferences/allergy exclusions only after the deletion and privacy paths exist.
-12. Add authoritative calorie/protein targets and deterministic hard filters before using the product name **Best Balanced Fit**.
-13. Then advance Today to training and closeout actions.
+12. Add dietary preferences/allergy exclusions only after the deletion and privacy paths exist.
+13. Add authoritative calorie/protein targets and deterministic hard filters before using the product name **Best Balanced Fit**.
+14. Then advance Today to training and closeout actions.
 
-## Owner actions not yet required for local development
+## Owner actions required for the next external step
 
-Apple enrollment, EAS authentication, production credentials, subscription
-product creation, TestFlight distribution, App Store questionnaire/privacy
-publication, the higher 18+ rating override, Submit for Review, and public
-release remain owner-controlled gates. Terms/Privacy and jurisdictional
-age-assurance approval remain qualified-counsel gates; nutrition and health
-claims remain qualified professional/legal review gates. Legal and Support must
-also approve the permanent ineligible-identity and later-new-account workflow.
+The local paid-v1 checkpoint is complete. Apple enrollment/seller type, paid
+product terms, financial agreements/tax/banking, production credentials,
+RevenueCat secret-key authorization, EAS/Apple authentication, TestFlight
+distribution, App Store questionnaire/privacy publication, Submit for Review,
+and public release remain owner-controlled gates. The owner has confirmed an
+18+ launch position; the final rating questionnaire and legal policy still need
+owner/counsel approval. Terms/Privacy and jurisdictional age-assurance remain
+qualified-counsel gates, and nutrition/health claims remain qualified
+professional/legal review gates.

@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Response } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { getAuth } from "@clerk/express";
 import {
   DecideMyAdultEligibilityBody,
@@ -13,6 +13,10 @@ import {
   UpsertMyProfileResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
+import {
+  requireSubscription,
+  sendSubscriptionStatusUnavailable,
+} from "../middlewares/requireSubscription";
 import { getProfile, updateUser, upsertProfile } from "../services/userService";
 import {
   enforcePostProvisionDeletionGuard,
@@ -25,6 +29,10 @@ import {
   decideAdultEligibility,
   getAdultEligibility,
 } from "../services/adultEligibilityService";
+import {
+  getSubscriptionStatusProvider,
+  REVENUECAT_ENTITLEMENT_ID,
+} from "../services/revenueCatSubscriptionService";
 import { HttpError } from "../lib/httpError";
 
 const router: IRouter = Router();
@@ -49,10 +57,38 @@ function sendDeletionBlocked(res: Response): void {
   });
 }
 
+async function sendSubscriptionStatus(
+  req: Request,
+  res: Response,
+  refresh: boolean,
+): Promise<void> {
+  try {
+    const status = await getSubscriptionStatusProvider().getStatus(
+      req.userId!,
+      refresh ? { refresh: true } : undefined,
+    );
+    res.json({
+      entitled: status.entitled,
+      entitlementId: REVENUECAT_ENTITLEMENT_ID,
+      expiresAt: status.expiresAt,
+      managementUrl: status.managementUrl,
+    });
+  } catch (error) {
+    sendSubscriptionStatusUnavailable(req, res, error);
+  }
+}
+
 // Eligibility status is authorization state and the PUT receives transient
 // age evidence. Keep every response on this path out of intermediary/browser
 // caches, including errors.
 router.use("/me/adult-eligibility", (_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
+
+// Subscription state is authorization data and may be explicitly refreshed
+// after a purchase or restore. Never let an intermediary reuse these results.
+router.use("/me/subscription", (_req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
   next();
 });
@@ -63,22 +99,41 @@ router.get("/me", requireAuth, async (req, res): Promise<void> => {
   res.json(GetMeResponse.parse(req.user));
 });
 
+// These status endpoints are authenticated but intentionally not paywalled:
+// clients need them to decide whether to show purchase or restore UI.
+router.get("/me/subscription", requireAuth, async (req, res): Promise<void> => {
+  await sendSubscriptionStatus(req, res, false);
+});
+
+router.post(
+  "/me/subscription/refresh",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    await sendSubscriptionStatus(req, res, true);
+  },
+);
+
 // PATCH /api/me — update account settings (timezone, units). The onboarding
 // flag is server-owned, not a free setting: updateUser validates it against
 // profile existence (see PRODUCT_RULES "Onboarding completion", P1-4).
-router.patch("/me", requireAuth, async (req, res): Promise<void> => {
-  const parsed = UpdateMeBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const user = await updateUser(req.userId!, parsed.data);
-  if (!user) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  res.json(UpdateMeResponse.parse(user));
-});
+router.patch(
+  "/me",
+  requireAuth,
+  requireSubscription,
+  async (req, res): Promise<void> => {
+    const parsed = UpdateMeBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const user = await updateUser(req.userId!, parsed.data);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    res.json(UpdateMeResponse.parse(user));
+  },
+);
 
 // GET /api/me/account-deletion — special auth with no JIT provisioning. This
 // remains available to a tombstoned identity while its token is still valid.
@@ -226,24 +281,34 @@ router.delete("/me", async (req, res): Promise<void> => {
 });
 
 // GET /api/me/profile — the current user's onboarding profile.
-router.get("/me/profile", requireAuth, async (req, res): Promise<void> => {
-  const profile = await getProfile(req.userId!);
-  if (!profile) {
-    res.status(404).json({ error: "Profile not found" });
-    return;
-  }
-  res.json(GetMyProfileResponse.parse(profile));
-});
+router.get(
+  "/me/profile",
+  requireAuth,
+  requireSubscription,
+  async (req, res): Promise<void> => {
+    const profile = await getProfile(req.userId!);
+    if (!profile) {
+      res.status(404).json({ error: "Profile not found" });
+      return;
+    }
+    res.json(GetMyProfileResponse.parse(profile));
+  },
+);
 
 // PUT /api/me/profile — create or replace the current user's profile.
-router.put("/me/profile", requireAuth, async (req, res): Promise<void> => {
-  const parsed = UpsertMyProfileBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const profile = await upsertProfile(req.userId!, parsed.data);
-  res.json(UpsertMyProfileResponse.parse(profile));
-});
+router.put(
+  "/me/profile",
+  requireAuth,
+  requireSubscription,
+  async (req, res): Promise<void> => {
+    const parsed = UpsertMyProfileBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const profile = await upsertProfile(req.userId!, parsed.data);
+    res.json(UpsertMyProfileResponse.parse(profile));
+  },
+);
 
 export default router;

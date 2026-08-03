@@ -32,6 +32,7 @@ import {
 import { useAccountDeletionGate } from "@/lib/account-deletion-gate";
 import { useAdultEligibilityGate } from "@/lib/adult-eligibility-gate";
 import { pendingMealCreateKey } from "@/lib/meal-create-intent";
+import { useOptionalSubscriptionGate } from "@/lib/subscription-gate";
 
 const APP_STORE_SUBSCRIPTIONS_URL =
   "https://apps.apple.com/account/subscriptions";
@@ -46,10 +47,17 @@ export default function SettingsScreen() {
   const s = makeStyles(c);
   const { marker, serverStatus, setMarker } = useAccountDeletionGate();
   const adultEligibility = useAdultEligibilityGate();
+  const subscription = useOptionalSubscriptionGate();
 
   const [actionError, setActionError] = React.useState<string | null>(null);
   const [subscriptionError, setSubscriptionError] = React.useState<
     string | null
+  >(null);
+  const [subscriptionMessage, setSubscriptionMessage] = React.useState<
+    string | null
+  >(null);
+  const [subscriptionBusy, setSubscriptionBusy] = React.useState<
+    "restore" | "manage" | null
   >(null);
   const [operationBusy, setOperationBusy] = React.useState(false);
   const operationLock = React.useRef(false);
@@ -67,7 +75,7 @@ export default function SettingsScreen() {
   const recoveryRequired = marker !== null || serverStatus !== "none";
   const ageRequirementRequired =
     !recoveryRequired && adultEligibility.isRequired;
-  const busy = operationBusy;
+  const busy = operationBusy || subscriptionBusy !== null;
 
   const leaveSettings = () => {
     if (ageRequirementRequired) {
@@ -78,13 +86,47 @@ export default function SettingsScreen() {
   };
 
   const openSubscriptions = async () => {
+    if (subscriptionBusy) return;
+    setSubscriptionBusy("manage");
     setSubscriptionError(null);
+    setSubscriptionMessage(null);
     try {
-      await WebBrowser.openBrowserAsync(APP_STORE_SUBSCRIPTIONS_URL);
+      await WebBrowser.openBrowserAsync(
+        subscription?.managementUrl ?? APP_STORE_SUBSCRIPTIONS_URL,
+      );
     } catch {
       setSubscriptionError(
         "Couldn't open Apple subscription settings. Try again when you're online.",
       );
+    } finally {
+      setSubscriptionBusy(null);
+    }
+  };
+
+  const restoreSubscription = async () => {
+    if (!subscription || subscriptionBusy) return;
+    setSubscriptionBusy("restore");
+    setSubscriptionError(null);
+    setSubscriptionMessage(null);
+    try {
+      const result = await subscription.restore();
+      if (result === "entitled") {
+        setSubscriptionMessage("CUT OS Pro access was restored.");
+      } else if (result === "not_entitled") {
+        setSubscriptionMessage(
+          "No active CUT OS Pro purchase was found for this Apple ID.",
+        );
+      } else if (result === "pending") {
+        setSubscriptionMessage(
+          "The restore check finished. CUT OS is still waiting for secure access verification; try again shortly.",
+        );
+      }
+    } catch {
+      setSubscriptionError(
+        "CUT OS couldn't restore purchases. Check your connection and try again.",
+      );
+    } finally {
+      setSubscriptionBusy(null);
     }
   };
 
@@ -347,25 +389,105 @@ export default function SettingsScreen() {
 
       <View style={s.card}>
         <Text style={s.cardOverline}>SUBSCRIPTION</Text>
-        <Text style={s.cardTitle}>App Store subscription</Text>
-        <Text style={s.cardBody}>
-          Deleting CUT OS does not cancel billing through Apple. Cancel or
-          review renewal in your App Store subscriptions.
+        <Text style={s.cardTitle}>
+          {subscription?.server.state === "ready" &&
+          subscription.server.entitled
+            ? "CUT OS Pro is active"
+            : "CUT OS Pro"}
         </Text>
+        <Text style={s.cardBody}>
+          {subscription?.server.state === "loading"
+            ? "Checking App Store access…"
+            : subscription?.server.state === "unavailable"
+              ? "CUT OS couldn't verify Pro access. Retry before opening paid features."
+              : subscription?.server.state === "ready" &&
+                  subscription.server.entitled
+                ? "Your paid daily plan, weigh-ins, and nutrition features are available."
+                : "Upgrade to unlock the paid daily plan, weigh-ins, and nutrition features."}
+        </Text>
+        <Text style={s.cardBody}>
+          Deleting CUT OS does not cancel billing through Apple. Manage or
+          cancel separately in App Store subscription settings.
+        </Text>
+        {subscriptionMessage ? (
+          <Text accessibilityLiveRegion="polite" style={s.statusText}>
+            {subscriptionMessage}
+          </Text>
+        ) : null}
         {subscriptionError ? (
           <Text accessibilityRole="alert" style={s.errorText}>
             {subscriptionError}
           </Text>
         ) : null}
+        {subscription?.server.state === "ready" &&
+        !subscription.server.entitled ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            style={({ pressed }) => [
+              s.primaryAction,
+              busy && s.disabled,
+              pressed && !busy && s.pressed,
+            ]}
+            onPress={() => router.push("/subscription")}
+          >
+            <Text style={s.primaryActionText}>View subscription options</Text>
+          </Pressable>
+        ) : null}
+        {subscription?.server.state === "unavailable" ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            style={({ pressed }) => [
+              s.secondaryAction,
+              busy && s.disabled,
+              pressed && !busy && s.pressed,
+            ]}
+            onPress={subscription.retryServer}
+          >
+            <Text style={s.secondaryActionText}>Retry access check</Text>
+          </Pressable>
+        ) : null}
+        {subscription?.capability.available ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{
+              disabled: busy || subscription.storeStatus !== "ready",
+              busy: subscriptionBusy === "restore",
+            }}
+            disabled={busy || subscription.storeStatus !== "ready"}
+            style={({ pressed }) => [
+              s.secondaryAction,
+              (busy || subscription.storeStatus !== "ready") && s.disabled,
+              pressed && !busy && s.pressed,
+            ]}
+            onPress={() => void restoreSubscription()}
+          >
+            {subscriptionBusy === "restore" ? (
+              <ActivityIndicator color={c.primary} />
+            ) : (
+              <Text style={s.secondaryActionText}>Restore purchases</Text>
+            )}
+          </Pressable>
+        ) : null}
         <Pressable
           accessibilityRole="link"
           accessibilityLabel="Manage App Store subscription"
-          style={({ pressed }) => [s.secondaryAction, pressed && s.pressed]}
+          disabled={busy}
+          style={({ pressed }) => [
+            s.secondaryAction,
+            busy && s.disabled,
+            pressed && !busy && s.pressed,
+          ]}
           onPress={() => void openSubscriptions()}
         >
-          <Text style={s.secondaryActionText}>
-            Manage App Store subscription
-          </Text>
+          {subscriptionBusy === "manage" ? (
+            <ActivityIndicator color={c.primary} />
+          ) : (
+            <Text style={s.secondaryActionText}>
+              Manage App Store subscription
+            </Text>
+          )}
         </Pressable>
       </View>
 
@@ -551,6 +673,28 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontFamily: "Inter_600SemiBold",
       fontSize: 15,
       textAlign: "center",
+    },
+    primaryAction: {
+      minHeight: 50,
+      borderRadius: c.radius,
+      backgroundColor: c.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 14,
+      marginTop: 18,
+    },
+    primaryActionText: {
+      color: c.primaryForeground,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 15,
+      textAlign: "center",
+    },
+    statusText: {
+      color: c.foreground,
+      fontFamily: "Inter_500Medium",
+      fontSize: 13,
+      lineHeight: 19,
+      marginTop: 12,
     },
     deleteButton: {
       minHeight: 54,

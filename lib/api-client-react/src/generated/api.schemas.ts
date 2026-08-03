@@ -5,6 +5,52 @@
  * CUT OS API specification
  * OpenAPI spec version: 0.1.0
  */
+export type SubscriptionStatusEntitlementId = typeof SubscriptionStatusEntitlementId[keyof typeof SubscriptionStatusEntitlementId];
+
+
+export const SubscriptionStatusEntitlementId = {
+  CUT_OS_PRO: 'CUT_OS_PRO',
+} as const;
+
+export interface SubscriptionStatus {
+  entitled: boolean;
+  entitlementId: SubscriptionStatusEntitlementId;
+  /**
+     * Null only for lifetime access or when no access exists.
+     * @nullable
+     */
+  expiresAt: string | null;
+  /**
+     * Provider-supplied subscription management URL when available.
+     * @nullable
+     */
+  managementUrl: string | null;
+}
+
+export type SubscriptionRequiredErrorCode = typeof SubscriptionRequiredErrorCode[keyof typeof SubscriptionRequiredErrorCode];
+
+
+export const SubscriptionRequiredErrorCode = {
+  subscription_required: 'subscription_required',
+} as const;
+
+export interface SubscriptionRequiredError {
+  error: string;
+  code: SubscriptionRequiredErrorCode;
+}
+
+export type SubscriptionStatusUnavailableErrorCode = typeof SubscriptionStatusUnavailableErrorCode[keyof typeof SubscriptionStatusUnavailableErrorCode];
+
+
+export const SubscriptionStatusUnavailableErrorCode = {
+  subscription_status_unavailable: 'subscription_status_unavailable',
+} as const;
+
+export interface SubscriptionStatusUnavailableError {
+  error: string;
+  code: SubscriptionStatusUnavailableErrorCode;
+}
+
 export type AdultEligibilityStatusStatus = typeof AdultEligibilityStatusStatus[keyof typeof AdultEligibilityStatusStatus];
 
 
@@ -398,6 +444,16 @@ export type AdultEligibilityRequiredResponse = AdultEligibilityBlockedError;
  * The authenticated identity is not eligible for adult access
  */
 export type AdultEligibilityDeniedResponse = AdultEligibilityBlockedError;
+
+/**
+ * An active CUT OS Pro subscription is required
+ */
+export type SubscriptionRequiredResponse = SubscriptionRequiredError;
+
+/**
+ * Subscription status could not be safely verified
+ */
+export type SubscriptionStatusUnavailableResponse = SubscriptionStatusUnavailableError;
 
 export type ListMyWeightEntriesParams = {
 /**

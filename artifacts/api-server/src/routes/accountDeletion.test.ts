@@ -18,7 +18,14 @@ import {
   setAccountDeletionStageAfterInsertHook,
   setAccountDeletionStatusBeforeFallbackHook,
   setAccountIdentityDeleter,
+  setAccountSubscriptionCustomerDeletionPoller,
+  setAccountSubscriptionCustomerDeleter,
 } from "../services/accountDeletionService";
+import {
+  REVENUECAT_ENTITLEMENT_ID,
+  RevenueCatCustomerDeletionError,
+  setSubscriptionStatusProviderForTesting,
+} from "../services/revenueCatSubscriptionService";
 import { startAccountDeletionWorker } from "../services/accountDeletionWorker";
 import { setRequireAuthAfterDeletionPrecheckHook } from "../middlewares/requireAuth";
 import {
@@ -41,6 +48,8 @@ afterEach(async () => {
   setAccountDeletionStatusBeforeFallbackHook(null);
   setAccountDeletionFinalizer(null);
   setAccountIdentityDeleter(null);
+  setAccountSubscriptionCustomerDeletionPoller(null);
+  setAccountSubscriptionCustomerDeleter(null);
   await ctx.close();
 });
 
@@ -293,6 +302,363 @@ describe("durable account deletion", () => {
     expect(await usersForIdentity(ownerClerkId)).toEqual([]);
   });
 
+  it("deletes the RevenueCat customer by internal UUID before Clerk and local data", async () => {
+    const calls: string[] = [];
+    const deleteSubscriptionCustomer = vi.fn(async (internalUserId: string) => {
+      calls.push(`subscription:${internalUserId}`);
+    });
+    const deleteIdentity = vi.fn(async (clerkUserId: string) => {
+      calls.push(`identity:${clerkUserId}`);
+    });
+    setAccountSubscriptionCustomerDeleter(deleteSubscriptionCustomer);
+    setAccountIdentityDeleter(deleteIdentity);
+    const clerkUserId = "subscription_delete_order_owner";
+    const ownerId = await seedAccount(
+      clerkUserId,
+      "7a31855d-cdb0-4d3c-a863-03a424743031",
+    );
+
+    const response = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId));
+
+    expect(response.status).toBe(204);
+    expect(response.text).toBe("");
+    expect(deleteSubscriptionCustomer).toHaveBeenCalledWith(ownerId);
+    expect(deleteSubscriptionCustomer).not.toHaveBeenCalledWith(clerkUserId);
+    expect(calls).toEqual([
+      `subscription:${ownerId}`,
+      `identity:${clerkUserId}`,
+    ]);
+    expect(await usersForIdentity(clerkUserId)).toEqual([]);
+  });
+
+  it("keeps ambiguous RevenueCat failures pending without deleting Clerk", async () => {
+    const clerkUserId = "subscription_ambiguous_delete_owner";
+    const ownerId = await seedAccount(
+      clerkUserId,
+      "4cbbd9c8-2c3e-4ddb-b681-20947046664c",
+    );
+    const rawError = new Error(
+      `RevenueCat raw failure for ${ownerId} with Bearer secret`,
+    );
+    const deleteSubscriptionCustomer = vi
+      .fn()
+      .mockRejectedValueOnce(rawError)
+      .mockResolvedValueOnce(undefined);
+    const deleteIdentity = vi.fn().mockResolvedValue(undefined);
+    setAccountSubscriptionCustomerDeleter(deleteSubscriptionCustomer);
+    setAccountIdentityDeleter(deleteIdentity);
+
+    const failed = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId));
+
+    expect(failed.status).toBe(503);
+    expect(failed.body).toEqual({
+      error: "Account deletion is pending and will be retried",
+    });
+    expect(JSON.stringify(failed.body)).not.toContain(ownerId);
+    expect(JSON.stringify(failed.body)).not.toContain("Bearer");
+    expect(deleteIdentity).not.toHaveBeenCalled();
+    expect(await deletionRequest(clerkUserId)).toMatchObject({
+      status: "pending",
+      attemptCount: 1,
+      lastErrorCode: "subscription_transport_failed",
+    });
+    expect((await usersForIdentity(clerkUserId))[0]).toMatchObject({
+      id: ownerId,
+      deletionStatus: "pending",
+    });
+
+    const retried = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId));
+    expect(retried.status).toBe(204);
+    expect(deleteSubscriptionCustomer).toHaveBeenCalledTimes(2);
+    expect(deleteSubscriptionCustomer).toHaveBeenLastCalledWith(ownerId);
+    expect(deleteIdentity).toHaveBeenCalledOnce();
+    expect(await usersForIdentity(clerkUserId)).toEqual([]);
+  });
+
+  it("trusts only the typed RevenueCat not-found result for an already absent UUID", async () => {
+    const trustedIdentity = "subscription_trusted_not_found";
+    const trustedOwnerId = await seedAccount(
+      trustedIdentity,
+      "82a8da30-11ea-427e-8dcb-6eff9b3894e8",
+    );
+    const deleteIdentity = vi.fn().mockResolvedValue(undefined);
+    const trustedDelete = vi
+      .fn()
+      .mockRejectedValue(new RevenueCatCustomerDeletionError("not_found"));
+    setAccountSubscriptionCustomerDeleter(trustedDelete);
+    setAccountIdentityDeleter(deleteIdentity);
+
+    const trusted = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(trustedIdentity));
+    expect(trusted.status).toBe(204);
+    expect(trustedDelete).toHaveBeenCalledWith(trustedOwnerId);
+    expect(deleteIdentity).toHaveBeenCalledWith(trustedIdentity);
+
+    const untrustedIdentity = "subscription_plain_not_found";
+    const untrustedOwnerId = await seedAccount(
+      untrustedIdentity,
+      "e81ecf3f-2d0e-4175-8c73-d35d5091ba83",
+    );
+    const plainDelete = vi
+      .fn()
+      .mockRejectedValue(
+        Object.assign(new Error("proxy 404"), { status: 404 }),
+      );
+    deleteIdentity.mockClear();
+    setAccountSubscriptionCustomerDeleter(plainDelete);
+
+    const untrusted = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(untrustedIdentity));
+    expect(untrusted.status).toBe(503);
+    expect(plainDelete).toHaveBeenCalledWith(untrustedOwnerId);
+    expect(deleteIdentity).not.toHaveBeenCalled();
+    expect(await deletionRequest(untrustedIdentity)).toMatchObject({
+      status: "pending",
+      lastErrorCode: "subscription_transport_failed",
+    });
+  });
+
+  it("persists RevenueCat confirmation when Clerk fails and does not delete twice", async () => {
+    const clerkUserId = "subscription_deleted_before_clerk_retry";
+    const ownerId = await seedAccount(
+      clerkUserId,
+      "2827ebfc-ebcf-413f-a9f5-88cfabde384c",
+    );
+    const deleteSubscriptionCustomer = vi.fn().mockResolvedValueOnce(undefined);
+    const deleteIdentity = vi
+      .fn()
+      .mockRejectedValueOnce(clerkProviderError(503, "service_unavailable"))
+      .mockResolvedValueOnce(undefined);
+    setAccountSubscriptionCustomerDeleter(deleteSubscriptionCustomer);
+    setAccountIdentityDeleter(deleteIdentity);
+
+    const first = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId));
+    expect(first.status).toBe(503);
+    expect(await deletionRequest(clerkUserId)).toMatchObject({
+      status: "pending",
+      attemptCount: 1,
+      lastErrorCode: "identity_unavailable",
+    });
+
+    const second = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId));
+    expect(second.status).toBe(204);
+    expect(deleteSubscriptionCustomer).toHaveBeenCalledOnce();
+    expect(deleteSubscriptionCustomer).toHaveBeenCalledWith(ownerId);
+    expect(deleteIdentity).toHaveBeenCalledTimes(2);
+    expect(await usersForIdentity(clerkUserId)).toEqual([]);
+  });
+
+  it("persists a queued RevenueCat phase and uses GET-only polling across retries", async () => {
+    const clerkUserId = "subscription_queued_delete_owner";
+    const ownerId = await seedAccount(
+      clerkUserId,
+      "fbc35bf8-df1e-491f-8d91-b0cbe87380af",
+    );
+    const deleteSubscriptionCustomer = vi
+      .fn()
+      .mockRejectedValue(
+        new RevenueCatCustomerDeletionError("deletion_queued"),
+      );
+    const pollSubscriptionCustomer = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new RevenueCatCustomerDeletionError("deletion_queued"),
+      )
+      .mockResolvedValueOnce(undefined);
+    const deleteIdentity = vi.fn().mockResolvedValue(undefined);
+    setAccountSubscriptionCustomerDeleter(deleteSubscriptionCustomer);
+    setAccountSubscriptionCustomerDeletionPoller(pollSubscriptionCustomer);
+    setAccountIdentityDeleter(deleteIdentity);
+
+    const queued = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId));
+    expect(queued.status).toBe(503);
+    expect(deleteSubscriptionCustomer).toHaveBeenCalledOnce();
+    expect(pollSubscriptionCustomer).not.toHaveBeenCalled();
+    expect(await deletionRequest(clerkUserId)).toMatchObject({
+      status: "pending",
+      subscriptionDeletionStatus: "queued",
+      lastErrorCode: "subscription_deletion_queued",
+      leaseToken: null,
+      leaseExpiresAt: null,
+    });
+
+    // Replacing the function simulates a fresh worker process: the database,
+    // rather than in-memory client state, must select the GET-only path.
+    const repeatedDelete = vi.fn().mockRejectedValue(new Error("must not run"));
+    setAccountSubscriptionCustomerDeleter(repeatedDelete);
+    const stillQueued = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId));
+    expect(stillQueued.status).toBe(503);
+    expect(repeatedDelete).not.toHaveBeenCalled();
+    expect(pollSubscriptionCustomer).toHaveBeenCalledOnce();
+    expect(deleteIdentity).not.toHaveBeenCalled();
+
+    const completed = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId));
+    expect(completed.status).toBe(204);
+    expect(repeatedDelete).not.toHaveBeenCalled();
+    expect(pollSubscriptionCustomer).toHaveBeenCalledTimes(2);
+    expect(pollSubscriptionCustomer).toHaveBeenLastCalledWith(ownerId);
+    expect(deleteIdentity).toHaveBeenCalledOnce();
+    expect(await deletionRequest(clerkUserId)).toMatchObject({
+      status: "completed",
+      subscriptionDeletionStatus: "confirmed",
+      lastErrorCode: null,
+    });
+  });
+
+  it("allows only one live lease holder to execute vendor deletion", async () => {
+    const clerkUserId = "single_vendor_executor_owner";
+    const ownerId = await seedAccount(
+      clerkUserId,
+      "c5b87fbf-730a-47c0-9347-c903474fed43",
+    );
+    const invalidate = vi.fn();
+    setSubscriptionStatusProviderForTesting({
+      async getStatus() {
+        return {
+          entitled: true,
+          entitlementId: REVENUECAT_ENTITLEMENT_ID,
+          expiresAt: null,
+          managementUrl: null,
+        };
+      },
+      invalidate,
+    });
+    let reachedVendor!: () => void;
+    const vendorReached = new Promise<void>((resolve) => {
+      reachedVendor = resolve;
+    });
+    let releaseVendor!: () => void;
+    const vendorBarrier = new Promise<void>((resolve) => {
+      releaseVendor = resolve;
+    });
+    const deleteSubscriptionCustomer = vi.fn(async () => {
+      reachedVendor();
+      await vendorBarrier;
+    });
+    const deleteIdentity = vi.fn().mockResolvedValue(undefined);
+    setAccountSubscriptionCustomerDeleter(deleteSubscriptionCustomer);
+    setAccountIdentityDeleter(deleteIdentity);
+
+    const firstRequest = request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId))
+      .then((response) => response);
+    await vendorReached;
+    const overlapping = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId));
+
+    expect(overlapping.status).toBe(503);
+    expect(deleteSubscriptionCustomer).toHaveBeenCalledOnce();
+    expect(deleteIdentity).not.toHaveBeenCalled();
+    expect(invalidate.mock.calls).toEqual([[ownerId], [ownerId], [ownerId]]);
+    releaseVendor();
+    expect((await firstRequest).status).toBe(204);
+    expect(deleteSubscriptionCustomer).toHaveBeenCalledOnce();
+    expect(deleteIdentity).toHaveBeenCalledOnce();
+    expect(invalidate).toHaveBeenCalledTimes(4);
+  });
+
+  it("fences an expired claimant from regressing a newer confirmed completion", async () => {
+    const clerkUserId = "stale_deletion_claim_owner";
+    const identityHash = hashClerkIdentity(clerkUserId);
+    await seedAccount(clerkUserId, "564d5d7d-b056-4125-a058-ff2b0b3b1a2b");
+    let reachedVendor!: () => void;
+    const vendorReached = new Promise<void>((resolve) => {
+      reachedVendor = resolve;
+    });
+    let releaseVendor!: () => void;
+    const vendorBarrier = new Promise<void>((resolve) => {
+      releaseVendor = resolve;
+    });
+    const deleteSubscriptionCustomer = vi
+      .fn()
+      .mockImplementationOnce(async () => {
+        reachedVendor();
+        await vendorBarrier;
+        throw new RevenueCatCustomerDeletionError("deletion_queued");
+      })
+      .mockResolvedValueOnce(undefined);
+    const deleteIdentity = vi.fn().mockResolvedValue(undefined);
+    setAccountSubscriptionCustomerDeleter(deleteSubscriptionCustomer);
+    setAccountIdentityDeleter(deleteIdentity);
+
+    const staleRequest = request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId))
+      .then((response) => response);
+    await vendorReached;
+    await ctx.db
+      .update(accountDeletionRequestsTable)
+      .set({ leaseExpiresAt: new Date(0) })
+      .where(eq(accountDeletionRequestsTable.identityHash, identityHash));
+
+    const replacement = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId));
+    expect(replacement.status).toBe(204);
+    expect(deleteSubscriptionCustomer).toHaveBeenCalledTimes(2);
+    expect(deleteIdentity).toHaveBeenCalledOnce();
+
+    releaseVendor();
+    expect((await staleRequest).status).toBe(204);
+    expect(await deletionRequest(clerkUserId)).toMatchObject({
+      status: "completed",
+      subscriptionDeletionStatus: "confirmed",
+      attemptCount: 2,
+      lastErrorCode: null,
+      leaseToken: null,
+      leaseExpiresAt: null,
+    });
+  });
+
+  it("invalidates subscription status at staging and immediately before completion", async () => {
+    const clerkUserId = "subscription_cache_invalidation_owner";
+    const ownerId = await seedAccount(
+      clerkUserId,
+      "ef0a7da7-aea4-46d7-892f-ab3108cb88c7",
+    );
+    const invalidate = vi.fn();
+    setSubscriptionStatusProviderForTesting({
+      async getStatus() {
+        return {
+          entitled: true,
+          entitlementId: REVENUECAT_ENTITLEMENT_ID,
+          expiresAt: null,
+          managementUrl: null,
+        };
+      },
+      invalidate,
+    });
+    setAccountIdentityDeleter(vi.fn().mockResolvedValue(undefined));
+
+    const response = await request(ctx.app)
+      .delete("/api/me")
+      .set(asUser(clerkUserId));
+
+    expect(response.status).toBe(204);
+    expect(invalidate).toHaveBeenCalledTimes(3);
+    expect(invalidate.mock.calls).toEqual([[ownerId], [ownerId], [ownerId]]);
+  });
+
   it("keeps a failed Clerk deletion pending and locked until a safe retry completes", async () => {
     const clerkUserId = "pending_delete_owner";
     const ownerId = await seedAccount(
@@ -538,6 +904,9 @@ describe("durable account deletion", () => {
             status: "completed",
             clerkUserId: null,
             completedAt,
+            subscriptionDeletionStatus: "confirmed",
+            leaseToken: null,
+            leaseExpiresAt: null,
             updatedAt: completedAt,
           })
           .where(eq(accountDeletionRequestsTable.identityHash, identityHash));
@@ -563,6 +932,11 @@ describe("durable account deletion", () => {
     const attemptedOld = "worker_attempted_old";
     const attemptedRecent = "worker_attempted_recent";
     const neverAttempted = "worker_never_attempted";
+    await ctx.db.insert(usersTable).values([
+      { clerkUserId: attemptedOld, deletionStatus: "pending" },
+      { clerkUserId: attemptedRecent, deletionStatus: "pending" },
+      { clerkUserId: neverAttempted, deletionStatus: "pending" },
+    ]);
     await ctx.db.insert(accountDeletionRequestsTable).values([
       {
         identityHash: hashClerkIdentity(attemptedOld),
@@ -638,7 +1012,7 @@ describe("durable account deletion", () => {
     expect(requestRow).toMatchObject({
       status: "pending",
       clerkUserId: mismatchedIdentity,
-      attemptCount: 0,
+      attemptCount: 1,
       lastErrorCode: "identity_binding_invalid",
     });
   });

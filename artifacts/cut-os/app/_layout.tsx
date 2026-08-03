@@ -38,6 +38,8 @@ const runtimeConfig = resolveRuntimeConfig({
   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY:
     process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
   EXPO_PUBLIC_CLERK_PROXY_URL: process.env.EXPO_PUBLIC_CLERK_PROXY_URL,
+  EXPO_PUBLIC_REVENUECAT_IOS_API_KEY:
+    process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
 });
 
 if (runtimeConfig.ok) {
