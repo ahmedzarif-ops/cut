@@ -8,6 +8,9 @@
 
 export * from './error';
 export * from './healthStatus';
+export * from './listMyWeightEntriesParams';
+export * from './nextAction';
+export * from './nextActionKind';
 export * from './profile';
 export * from './profileActivityLevel';
 export * from './profileGoal';
@@ -18,7 +21,10 @@ export * from './profileInputSex';
 export * from './profileInputTrainingExperience';
 export * from './profileSex';
 export * from './profileTrainingExperience';
+export * from './todayState';
 export * from './user';
 export * from './userUnits';
 export * from './userUpdate';
 export * from './userUpdateUnits';
+export * from './weightEntry';
+export * from './weightEntryInput';

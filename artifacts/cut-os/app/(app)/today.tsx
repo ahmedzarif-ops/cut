@@ -1,16 +1,27 @@
 import { useAuth } from "@clerk/expo";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetMyProfileQueryKey,
+  getGetTodayQueryKey,
   useGetMe,
   useGetMyProfile,
+  useGetToday,
+  useUpsertTodayWeight,
 } from "@workspace/api-client-react";
+import {
+  kilogramsToPounds,
+  poundsToKilograms,
+  roundWeight,
+} from "@workspace/domain";
 import { useRouter } from "expo-router";
+import React from "react";
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -31,17 +42,24 @@ function greeting(): string {
   return "Good evening";
 }
 
+function displayWeight(weightKg: number, units: "metric" | "imperial"): string {
+  const value = units === "imperial" ? kilogramsToPounds(weightKg) : weightKg;
+  return roundWeight(value).toFixed(1);
+}
+
 export default function TodayScreen() {
   const { signOut } = useAuth();
   const router = useRouter();
+  const qc = useQueryClient();
   const c = useColors();
   const insets = useSafeAreaInsets();
   const s = makeStyles(c);
 
+  const [weightText, setWeightText] = React.useState("");
+  const [editingWeight, setEditingWeight] = React.useState(false);
+  const [weightError, setWeightError] = React.useState<string | null>(null);
+
   const meQuery = useGetMe();
-  // Only fetch the profile once we know onboarding is complete. Retry transient
-  // failures (e.g. a cold-start token hiccup) but never a 404 — a missing
-  // profile is a valid state, not an error to retry.
   const profileQuery = useGetMyProfile({
     query: {
       queryKey: getGetMyProfileQueryKey(),
@@ -50,9 +68,99 @@ export default function TodayScreen() {
         (error as { status?: number })?.status !== 404 && failureCount < 2,
     },
   });
+  const todayQuery = useGetToday({
+    query: {
+      queryKey: getGetTodayQueryKey(),
+      enabled: meQuery.data?.onboardingComplete === true,
+    },
+  });
+  const saveWeightMutation = useUpsertTodayWeight();
 
   const me = meQuery.data;
   const profile = profileQuery.data;
+  const today = todayQuery.data;
+  const units = me?.units ?? "metric";
+  const unitLabel = units === "imperial" ? "lb" : "kg";
+
+  React.useEffect(() => {
+    if (today?.weightEntry && !editingWeight) {
+      setWeightText(displayWeight(today.weightEntry.weightKg, units));
+    }
+  }, [editingWeight, today?.weightEntry, units]);
+
+  const saveWeight = async () => {
+    setWeightError(null);
+    const entered = Number(weightText.trim().replace(",", "."));
+    const weightKg =
+      units === "imperial" ? poundsToKilograms(entered) : entered;
+    if (!Number.isFinite(weightKg) || weightKg < 20 || weightKg > 500) {
+      setWeightError(`Enter a valid weight in ${unitLabel}.`);
+      return;
+    }
+
+    try {
+      const saved = await saveWeightMutation.mutateAsync({
+        data: { weightKg },
+      });
+      setWeightText(displayWeight(saved.weightKg, units));
+      setEditingWeight(false);
+      await qc.invalidateQueries({ queryKey: getGetTodayQueryKey() });
+    } catch {
+      setWeightError(
+        "Couldn't save your weigh-in. Check your connection and retry.",
+      );
+    }
+  };
+
+  const weightEditor = (
+    <View style={s.weightEditor}>
+      <Text style={s.inputLabel}>Today&apos;s weight</Text>
+      <View style={s.weightRow}>
+        <TextInput
+          accessibilityLabel={`Today's weight in ${unitLabel}`}
+          style={s.weightInput}
+          keyboardType="decimal-pad"
+          placeholder={units === "imperial" ? "210.0" : "95.3"}
+          placeholderTextColor={c.mutedForeground}
+          value={weightText}
+          onChangeText={setWeightText}
+          editable={!saveWeightMutation.isPending}
+        />
+        <Text style={s.unitLabel}>{unitLabel}</Text>
+      </View>
+      {weightError ? <Text style={s.error}>{weightError}</Text> : null}
+      <Pressable
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          s.button,
+          saveWeightMutation.isPending && s.buttonDisabled,
+          pressed && !saveWeightMutation.isPending && s.buttonPressed,
+        ]}
+        onPress={saveWeight}
+        disabled={saveWeightMutation.isPending}
+      >
+        {saveWeightMutation.isPending ? (
+          <ActivityIndicator color={c.primaryForeground} />
+        ) : (
+          <Text style={s.buttonText}>
+            {today?.weightEntry ? "Update weigh-in" : "Log weigh-in"}
+          </Text>
+        )}
+      </Pressable>
+      {today?.weightEntry ? (
+        <Pressable
+          style={s.cancelButton}
+          onPress={() => {
+            setEditingWeight(false);
+            setWeightError(null);
+            setWeightText(displayWeight(today.weightEntry!.weightKg, units));
+          }}
+        >
+          <Text style={s.secondaryButtonText}>Cancel</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
 
   const renderContent = () => {
     if (meQuery.isLoading) {
@@ -67,13 +175,8 @@ export default function TodayScreen() {
       return (
         <View style={s.card}>
           <Text style={s.cardTitle}>Couldn&apos;t load your account</Text>
-          <Text style={s.cardBody}>
-            Check your connection and try again.
-          </Text>
-          <Pressable
-            style={({ pressed }) => [s.button, pressed && s.buttonPressed]}
-            onPress={() => meQuery.refetch()}
-          >
+          <Text style={s.cardBody}>Check your connection and try again.</Text>
+          <Pressable style={s.button} onPress={() => meQuery.refetch()}>
             <Text style={s.buttonText}>Retry</Text>
           </Pressable>
         </View>
@@ -83,12 +186,13 @@ export default function TodayScreen() {
     if (!me.onboardingComplete) {
       return (
         <View style={s.card}>
-          <Text style={s.cardTitle}>Set up your plan</Text>
+          <Text style={s.overline}>NEXT</Text>
+          <Text style={s.cardTitle}>Build your cut plan</Text>
           <Text style={s.cardBody}>
-            Tell us your goal and stats so CUT OS can build your daily targets.
+            Tell us your goal and stats so CUT OS can guide the day.
           </Text>
           <Pressable
-            style={({ pressed }) => [s.button, pressed && s.buttonPressed]}
+            style={s.button}
             onPress={() => router.push("/onboarding")}
           >
             <Text style={s.buttonText}>Start onboarding</Text>
@@ -97,7 +201,7 @@ export default function TodayScreen() {
       );
     }
 
-    if (profileQuery.isLoading) {
+    if (profileQuery.isLoading || todayQuery.isLoading) {
       return (
         <View style={s.loading}>
           <ActivityIndicator color={c.primary} />
@@ -105,40 +209,90 @@ export default function TodayScreen() {
       );
     }
 
+    if (profileQuery.isError || todayQuery.isError || !today) {
+      return (
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Couldn&apos;t load Today</Text>
+          <Text style={s.cardBody}>
+            Your data is safe. Retry the connection.
+          </Text>
+          <Pressable
+            style={s.button}
+            onPress={() => {
+              profileQuery.refetch();
+              todayQuery.refetch();
+            }}
+          >
+            <Text style={s.buttonText}>Retry</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
     return (
-      <View style={s.card}>
-        <Text style={s.cardTitle}>Your plan</Text>
-        <View style={s.statRow}>
-          <Text style={s.statLabel}>Goal</Text>
-          <Text style={s.statValue}>
-            {profile ? GOAL_LABELS[profile.goal] ?? profile.goal : "—"}
-          </Text>
+      <View style={s.stack}>
+        <View style={[s.card, s.nextCard]}>
+          <Text style={s.overline}>NEXT</Text>
+          <Text style={s.nextTitle}>{today.nextAction.title}</Text>
+          <Text style={s.cardBody}>{today.nextAction.detail}</Text>
+          {today.nextAction.kind === "weigh_in" ? weightEditor : null}
         </View>
-        <View style={s.statRow}>
-          <Text style={s.statLabel}>Start weight</Text>
-          <Text style={s.statValue}>
-            {profile?.startWeightKg != null
-              ? `${profile.startWeightKg} kg`
-              : "—"}
-          </Text>
+
+        {today.weightEntry ? (
+          <View style={s.card}>
+            <Text style={s.successLabel}>WEIGH-IN COMPLETE</Text>
+            <View style={s.savedWeightRow}>
+              <Text style={s.savedWeight}>
+                {displayWeight(today.weightEntry.weightKg, units)}
+              </Text>
+              <Text style={s.savedUnit}>{unitLabel}</Text>
+            </View>
+            {editingWeight ? (
+              weightEditor
+            ) : (
+              <Pressable
+                style={s.secondaryButton}
+                onPress={() => setEditingWeight(true)}
+              >
+                <Text style={s.secondaryButtonText}>
+                  Update today&apos;s weigh-in
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        ) : null}
+
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Your plan</Text>
+          <View style={s.statRow}>
+            <Text style={s.statLabel}>Goal</Text>
+            <Text style={s.statValue}>
+              {profile ? (GOAL_LABELS[profile.goal] ?? profile.goal) : "—"}
+            </Text>
+          </View>
+          <View style={s.statRow}>
+            <Text style={s.statLabel}>Start weight</Text>
+            <Text style={s.statValue}>
+              {profile?.startWeightKg != null
+                ? `${displayWeight(profile.startWeightKg, units)} ${unitLabel}`
+                : "—"}
+            </Text>
+          </View>
+          <View style={s.statRow}>
+            <Text style={s.statLabel}>Goal weight</Text>
+            <Text style={s.statValue}>
+              {profile?.goalWeightKg != null
+                ? `${displayWeight(profile.goalWeightKg, units)} ${unitLabel}`
+                : "—"}
+            </Text>
+          </View>
+          <Pressable
+            style={s.secondaryButton}
+            onPress={() => router.push("/onboarding")}
+          >
+            <Text style={s.secondaryButtonText}>Edit plan</Text>
+          </Pressable>
         </View>
-        <View style={s.statRow}>
-          <Text style={s.statLabel}>Goal weight</Text>
-          <Text style={s.statValue}>
-            {profile?.goalWeightKg != null
-              ? `${profile.goalWeightKg} kg`
-              : "—"}
-          </Text>
-        </View>
-        <Pressable
-          style={({ pressed }) => [
-            s.secondaryButton,
-            pressed && s.buttonPressed,
-          ]}
-          onPress={() => router.push("/onboarding")}
-        >
-          <Text style={s.secondaryButtonText}>Edit plan</Text>
-        </Pressable>
       </View>
     );
   };
@@ -150,6 +304,7 @@ export default function TodayScreen() {
         s.container,
         { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 32 },
       ]}
+      keyboardShouldPersistTaps="handled"
     >
       <Text style={s.greeting}>{greeting()}</Text>
       <Text style={s.name}>
@@ -158,10 +313,7 @@ export default function TodayScreen() {
 
       {renderContent()}
 
-      <Pressable
-        style={({ pressed }) => [s.signOut, pressed && s.buttonPressed]}
-        onPress={() => signOut()}
-      >
+      <Pressable style={s.signOut} onPress={() => signOut()}>
         <Text style={s.signOutText}>Sign out</Text>
       </Pressable>
     </ScrollView>
@@ -185,12 +337,28 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       marginBottom: 24,
     },
     loading: { paddingVertical: 48, alignItems: "center" },
+    stack: { gap: 14 },
     card: {
       backgroundColor: c.card,
       borderColor: c.border,
       borderWidth: 1,
       borderRadius: c.radius,
       padding: 20,
+    },
+    nextCard: { borderColor: c.primary, borderWidth: 1.5 },
+    overline: {
+      color: c.primary,
+      fontFamily: "Inter_700Bold",
+      fontSize: 12,
+      letterSpacing: 1.6,
+      marginBottom: 8,
+    },
+    nextTitle: {
+      color: c.cardForeground,
+      fontFamily: "Inter_700Bold",
+      fontSize: 24,
+      lineHeight: 30,
+      marginBottom: 10,
     },
     cardTitle: {
       color: c.cardForeground,
@@ -203,7 +371,76 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontFamily: "Inter_400Regular",
       fontSize: 15,
       lineHeight: 22,
-      marginBottom: 20,
+      marginBottom: 18,
+    },
+    weightEditor: { marginTop: 2 },
+    inputLabel: {
+      color: c.foreground,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 14,
+      marginBottom: 8,
+    },
+    weightRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+    weightInput: {
+      flex: 1,
+      backgroundColor: c.input,
+      borderColor: c.border,
+      borderWidth: 1,
+      borderRadius: c.radius,
+      color: c.foreground,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 24,
+      paddingHorizontal: 16,
+      paddingVertical: 13,
+    },
+    unitLabel: {
+      color: c.mutedForeground,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 16,
+      width: 28,
+    },
+    error: {
+      color: c.destructive,
+      fontFamily: "Inter_500Medium",
+      fontSize: 13,
+      marginTop: 8,
+    },
+    button: {
+      backgroundColor: c.primary,
+      borderRadius: c.radius,
+      alignItems: "center",
+      paddingVertical: 15,
+      marginTop: 14,
+    },
+    buttonDisabled: { opacity: 0.55 },
+    buttonPressed: { opacity: 0.85 },
+    buttonText: {
+      color: c.primaryForeground,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 16,
+    },
+    cancelButton: { alignItems: "center", paddingVertical: 12 },
+    successLabel: {
+      color: c.success,
+      fontFamily: "Inter_700Bold",
+      fontSize: 12,
+      letterSpacing: 1.2,
+    },
+    savedWeightRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      marginTop: 8,
+    },
+    savedWeight: {
+      color: c.foreground,
+      fontFamily: "Inter_700Bold",
+      fontSize: 36,
+    },
+    savedUnit: {
+      color: c.mutedForeground,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 16,
+      marginLeft: 6,
     },
     statRow: {
       flexDirection: "row",
@@ -223,20 +460,11 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontFamily: "Inter_600SemiBold",
       fontSize: 15,
     },
-    button: {
-      backgroundColor: c.primary,
-      borderRadius: c.radius,
+    secondaryButton: {
       alignItems: "center",
-      paddingVertical: 15,
-      marginTop: 4,
+      paddingVertical: 14,
+      marginTop: 8,
     },
-    buttonPressed: { opacity: 0.85 },
-    buttonText: {
-      color: c.primaryForeground,
-      fontFamily: "Inter_600SemiBold",
-      fontSize: 16,
-    },
-    secondaryButton: { alignItems: "center", paddingVertical: 14, marginTop: 8 },
     secondaryButtonText: {
       color: c.primary,
       fontFamily: "Inter_600SemiBold",

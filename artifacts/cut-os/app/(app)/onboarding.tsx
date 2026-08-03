@@ -4,7 +4,6 @@ import {
   getGetMyProfileQueryKey,
   useGetMe,
   useGetMyProfile,
-  useUpdateMe,
   useUpsertMyProfile,
   type Profile,
 } from "@workspace/api-client-react";
@@ -158,7 +157,6 @@ function OnboardingForm({
   const s = makeStyles(c);
 
   const upsertProfile = useUpsertMyProfile();
-  const updateMe = useUpdateMe();
 
   const [form, setForm] = React.useState<ProfileFormState>(initial);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -168,7 +166,7 @@ function OnboardingForm({
     value: ProfileFormState[K],
   ) => setForm((prev) => ({ ...prev, [key]: value }));
 
-  const busy = upsertProfile.isPending || updateMe.isPending;
+  const busy = upsertProfile.isPending;
 
   const handleSave = async () => {
     setSubmitError(null);
@@ -176,7 +174,6 @@ function OnboardingForm({
       await upsertProfile.mutateAsync({
         data: formStateToProfileInput(form, existing),
       });
-      await updateMe.mutateAsync({ data: { onboardingComplete: true } });
       await qc.invalidateQueries({ queryKey: getGetMyProfileQueryKey() });
       await qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
       router.replace("/today");
@@ -400,7 +397,11 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontFamily: "Inter_600SemiBold",
       fontSize: 16,
     },
-    secondaryButton: { alignItems: "center", paddingVertical: 14, marginTop: 8 },
+    secondaryButton: {
+      alignItems: "center",
+      paddingVertical: 14,
+      marginTop: 8,
+    },
     secondaryButtonText: {
       color: c.mutedForeground,
       fontFamily: "Inter_500Medium",

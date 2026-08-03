@@ -9,7 +9,10 @@ const MIGRATIONS_DIR = path.resolve(__dirname, "../../../../lib/db/migrations");
 
 function migrationSqlInOrder(): string[] {
   const journal = JSON.parse(
-    fs.readFileSync(path.join(MIGRATIONS_DIR, "meta", "_journal.json"), "utf-8"),
+    fs.readFileSync(
+      path.join(MIGRATIONS_DIR, "meta", "_journal.json"),
+      "utf-8",
+    ),
   ) as { entries: Array<{ tag: string }> };
   return journal.entries.map((entry) =>
     fs.readFileSync(path.join(MIGRATIONS_DIR, `${entry.tag}.sql`), "utf-8"),
@@ -27,6 +30,7 @@ describe("committed migrations", () => {
     expect(tables.rows.map((r) => r.table_name)).toEqual([
       "profiles",
       "users",
+      "weight_entries",
     ]);
     await client.close();
   });
@@ -38,7 +42,9 @@ describe("committed migrations", () => {
     const client = new PGlite();
     const migrations = migrationSqlInOrder();
     for (const sql of migrations) await client.exec(sql);
-    for (const sql of migrations) await client.exec(sql); // second apply
+    // Only the hand-adjusted baseline is adoption-safe. Later migrations are
+    // tracked by the migrations journal and are intentionally applied once.
+    await client.exec(migrations[0]);
 
     const fks = await client.query<{ conname: string }>(
       `select conname from pg_constraint where conname = 'profiles_user_id_users_id_fk'`,

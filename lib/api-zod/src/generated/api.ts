@@ -125,3 +125,79 @@ export const UpsertMyProfileResponse = zod.object({
 })
 
 
+/**
+ * @summary Get the current user's Today state
+ */
+export const getTodayResponseDayKeyRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const getTodayResponseWeightEntryOneRecordedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const GetTodayResponse = zod.object({
+  "dayKey": zod.string().regex(getTodayResponseDayKeyRegExp),
+  "nextAction": zod.object({
+  "kind": zod.enum(['complete_onboarding', 'weigh_in', 'first_meal']),
+  "title": zod.string(),
+  "detail": zod.string()
+}),
+  "weightEntry": zod.union([zod.object({
+  "id": zod.uuid(),
+  "userId": zod.uuid(),
+  "recordedOn": zod.string().regex(getTodayResponseWeightEntryOneRecordedOnRegExp),
+  "weightKg": zod.number(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),zod.null()])
+})
+
+
+/**
+ * @summary List the current user's recent weigh-ins
+ */
+export const listMyWeightEntriesQueryLimitDefault = 14;
+export const listMyWeightEntriesQueryLimitMax = 90;
+
+
+
+export const ListMyWeightEntriesQueryParams = zod.object({
+  "limit": zod.coerce.number().min(1).max(listMyWeightEntriesQueryLimitMax).default(listMyWeightEntriesQueryLimitDefault)
+})
+
+export const listMyWeightEntriesResponseRecordedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const ListMyWeightEntriesResponseItem = zod.object({
+  "id": zod.uuid(),
+  "userId": zod.uuid(),
+  "recordedOn": zod.string().regex(listMyWeightEntriesResponseRecordedOnRegExp),
+  "weightKg": zod.number(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListMyWeightEntriesResponse = zod.array(ListMyWeightEntriesResponseItem)
+
+
+/**
+ * @summary Create or replace today's weigh-in
+ */
+export const upsertTodayWeightBodyWeightKgMin = 20;
+export const upsertTodayWeightBodyWeightKgMax = 500;
+
+
+
+export const UpsertTodayWeightBody = zod.object({
+  "weightKg": zod.number().min(upsertTodayWeightBodyWeightKgMin).max(upsertTodayWeightBodyWeightKgMax)
+})
+
+export const upsertTodayWeightResponseRecordedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const UpsertTodayWeightResponse = zod.object({
+  "id": zod.uuid(),
+  "userId": zod.uuid(),
+  "recordedOn": zod.string().regex(upsertTodayWeightResponseRecordedOnRegExp),
+  "weightKg": zod.number(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+

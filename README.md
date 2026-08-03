@@ -5,15 +5,15 @@ The adaptive cut operating system for people who lift. Native mobile app
 
 ## What's here
 
-| Path | What it is |
-| --- | --- |
-| `artifacts/cut-os` | The Expo mobile app (SDK 54, expo-router, Clerk auth) |
-| `artifacts/api-server` | Express 5 API (Clerk-verified, Drizzle ORM) |
-| `lib/api-spec` | OpenAPI contract → Orval codegen |
-| `lib/api-client-react` | Generated typed react-query client |
-| `lib/api-zod` | Generated Zod validators (server-side) |
-| `lib/db` | Drizzle schema + committed migrations |
-| `artifacts/mockup-sandbox` | Replit design-preview tooling (not the product) |
+| Path                       | What it is                                            |
+| -------------------------- | ----------------------------------------------------- |
+| `artifacts/cut-os`         | The Expo mobile app (SDK 54, expo-router, Clerk auth) |
+| `artifacts/api-server`     | Express 5 API (Clerk-verified, Drizzle ORM)           |
+| `lib/api-spec`             | OpenAPI contract → Orval codegen                      |
+| `lib/api-client-react`     | Generated typed react-query client                    |
+| `lib/api-zod`              | Generated Zod validators (server-side)                |
+| `lib/db`                   | Drizzle schema + committed migrations                 |
+| `artifacts/mockup-sandbox` | Replit design-preview tooling (not the product)       |
 
 ## Run it
 
@@ -29,12 +29,12 @@ pnpm --filter @workspace/cut-os run dev
 
 ### Environment variables
 
-| Var | Used by | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | api-server, lib/db | Postgres connection |
-| `CLERK_PUBLISHABLE_KEY` | api-server, cut-os dev script | Clerk client key |
-| `CLERK_SECRET_KEY` | api-server | Clerk server key / FAPI proxy |
-| `PORT` | api-server | Listen port (Replit-provided) |
+| Var                     | Used by                       | Purpose                       |
+| ----------------------- | ----------------------------- | ----------------------------- |
+| `DATABASE_URL`          | api-server, lib/db            | Postgres connection           |
+| `CLERK_PUBLISHABLE_KEY` | api-server, cut-os dev script | Clerk client key              |
+| `CLERK_SECRET_KEY`      | api-server                    | Clerk server key / FAPI proxy |
+| `PORT`                  | api-server                    | Listen port (Replit-provided) |
 
 ## Tests & checks
 
@@ -59,6 +59,8 @@ database from the committed migrations, so drift fails tests.
 
 - `ARCHITECTURE.md` — auth decision, data flow, source-of-truth rules
 - `QA_REPORT.md` — what has actually been verified, and where
+- `WORK_STATUS.md` — current continuation state and next implementation slice
+- `APP_STORE_READINESS.md` — focused v1 scope and release gates
 - `PHASE_0_CLAUDE_AUDIT.md` — post-Phase-0 architecture audit findings
 - `replit.md` — operational quick reference
 - Product spec + change order: `attached_assets/`

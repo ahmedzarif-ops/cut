@@ -1,5 +1,7 @@
 import { defineConfig } from "vitest/config";
 
+// Native ESM avoids a TypeScript config-loader dependency before the test
+// suite starts. The application and tests remain TypeScript.
 export default defineConfig({
   test: {
     environment: "node",

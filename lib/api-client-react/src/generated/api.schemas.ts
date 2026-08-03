@@ -5,6 +5,46 @@
  * CUT OS API specification
  * OpenAPI spec version: 0.1.0
  */
+export type NextActionKind = typeof NextActionKind[keyof typeof NextActionKind];
+
+
+export const NextActionKind = {
+  complete_onboarding: 'complete_onboarding',
+  weigh_in: 'weigh_in',
+  first_meal: 'first_meal',
+} as const;
+
+export interface NextAction {
+  kind: NextActionKind;
+  title: string;
+  detail: string;
+}
+
+export interface WeightEntry {
+  id: string;
+  userId: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  recordedOn: string;
+  weightKg: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WeightEntryInput {
+  /**
+     * @minimum 20
+     * @maximum 500
+     */
+  weightKg: number;
+}
+
+export interface TodayState {
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  dayKey: string;
+  nextAction: NextAction;
+  weightEntry: WeightEntry | null;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -185,4 +225,12 @@ export interface ProfileInput {
   activityLevel?: ProfileInputActivityLevel;
   trainingExperience?: ProfileInputTrainingExperience;
 }
+
+export type ListMyWeightEntriesParams = {
+/**
+ * @minimum 1
+ * @maximum 90
+ */
+limit?: number;
+};
 

@@ -3,7 +3,21 @@
 All **deterministic product rules** live in `lib/domain` (`@workspace/domain`):
 pure, I/O-free functions with an injected clock/timezone. Examples today:
 `localDayKey`/`todayKey` (user-local calendar day for daily rollups) and
-`estimateOneRepMax`.
+`estimateOneRepMax`. The first live Today rule is `selectNextAction`, which
+advances from onboarding to the daily weigh-in and then to the first balanced
+meal. Weight conversion also lives here so the database stays metric while the
+client can honor the user's display units.
+
+## Daily weigh-in invariant
+
+- One row per `users.id` + user-local `recorded_on` day.
+- The server derives the day from the validated IANA timezone; the client does
+  not choose the canonical day.
+- A repeated save updates the existing row and returns the same ID.
+- All history queries scope by the authenticated internal user ID.
+- Weight is stored in kilograms; pounds are presentation only.
+- Today's Next Action is recalculated from authoritative server state after a
+  successful save.
 
 The seam, top to bottom:
 
@@ -85,6 +99,7 @@ while touching auth, `db`, or the Express app.
   vars) or multi-domain Clerk flows fall back to the single env key.
 
 **Deferred (not built here):**
+
 - Email refresh via a Clerk `user.updated` webhook or a Clerk token
   template — today `email` is captured only at first provisioning
   (`requireAuth` reads it off the initial session claims) and never

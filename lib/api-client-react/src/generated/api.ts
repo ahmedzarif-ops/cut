@@ -22,14 +22,18 @@ import type {
 import type {
   Error,
   HealthStatus,
+  ListMyWeightEntriesParams,
   Profile,
   ProfileInput,
+  TodayState,
   User,
-  UserUpdate
+  UserUpdate,
+  WeightEntry,
+  WeightEntryInput
 } from './api.schemas';
 
-import { customFetch } from '../custom-fetch';
-import type { ErrorType , BodyType } from '../custom-fetch';
+import { customFetch } from '../custom-fetch.mutator';
+import type { ErrorType , BodyType } from '../custom-fetch.mutator';
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -428,5 +432,237 @@ export const useUpsertMyProfile = <TError = ErrorType<Error>,
         TContext
       > => {
       return useMutation(getUpsertMyProfileMutationOptions(options));
+    }
+
+export const getGetTodayUrl = () => {
+
+
+
+
+  return `/api/me/today`
+}
+
+/**
+ * @summary Get the current user's Today state
+ */
+export const getToday = async ( options?: RequestInit): Promise<TodayState> => {
+
+  return customFetch<TodayState>(getGetTodayUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTodayQueryKey = () => {
+    return [
+    `/api/me/today`
+    ] as const;
+    }
+
+
+export const getGetTodayQueryOptions = <TData = Awaited<ReturnType<typeof getToday>>, TError = ErrorType<Error>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTodayQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getToday>>> = ({ signal }) => getToday({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getToday>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTodayQueryResult = NonNullable<Awaited<ReturnType<typeof getToday>>>
+export type GetTodayQueryError = ErrorType<Error>
+
+
+/**
+ * @summary Get the current user's Today state
+ */
+
+export function useGetToday<TData = Awaited<ReturnType<typeof getToday>>, TError = ErrorType<Error>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTodayQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListMyWeightEntriesUrl = (params?: ListMyWeightEntriesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/me/weight-entries?${stringifiedParams}` : `/api/me/weight-entries`
+}
+
+/**
+ * @summary List the current user's recent weigh-ins
+ */
+export const listMyWeightEntries = async (params?: ListMyWeightEntriesParams, options?: RequestInit): Promise<WeightEntry[]> => {
+
+  return customFetch<WeightEntry[]>(getListMyWeightEntriesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyWeightEntriesQueryKey = (params?: ListMyWeightEntriesParams,) => {
+    return [
+    `/api/me/weight-entries`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListMyWeightEntriesQueryOptions = <TData = Awaited<ReturnType<typeof listMyWeightEntries>>, TError = ErrorType<Error>>(params?: ListMyWeightEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyWeightEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyWeightEntriesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyWeightEntries>>> = ({ signal }) => listMyWeightEntries(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyWeightEntries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyWeightEntriesQueryResult = NonNullable<Awaited<ReturnType<typeof listMyWeightEntries>>>
+export type ListMyWeightEntriesQueryError = ErrorType<Error>
+
+
+/**
+ * @summary List the current user's recent weigh-ins
+ */
+
+export function useListMyWeightEntries<TData = Awaited<ReturnType<typeof listMyWeightEntries>>, TError = ErrorType<Error>>(
+ params?: ListMyWeightEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyWeightEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyWeightEntriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpsertTodayWeightUrl = () => {
+
+
+
+
+  return `/api/me/weight-entries/today`
+}
+
+/**
+ * @summary Create or replace today's weigh-in
+ */
+export const upsertTodayWeight = async (weightEntryInput: WeightEntryInput, options?: RequestInit): Promise<WeightEntry> => {
+
+  return customFetch<WeightEntry>(getUpsertTodayWeightUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(weightEntryInput)
+  }
+);}
+
+
+
+
+
+export const getUpsertTodayWeightMutationOptions = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertTodayWeight>>, TError,{data: BodyType<WeightEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof upsertTodayWeight>>, TError,{data: BodyType<WeightEntryInput>}, TContext> => {
+
+const mutationKey = ['upsertTodayWeight'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof upsertTodayWeight>>, {data: BodyType<WeightEntryInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  upsertTodayWeight(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpsertTodayWeightMutationResult = NonNullable<Awaited<ReturnType<typeof upsertTodayWeight>>>
+    export type UpsertTodayWeightMutationBody = BodyType<WeightEntryInput>
+    export type UpsertTodayWeightMutationError = ErrorType<Error>
+
+    /**
+ * @summary Create or replace today's weigh-in
+ */
+export const useUpsertTodayWeight = <TError = ErrorType<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertTodayWeight>>, TError,{data: BodyType<WeightEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof upsertTodayWeight>>,
+        TError,
+        {data: BodyType<WeightEntryInput>},
+        TContext
+      > => {
+      return useMutation(getUpsertTodayWeightMutationOptions(options));
     }
 
