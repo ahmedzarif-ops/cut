@@ -64,7 +64,7 @@ describe("createShutdownHandler", () => {
 
     await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(0));
     expect(logger.error).toHaveBeenCalledWith(
-      { err: expect.any(Error) },
+      { errorCode: "server_close_failed" },
       "Error during server close",
     );
     // The close error must not skip the pool teardown.
@@ -90,7 +90,7 @@ describe("createShutdownHandler", () => {
     await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(1));
     expect(exit).toHaveBeenCalledTimes(1);
     expect(logger.error).toHaveBeenCalledWith(
-      { err: poolErr },
+      { errorCode: "db_pool_close_failed" },
       "Error closing DB pool",
     );
   });

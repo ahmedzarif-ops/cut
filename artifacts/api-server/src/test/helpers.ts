@@ -23,6 +23,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import { setDb, type Db } from "@workspace/db";
 import * as schema from "@workspace/db/schema";
 import router from "../routes";
+import healthRouter from "../routes/health";
 import { errorHandler } from "../middlewares/errorHandler";
 import {
   REVENUECAT_ENTITLEMENT_ID,
@@ -154,6 +155,7 @@ export async function createTestContext(
   const app = express();
   app.use(pinoHttp({ logger: pino({ level: "silent" }) }));
   app.use(express.json());
+  app.use("/api", healthRouter);
   app.use(testClerkAuth());
   app.use("/api", router);
   app.use(errorHandler);

@@ -32,15 +32,23 @@ export function createShutdownHandler(
     (timer as { unref?: () => void }).unref?.();
 
     deps.server.close((err?: Error) => {
-      if (err) deps.logger.error({ err }, "Error during server close");
+      if (err) {
+        deps.logger.error(
+          { errorCode: "server_close_failed" },
+          "Error during server close",
+        );
+      }
       deps
         .closePool()
         .then(() => {
           clearTimeout(timer);
           deps.exit(0);
         })
-        .catch((poolErr: unknown) => {
-          deps.logger.error({ err: poolErr }, "Error closing DB pool");
+        .catch(() => {
+          deps.logger.error(
+            { errorCode: "db_pool_close_failed" },
+            "Error closing DB pool",
+          );
           clearTimeout(timer);
           deps.exit(1);
         });

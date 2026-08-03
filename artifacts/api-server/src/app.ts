@@ -12,11 +12,9 @@ import {
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
 import helmet from "helmet";
-import {
-  createApiLimiter,
-  createClerkLimiter,
-} from "./middlewares/rateLimit";
+import { createApiLimiter, createClerkLimiter } from "./middlewares/rateLimit";
 import { buildAllowedHosts, buildAllowedOrigins } from "./lib/allowedHosts";
+import healthRouter from "./routes/health";
 
 const app: Express = express();
 
@@ -78,6 +76,10 @@ app.use(
 // FAPI bytes are untouched. CSP disabled (JSON API); helmet's defaults still
 // emit nosniff, HSTS, X-Frame-Options, and no-referrer.
 app.use("/api", helmet({ contentSecurityPolicy: false }));
+
+// Platform liveness/readiness probes must remain independent of Clerk and the
+// public API limiter. Readiness performs its own database revision checks.
+app.use("/api", healthRouter);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

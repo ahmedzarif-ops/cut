@@ -115,8 +115,14 @@ Reconcile this list against the production archive, backend, Clerk, RevenueCat
 when added, hosting/database logs and backups, crash reporting, analytics,
 support tools, and every embedded SDK:
 
-- Contact Info — email address, linked to the user, App Functionality.
+- Contact Info — display name and email address, linked to the user, App
+  Functionality; display name also supports the user-directed personalized
+  greeting.
 - Identifiers — account/user identifier, linked to the user, App Functionality.
+  Client IP/network metadata is processed for abuse prevention, request
+  delivery, and Clerk authentication; the final hosting and Clerk retention and
+  linkage determine whether the live questionnaire maps it to Identifiers,
+  Diagnostics, or Other Data Types. It is not used for tracking.
 - Health & Fitness — profile, body, weight, nutrition, and workout data that
   actually ships; linked to the user; App Functionality and any truthful Product
   Personalization use.

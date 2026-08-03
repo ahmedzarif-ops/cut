@@ -175,6 +175,34 @@ describe("CUT OS public server", () => {
     expect(asset.body).toBe("static asset");
   });
 
+  it("reports ready only after the static build and templates initialize", async () => {
+    const staticRoot = await createStaticRoot();
+    const { port } = await listen({ staticRoot, appName: "CUT OS" });
+
+    const status = await request(port, "/status");
+    expect(status.status).toBe(200);
+    expect(status.headers["cache-control"]).toBe("no-store");
+    expect(status.headers["content-type"]).toContain("application/json");
+    expect(status.headers["x-content-type-options"]).toBe("nosniff");
+    expect(JSON.parse(status.body)).toEqual({ status: "ok" });
+
+    const head = await request(port, "/status", { method: "HEAD" });
+    expect(head.status).toBe(200);
+    expect(head.body).toBe("");
+
+    expect(() =>
+      createAppServer({
+        staticRoot: join(staticRoot, "missing-static-build"),
+      }),
+    ).toThrow(/Static build root is not a readable directory/u);
+    expect(() =>
+      createAppServer({
+        staticRoot,
+        templateRoot: join(staticRoot, "missing-templates"),
+      }),
+    ).toThrow();
+  });
+
   it.each(["/privacy", "/terms/", "/support"])(
     "serves %s as a zero-JavaScript blocked draft",
     async (pathname) => {

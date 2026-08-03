@@ -51,8 +51,10 @@ function createDefaultDb(): Db {
   // on the pool. Without a listener Node treats it as an unhandled 'error' and
   // crashes the process. Log the signal (no health values — privacy rule) and
   // let the pool evict the dead client.
-  pool.on("error", (err) => {
-    console.error("[db] idle pool client error", err);
+  pool.on("error", () => {
+    console.error("[db] idle pool client error", {
+      errorCode: "db_idle_client_error",
+    });
   });
   _pool = pool;
   return drizzle(pool, { schema });

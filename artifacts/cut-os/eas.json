@@ -1,20 +1,28 @@
 {
   "cli": {
-    "version": ">= 16.0.0",
+    "version": "21.4.0",
     "appVersionSource": "remote",
     "requireCommit": true
   },
   "build": {
+    "base": {
+      "node": "24.14.0",
+      "pnpm": "10.34.5",
+      "corepack": true
+    },
     "development": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
       "environment": "development"
     },
     "preview": {
+      "extends": "base",
       "distribution": "internal",
       "environment": "preview"
     },
     "production": {
+      "extends": "base",
       "autoIncrement": true,
       "environment": "production",
       "ios": {

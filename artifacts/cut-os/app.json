@@ -12,7 +12,7 @@
     "splash": {
       "image": "./assets/images/icon-v2.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#07111F"
     },
     "ios": {
       "supportsTablet": false,
@@ -117,7 +117,12 @@
     "web": {
       "favicon": "./assets/images/icon-v2.png"
     },
-    "plugins": ["expo-router", "expo-font", "expo-web-browser"],
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-web-browser",
+      ["@clerk/expo", { "appleSignIn": false }]
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

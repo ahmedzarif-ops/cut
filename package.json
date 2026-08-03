@@ -2,6 +2,10 @@
   "name": "workspace",
   "version": "0.0.0",
   "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": "24.x",
+    "pnpm": "10.34.5"
+  },
   "license": "MIT",
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
@@ -17,6 +21,7 @@
     "@replit/connectors-sdk": "^0.4.1"
   },
   "devDependencies": {
+    "eas-cli": "21.4.0",
     "prettier": "^3.9.4",
     "typescript": "~5.9.3"
   }

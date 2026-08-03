@@ -143,6 +143,24 @@ function loadTemplates(templateRoot, publicationStatus, appName, basePath) {
   return templates;
 }
 
+function assertStaticRoot(staticRoot) {
+  let stat;
+  try {
+    stat = fs.statSync(staticRoot);
+    fs.accessSync(staticRoot, fs.constants.R_OK);
+  } catch {
+    throw new Error(
+      `Static build root is not a readable directory: ${staticRoot}`,
+    );
+  }
+
+  if (!stat.isDirectory()) {
+    throw new Error(
+      `Static build root is not a readable directory: ${staticRoot}`,
+    );
+  }
+}
+
 function serveManifest(platform, res, staticRoot, requestMethod) {
   const manifestPath = path.join(staticRoot, platform, "manifest.json");
 
@@ -217,6 +235,15 @@ function serveLegalCss(req, res, css) {
   res.end(req.method === "HEAD" ? undefined : css);
 }
 
+function serveStatus(req, res) {
+  res.writeHead(200, {
+    "cache-control": "no-store",
+    "content-type": "application/json; charset=utf-8",
+    "x-content-type-options": "nosniff",
+  });
+  res.end(req.method === "HEAD" ? undefined : JSON.stringify({ status: "ok" }));
+}
+
 function serveStaticFile(req, urlPath, res, staticRoot) {
   const safePath = path.normalize(urlPath).replace(/^(\.\.(\/|\\|$))+/u, "");
   const filePath = path.join(staticRoot, safePath);
@@ -252,6 +279,7 @@ function createRequestHandler(options = {}) {
     process.env.LEGAL_SITE_PUBLICATION_STATUS ??
     "draft";
   validatePublicationStatus(publicationStatus);
+  assertStaticRoot(staticRoot);
   const templates = loadTemplates(
     templateRoot,
     publicationStatus,
@@ -287,6 +315,10 @@ function createRequestHandler(options = {}) {
     }
     const routePath =
       pathname.length > 1 ? pathname.replace(/\/+$/u, "") : pathname;
+
+    if (routePath === "/status") {
+      return serveStatus(req, res);
+    }
 
     if (routePath === "/" || routePath === "/manifest") {
       const platform = req.headers["expo-platform"];

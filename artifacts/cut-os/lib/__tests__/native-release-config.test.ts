@@ -12,8 +12,24 @@ const easConfig = JSON.parse(
 const packageConfig = JSON.parse(
   readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
 );
+const workspaceConfig = JSON.parse(
+  readFileSync(resolve(process.cwd(), "..", "..", "package.json"), "utf8"),
+);
+const nodeVersion = readFileSync(
+  resolve(process.cwd(), "..", "..", ".node-version"),
+  "utf8",
+).trim();
 
 describe("native release configuration", () => {
+  it("locks the App Store identity, device support, and icon", () => {
+    expect(appConfig.expo.name).toBe("CUT OS");
+    expect(appConfig.expo.version).toBe("1.0.0");
+    expect(appConfig.expo.orientation).toBe("portrait");
+    expect(appConfig.expo.icon).toBe("./assets/images/icon-v2.png");
+    expect(appConfig.expo.ios.bundleIdentifier).toBe("com.zarifahmed.cut");
+    expect(appConfig.expo.ios.supportsTablet).toBe(false);
+  });
+
   it("links the app to the existing CUT EAS project", () => {
     expect(appConfig.expo.owner).toBe("zee-digipit");
     expect(appConfig.expo.slug).toBe("cut");
@@ -37,6 +53,21 @@ describe("native release configuration", () => {
           Array.isArray(plugin) && plugin[0] === "expo-router",
       ),
     ).toBe(false);
+  });
+
+  it("applies Clerk's native build requirements without advertising unused Apple sign-in", () => {
+    expect(appConfig.expo.plugins).toContainEqual([
+      "@clerk/expo",
+      { appleSignIn: false },
+    ]);
+  });
+
+  it("uses the dark launch background behind the full-canvas app icon", () => {
+    expect(appConfig.expo.splash).toMatchObject({
+      image: "./assets/images/icon-v2.png",
+      resizeMode: "contain",
+      backgroundColor: "#07111F",
+    });
   });
 
   it("declares first-party collection as linked and never tracked", () => {
@@ -138,6 +169,7 @@ describe("native release configuration", () => {
   });
 
   it("binds every profile to its EAS environment and pins production Xcode", () => {
+    expect(easConfig.cli.appVersionSource).toBe("remote");
     expect(easConfig.cli.requireCommit).toBe(true);
     for (const profile of ["development", "preview", "production"] as const) {
       expect(easConfig.build[profile].environment).toBe(profile);
@@ -145,6 +177,27 @@ describe("native release configuration", () => {
     expect(easConfig.build.production.ios.image).toBe(
       "macos-sequoia-15.6-xcode-26.0",
     );
+    expect(easConfig.build.production.autoIncrement).toBe(true);
+  });
+
+  it("pins one EAS, Node, pnpm, and Corepack toolchain across build profiles", () => {
+    expect(easConfig.cli.version).toBe("21.4.0");
+    expect(easConfig.build.base).toEqual({
+      node: "24.14.0",
+      pnpm: "10.34.5",
+      corepack: true,
+    });
+    for (const profile of ["development", "preview", "production"] as const) {
+      expect(easConfig.build[profile].extends).toBe("base");
+    }
+
+    expect(nodeVersion).toBe("24.14.0");
+    expect(workspaceConfig.packageManager).toBe("pnpm@10.34.5");
+    expect(workspaceConfig.engines).toEqual({
+      node: "24.x",
+      pnpm: "10.34.5",
+    });
+    expect(workspaceConfig.devDependencies["eas-cli"]).toBe("21.4.0");
   });
 
   it("disables arbitrary network loads and declares exempt-only encryption", () => {
@@ -155,9 +208,12 @@ describe("native release configuration", () => {
     expect(appConfig.expo.ios.config.usesNonExemptEncryption).toBe(false);
   });
 
-  it("runs release validation before EAS installs dependencies", () => {
+  it("runs the profile-aware release gate before EAS installs dependencies", () => {
     expect(packageConfig.scripts["eas-build-pre-install"]).toBe(
-      "node scripts/validate-release-config.mjs",
+      "node scripts/eas-build-pre-install.mjs",
+    );
+    expect(packageConfig.scripts["validate:legal-site:live"]).toBe(
+      "node server/verify-live-legal-site.mjs",
     );
   });
 });

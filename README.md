@@ -42,22 +42,22 @@ real App Store purchases.
 
 ### Environment variables
 
-| Var                                  | Used by                       | Purpose                                                    |
-| ------------------------------------ | ----------------------------- | ---------------------------------------------------------- |
-| `DATABASE_URL`                       | api-server, lib/db            | Postgres connection                                        |
-| `CLERK_PUBLISHABLE_KEY`              | api-server, cut-os dev script | Clerk client key for local/Replit development              |
-| `CLERK_SECRET_KEY`                   | api-server                    | Clerk server key, FAPI proxy, and backend account deletion |
-| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`  | cut-os EAS release            | Clerk publishable key embedded in the submitted app        |
-| `EXPO_PUBLIC_DOMAIN`                 | cut-os EAS release            | HTTPS API hostname embedded in the submitted app           |
-| `EXPO_PUBLIC_CLERK_PROXY_URL`        | cut-os EAS release            | Exact same-origin `https://<domain>/api/__clerk` route     |
-| `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` | cut-os EAS release            | RevenueCat public Apple SDK key embedded in the app        |
-| `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | cut-os EAS release            | Public Privacy Policy opened from sign-up and Settings     |
-| `EXPO_PUBLIC_TERMS_URL`              | cut-os EAS release            | Public Terms of Use opened from sign-up and Settings       |
-| `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Public support page opened from Settings                   |
-| `PORT`                               | api-server                    | Listen port (Replit-provided)                              |
-| `REVENUECAT_SECRET_API_KEY`          | api-server                    | Server-only RevenueCat REST API v2 secret                  |
-| `REVENUECAT_PROJECT_ID`              | api-server                    | RevenueCat REST API v2 project resource ID (`proj...`)     |
-| `REVENUECAT_ENTITLEMENT_REST_ID`     | api-server                    | RevenueCat v2 entitlement resource ID (`entl...`)          |
+| Var                                  | Used by                       | Purpose                                                        |
+| ------------------------------------ | ----------------------------- | -------------------------------------------------------------- |
+| `DATABASE_URL`                       | api-server, lib/db            | Postgres connection; production requires `sslmode=verify-full` |
+| `CLERK_PUBLISHABLE_KEY`              | api-server, cut-os dev script | Clerk client key for local/Replit development                  |
+| `CLERK_SECRET_KEY`                   | api-server                    | Clerk server key, FAPI proxy, and backend account deletion     |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`  | cut-os EAS release            | Clerk publishable key embedded in the submitted app            |
+| `EXPO_PUBLIC_DOMAIN`                 | cut-os EAS release            | HTTPS API hostname embedded in the submitted app               |
+| `EXPO_PUBLIC_CLERK_PROXY_URL`        | cut-os EAS release            | Exact same-origin `https://<domain>/api/__clerk` route         |
+| `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` | cut-os EAS release            | RevenueCat public Apple SDK key embedded in the app            |
+| `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | cut-os EAS release            | Public Privacy Policy opened from sign-up and Settings         |
+| `EXPO_PUBLIC_TERMS_URL`              | cut-os EAS release            | Public Terms of Use opened from sign-up and Settings           |
+| `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Public support page opened from Settings                       |
+| `PORT`                               | api-server                    | Listen port (Replit-provided)                                  |
+| `REVENUECAT_SECRET_API_KEY`          | api-server                    | Server-only RevenueCat REST API v2 secret                      |
+| `REVENUECAT_PROJECT_ID`              | api-server                    | RevenueCat REST API v2 project resource ID (`proj...`)         |
+| `REVENUECAT_ENTITLEMENT_REST_ID`     | api-server                    | RevenueCat v2 entitlement resource ID (`entl...`)              |
 
 All seven `EXPO_PUBLIC_*` release values must be configured and verified in the
 production EAS environment before TestFlight. They are public app
@@ -85,6 +85,9 @@ pnpm --filter @workspace/db run push      # rapid dev only
 
 Migrations are the production path; the api-server test suite constructs its
 database from the committed migrations, so drift fails tests.
+Production API startup also applies these files under a bounded PostgreSQL
+advisory lock and refuses to listen unless the database's latest recorded
+migration timestamp and hash exactly match the server build.
 
 ## Docs
 

@@ -33,11 +33,16 @@ From `artifacts/cut-os`:
 ```sh
 pnpm run validate:legal-site
 pnpm run validate:legal-site:release
+pnpm run validate:legal-site:live
 ```
 
 The first command verifies the draft safety markers and zero-JavaScript
 boundary. It should pass. The release command should fail until all owner and
-counsel work is complete.
+counsel work is complete. The live command uses the configured production URLs
+and fails unless the exact approved pages and stylesheet are publicly served.
+The EAS pre-install hook always validates release configuration; production also
+runs both approved-source and live-site checks, while development and preview do
+not require approved legal pages.
 
 The server itself repeats the important release checks. If
 `LEGAL_SITE_PUBLICATION_STATUS=approved` is set while a placeholder, draft

@@ -31,7 +31,10 @@ The app fails closed when its API hostname or Clerk publishable key is missing
 or malformed. Production EAS builds also stop before dependency installation if
 any required public resource is missing, the Clerk key is not live, the API is
 not public, or the required Clerk proxy is not the exact same-origin server
-route.
+route. The production pre-install hook also requires the locally approved legal
+source and the live same-origin Privacy, Terms, Support, and stylesheet bytes to
+match the recorded counsel-approval hashes. Development and preview builds skip
+those two approved-publication checks.
 
 ## One-time owner setup
 
@@ -63,8 +66,8 @@ production EAS environment without copying values into a committed file:
 pnpm run codegen:check
 pnpm run typecheck
 pnpm run test
-eas env:exec --environment production \
-  'pnpm --filter @workspace/cut-os run validate:release-config'
+pnpm exec eas env:exec --environment production \
+  'pnpm --filter @workspace/cut-os run eas-build-pre-install'
 ```
 
 The validator reports variable names and reasons only; it never prints values.
@@ -75,12 +78,23 @@ Stop if any gate fails.
 From `artifacts/cut-os`:
 
 ```sh
-eas build --platform ios --profile production
+pnpm exec eas build --platform ios --profile production
 ```
 
-The production profile is pinned to the Expo SDK 54-compatible Xcode 26 image.
+The repository pins Node 24.14.0, pnpm 10.34.5, and EAS CLI 21.4.0; every EAS
+profile inherits those versions. The production profile is also pinned to the
+Expo SDK 54-compatible Xcode 26 image.
 Confirm the build log names `macos-sequoia-15.6-xcode-26.0`, shows the release
-configuration preflight passing, and contains no secret values.
+configuration and legal-publication preflights passing, and contains no secret
+values.
+
+The configured `@clerk/expo` native plugin raises the application deployment
+target to iOS 17, which the linked Clerk iOS SDK requires. Confirm the generated
+archive reports a minimum iOS version of 17.0; do not remove the plugin or lower
+the target without replacing or downgrading the native Clerk dependency and
+re-running the complete native release gate. CUT OS does not currently offer
+Sign in with Apple, so the plugin is intentionally configured with
+`appleSignIn: false` and must not add that entitlement.
 
 Before external TestFlight or App Review:
 

@@ -39,7 +39,9 @@ social features. Those are backlog, not submission truth.
       date inputs are rejected and legacy stored values have a prelaunch purge
       migration.
 - [x] EAS development/preview/production profiles, production environment
-      preflight, Xcode 26 image pin, and baseline app privacy manifest.
+      preflight, Xcode 26 image pin, baseline app privacy manifest, and the
+      Clerk native config plugin that explicitly raises the iOS deployment
+      target to Clerk's required iOS 17 while leaving unused Apple sign-in off.
 - [x] RevenueCat client purchase/restore/listener/principal-isolation flow and
       truthful subscription screen pass automated verification.
 - [x] RevenueCat REST v2 server reconciliation independently protects every
@@ -48,10 +50,15 @@ social features. Those are backlog, not submission truth.
 - [x] RevenueCat customer deletion is part of the durable account-deletion
       provider workflow, including validated absence, queued-delete polling,
       multi-worker leases, stale-worker fencing, and cache invalidation.
+- [x] Production API startup validates live credentials/TLS, applies bundled
+      migrations under a bounded advisory lock, verifies the exact schema
+      revision before binding, and exposes a single-flight guarded readiness
+      probe while keeping liveness dependency-free.
 - [x] Full repository typecheck/tests, pinned frozen install, Expo dependency
       check, Expo Doctor, migration drift check, and production-style iOS
-      export pass after subscription integration. The clean-commit gate is
-      completed by the release checkpoint commit.
+      export pass after subscription integration. The complete dependency
+      graph has no known high/critical advisories, and CI enforces that gate.
+      The clean-commit gate is completed by the release checkpoint commit.
 
 ## Submission blockers
 

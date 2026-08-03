@@ -332,33 +332,20 @@ export class ResponseParseError extends Error {
   readonly name = "ResponseParseError";
   readonly status: number;
   readonly statusText: string;
-  readonly headers: Headers;
-  readonly response: Response;
   readonly method: string;
-  readonly url: string;
-  readonly rawBody: string;
-  readonly cause: unknown;
 
   constructor(
     response: Response,
-    rawBody: string,
-    cause: unknown,
     requestInfo: { method: string; url: string },
   ) {
     super(
-      `Failed to parse response from ${requestInfo.method} ${response.url || requestInfo.url} ` +
-        `(${response.status} ${response.statusText}) as JSON`,
+      `Failed to parse the server response (${response.status} ${response.statusText}) as JSON`,
     );
     Object.setPrototypeOf(this, new.target.prototype);
 
     this.status = response.status;
     this.statusText = response.statusText;
-    this.headers = response.headers;
-    this.response = response;
     this.method = requestInfo.method;
-    this.url = response.url || requestInfo.url;
-    this.rawBody = rawBody;
-    this.cause = cause;
   }
 }
 
@@ -375,8 +362,12 @@ async function parseJsonBody(
 
   try {
     return JSON.parse(normalized);
-  } catch (cause) {
-    throw new ResponseParseError(response, raw, cause, requestInfo);
+  } catch {
+    // Do not retain the raw body, Response, headers, URL, or parser cause on
+    // the thrown object. A malformed success payload can contain weight,
+    // nutrition, or account data and may otherwise survive in query/error
+    // state or a future crash report.
+    throw new ResponseParseError(response, requestInfo);
   }
 }
 

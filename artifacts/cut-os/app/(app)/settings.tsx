@@ -31,8 +31,11 @@ import {
 } from "@/lib/account-deletion";
 import { useAccountDeletionGate } from "@/lib/account-deletion-gate";
 import { useAdultEligibilityGate } from "@/lib/adult-eligibility-gate";
-import { pendingMealCreateKey } from "@/lib/meal-create-intent";
 import { useOptionalSubscriptionGate } from "@/lib/subscription-gate";
+import {
+  finishTerminalDeletionDeviceCleanup,
+  isTerminalDeletionServerCompleted,
+} from "@/lib/terminal-deletion-device-cleanup";
 
 const APP_STORE_SUBSCRIPTIONS_URL =
   "https://apps.apple.com/account/subscriptions";
@@ -60,6 +63,8 @@ export default function SettingsScreen() {
     "restore" | "manage" | null
   >(null);
   const [operationBusy, setOperationBusy] = React.useState(false);
+  const [locallyCompletedOwnerUserId, setLocallyCompletedOwnerUserId] =
+    React.useState<string | null>(null);
   const operationLock = React.useRef(false);
   const mounted = React.useRef(true);
   const currentPrincipal = React.useRef({ userId, sessionId });
@@ -72,7 +77,13 @@ export default function SettingsScreen() {
     [],
   );
 
-  const recoveryRequired = marker !== null || serverStatus !== "none";
+  const terminalServerCompleted = isTerminalDeletionServerCompleted(
+    serverStatus,
+    locallyCompletedOwnerUserId,
+    userId,
+  );
+  const recoveryRequired =
+    marker !== null || serverStatus !== "none" || terminalServerCompleted;
   const ageRequirementRequired =
     !recoveryRequired && adultEligibility.isRequired;
   const busy = operationBusy || subscriptionBusy !== null;
@@ -147,31 +158,49 @@ export default function SettingsScreen() {
     ownerUserId: string,
     ownerSessionId: string,
   ) => {
-    // Server completion is authoritative. Remove every owner-scoped recovery
-    // record before signout; cleanup failure must not resurrect deleted server
-    // data or leave a different principal's session gated.
-    await Promise.all([
-      SecureStore.deleteItemAsync(accountDeletionKey(ownerUserId)).catch(
-        () => undefined,
-      ),
-      SecureStore.deleteItemAsync(pendingMealCreateKey(ownerUserId)).catch(
-        () => undefined,
-      ),
-    ]);
+    let cleanup;
+    try {
+      cleanup = await finishTerminalDeletionDeviceCleanup({
+        ownerClerkUserId: ownerUserId,
+        deleteSecureItem: SecureStore.deleteItemAsync,
+        setSecureItem: SecureStore.setItemAsync,
+        onRecordsCleared: async () => {
+          assertCurrentPrincipal(ownerUserId, ownerSessionId);
+          qc.clear();
+          setMarker(null);
+          void Haptics.notificationAsync(
+            Haptics.NotificationFeedbackType.Success,
+          ).catch(() => undefined);
 
-    qc.clear();
-    void Haptics.notificationAsync(
-      Haptics.NotificationFeedbackType.Success,
-    ).catch(() => undefined);
-    if (mounted.current && isCurrentPrincipal(ownerUserId, ownerSessionId)) {
-      setMarker(null);
+          // Scope signout to the session that authorized deletion. If another
+          // principal became active mid-flight, their session is left untouched.
+          await signOut({ sessionId: ownerSessionId });
+          if (
+            mounted.current &&
+            isCurrentPrincipal(ownerUserId, ownerSessionId)
+          ) {
+            router.replace("/sign-in");
+          }
+        },
+      });
+    } catch (error) {
+      if (error instanceof PrincipalChangedError) return;
+      if (mounted.current && isCurrentPrincipal(ownerUserId, ownerSessionId)) {
+        setActionError(
+          "Your CUT OS account is deleted and its private recovery data was cleared, but this device could not finish signing out. Retry device cleanup.",
+        );
+      }
+      return;
     }
 
-    // Scope signout to the session that authorized deletion. If another
-    // principal became active mid-flight, their session is left untouched.
-    await signOut({ sessionId: ownerSessionId }).catch(() => undefined);
-    if (mounted.current && isCurrentPrincipal(ownerUserId, ownerSessionId)) {
-      router.replace("/sign-in");
+    if (
+      !cleanup.ok &&
+      mounted.current &&
+      isCurrentPrincipal(ownerUserId, ownerSessionId)
+    ) {
+      setActionError(
+        "Your CUT OS account is deleted on the server, but private recovery data could not be cleared from this device. Stay signed in and retry device cleanup.",
+      );
     }
   };
 
@@ -220,7 +249,7 @@ export default function SettingsScreen() {
     setActionError(null);
 
     try {
-      if (serverStatus === "completed") {
+      if (terminalServerCompleted) {
         await finishTerminalDeletion(ownerUserId, ownerSessionId);
         return;
       }
@@ -274,6 +303,12 @@ export default function SettingsScreen() {
         await deleteMeRequest({
           headers: { Authorization: `Bearer ${token}` },
         });
+        if (
+          mounted.current &&
+          isCurrentPrincipal(ownerUserId, ownerSessionId)
+        ) {
+          setLocallyCompletedOwnerUserId(ownerUserId);
+        }
       } catch (error) {
         if (error instanceof PrincipalChangedError) return;
         const status = apiStatus(error);
@@ -317,26 +352,23 @@ export default function SettingsScreen() {
     );
   };
 
-  const deletionTitle =
-    serverStatus === "completed"
-      ? "Deletion complete"
-      : recoveryRequired
-        ? "Deletion needs attention"
-        : "Delete account";
-  const deletionBody =
-    serverStatus === "completed"
-      ? "Your account deletion is complete. Finish signing out on this device."
-      : serverStatus === "pending"
-        ? "The server is securely finishing your deletion. Retry to confirm completion."
-        : marker
-          ? "A deletion request is saved on this device. Retry safely to send or confirm it."
-          : "Permanently delete your CUT OS login, profile, weigh-ins, and meal history.";
-  const deletionButton =
-    serverStatus === "completed"
-      ? "Finish and sign out"
-      : recoveryRequired
-        ? "Retry account deletion"
-        : "Delete account";
+  const deletionTitle = terminalServerCompleted
+    ? "Account deleted"
+    : recoveryRequired
+      ? "Deletion needs attention"
+      : "Delete account";
+  const deletionBody = terminalServerCompleted
+    ? "Your CUT OS account is deleted on the server. Clear private recovery data from this device before signing out."
+    : serverStatus === "pending"
+      ? "The server is securely finishing your deletion. Retry to confirm completion."
+      : marker
+        ? "A deletion request is saved on this device. Retry safely to send or confirm it."
+        : "Permanently delete your CUT OS login, profile, weigh-ins, and meal history.";
+  const deletionButton = terminalServerCompleted
+    ? "Finish device cleanup"
+    : recoveryRequired
+      ? "Retry account deletion"
+      : "Delete account";
 
   return (
     <ScrollView
@@ -522,7 +554,11 @@ export default function SettingsScreen() {
           {busy ? (
             <View style={s.busyRow}>
               <ActivityIndicator color={c.destructiveForeground} />
-              <Text style={s.deleteButtonText}>Deleting securely…</Text>
+              <Text style={s.deleteButtonText}>
+                {terminalServerCompleted
+                  ? "Cleaning this device…"
+                  : "Deleting securely…"}
+              </Text>
             </View>
           ) : (
             <Text style={s.deleteButtonText}>{deletionButton}</Text>
