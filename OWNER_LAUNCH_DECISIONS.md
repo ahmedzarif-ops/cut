@@ -69,16 +69,16 @@ a legal entity, D-U-N-S Number, organization-domain email and website, and a
 person with authority to bind the organization.
 
 Do not form an entity, repeat the Apple payment, or accept agreements
-automatically. Paid Apps currently shows an August 4, 2026 through August 3,
-2027 effective period with status `Processing`; banking is `Processing`, and
-U.S. Form W-9 is `Active` after its August 4 submission. The tax gate is
-confirmed; completion of the agreement and bank processing remains owner
-controlled.
+automatically. Paid Apps now shows an August 4, 2026 through August 3, 2027
+effective period with status `Active`; banking and the U.S. Form W-9 are also
+`Active`. The Apple commerce gates are confirmed. Seller-path and counsel
+decisions remain owner controlled.
 
 ## Decision 2 — first real subscription
 
 **Status:** The exact launch offer, App Store Connect subscription, U.S. price,
-availability, and credential-free Review Notes are saved; RevenueCat mapping,
+availability, and credential-free Review Notes are saved; the exact RevenueCat
+Apple app/product/entitlement/default-offering mapping is verified. The
 first-version attachment, review screenshot, exact-build QA, submission, and
 release remain pending.
 
@@ -122,23 +122,28 @@ name and description are reviewed.
 
 ## Decision 3 — RevenueCat production authorization
 
-**Status:** Least-privilege server preparation complete; owner ratification,
-exact Apple connection, restore approval, and production evidence remain
+**Status:** Least-privilege server preparation and the exact production Apple
+mapping are complete; the separate App Store Connect API credential, owner
+ratification, restore approval, and exact-build production evidence remain
 pending.
 
 **Verified August 4, 2026:** A secret RevenueCat API v2 key named
 `CUT Replit Production` was created with Charts set to no access, Customer info
-set to Read & write, and Project configuration set to Read only. Its value was
-transferred directly into Replit without being printed or committed. The exact
-CUT project, entitlement, and default offering REST IDs are also configured in
-Replit. The existing Test Store product remains test-only and cannot collect
-the approved live subscription revenue.
+set to Read & write, and Project configuration set to Read only. Its value is
+not present in the current Replit project and cannot be recovered from this
+repository. Replit now holds the exact CUT project, Apple app, entitlement, and
+default offering REST IDs as non-secret configurations. The existing Test Store
+product remains test-only and cannot collect the approved live subscription
+revenue.
 
 This key preparation is a completed technical fact, not owner approval. The
-real Apple app and subscription now exist. The RevenueCat Apple app, authorized
-Apple credential upload, product mapping, Apple public iOS SDK key, and
-`REVENUECAT_APP_REST_ID` remain pending. This preparation does not approve or
-claim the production Apple connection, restore policy, or key ratification.
+RevenueCat Apple app is now bound to `com.zarifahmed.cut`; the exact
+`com.zarifahmed.cut.pro.monthly` product is attached to `CUT_OS_PRO` and the
+default `$rc_monthly` package. RevenueCat reports the uploaded In-App Purchase
+subscription key as valid and provisioned the public iOS SDK key. The separate
+App Store Connect API credential remains pending and must not be conflated with
+that subscription key. These technical facts do not approve or claim the
+restore policy or full Decision 3 ratification.
 
 The production project must also use RevenueCat's **Transfer to new App User
 ID** restore behavior. That setting now has controlled non-secret dashboard
@@ -156,6 +161,10 @@ Exact approval phrase:
 > Ratify the prepared least-privilege RevenueCat server key and approve the CUT
 > App Store connection and RevenueCat Transfer to new App User ID restore
 > behavior after the exact Apple app and subscription identifiers are verified.
+
+If that server key cannot be recovered through the owner's secured credential
+store, creating or rotating a replacement is a new credential action and needs
+fresh owner approval before Replit can receive it.
 
 Never paste a secret key into source code, the mobile app, screenshots, support
 messages, or this decision record.
@@ -331,6 +340,12 @@ point. Publishing must still wait until the exact Apple/RevenueCat/database
 production preflight can pass. Immediately before publish, verify that Replit's
 **Set up your production database with your current development data** control
 remains off because the UI can reset it after a reload.
+
+**Direct recheck 2026-08-04T23:54:24Z:** The live draft still shows one public
+North America Reserved VM at 0.5 vCPU / 2 GiB for $15/month, critical-
+vulnerability blocking on, and the development-data-copy control off after the
+provider UI reset was corrected. No publish action or recurring charge was
+started.
 
 ## Decision 8 — Clerk production plan and billing
 

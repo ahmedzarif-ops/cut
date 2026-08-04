@@ -392,9 +392,9 @@
         "verifiedAtUtc": null,
         "evidenceReference": null
       },
-      "productionMappingStatus": "pending",
+      "productionMappingStatus": "verified",
       "appStoreConnectApiKeyStatus": "pending",
-      "subscriptionKeyStatus": "pending",
+      "subscriptionKeyStatus": "verified",
       "customerReadWritePermissionStatus": "confirmed_in_revenuecat",
       "apiV2Key": {
         "label": "CUT Replit Production",
@@ -414,8 +414,8 @@
         "nativeQaTestedAtUtc": null,
         "nativeQaEvidenceReference": null
       },
-      "verifiedAtUtc": null,
-      "evidenceReference": null
+      "verifiedAtUtc": "2026-08-04T23:39:31Z",
+      "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat"
     },
     "exactBuildEvidence": {
       "appVersion": "1.0.0",

@@ -171,8 +171,8 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 1,340 tests** (release operations 300, App Store
-  artifacts 60, domain 33, database 4, mobile 437, API 506).
+- `pnpm run test`: **PASS — 1,341 tests** (release operations 300, App Store
+  artifacts 60, domain 33, database 4, mobile 438, API 506).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
@@ -262,48 +262,53 @@ launch gate.
   while first-version attachment, review screenshot, price-effective timestamp,
   exact build, submission, and release remain pending. Apple's commerce page
   shows the Paid Apps Agreement effective August 4, 2026 through August 3, 2027
-  with status `Processing`, banking `Processing`, and U.S. Form W-9 `Active`
-  after its August 4 submission. The tax gate is confirmed; agreement, banking,
-  and legal gates remain open.
+  with status `Active`, banking `Active`, and U.S. Form W-9 `Active` after its
+  August 4 submission. Apple commerce readiness is confirmed; legal gates
+  remain open.
 - TestFlight feedback email and the exact beta description are saved. Internal
   group `CUT OS Internal QA` exists with automatic distribution off, 0 testers,
   and 0 builds; no build assignment or QA is claimed.
 - Replit hosting is owner-approved up to **$20/month before tax** and phone
   verification is complete. The clean workspace matches the exact source
   checkpoint. The one-machine $15 Reserved VM remains stopped and unpublished,
-  so its recurring server charge has not started; production database creation
-  and its exact TLS mode remain unverified until publish.
+  so its recurring server charge has not started. The provider UI reset the
+  development-data-copy option on and it was directly returned to off at
+  `2026-08-04T23:54:24Z`; production database creation and its exact TLS mode
+  remain unverified until publish.
 - Clerk production exists on the free Hobby plan for
   `cut-ahmedzarif1.replit.app`; live keys were transferred directly into Replit
   without entering source. Proxy health and exact production security/iOS
   settings remain post-deployment and signed-device evidence gates.
-- Replit contains a least-privilege RevenueCat API v2 key plus the exact CUT
-  project, entitlement, and offering REST IDs. The Apple product now exists,
-  but the RevenueCat Apple app, credential upload, app REST ID, and exact
-  product mapping remain absent, so production continues to fail closed. The
-  dashboard restore behavior is evidence-bound as Transfer to new App User ID;
-  owner authorization and exact-build native restore QA remain pending.
+- Replit contains the exact CUT project, Apple app, entitlement, and offering
+  REST IDs as non-secret configurations. Its RevenueCat server API secret is
+  absent. Production Apple app `app8feee0dfba` is created for
+  `com.zarifahmed.cut`, its subscription key is valid, and product
+  `prod66e8dc0083` maps to `CUT_OS_PRO` and `default/$rc_monthly`. A public iOS
+  SDK key is provisioned without recording its value. The server API secret and
+  separate App Store Connect API key remain pending, so production continues to
+  fail closed. The dashboard restore behavior is evidence-bound as Transfer to
+  new App User ID; owner ratification and exact-build native restore QA remain
+  pending.
 
 ## Highest-priority next slice
 
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
-1. With explicit owner authorization at the credential action, upload the
-   secured Apple In-App Purchase signing credential to RevenueCat, create the
-   Apple app mapping, bind the exact product/entitlement/offering, and record
-   the public iOS SDK key and app REST ID only in their approved destinations.
-2. Wait for Apple's Paid Apps Agreement and bank-account `Processing` states to
-   complete, while retaining the confirmed active W-9 evidence. Have
-   qualified counsel review the selected individual-seller/Texas-sole-proprietor
-   path before submission.
+1. Connect and directly verify RevenueCat's separate App Store Connect API key,
+   then place the production app REST ID and provisioned public iOS SDK key only
+   in their approved server/EAS destinations.
+2. Retain the confirmed active Paid Apps Agreement, banking, and W-9 evidence.
+   Have qualified counsel review the selected individual-seller/Texas-sole-
+   proprietor path before submission.
 3. Publish owner/counsel-approved Privacy, Terms, and Support pages and supply
    their final HTTPS destinations to the production EAS environment.
 4. Complete the still-provisional age-rating and regulated-medical-device
    answers only after legal, qualified health/nutrition, and final-binary review.
 5. Link the intended Apple and Expo/EAS projects, configure the validated
    production values, and upload a build into the already configured internal
-   TestFlight group after the RevenueCat mapping and public legal URLs are ready.
+   TestFlight group after the remaining RevenueCat API-key configuration and
+   public legal URLs are ready.
 6. Complete native-device acceptance for `adult-18-v1`, including deep links,
    offline/relaunch, shared-device account switching, stale-cache clearing,
    deletion in every eligibility state, legal/support links, and VoiceOver.
@@ -339,10 +344,9 @@ seller path and intended Texas sole proprietorship require eventual public
 seller-display verification and counsel review because Guideline 5.1.1(ix) directs
 sensitive-data apps toward legal-entity submission. Preliminary name screening
 also found a crowded same-market `CUT` field, so qualified `CUT OS` clearance
-remains open. Apple's Paid Apps Agreement and banking remain `Processing`; the
-U.S. Form W-9 is active and evidence-confirmed. Apple signing and RevenueCat Apple
-credentials, RevenueCat Apple-connection/restore authorization and prepared-key
-ratification, EAS/Apple authentication, TestFlight build/QA,
+remains open. Apple's Paid Apps Agreement, banking, and U.S. Form W-9 are active
+and evidence-confirmed. Apple signing, RevenueCat's separate App Store Connect
+API key, RevenueCat owner ratification, EAS/Apple authentication, TestFlight build/QA,
 distribution, App Store questionnaire/privacy publication, Submit for Review,
 and public release remain owner-controlled gates. The owner has confirmed an
 18+ launch position; the final rating questionnaire and legal policy still need

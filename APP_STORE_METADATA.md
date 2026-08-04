@@ -108,7 +108,7 @@ invent a value.
 | App distribution method    | Public; saved                                 | Controlled evidence retained; signed-build and submission gates remain open.                                                    |
 | Apple silicon Mac          | Do Not Make Available; saved                  | Keep disabled until platform-specific QA is approved.                                                                           |
 | Apple Vision Pro           | Do Not Make Available; saved                  | Keep disabled until platform-specific QA is approved.                                                                           |
-| App download price         | Free download; saved                          | Paid Apps and banking remain processing; active W-9 evidence is saved; subscription release remains open.                       |
+| App download price         | Free download; saved                          | Paid Apps Agreement, banking, and W-9 are active; subscription release remains open.                                            |
 | License agreement          | Unresolved                                    | Owner/counsel chooses Apple's standard EULA or an approved custom EULA.                                                         |
 | App tax category           | Unresolved                                    | Owner/counsel/finance confirms the value; the subscription inherits it unless an explicit override is approved.                 |
 | DSA trader status          | Unresolved                                    | Owner/counsel confirms trader or non-trader; Apple still requires the declaration when distribution excludes the EU.            |
@@ -160,11 +160,9 @@ canonical version/build/Git/EAS/App Store Connect identity and must match the
 TestFlight record.
 
 `commercialAndLegal.appleCommerceReadiness` records Apple Developer Program
-membership, Account Holder access, and the active U.S. W-9 as confirmed. The
-Paid Apps Agreement and banking remain pending while Apple shows them as
-`Processing`. All five must be confirmed for release. Never store account,
-agreement, tax, or banking credentials or values
-in this record.
+membership, Account Holder access, the Paid Apps Agreement, the U.S. W-9, and
+banking as confirmed active. Never store account, agreement, tax, or banking
+credentials or values in this record.
 
 ## Age rating and questionnaire
 
@@ -348,6 +346,13 @@ controlled evidence; no defensible effective timestamp is recorded and
 public/effective revenue status remains pending. The subscription tax category
 inherits the required app-level category unless an explicit override is
 approved.
+RevenueCat production Apple app `app8feee0dfba` is created for
+`com.zarifahmed.cut`; its Apple subscription key is valid. Product
+`prod66e8dc0083` maps to `CUT_OS_PRO` and the `default` offering's
+`$rc_monthly` package. A public iOS SDK key is provisioned, but its value is not
+recorded here. The separate App Store Connect API key, owner ratification,
+native purchase/restore QA, exact build, submission, and release remain
+pending.
 Release requires App Store Connect confirmation, attachment to version 1.0,
 retention of the already saved credential-free Review Notes, an uploaded review
 screenshot whose SHA-256 equals approved shot 07, verified RevenueCat mapping,

@@ -12,8 +12,8 @@
   become historical as soon as the handoff itself changes.
 - The agent must not self-merge the pull request; the owner merges or explicitly
   overrides that repository rule.
-- The current repository checkpoint passes **1,340 automated tests** (300 release
-  operations, 60 App Store, 33 domain, 4 database, 437 mobile, and 506 API), all
+- The current repository checkpoint passes **1,341 automated tests** (300 release
+  operations, 60 App Store, 33 domain, 4 database, 438 mobile, and 506 API), all
   TypeScript checks, generated-code drift, working App Store validation,
   changed-file formatting, `.replit`/migration parsing and drift checks, Expo
   dependency health, and the clean zero-JavaScript Replit production-build
@@ -24,8 +24,9 @@
   serves a CSP-locked zero-JavaScript CUT page, blocks Expo preview artifacts at
   origin and mounted paths, and has a bounded live verifier.
 - RevenueCat startup now proves bounded customer-read access; customer
-  write/delete permission, both Apple keys, restore behavior, and post-upload
-  exact-build restore QA remain evidence gates. Database/migration and shutdown
+  write/delete behavior, the separate App Store Connect API key, owner
+  ratification, and post-upload exact-build restore QA remain evidence gates.
+  Database/migration and shutdown
   timeout relationships are cross-tested, and Metro gets only reviewed public
   values with dotenv loading forced off.
 - Malformed StoreKit display data now withholds purchase, and the settled
@@ -80,26 +81,31 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   plus $5 of new usage-based headroom. Phone verification is complete. No
   Replit production deployment or $15 recurring server charge has started; the
   one-machine draft remains stopped and unpublished, with development-data copy
-  off and subject to an immediate pre-publish recheck.
+  directly rechecked off at `2026-08-04T23:54:24Z` and subject to another
+  immediate pre-publish recheck.
 - Apple Developer Program membership is active as an Individual account with
   Zarif Ahmed as Account Holder. App Store Connect access and the CUT OS app
   record are active. Paid Apps shows an August 4, 2026 through August 3, 2027
-  effective period with status `Processing`; banking is `Processing` and U.S.
-  Form W-9 is `Active` after its August 4 submission. The tax gate is confirmed;
-  agreement, banking, legal, exact-build, submission, and release remain open.
+  effective period with status `Active`; banking and U.S. Form W-9 are also
+  `Active`. Apple commerce readiness is confirmed; legal, exact-build,
+  submission, and release gates remain open.
   Production EAS submission
   routing is pinned to Apple app ID `6798020879` and validated against
   subscription group ID `22286645` and subscription ID `6798020349`.
-- RevenueCat now has a least-privilege server API v2 key plus the exact CUT
-  project, entitlement, and offering REST IDs configured directly in Replit.
+- RevenueCat has a prepared least-privilege server API v2 key. Replit now has
+  the exact CUT project, Apple app, entitlement, and offering REST IDs as
+  non-secret configurations, but its RevenueCat server API secret is absent.
   The existing Test Store product remains test-only. The owner-approved real
   offer is a free download with `com.zarifahmed.cut.pro.monthly` at $4.99/month,
   no trial, Family Sharing off, United States only initially, and manual
-  release. The real Apple app and subscription now exist. RevenueCat Apple-app
-  creation, the authorized Apple credential upload, public iOS SDK key, app REST
-  ID, and exact product mapping remain pending. **Transfer to new App User ID**
-  is now persisted with controlled non-secret dashboard evidence; owner
-  authorization and exact-build restore-after-deletion QA remain required.
+  release. RevenueCat production Apple app `app8feee0dfba` is created for the
+  exact bundle, its subscription key is valid, and product `prod66e8dc0083`
+  maps to `CUT_OS_PRO` and `default/$rc_monthly`. A public iOS SDK key is
+  provisioned without recording its value. The separate App Store Connect API
+  key, server API secret, and public-iOS-key/EAS wiring remain pending.
+  **Transfer to new App User ID** is persisted with controlled non-secret
+  dashboard evidence; owner ratification and exact-build
+  restore-after-deletion QA remain required.
 - TestFlight group `CUT OS Internal QA` is configured with automatic
   distribution off, the authorized public feedback email, the exact beta
   description, 0 testers, and 0 builds. The subscription's credential-free
@@ -114,12 +120,11 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
    Publishing draft still says Reserved VM after every sync. The cost ceiling is
    approved, but do not publish until the Apple/RevenueCat/database production
    preflight can pass and the development-data copy setting is rechecked off.
-3. Keep the live Apple membership/app/subscription evidence current and wait for
-   the Paid Apps Agreement and bank-account `Processing` states to complete.
-4. With explicit owner authorization at the credential action, upload the
-   secured Apple In-App Purchase credential to RevenueCat, create the Apple app,
-   and bind the exact product, entitlement, offering, public iOS SDK key, and app
-   REST ID without exposing secrets.
+3. Keep the live active Apple membership, Paid Apps, banking, tax, and
+   app/subscription evidence current.
+4. Connect and directly verify RevenueCat's separate App Store Connect API key,
+   then place the app REST ID and provisioned public iOS SDK key only in their
+   approved server/EAS destinations.
 5. Complete Replit production database, Clerk proxy/security, and RevenueCat
    Apple configuration only after their exact prerequisites can pass.
 6. Build the exact signed TestFlight candidate and complete physical-iPhone
@@ -134,8 +139,9 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   `com.zarifahmed.cut.pro.monthly`; runtime fails closed and accepts only one
   $4.99 U.S. `P1M`, no-introductory-offer product mapped to `CUT_OS_PRO`.
   The exact App Store Connect product and U.S. price are saved; first-version
-  attachment, review screenshot, RevenueCat mapping, and exact-build evidence
-  remain pending. Credential-free Review Notes are saved. If the offer changes,
+  attachment, review screenshot, the separate RevenueCat App Store Connect API
+  key, and exact-build evidence remain pending. Credential-free Review Notes are
+  saved. If the offer changes,
   update and reverify the owner decision, source, configuration, and tests before
   any signed build.
 - Local StoreKit/RevenueCat state never grants paid access without the
@@ -156,8 +162,7 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   override, DSA status, copyright holder/year, content-rights declaration, and
   final product-name clearance.
 - Qualified legal/privacy and nutrition/allergen review.
-- Apple agreements, tax/banking, signing/2FA, App Review submission, and manual
-  public release.
+- Apple signing/2FA, App Review submission, and manual public release.
 
 ## PERSISTENT REFERENCE
 

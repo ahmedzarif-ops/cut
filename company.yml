@@ -15,7 +15,7 @@ owner:
 
 offer:
   summary: "A paid App Store subscription for one daily next action, consistent weigh-ins, six curated balanced-meal choices, meal logging, and daily nutrition totals."
-  pricing_notes: "Owner-approved v1: free download; one US-only $4.99/month subscription; no trial; Family Sharing off; manual release. The exact App Store Connect app, subscription, price, and availability records were saved on 2026-08-04; Paid Apps Agreement, tax, banking, RevenueCat mapping, exact-build QA, and submission remain pending."
+  pricing_notes: "Owner-approved v1: free download; one US-only $4.99/month subscription; no trial; Family Sharing off; manual release. The exact App Store Connect app, subscription, price, and availability records are saved; Paid Apps Agreement, tax, and banking are active. RevenueCat production app, subscription key, product-entitlement-offering mapping, and public iOS SDK-key provisioning are complete; its separate App Store Connect API key, owner ratification, exact-build QA, submission, and release remain pending."
   booking_link: ""
 
 icp:

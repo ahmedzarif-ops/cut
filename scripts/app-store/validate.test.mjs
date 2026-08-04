@@ -275,7 +275,23 @@ test("committed working App Store records preserve approved and pending scopes",
   );
   assert.equal(
     submission.subscription.revenueCat.productionMappingStatus,
+    "verified",
+  );
+  assert.equal(
+    submission.subscription.revenueCat.appStoreConnectApiKeyStatus,
     "pending",
+  );
+  assert.equal(
+    submission.subscription.revenueCat.subscriptionKeyStatus,
+    "verified",
+  );
+  assert.equal(
+    submission.subscription.revenueCat.verifiedAtUtc,
+    "2026-08-04T23:39:31Z",
+  );
+  assert.equal(
+    submission.subscription.revenueCat.evidenceReference,
+    "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat",
   );
   assert.equal(submission.subscription.approval.appStoreConnectConfirmed, true);
   assert.equal(submission.subscription.approval.revenueCatVerified, false);
@@ -1358,6 +1374,8 @@ test("verified or ready states cannot omit their supporting evidence", () => {
   submission.subscription.revenueCat.subscriptionKeyStatus = "verified";
   submission.subscription.revenueCat.customerReadWritePermissionStatus =
     "verified";
+  submission.subscription.revenueCat.verifiedAtUtc = null;
+  submission.subscription.revenueCat.evidenceReference = null;
   submission.subscription.revenueCat.ownerAuthorization.status = "confirmed";
   submission.subscription.exactBuildEvidence.storeKitOfferStatus = "verified";
   submission.accessibility.status = "evaluated_for_release";

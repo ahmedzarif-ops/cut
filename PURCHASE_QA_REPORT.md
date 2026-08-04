@@ -21,9 +21,14 @@ any Apple Sandbox or TestFlight item.
 - [ ] The App Store Connect review screenshot upload records shot
       `07-subscription-offer`, its approved SHA-256, upload UTC, and evidence
       reference; the hash matches the actual approved PNG.
-- [ ] RevenueCat Apple app uses the same bundle ID.
-- [ ] Products map to exact entitlement `CUT_OS_PRO` and the current offering.
-- [ ] RevenueCat **Project settings → General → Restore behavior** is directly
+- [x] RevenueCat production Apple app `app8feee0dfba` uses bundle ID
+      `com.zarifahmed.cut`; its Apple subscription key is valid and a public iOS
+      SDK key is provisioned without recording its value here.
+- [x] Product `prod66e8dc0083` maps to exact entitlement `CUT_OS_PRO` and the
+      current `default/$rc_monthly` offering package.
+- [ ] The separate RevenueCat App Store Connect API key is directly verified;
+      owner ratification remains a distinct gate.
+- [x] RevenueCat **Project settings → General → Restore behavior** is directly
       verified as **Transfer to new App User ID** for production; any enabled
       sandbox override uses the same behavior. Record UTC and controlled,
       non-secret dashboard evidence.

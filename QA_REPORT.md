@@ -6,8 +6,8 @@
 
 ## Current launch addendum — August 4, 2026
 
-- **1,340/1,340 automated tests pass:** 300 release operations, 60 App Store, 33
-  domain, 4 database, 437 mobile, and 506 API.
+- **1,341/1,341 automated tests pass:** 300 release operations, 60 App Store, 33
+  domain, 4 database, 438 mobile, and 506 API.
 - Root TypeScript, generated-code drift, working App Store validation,
   changed-file formatting, `.replit` parsing, migration drift, Expo dependency
   health, and a non-secret production-profile Expo bundle rehearsal pass. The
@@ -22,13 +22,16 @@
   check. The least-privilege API v2 key's Customer Information Read & write,
   Project Configuration Read only, Charts no-access permissions now have
   controlled non-secret dashboard evidence. Production write/delete behavior,
-  both Apple credential settings, owner authorization, and exact-build
+  the separate App Store Connect API key, owner ratification, and exact-build
   restore-after-deletion QA remain open gates.
-- A least-privilege RevenueCat API v2 key plus the exact project, entitlement,
-  and offering REST IDs are configured directly in Replit. The real Apple app
-  and subscription exist, but the RevenueCat Apple app, Apple credential
-  upload, Apple product mapping, public iOS SDK key, and app REST ID remain
-  pending; production therefore continues to fail closed.
+- Replit now has the exact RevenueCat project, Apple app, entitlement, and
+  offering REST IDs as non-secret configurations. Its server API secret is
+  absent. Production Apple app `app8feee0dfba` is created for
+  `com.zarifahmed.cut`, its subscription key is valid, and product
+  `prod66e8dc0083` maps to `CUT_OS_PRO` and `default/$rc_monthly`. A public iOS
+  SDK key is provisioned without recording its value. The server API secret,
+  separate App Store Connect API key, owner ratification, and exact-build native
+  QA remain pending, so production continues to fail closed.
 - App Store Connect app ID `6798020879`, subscription group ID `22286645`, and
   subscription ID `6798020349` are evidence-bound in the machine record. The
   factual credential-free subscription Review Notes are saved, but the product
@@ -98,9 +101,9 @@
   Vision Pro opted out. The configured 1024px opaque icon is SHA-256-bound and
   technically inspected by the release validator.
 - Apple's live commerce page now shows the Paid Apps Agreement effective August
-  4, 2026 through August 3, 2027 with status `Processing`, banking `Processing`,
-  and U.S. Form W-9 `Active` after its August 4 submission. The tax-form machine
-  gate is confirmed; agreement and banking remain pending.
+  4, 2026 through August 3, 2027 with status `Active`, banking `Active`, and U.S.
+  Form W-9 `Active` after its August 4 submission. All three Apple commerce
+  readiness gates are confirmed.
 - Light/dark status-bar contrast now follows the active surface from launch
   through the loaded app. The audited onboarding, Today, Settings,
   subscription-management, and recovery controls now expose explicit roles,

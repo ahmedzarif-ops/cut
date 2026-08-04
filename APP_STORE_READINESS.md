@@ -91,11 +91,10 @@ social features. Those are backlog, not submission truth.
       requiring sensitive user information toward a legal entity. An individual
       submission is not documented here as prohibited, but it is a material
       review risk.
-- [ ] Wait for the owner-accepted Paid Apps Agreement and bank account to finish
-      Apple's `Processing` state; the submitted W-9 is already `Active`. These
-      remain sensitive owner-only surfaces. Record only status, UTC, and a
-      non-secret evidence reference—never tax, bank, agreement, or account
-      credentials or values.
+- [x] The owner-accepted Paid Apps Agreement, bank account, and submitted W-9
+      are all confirmed `Active`. Only status, UTC, and a non-secret evidence
+      reference are recorded—never tax, bank, agreement, or account credentials
+      or values.
 - [x] Owner approved the first product's immutable Product ID, `P1M` duration,
       $4.99 U.S. monthly price, and no-introductory-offer decision. Any change
       requires coordinated source, release-record, configuration, and test
@@ -130,11 +129,16 @@ social features. Those are backlog, not submission truth.
       clearly test-only monthly product (`cut_os_pro_monthly_test`, no trial),
       and the current/default offering. Its public test key is scoped only to
       Expo's development environment.
-- [ ] Create/verify the App Store Connect app for `com.zarifahmed.cut`.
-- [ ] Create the first auto-renewable subscription and group, then attach both
-      the product and build to the same first review submission.
-- [ ] Create/verify the RevenueCat iOS app, Apple credentials, product mapping,
-      exact `CUT_OS_PRO` entitlement, and current/default offering.
+- [x] The App Store Connect app is verified for `com.zarifahmed.cut`.
+- [ ] Attach the existing first auto-renewable subscription and exact build to
+      the same first review submission.
+- [x] RevenueCat production Apple app `app8feee0dfba` is verified for
+      `com.zarifahmed.cut`; its Apple subscription key is valid, product
+      `prod66e8dc0083` maps to `CUT_OS_PRO` and `default/$rc_monthly`, and a
+      public iOS SDK key is provisioned without recording its value here.
+- [ ] Connect and directly verify the separate RevenueCat App Store Connect API
+      key. Owner ratification and exact-build native purchase/restore QA remain
+      separate gates.
 - [x] Record the initial-release omission of optional App Store Server
       Notifications. If configured later, use RevenueCat's production URL and
       retain non-secret evidence; Apple permits the sandbox URL to remain empty
@@ -144,8 +148,8 @@ social features. Those are backlog, not submission truth.
 - [ ] Deploy the production API/database/Clerk combination and server-only
       RevenueCat v2 secret plus project, app, entitlement, and current-offering
       resource IDs.
-- [ ] Configure production EAS values for API domain, live Clerk key/proxy,
-      RevenueCat public Apple SDK key, Privacy, Terms, and Support.
+- [ ] Configure production EAS values for API domain, live Clerk key/proxy, the
+      provisioned RevenueCat public Apple SDK key, Privacy, Terms, and Support.
 
 ### Legal, privacy, and content
 
@@ -294,8 +298,9 @@ social features. Those are backlog, not submission truth.
    including Guideline 5.1.1(ix), before submission.
 3. Owner completes financial/store decisions and service credentials.
 4. Publish approved legal/support pages and deploy the production backend.
-5. Configure App Store products, RevenueCat, and EAS. Optional Apple
-   notifications may be added later without blocking the first submission.
+5. Complete the separate RevenueCat App Store Connect API-key connection and
+   remaining server/EAS production values. Optional Apple notifications may be
+   added later without blocking the first submission.
 6. Build a native development client; pass Apple Sandbox purchase QA.
 7. Upload internal TestFlight; pass the critical matrix on real devices.
 8. Finish privacy, nutrition, legal, icon, screenshots, metadata, initial

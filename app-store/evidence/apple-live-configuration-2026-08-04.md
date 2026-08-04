@@ -2,10 +2,11 @@
 
 **Initial verification:** 2026-08-04T21:33:17Z
 
-**Latest live update:** 2026-08-04T23:08:08Z
+**Latest live update:** 2026-08-04T23:49:03Z
 
 **Method:** Direct confirmation in the live Apple Developer and App Store
-Connect interfaces, plus checked-in routing validation.
+Connect interfaces, direct confirmation in the RevenueCat dashboard, plus
+checked-in routing validation.
 
 **Scope:** Non-secret configuration evidence only; this is not submission,
 App Review, or public-release approval.
@@ -113,6 +114,28 @@ submitted or released.
 
 ## RevenueCat
 
+- Project REST ID: `projea0cbd46`.
+- Production Apple app REST ID: `app8feee0dfba`.
+- Production Apple app bundle ID: `com.zarifahmed.cut`.
+- Production Apple product REST ID: `prod66e8dc0083`.
+- The production product identifier is
+  `com.zarifahmed.cut.pro.monthly`, with product type Subscription.
+- The production product is attached to entitlement `CUT_OS_PRO`, whose REST
+  ID is `entl8efd6d2c18`; the entitlement now shows one product.
+- The default offering REST ID is `ofrngeb5cc4a73c`. Its `$rc_monthly`
+  package now includes the production Apple product alongside the isolated Test
+  Store product.
+- The Apple In-App Purchase subscription key was uploaded through the secured
+  file chooser and RevenueCat reports `Valid credentials`.
+- RevenueCat provisioned the production public iOS SDK key. Its value is
+  intentionally not stored in this repository.
+- Replit directly shows the project, Apple app, entitlement, and offering REST
+  IDs as non-secret configurations. A name-only shell check confirms the
+  RevenueCat server API secret is absent; no credential value was printed.
+- The separate App Store Connect API credential remains unconfigured. This is
+  distinct from the valid In-App Purchase subscription key, so automatic
+  product import, price synchronization, and RevenueCat store-status checks
+  remain unavailable.
 - API key label: `CUT Replit Production`.
 - API version: v2.
 - Customer Information permission: Read & write.
@@ -121,19 +144,18 @@ submitted or released.
 - The key value was not opened or viewed during this live verification and is
   not stored in the repository.
 - Project restore behavior is persisted as `Transfer to new App User ID`.
-- The RevenueCat Apple app, Apple product mapping, Apple credentials, and public
-  iOS SDK key remain pending.
+- The exact production Apple app, product, entitlement, and default monthly
+  offering mapping is verified.
 - Owner authorization of the RevenueCat production connection remains pending.
 - No exact-build native purchase or restore QA has been completed.
 
 ## Open gates
 
-- An Apple In-App Purchase signing credential was generated and secured outside
-  the repository. Its contents and storage location are intentionally excluded.
-- RevenueCat still needs the credential, Apple app creation, exact product and
-  entitlement mapping, public iOS SDK key, owner authorization, and controlled
-  exact-build verification. The RevenueCat Apple app REST ID is not yet
-  available.
+- The Apple In-App Purchase subscription credential remains secured outside the
+  repository. Its contents and storage location are intentionally excluded.
+- RevenueCat still needs the separate App Store Connect API credential, owner
+  ratification of the prepared production connection and restore behavior, and
+  controlled exact-build native purchase/restore verification.
 - The first subscription must still be attached to version 1.0.0 with the
   approved review screenshot. Its factual credential-free Review Notes are
   already saved.
