@@ -28,6 +28,7 @@ const DEFAULT_TEMPLATE_ROOT = path.resolve(__dirname, "templates");
 const DEFAULT_PORT = 3000;
 const DEFAULT_SHUTDOWN_TIMEOUT_MS = 10_000;
 const MAX_SHUTDOWN_TIMEOUT_MS = 60_000;
+const FULL_GIT_SHA = /^(?!0{40}$)[0-9a-f]{40}$/u;
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -392,13 +393,30 @@ function serveLegalCss(req, res, css) {
   res.end(req.method === "HEAD" ? undefined : css);
 }
 
-function serveStatus(req, res) {
+function serveStatus(req, res, buildSha) {
   res.writeHead(200, {
     "cache-control": "no-store",
     "content-type": "application/json; charset=utf-8",
     "x-content-type-options": "nosniff",
   });
-  res.end(req.method === "HEAD" ? undefined : JSON.stringify({ status: "ok" }));
+  res.end(
+    req.method === "HEAD"
+      ? undefined
+      : JSON.stringify({
+          status: "ok",
+          ...(buildSha ? { build_sha: buildSha } : {}),
+        }),
+  );
+}
+
+function parseBuildSha(value, required = false) {
+  if (value === undefined && !required) return undefined;
+  if (typeof value !== "string" || !FULL_GIT_SHA.test(value)) {
+    throw new Error(
+      "BUILD_SHA must be an exact non-placeholder lowercase 40-character Git SHA.",
+    );
+  }
+  return value;
 }
 
 function serveStaticFile(req, urlPath, res, staticRoot) {
@@ -441,6 +459,18 @@ function createRequestHandler(options = {}) {
   if (typeof previewMode !== "boolean") {
     throw new Error("previewMode must be a boolean when supplied.");
   }
+  if (
+    options.requireBuildSha !== undefined &&
+    typeof options.requireBuildSha !== "boolean"
+  ) {
+    throw new Error("requireBuildSha must be a boolean when supplied.");
+  }
+  const requireBuildSha =
+    process.env.NODE_ENV === "production" || options.requireBuildSha === true;
+  const buildSha = parseBuildSha(
+    options.buildSha ?? process.env.BUILD_SHA,
+    requireBuildSha,
+  );
   // Expo bundles and manifests exist only for the explicit development preview.
   // The production process serves the source-controlled launch/legal surface
   // and must not depend on a legacy Expo Go static build it will never expose.
@@ -484,7 +514,7 @@ function createRequestHandler(options = {}) {
       pathname.length > 1 ? pathname.replace(/\/+$/u, "") : pathname;
 
     if (routePath === "/status") {
-      return serveStatus(req, res);
+      return serveStatus(req, res, buildSha);
     }
 
     if (previewMode && (routePath === "/" || routePath === "/manifest")) {
@@ -637,6 +667,7 @@ module.exports = {
   createAppServer,
   createRequestHandler,
   normalizeBasePath,
+  parseBuildSha,
   parsePublicAppOrigin,
   parseServerPort,
   parseShutdownTimeoutMs,

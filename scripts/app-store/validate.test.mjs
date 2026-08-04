@@ -120,6 +120,14 @@ test("committed working App Store records preserve approved and pending scopes",
   const { submission } = validationInputs();
   assert.deepEqual(submission.listing.initialTerritories, ["US"]);
   assert.equal(submission.listing.sku, "cut-ios-v1");
+  assert.deepEqual(submission.appleIdentifiers, {
+    appId: "6798020879",
+    subscriptionGroupId: "22286645",
+    subscriptionId: "6798020349",
+    verifiedAtUtc: "2026-08-04T22:13:34Z",
+    evidenceReference:
+      "app-store/evidence/apple-live-configuration-2026-08-04.md#canonical-apple-identifiers",
+  });
   assert.equal(submission.availability.approval.owner, true);
   for (const field of [
     "availability.distributionMethod.decision",
@@ -160,10 +168,32 @@ test("committed working App Store records preserve approved and pending scopes",
       .status,
     "confirmed",
   );
-  assert.equal(
-    submission.commercialAndLegal.appleCommerceReadiness.paidAppsAgreement
-      .status,
-    "pending",
+  assert.deepEqual(
+    submission.commercialAndLegal.appleCommerceReadiness.paidAppsAgreement,
+    {
+      status: "processing",
+      verifiedAtUtc: "2026-08-04T22:28:52Z",
+      evidenceReference:
+        "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account",
+    },
+  );
+  assert.deepEqual(
+    submission.commercialAndLegal.appleCommerceReadiness.taxForms,
+    {
+      status: "confirmed",
+      verifiedAtUtc: "2026-08-04T22:28:52Z",
+      evidenceReference:
+        "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account",
+    },
+  );
+  assert.deepEqual(
+    submission.commercialAndLegal.appleCommerceReadiness.banking,
+    {
+      status: "processing",
+      verifiedAtUtc: "2026-08-04T22:28:52Z",
+      evidenceReference:
+        "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account",
+    },
   );
   assert.equal(submission.commercialAndLegal.appDownloadPrice, "free_download");
   assert.equal(
@@ -192,6 +222,56 @@ test("committed working App Store records preserve approved and pending scopes",
   assert.equal(
     submission.subscription.appStoreConnect.productStatus,
     "confirmed_in_app_store_connect",
+  );
+  assert.equal(
+    submission.subscription.appStoreConnect.reviewNotes.status,
+    "saved_in_app_store_connect",
+  );
+  assert.equal(
+    submission.subscription.appStoreConnect.reviewNotes.appleSubscriptionId,
+    submission.appleIdentifiers.subscriptionId,
+  );
+  assert.equal(
+    submission.subscription.appStoreConnect.reviewNotes.credentialFree,
+    true,
+  );
+  assert.equal(
+    submission.subscription.appStoreConnect.attachedToVersion,
+    false,
+  );
+  assert.equal(
+    submission.subscription.appStoreConnect.reviewScreenshotUpload.status,
+    "pending",
+  );
+  assert.equal(submission.subscription.usPricing.effectiveStatus, "pending");
+  assert.equal(submission.subscription.usPricing.effectiveAtUtc, null);
+  assert.equal(
+    submission.subscription.revenueCat.customerReadWritePermissionStatus,
+    "confirmed_in_revenuecat",
+  );
+  assert.deepEqual(submission.subscription.revenueCat.apiV2Key, {
+    label: "CUT Replit Production",
+    apiVersion: "v2",
+    customerInformationPermission: "read_write",
+    projectConfigurationPermission: "read_only",
+    chartsPermission: "no_access",
+    keyValueViewedDuringVerification: false,
+    verifiedAtUtc: "2026-08-04T22:13:34Z",
+    evidenceReference:
+      "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat",
+  });
+  assert.equal(
+    submission.subscription.revenueCat.restoreAfterAccountDeletion
+      .dashboardBehavior,
+    "transfer_to_new_app_user_id",
+  );
+  assert.equal(
+    submission.subscription.revenueCat.ownerAuthorization.status,
+    "pending",
+  );
+  assert.equal(
+    submission.subscription.revenueCat.productionMappingStatus,
+    "pending",
   );
   assert.equal(submission.subscription.approval.appStoreConnectConfirmed, true);
   assert.equal(submission.subscription.approval.revenueCatVerified, false);
@@ -264,6 +344,35 @@ test("recorded subscription offer rejects drift in every owner-controlled term",
   assert.ok(
     validateMetadata({ ...inputs, submission: rewrittenDecision }).includes(
       "subscription.ownerDecision.binding.amount must match the recorded launch decision",
+    ),
+  );
+
+  for (const [field, expected] of Object.entries({
+    appId: "6798020879",
+    subscriptionGroupId: "22286645",
+    subscriptionId: "6798020349",
+  })) {
+    const driftedIdentifier = clone(inputs.submission);
+    driftedIdentifier.appleIdentifiers[field] = "9999999999";
+    assert.ok(
+      validateMetadata({
+        ...inputs,
+        submission: driftedIdentifier,
+      }).includes(
+        `submission.appleIdentifiers.${field} must remain ${expected}`,
+      ),
+    );
+  }
+
+  const driftedReviewNotesIdentity = clone(inputs.submission);
+  driftedReviewNotesIdentity.subscription.appStoreConnect.reviewNotes.appleSubscriptionId =
+    "22286645";
+  assert.ok(
+    validateMetadata({
+      ...inputs,
+      submission: driftedReviewNotesIdentity,
+    }).includes(
+      "saved subscription Review Notes must bind submission.appleIdentifiers.subscriptionId",
     ),
   );
 });
@@ -545,10 +654,12 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
       "release mode requires verified RevenueCat production mapping, customer read/write permission, and Apple credential dashboard evidence",
     ),
   );
-  assert.ok(
+  assert.equal(
     errors.includes(
       "release mode requires RevenueCat restore behavior transfer_to_new_app_user_id with dashboard UTC evidence",
     ),
+    false,
+    "the committed dashboard restore behavior now has controlled evidence",
   );
   assert.ok(
     errors.includes(
@@ -957,6 +1068,30 @@ test("Apple commerce readiness is structured and evidence-gated", () => {
       "commercialAndLegal.appleCommerceReadiness.developerProgramMembership confirmed status requires verifiedAtUtc",
     ),
   );
+
+  const missingProcessingEvidence = clone(inputs.submission);
+  missingProcessingEvidence.commercialAndLegal.appleCommerceReadiness.paidAppsAgreement.evidenceReference =
+    null;
+  assert.ok(
+    validateMetadata({
+      ...inputs,
+      submission: missingProcessingEvidence,
+    }).includes(
+      "commercialAndLegal.appleCommerceReadiness.paidAppsAgreement processing status requires evidenceReference",
+    ),
+  );
+
+  const unsupportedTaxProcessing = clone(inputs.submission);
+  unsupportedTaxProcessing.commercialAndLegal.appleCommerceReadiness.taxForms.status =
+    "processing";
+  assert.ok(
+    validateMetadata({
+      ...inputs,
+      submission: unsupportedTaxProcessing,
+    }).includes(
+      "commercialAndLegal.appleCommerceReadiness.taxForms.status must be pending or confirmed",
+    ),
+  );
   assert.ok(
     errors.includes(
       "commercialAndLegal.appleCommerceReadiness.developerProgramMembership confirmed status requires evidenceReference",
@@ -1290,6 +1425,8 @@ test("RevenueCat restore after account deletion requires transfer behavior and n
   );
 
   restore.dashboardBehavior = "transfer_to_new_app_user_id";
+  restore.dashboardVerifiedAtUtc = null;
+  restore.dashboardEvidenceReference = null;
   assert.ok(
     validateMetadata({ ...inputs, submission }).includes(
       "transfer_to_new_app_user_id RevenueCat restore behavior requires dashboard UTC evidence",
@@ -2018,7 +2155,6 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
   subscription.appStoreConnect.groupStatus = "confirmed_in_app_store_connect";
   subscription.appStoreConnect.productStatus = "confirmed_in_app_store_connect";
   subscription.appStoreConnect.attachedToVersion = true;
-  subscription.appStoreConnect.reviewNotesConfigured = true;
   Object.assign(subscription.usPricing, {
     amount: "4.99",
     effectiveStatus: "scheduled",
@@ -3153,6 +3289,21 @@ test("TestFlight record distinguishes internal testing from external review", ()
     }),
     [],
   );
+  assert.equal(record.feedbackEmail, "ahmed.zarif@gmail.com");
+  assert.equal(record.feedbackEmailConfiguredInAppStoreConnect, true);
+  assert.deepEqual(record.internalGroup, {
+    name: "CUT OS Internal QA",
+    status: "configured",
+    automaticDistribution: false,
+    testerCount: 0,
+    buildCount: 0,
+    assignedAppStoreConnectBuildId: null,
+    assignmentVerifiedAtUtc: null,
+    assignmentEvidenceReference: null,
+    verifiedAtUtc: "2026-08-04T22:13:34Z",
+    evidenceReference:
+      "app-store/evidence/apple-live-configuration-2026-08-04.md#testflight-internal-configuration",
+  });
 
   const driftedCopy = clone(record);
   driftedCopy.whatToTest = `${driftedCopy.whatToTest} Unreviewed extra step.`;
@@ -3189,13 +3340,18 @@ test("TestFlight record distinguishes internal testing from external review", ()
   const ready = clone(record);
   ready.status = "ready_for_app_review";
   ready.feedbackEmailConfiguredInAppStoreConnect = true;
+  ready.internalGroup.testerCount = 1;
+  ready.internalGroup.buildCount = 1;
+  ready.internalGroup.assignedAppStoreConnectBuildId = "asc-build-01234567";
+  ready.internalGroup.assignmentVerifiedAtUtc = "2026-08-04T22:14:00Z";
+  ready.internalGroup.assignmentEvidenceReference =
+    "evidence/testflight-group-build-assignment";
   Object.assign(ready.exactBuildEvidence, {
     buildNumber: "1",
     gitCommit: "0123456789abcdef0123456789abcdef01234567",
     easBuildId: "eas-build-01234567",
     appStoreConnectBuildId: "asc-build-01234567",
-    internalGroupConfigured: true,
-    testedAtUtc: "2026-08-03T23:59:00Z",
+    testedAtUtc: "2026-08-04T22:15:00Z",
     qaReportReference: "QA_REPORT.md",
     purchaseQaReportReference: "PURCHASE_QA_REPORT.md",
     appReviewRunbookReference: "APP_REVIEW_RUNBOOK.md",
@@ -3214,6 +3370,58 @@ test("TestFlight record distinguishes internal testing from external review", ()
       release: true,
     }),
     [],
+  );
+
+  const mismatchedAssignment = clone(ready);
+  mismatchedAssignment.internalGroup.assignedAppStoreConnectBuildId =
+    "asc-build-unrelated";
+  assert.ok(
+    validateTestFlightSubmission({
+      record: mismatchedAssignment,
+      expectedAppVersion: "1.0.0",
+      release: true,
+    }).includes(
+      "TestFlight internalGroup assigned build must match exactBuildEvidence.appStoreConnectBuildId",
+    ),
+  );
+
+  const assignmentBeforeGroup = clone(ready);
+  assignmentBeforeGroup.internalGroup.assignmentVerifiedAtUtc =
+    "2026-08-04T22:13:00Z";
+  assert.ok(
+    validateTestFlightSubmission({
+      record: assignmentBeforeGroup,
+      expectedAppVersion: "1.0.0",
+      release: true,
+    }).includes(
+      "TestFlight internalGroup assignmentVerifiedAtUtc must not precede internalGroup.verifiedAtUtc",
+    ),
+  );
+
+  const testBeforeAssignment = clone(ready);
+  testBeforeAssignment.exactBuildEvidence.testedAtUtc = "2026-08-04T22:13:59Z";
+  assert.ok(
+    validateTestFlightSubmission({
+      record: testBeforeAssignment,
+      expectedAppVersion: "1.0.0",
+      release: true,
+    }).includes(
+      "release mode requires exactBuildEvidence.testedAtUtc at or after the internal-group assignment verification",
+    ),
+  );
+
+  const missingAssignment = clone(ready);
+  missingAssignment.internalGroup.assignedAppStoreConnectBuildId = null;
+  missingAssignment.internalGroup.assignmentVerifiedAtUtc = null;
+  missingAssignment.internalGroup.assignmentEvidenceReference = null;
+  assert.ok(
+    validateTestFlightSubmission({
+      record: missingAssignment,
+      expectedAppVersion: "1.0.0",
+      release: true,
+    }).includes(
+      "release mode requires the internal TestFlight group assignment bound to exactBuildEvidence.appStoreConnectBuildId with UTC evidence",
+    ),
   );
 
   ready.distributionScope = "external_testing";

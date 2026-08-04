@@ -6,8 +6,8 @@
 
 ## Current launch addendum — August 4, 2026
 
-- **1,314/1,314 automated tests pass:** 298 release operations, 52 App Store, 33
-  domain, 4 database, 431 mobile, and 496 API.
+- **1,340/1,340 automated tests pass:** 300 release operations, 60 App Store, 33
+  domain, 4 database, 437 mobile, and 506 API.
 - Root TypeScript, generated-code drift, working App Store validation,
   changed-file formatting, `.replit` parsing, migration drift, Expo dependency
   health, and a non-secret production-profile Expo bundle rehearsal pass. The
@@ -19,20 +19,31 @@
   page and blocks both origin and mounted Expo preview artifacts; the bounded
   live verifier checks the same contract.
 - Production startup performs a bounded RevenueCat customer-read permission
-  check. Customer write/delete permission, both Apple credential settings, and
-  restore behavior remain direct dashboard evidence gates, with exact-build
-  restore-after-deletion QA required after internal TestFlight upload.
+  check. The least-privilege API v2 key's Customer Information Read & write,
+  Project Configuration Read only, Charts no-access permissions now have
+  controlled non-secret dashboard evidence. Production write/delete behavior,
+  both Apple credential settings, owner authorization, and exact-build
+  restore-after-deletion QA remain open gates.
 - A least-privilege RevenueCat API v2 key plus the exact project, entitlement,
-  and offering REST IDs are configured directly in Replit. The Apple app REST
-  ID and real App Store product remain intentionally absent until App Store
-  Connect activates; production therefore continues to fail closed.
+  and offering REST IDs are configured directly in Replit. The real Apple app
+  and subscription exist, but the RevenueCat Apple app, Apple credential
+  upload, Apple product mapping, public iOS SDK key, and app REST ID remain
+  pending; production therefore continues to fail closed.
+- App Store Connect app ID `6798020879`, subscription group ID `22286645`, and
+  subscription ID `6798020349` are evidence-bound in the machine record. The
+  factual credential-free subscription Review Notes are saved, but the product
+  remains Prepare for Submission, unattached to version 1.0.0, without the
+  review screenshot, and without a defensible price-effective timestamp.
+- The `CUT OS Internal QA` TestFlight group is configured with automatic
+  distribution off, the approved public feedback email, and the repository beta
+  description. It still has 0 testers and 0 builds; no TestFlight or exact-build
+  QA is claimed.
 - Database statements, startup migrations, API/public-server shutdown, and
   readiness recovery now have cross-tested timeout boundaries. Metro receives
   an allowlist with dotenv loading disabled instead of the server environment.
-- Target-aware strict validation intentionally fails with **216** diagnostics
-  for `app_review` and **215** for `public_release` until owner, legal,
-  production-service, exact-build, screenshot, and App Store Connect evidence
-  is complete.
+- Target-aware strict validation intentionally remains fail closed until owner,
+  legal, production-service, exact-build, screenshot, and App Store Connect
+  evidence is complete.
 - Release evidence now rejects prose-only monitoring thresholds and unsafe
   application-only rollback after any completed migration. It binds a closed
   migration class, pre-deploy write cutoff, covered recovery point, prior-API
@@ -83,9 +94,13 @@
   manage controls, renewal disclosure, legal/support links, and sign-out
   visible with 44-point-or-larger targets. Exact-build viewport capture remains
   a signed-device evidence gate.
-- Public iPhone-only distribution is recorded with Mac and Vision Pro opted out;
-  App Store Connect confirmation remains pending. The configured 1024px opaque
-  icon is now SHA-256-bound and technically inspected by the release validator.
+- Public iPhone-only distribution is saved in App Store Connect with Mac and
+  Vision Pro opted out. The configured 1024px opaque icon is SHA-256-bound and
+  technically inspected by the release validator.
+- Apple's live commerce page now shows the Paid Apps Agreement effective August
+  4, 2026 through August 3, 2027 with status `Processing`, banking `Processing`,
+  and U.S. Form W-9 `Active` after its August 4 submission. The tax-form machine
+  gate is confirmed; agreement and banking remain pending.
 - Light/dark status-bar contrast now follows the active surface from launch
   through the loaded app. The audited onboarding, Today, Settings,
   subscription-management, and recovery controls now expose explicit roles,

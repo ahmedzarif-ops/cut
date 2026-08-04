@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 
 const CONFIG_PATH = new URL("../../artifacts/cut-os/eas.json", import.meta.url);
 const NUMERIC_ASC_APP_ID = /^[1-9][0-9]*$/u;
+export const CUT_OS_APP_STORE_CONNECT_APP_ID = "6798020879";
 
 export class EasSubmitConfigurationError extends Error {
   constructor(code) {
@@ -18,12 +19,18 @@ export class EasSubmitConfigurationError extends Error {
  * Validate only the non-secret, deterministic iOS submission routing value.
  * App Store Connect API keys and Apple credentials do not belong in eas.json.
  */
-export function validateEasSubmitConfig(config) {
+export function validateEasSubmitConfig(
+  config,
+  { expectedAscAppId = CUT_OS_APP_STORE_CONNECT_APP_ID } = {},
+) {
   const ascAppId = config?.submit?.production?.ios?.ascAppId;
   if (typeof ascAppId !== "string" || !NUMERIC_ASC_APP_ID.test(ascAppId)) {
     throw new EasSubmitConfigurationError(
       "production_ios_asc_app_id_not_pinned",
     );
+  }
+  if (ascAppId !== expectedAscAppId) {
+    throw new EasSubmitConfigurationError("production_ios_asc_app_id_mismatch");
   }
   return true;
 }
@@ -53,7 +60,7 @@ if (isDirectExecution) {
     }
     validateEasSubmitConfig(await loadConfig());
     console.log(
-      "PASS  production iOS submit profile pins a numeric App Store Connect app ID",
+      "PASS  production iOS submit profile pins the canonical App Store Connect app ID",
     );
   } catch (error) {
     const code =

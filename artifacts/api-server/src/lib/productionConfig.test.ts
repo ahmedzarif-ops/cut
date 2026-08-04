@@ -33,6 +33,7 @@ const validProductionEnvironment: NodeJS.ProcessEnv = {
   REVENUECAT_OFFERING_REST_ID: "ofrngProduction1234",
   CORS_ALLOWED_ORIGINS: "https://api.cut.example.com",
   PUBLIC_APP_ORIGIN: "https://api.cut.example.com",
+  BUILD_SHA: "0123456789abcdef0123456789abcdef01234567",
   API_MAX_INSTANCES: "1",
   ACCOUNT_DELETION_RETRY_INTERVAL_MS: "60000",
 };
@@ -60,6 +61,7 @@ describe("production configuration", () => {
         "REVENUECAT_OFFERING_REST_ID",
         "HTTPS_ALLOWED_ORIGIN",
         "PUBLIC_APP_ORIGIN",
+        "BUILD_SHA",
         "API_MAX_INSTANCES",
       ],
     );
@@ -223,6 +225,29 @@ describe("production configuration", () => {
           BASE_PATH: basePath,
         }),
       ).toContain("BASE_PATH");
+    },
+  );
+
+  it.each([
+    undefined,
+    "",
+    "0123456789abcdef0123456789abcdef0123456",
+    "0123456789abcdef0123456789abcdef012345678",
+    "0123456789ABCDEF0123456789ABCDEF01234567",
+    "0123456789abcdef0123456789abcdef0123456g",
+    " 0123456789abcdef0123456789abcdef01234567",
+    "0123456789abcdef0123456789abcdef01234567 ",
+    "0000000000000000000000000000000000000000",
+    "refs/heads/main",
+  ])(
+    "requires an exact non-placeholder lowercase BUILD_SHA: %s",
+    (buildSha) => {
+      expect(
+        validateProductionConfiguration({
+          ...validProductionEnvironment,
+          BUILD_SHA: buildSha,
+        }),
+      ).toContain("BUILD_SHA");
     },
   );
 

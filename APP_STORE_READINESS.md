@@ -78,9 +78,9 @@ social features. Those are backlog, not submission truth.
 
 ### Owner financial/store decisions
 
-- [ ] Confirm Apple Developer Program membership and Account Holder access, then
-      record each confirmation UTC and a non-secret controlled evidence reference
-      under `commercialAndLegal.appleCommerceReadiness`.
+- [x] Apple Developer Program membership and Account Holder access are live-
+      confirmed with UTC and non-secret controlled evidence under
+      `commercialAndLegal.appleCommerceReadiness`.
 - [ ] The owner selected an individual Apple seller account and authorized
       `Zarif Ahmed` as the public legal operator for a Texas sole
       proprietorship; the applicable county is retained outside this public
@@ -91,10 +91,11 @@ social features. Those are backlog, not submission truth.
       requiring sensitive user information toward a legal entity. An individual
       submission is not documented here as prohibited, but it is a material
       review risk.
-- [ ] Accept the Paid Apps Agreement and complete tax/banking. These are
-      sensitive financial actions and remain owner-only; record only each
-      confirmation status, UTC, and non-secret evidence reference. Never record
-      tax, bank, agreement, or account credentials or values in the repository.
+- [ ] Wait for the owner-accepted Paid Apps Agreement and bank account to finish
+      Apple's `Processing` state; the submitted W-9 is already `Active`. These
+      remain sensitive owner-only surfaces. Record only status, UTC, and a
+      non-secret evidence reference—never tax, bank, agreement, or account
+      credentials or values.
 - [x] Owner approved the first product's immutable Product ID, `P1M` duration,
       $4.99 U.S. monthly price, and no-introductory-offer decision. Any change
       requires coordinated source, release-record, configuration, and test
@@ -117,11 +118,11 @@ social features. Those are backlog, not submission truth.
       clearance, App Store Connect exact-name acceptance, owner approval, legal
       review, qualified nutrition review, and exact-build claims review.
 - [ ] Approve App Review submission and later public release.
-- [x] Owner approved United States-only initial availability. Live App Store
-      Connect availability confirmation remains pending.
+- [x] United States-only initial availability is owner-approved and saved in
+      App Store Connect.
 - [x] Public distribution is selected for the iPhone-only v1, with Apple-silicon
       Mac and Apple Vision Pro availability both set to Do Not Make Available.
-      Live App Store Connect confirmation remains pending.
+      These compatibility choices are saved in App Store Connect.
 
 ### External services
 

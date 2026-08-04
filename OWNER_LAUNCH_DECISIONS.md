@@ -69,14 +69,18 @@ a legal entity, D-U-N-S Number, organization-domain email and website, and a
 person with authority to bind the organization.
 
 Do not form an entity, repeat the Apple payment, or accept agreements
-automatically. Paid Apps Agreement acceptance, tax, and banking remain separate
-owner-controlled gates.
+automatically. Paid Apps currently shows an August 4, 2026 through August 3,
+2027 effective period with status `Processing`; banking is `Processing`, and
+U.S. Form W-9 is `Active` after its August 4 submission. The tax gate is
+confirmed; completion of the agreement and bank processing remains owner
+controlled.
 
 ## Decision 2 — first real subscription
 
 **Status:** The exact launch offer, App Store Connect subscription, U.S. price,
-and availability are saved; RevenueCat mapping, first-version attachment,
-review assets, exact-build QA, submission, and release remain pending.
+availability, and credential-free Review Notes are saved; RevenueCat mapping,
+first-version attachment, review screenshot, exact-build QA, submission, and
+release remain pending.
 
 Recommended focused launch configuration:
 
@@ -137,14 +141,13 @@ Apple credential upload, product mapping, Apple public iOS SDK key, and
 claim the production Apple connection, restore policy, or key ratification.
 
 The production project must also use RevenueCat's **Transfer to new App User
-ID** restore behavior. The live dashboard currently displays that setting, but
-controlled evidence and owner approval remain pending.
+ID** restore behavior. That setting now has controlled non-secret dashboard
+evidence, but owner approval remains pending.
 It is required so an Apple subscription that continues after CUT account
 deletion can move to a replacement CUT account after Restore, without leaving
-the deleted account's old App User ID entitled. The dashboard setting and the
-full exact-build purchase → delete → replacement account → Restore →
-server-confirmed unlock test require separate evidence; neither is currently
-approved or verified. See RevenueCat's
+the deleted account's old App User ID entitled. The full exact-build purchase →
+delete → replacement account → Restore → server-confirmed unlock test still
+requires separate evidence and is not currently approved or verified. See RevenueCat's
 [Restore Behavior](https://www.revenuecat.com/docs/projects/restore-behavior)
 documentation.
 
@@ -197,9 +200,12 @@ decisions.
 
 **Status:** The owner-approved free-download, United States-only, public,
 iPhone-only, manual-release commercial settings are saved in App Store Connect.
-Paid Apps terms, EULA, tax, banking, DSA, counsel review, and full commercial
-approval remain pending. Optional App Store Server Notifications are explicitly
-omitted from the initial release rather than treated as a submission gate.
+Paid Apps shows an August 4, 2026 through August 3, 2027 effective period with
+status `Processing`; banking is `Processing`, and U.S. Form W-9 is `Active`
+after its August 4 submission. The tax gate is confirmed; the agreement gate,
+EULA, banking, DSA, counsel review, and full commercial approval remain pending. Optional App Store Server
+Notifications are explicitly omitted from the initial release rather than
+treated as a submission gate.
 
 The owner must explicitly choose and record:
 
@@ -213,11 +219,11 @@ The owner must explicitly choose and record:
 - evidence that each choice was saved in App Store Connect.
 
 The working records retain controlled evidence for the saved free-download,
-United States-only, public, compatibility, and manual-release choices while
-keeping the unresolved Paid Apps terms, EULA, tax, banking, DSA, counsel, and
-overall commercial approval fields pending. The notifications record explicitly
-states `not_configured_optional_for_initial_release` with no URL or fabricated
-evidence.
+United States-only, public, compatibility, and manual-release choices. The W-9
+is active; Paid Apps and banking remain processing. EULA, DSA, counsel, and
+overall commercial approval fields remain pending. The notifications record
+explicitly states `not_configured_optional_for_initial_release` with no URL or
+fabricated evidence.
 Engineering has fixed the v1 delivery architecture to RevenueCat direct because
 the API does not implement an Apple notification receiver; the exact dashboard
 URL may be configured after the RevenueCat iOS app exists, but it is not an
@@ -276,11 +282,13 @@ later, a qualified reviewer must evaluate every recorded iPhone common task and
 all applicable Apple feature labels on the exact build; never infer support
 from automated tests or framework use.
 
-For TestFlight, the owner must approve the feedback email and distribution
-scope. Internal-only testing does not require external TestFlight App Review;
-adding external testers does, including review contact, demo access, notes, and
-review of the selected build. Credentials remain only in App Store Connect or
-approved secret storage.
+For TestFlight, the already authorized public email is saved as the feedback
+email, and internal group `CUT OS Internal QA` is configured with automatic
+distribution off. It currently has 0 testers and 0 builds, and TestFlight owner,
+mobile-QA, and App Store Connect approvals remain pending. Internal-only testing
+does not require external TestFlight App Review; adding external testers does,
+including review contact, demo access, notes, and review of the selected build.
+Credentials remain only in App Store Connect or approved secret storage.
 
 ## Decision 7 — production hosting and database spend
 
@@ -396,7 +404,7 @@ These are intentionally deferred until the prerequisites are ready:
   ceiling; deployment remains deferred until production preflight passes.
 - Any Clerk trial, billing method, or paid-plan upgrade if production cannot use
   the existing no-cost plan.
-- Apple agreements, tax, and banking.
+- Apple Paid Apps and bank-processing completion; the W-9 is active.
 - EULA, app tax category, optional subscription tax override, and DSA status.
   The free-download, optional-notification omission, and subscription App Name
   Display choices are recorded.

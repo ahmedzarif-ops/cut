@@ -21,6 +21,8 @@ import {
   validateEasSubmitConfig,
 } from "./eas-submit-config-verify.mjs";
 
+const BUILD_SHA = "0123456789abcdef0123456789abcdef01234567";
+
 async function withServer(handler, callback) {
   const server = http.createServer(handler);
   await new Promise((resolve, reject) => {
@@ -69,6 +71,69 @@ test("evaluates liveness, readiness, and unauthenticated auth guards", () => {
     body: JSON.stringify({ status: "ok" }),
   });
   assert.equal(ready.allPass, true);
+
+  const exactBuildStatus = evaluateSurface({
+    surfaceType: "json-readiness",
+    status: 200,
+    headers: new Headers({
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+    }),
+    body: JSON.stringify({ status: "ok", build_sha: BUILD_SHA }),
+    expect: { path: "/status", buildSha: BUILD_SHA },
+  });
+  assert.equal(exactBuildStatus.allPass, true);
+  assert.equal(
+    exactBuildStatus.checks.find(({ name }) => name === "exact BUILD_SHA").pass,
+    true,
+  );
+
+  const wrongBuildStatus = evaluateSurface({
+    surfaceType: "json-readiness",
+    status: 200,
+    headers: new Headers({
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+    }),
+    body: JSON.stringify({
+      status: "ok",
+      build_sha: "1123456789abcdef0123456789abcdef01234567",
+    }),
+    expect: { path: "/status", buildSha: BUILD_SHA },
+  });
+  assert.equal(wrongBuildStatus.allPass, false);
+
+  const overexposedBuildStatus = evaluateSurface({
+    surfaceType: "json-readiness",
+    status: 200,
+    headers: new Headers({
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+    }),
+    body: JSON.stringify({
+      status: "ok",
+      build_sha: BUILD_SHA,
+      unexpected: "must-not-be-public",
+    }),
+    expect: { path: "/status", buildSha: BUILD_SHA },
+  });
+  assert.equal(overexposedBuildStatus.allPass, false);
+
+  assert.throws(
+    () =>
+      evaluateSurface({
+        surfaceType: "json-readiness",
+        status: 200,
+        headers: new Headers(),
+        body: JSON.stringify({ status: "ok", build_sha: BUILD_SHA }),
+        expect: { path: "/status" },
+      }),
+    (error) => {
+      assert.ok(error instanceof DeployVerificationError);
+      assert.equal(error.code, "build_sha_required");
+      return true;
+    },
+  );
 
   const authGuard = evaluateSurface({
     surfaceType: "auth-guard",
@@ -191,6 +256,48 @@ test("verifies a live JSON readiness endpoint", async () => {
         { allowLocalHttp: true },
       );
       assert.equal(result.allPass, true);
+      await assert.rejects(
+        verifyUrl(
+          `${origin}/api/readyz`,
+          "json-readiness",
+          { buildSha: BUILD_SHA },
+          { allowLocalHttp: true },
+        ),
+        (error) => {
+          assert.ok(error instanceof DeployVerificationError);
+          assert.equal(error.code, "invalid_build_sha_target");
+          return true;
+        },
+      );
+    },
+  );
+});
+
+test("verifies the live public status against the exact expected BUILD_SHA", async () => {
+  await withServer(
+    (_request, response) => {
+      response.writeHead(200, {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8",
+      });
+      response.end(JSON.stringify({ status: "ok", build_sha: BUILD_SHA }));
+    },
+    async (origin) => {
+      const result = await verifyUrl(
+        `${origin}/status`,
+        "json-readiness",
+        { buildSha: BUILD_SHA },
+        { allowLocalHttp: true },
+      );
+      assert.equal(result.allPass, true);
+
+      const mismatch = await verifyUrl(
+        `${origin}/status`,
+        "json-readiness",
+        { buildSha: "1123456789abcdef0123456789abcdef01234567" },
+        { allowLocalHttp: true },
+      );
+      assert.equal(mismatch.allPass, false);
     },
   );
 });
@@ -442,7 +549,7 @@ test("Clerk proxy health keeps its response below the fixed safety ceiling", asy
   );
 });
 
-test("EAS submit routing requires a pinned numeric App Store Connect app ID", () => {
+test("EAS submit routing requires the canonical App Store Connect app ID", () => {
   for (const config of [
     {},
     { submit: { production: {} } },
@@ -461,9 +568,21 @@ test("EAS submit routing requires a pinned numeric App Store Connect app ID", ()
     );
   }
 
+  assert.throws(
+    () =>
+      validateEasSubmitConfig({
+        submit: { production: { ios: { ascAppId: "1234567890" } } },
+      }),
+    (error) => {
+      assert.ok(error instanceof EasSubmitConfigurationError);
+      assert.equal(error.code, "production_ios_asc_app_id_mismatch");
+      return true;
+    },
+  );
+
   assert.equal(
     validateEasSubmitConfig({
-      submit: { production: { ios: { ascAppId: "1234567890" } } },
+      submit: { production: { ios: { ascAppId: "6798020879" } } },
     }),
     true,
   );
@@ -587,6 +706,31 @@ test("requires complete CLI option values", () => {
   );
   assert.equal(result.status, 1);
   assert.match(result.stderr, /missing_option_value/u);
+});
+
+test("public status CLI verification requires a canonical expected BUILD_SHA", () => {
+  const script = fileURLToPath(new URL("./deploy-verify.mjs", import.meta.url));
+  const missing = spawnSync(
+    process.execPath,
+    [script, "https://example.com/status", "json-readiness"],
+    { encoding: "utf8" },
+  );
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /build_sha_required/u);
+
+  const invalid = spawnSync(
+    process.execPath,
+    [
+      script,
+      "https://example.com/status",
+      "json-readiness",
+      "--build-sha",
+      "0123456789ABCDEF0123456789ABCDEF01234567",
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(invalid.status, 1);
+  assert.match(invalid.stderr, /invalid_build_sha/u);
 });
 
 test("CLI local HTTP flag never permits a non-loopback host", () => {

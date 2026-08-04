@@ -44,6 +44,7 @@ function assert(condition, message) {
 }
 
 const canonicalOrigin = "https://dry-run.cutos.app";
+const dryRunBuildSha = "0123456789abcdef0123456789abcdef01234567";
 const livePublishableKey = `${["pk", "live"].join("_")}_${Buffer.from(
   "clerk.dry-run.cutos.app$",
 )
@@ -57,6 +58,7 @@ Object.assign(process.env, {
   API_RATE_LIMIT: "100",
   API_MAX_INSTANCES: "1",
   BASE_PATH: "/",
+  BUILD_SHA: dryRunBuildSha,
   CLERK_PUBLISHABLE_KEY: livePublishableKey,
   CLERK_RATE_LIMIT: "30",
   CLERK_SECRET_KEY: ["sk", "live", "DryRunOnlyNeverValid1234"].join("_"),
@@ -102,6 +104,13 @@ assert(
     PUBLIC_APP_ORIGIN: "https://split-origin.cutos.app",
   }).includes("PUBLIC_APP_ORIGIN"),
   "Built production preflight accepted a split public/API origin.",
+);
+assert(
+  validateProductionConfiguration({
+    ...process.env,
+    BUILD_SHA: "0123456789ABCDEF0123456789ABCDEF01234567",
+  }).includes("BUILD_SHA"),
+  "Built production preflight accepted a non-canonical BUILD_SHA.",
 );
 
 const { default: app } = await import(
@@ -199,7 +208,7 @@ try {
   );
   assert(status.status === 200, "Public status route did not return 200.");
   assert(
-    status.body === '{"status":"ok"}',
+    status.body === JSON.stringify({ status: "ok", build_sha: dryRunBuildSha }),
     "Public status route returned an unexpected body.",
   );
   assert(privacy.status === 503, "Draft privacy route did not fail closed.");

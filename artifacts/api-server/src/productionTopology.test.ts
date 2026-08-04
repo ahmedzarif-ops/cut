@@ -141,11 +141,16 @@ describe("source-controlled production topology", () => {
       '"artifacts/api-server/dist/productionConfig.mjs"',
     );
     expect(dryRun).toContain('NODE_ENV: "production"');
+    expect(dryRun).toContain("BUILD_SHA: dryRunBuildSha");
     expect(dryRun).toContain("assertProductionConfiguration(process.env)");
     expect(dryRun).toContain('BASE_PATH: "/mounted-app"');
     expect(dryRun).toContain(
       'PUBLIC_APP_ORIGIN: "https://split-origin.cutos.app"',
     );
+    expect(dryRun).toContain(
+      'BUILD_SHA: "0123456789ABCDEF0123456789ABCDEF01234567"',
+    );
+    expect(dryRun).toContain("build_sha: dryRunBuildSha");
     expect(dryRun).toContain('server = app.listen(0, "127.0.0.1")');
     expect(dryRun).toContain('request("/api/healthz"');
     expect(dryRun).not.toContain('request("/api/readyz"');

@@ -108,7 +108,7 @@ invent a value.
 | App distribution method    | Public; saved                                 | Controlled evidence retained; signed-build and submission gates remain open.                                                    |
 | Apple silicon Mac          | Do Not Make Available; saved                  | Keep disabled until platform-specific QA is approved.                                                                           |
 | Apple Vision Pro           | Do Not Make Available; saved                  | Keep disabled until platform-specific QA is approved.                                                                           |
-| App download price         | Free download; saved                          | Paid Apps terms, tax, banking, and subscription release remain open.                                                            |
+| App download price         | Free download; saved                          | Paid Apps and banking remain processing; active W-9 evidence is saved; subscription release remains open.                       |
 | License agreement          | Unresolved                                    | Owner/counsel chooses Apple's standard EULA or an approved custom EULA.                                                         |
 | App tax category           | Unresolved                                    | Owner/counsel/finance confirms the value; the subscription inherits it unless an explicit override is approved.                 |
 | DSA trader status          | Unresolved                                    | Owner/counsel confirms trader or non-trader; Apple still requires the declaration when distribution excludes the EU.            |
@@ -160,10 +160,10 @@ canonical version/build/Git/EAS/App Store Connect identity and must match the
 TestFlight record.
 
 `commercialAndLegal.appleCommerceReadiness` records Apple Developer Program
-membership and Account Holder access as confirmed. The Paid Apps Agreement, tax
-forms, and banking remain pending until each has a confirmation UTC and
-controlled non-secret evidence reference. All five must be confirmed for
-release. Never store account, agreement, tax, or banking credentials or values
+membership, Account Holder access, and the active U.S. W-9 as confirmed. The
+Paid Apps Agreement and banking remain pending while Apple shows them as
+`Processing`. All five must be confirmed for release. Never store account,
+agreement, tax, or banking credentials or values
 in this record.
 
 ## Age rating and questionnaire
@@ -343,16 +343,17 @@ display names, exact 45-character description, and `use_app_name` selection.
 Apple's live reference limits the localizable description to 45 characters; the
 initially approved 54-character sentence must not be entered. The exact
 corrected offer is bound to its recorded decision by working validation. The
-U.S. $4.99 Current Pricing record and U.S.-only availability are saved with
-controlled evidence; public/effective revenue status remains pending. The
-subscription tax category inherits the required app-level category unless an
-explicit override is approved.
+U.S. $4.99 Starting Price record and U.S.-only availability are saved with
+controlled evidence; no defensible effective timestamp is recorded and
+public/effective revenue status remains pending. The subscription tax category
+inherits the required app-level category unless an explicit override is
+approved.
 Release requires App Store Connect confirmation, attachment to version 1.0,
-review notes, an uploaded review screenshot whose SHA-256 equals approved shot
-07, verified RevenueCat mapping, exact-build StoreKit/Purchase QA/TestFlight
-evidence, and attributable owner/App Store Connect/RevenueCat/native-QA
-approvals. The U.S. price record also binds the owner decision revision and its
-controlled evidence reference.
+retention of the already saved credential-free Review Notes, an uploaded review
+screenshot whose SHA-256 equals approved shot 07, verified RevenueCat mapping,
+exact-build StoreKit/Purchase QA/TestFlight evidence, and attributable owner/App
+Store Connect/RevenueCat/native-QA approvals. The U.S. price record also binds
+the owner decision revision and its controlled evidence reference.
 
 The working validator now enforces Apple's verified current limits for Product
 Reference Name (64), Product ID (100), product Display Name (2–30), and

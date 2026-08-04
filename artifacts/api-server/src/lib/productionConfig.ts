@@ -19,6 +19,7 @@ export type ProductionConfigurationIssue =
   | "HTTPS_ALLOWED_ORIGIN"
   | "PUBLIC_APP_ORIGIN"
   | "BASE_PATH"
+  | "BUILD_SHA"
   | "API_MAX_INSTANCES"
   | "SHARED_RATE_LIMIT_STORE"
   | "ACCOUNT_DELETION_RETRY_INTERVAL_MS"
@@ -32,6 +33,7 @@ const PLACEHOLDER_CLERK_FRONTEND_APIS = new Set([
   "clerk.example.com",
 ]);
 const PG_POOL_MAXIMUM = 20;
+const FULL_GIT_SHA = /^(?!0{40}$)[0-9a-f]{40}$/u;
 
 function isClerkDevelopmentFrontendApi(frontendApi: string): boolean {
   return frontendApi.endsWith(".accounts.dev");
@@ -144,6 +146,10 @@ export function hasRootProductionBasePath(value: string | undefined): boolean {
   return value === undefined || value === "" || value === "/";
 }
 
+function hasExactBuildSha(value: string | undefined): boolean {
+  return typeof value === "string" && FULL_GIT_SHA.test(value);
+}
+
 function parseMaximumInstanceCount(value: string | undefined): number | null {
   if (!value || !/^[1-9]\d*$/u.test(value)) return null;
   const parsed = Number(value);
@@ -191,6 +197,9 @@ export function validateProductionConfiguration(
   }
   if (!hasRootProductionBasePath(env.BASE_PATH)) {
     issues.push("BASE_PATH");
+  }
+  if (!hasExactBuildSha(env.BUILD_SHA)) {
+    issues.push("BUILD_SHA");
   }
   if (
     parseAccountDeletionRetryInterval(

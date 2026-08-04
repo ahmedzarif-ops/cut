@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 const require = createRequire(import.meta.url);
 const {
   createAppServer,
+  parseBuildSha,
   parsePublicAppOrigin,
   parseServerPort,
   parseShutdownTimeoutMs,
@@ -22,6 +23,7 @@ const {
 const servers = [];
 const temporaryDirectories = [];
 const DEFAULT_PUBLIC_APP_ORIGIN = "https://preview.cutos.app";
+const BUILD_SHA = "0123456789abcdef0123456789abcdef01234567";
 
 async function createStaticRoot() {
   const root = await mkdtemp(join(tmpdir(), "cut-os-server-"));
@@ -436,6 +438,60 @@ describe("CUT OS public server", () => {
         templateRoot: join(staticRoot, "missing-templates"),
       }),
     ).toThrow();
+  });
+
+  it("fails closed on invalid production revisions and exposes the exact BUILD_SHA", async () => {
+    const staticRoot = await createStaticRoot();
+
+    expect(parseBuildSha(BUILD_SHA, true)).toBe(BUILD_SHA);
+    expect(() => parseBuildSha(undefined, true)).toThrow(/BUILD_SHA/u);
+    for (const invalidBuildSha of [
+      "",
+      "0123456789abcdef0123456789abcdef0123456",
+      "0123456789ABCDEF0123456789ABCDEF01234567",
+      "0000000000000000000000000000000000000000",
+      "refs/heads/main",
+    ]) {
+      expect(() => parseBuildSha(invalidBuildSha, true)).toThrow(/BUILD_SHA/u);
+    }
+
+    const previousNodeEnvironment = process.env.NODE_ENV;
+    const previousBuildSha = process.env.BUILD_SHA;
+    try {
+      process.env.NODE_ENV = "production";
+      delete process.env.BUILD_SHA;
+      expect(() =>
+        createAppServer({
+          staticRoot,
+          previewMode: false,
+          publicAppOrigin: DEFAULT_PUBLIC_APP_ORIGIN,
+          requireBuildSha: false,
+        }),
+      ).toThrow(/BUILD_SHA/u);
+    } finally {
+      if (previousNodeEnvironment === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = previousNodeEnvironment;
+      }
+      if (previousBuildSha === undefined) {
+        delete process.env.BUILD_SHA;
+      } else {
+        process.env.BUILD_SHA = previousBuildSha;
+      }
+    }
+
+    const { port } = await listen({
+      staticRoot,
+      buildSha: BUILD_SHA,
+      previewMode: false,
+      requireBuildSha: true,
+    });
+    const status = await request(port, "/status");
+    expect(JSON.parse(status.body)).toEqual({
+      status: "ok",
+      build_sha: BUILD_SHA,
+    });
   });
 
   it.each(["/privacy", "/terms/", "/support"])(

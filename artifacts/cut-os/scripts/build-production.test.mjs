@@ -9,6 +9,7 @@ const scriptsDirectory = dirname(fileURLToPath(import.meta.url));
 const artifactDirectory = resolve(scriptsDirectory, "..");
 const workspaceDirectory = resolve(artifactDirectory, "../..");
 const productionBuildPath = resolve(scriptsDirectory, "build-production.mjs");
+const BUILD_SHA = "0123456789abcdef0123456789abcdef01234567";
 
 describe("Replit production public-site build", () => {
   it("validates the production handler without invoking preview tooling", () => {
@@ -16,6 +17,7 @@ describe("Replit production public-site build", () => {
       cwd: artifactDirectory,
       encoding: "utf8",
       env: {
+        BUILD_SHA,
         LEGAL_SITE_PUBLICATION_STATUS: "draft",
         NODE_ENV: "production",
         PUBLIC_APP_ORIGIN: "https://ci.cutos.app",
@@ -77,6 +79,7 @@ describe("Replit production public-site build", () => {
       cwd: artifactDirectory,
       encoding: "utf8",
       env: {
+        BUILD_SHA,
         LEGAL_SITE_PUBLICATION_STATUS: "draft",
         NODE_ENV: "production",
       },
@@ -84,5 +87,25 @@ describe("Replit production public-site build", () => {
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("PUBLIC_APP_ORIGIN");
+  });
+
+  it.each([
+    ["missing", undefined],
+    ["uppercase", "0123456789ABCDEF0123456789ABCDEF01234567"],
+    ["all-zero placeholder", "0000000000000000000000000000000000000000"],
+  ])("fails closed when BUILD_SHA is %s", (_label, buildSha) => {
+    const result = spawnSync(process.execPath, [productionBuildPath], {
+      cwd: artifactDirectory,
+      encoding: "utf8",
+      env: {
+        ...(buildSha === undefined ? {} : { BUILD_SHA: buildSha }),
+        LEGAL_SITE_PUBLICATION_STATUS: "draft",
+        NODE_ENV: "production",
+        PUBLIC_APP_ORIGIN: "https://ci.cutos.app",
+      },
+    });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("BUILD_SHA");
   });
 });

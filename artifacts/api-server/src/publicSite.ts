@@ -15,9 +15,11 @@ interface PublicSiteModule {
   createRequestHandler(options: {
     appName: string;
     basePath?: string;
+    buildSha?: string;
     previewMode: false;
     publicationStatus?: string;
     publicAppOrigin: string;
+    requireBuildSha: boolean;
     templateRoot: string;
   }): (request: IncomingMessage, response: ServerResponse) => void;
 }
@@ -99,9 +101,11 @@ export function createProductionPublicSiteMiddleware(
   const handler = createRequestHandler({
     appName: "CUT OS",
     basePath: resolvePublicSiteBasePath(env),
+    buildSha: env.BUILD_SHA,
     previewMode: false,
     publicationStatus: env.LEGAL_SITE_PUBLICATION_STATUS,
     publicAppOrigin: resolvePublicSiteOrigin(env),
+    requireBuildSha: env.NODE_ENV === "production",
     templateRoot: resolvePublicSiteTemplateRoot(env),
   });
 

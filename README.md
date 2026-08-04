@@ -69,6 +69,7 @@ real App Store purchases.
 | `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Exact `https://<domain>/support` and App Store listing URL      |
 | `PUBLIC_APP_ORIGIN`                  | api-server public routes      | Canonical launch/legal origin; must equal production CORS host  |
 | `CORS_ALLOWED_ORIGINS`               | api-server                    | Same canonical HTTPS origin in production; lists allowed in dev |
+| `BUILD_SHA`                          | api-server production         | Exact full lowercase 40-character deployed Git commit identity  |
 | `BASE_PATH`                          | api-server public routes      | Production must be unset, empty, or `/`; mounted paths fail     |
 | `CLERK_PROXY_URL`                    | cut-os development preview    | Relative API proxy path; configured value is `/api/__clerk`     |
 | `LEGAL_SITE_PUBLICATION_STATUS`      | api-server public routes      | `draft` until approved legal sources and hashes are recorded    |
@@ -108,7 +109,10 @@ paywall that can never load a purchasable plan.
 request headers, and must exactly equal the canonical
 `CORS_ALLOWED_ORIGINS`. A non-root production `BASE_PATH` also fails before
 binding so public, legal, Clerk proxy, and API routes cannot split. Production
-startup also fails closed unless `API_MAX_INSTANCES` is explicitly `1`. This is
+also requires `BUILD_SHA` to be the exact non-placeholder lowercase full Git
+SHA of the deployed candidate; `/status` returns that SHA so the live verifier
+can reject a stale or wrong revision. Production startup also fails closed
+unless `API_MAX_INSTANCES` is explicitly `1`. This is
 a launch-only single-instance control: the release record must prove the
 provider maximum is one, and a multi-replica deployment requires a real shared
 rate-limit store first.

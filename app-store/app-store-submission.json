@@ -11,6 +11,13 @@
     "testFlightRecord": "app-store/testflight-submission.json",
     "screenshotManifest": "app-store/screenshots/manifest.json"
   },
+  "appleIdentifiers": {
+    "appId": "6798020879",
+    "subscriptionGroupId": "22286645",
+    "subscriptionId": "6798020349",
+    "verifiedAtUtc": "2026-08-04T22:13:34Z",
+    "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#canonical-apple-identifiers"
+  },
   "listing": {
     "appName": "CUT OS",
     "bundleId": "com.zarifahmed.cut",
@@ -161,19 +168,19 @@
         "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
       },
       "paidAppsAgreement": {
-        "status": "pending",
-        "verifiedAtUtc": null,
-        "evidenceReference": null
+        "status": "processing",
+        "verifiedAtUtc": "2026-08-04T22:28:52Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
       },
       "taxForms": {
-        "status": "pending",
-        "verifiedAtUtc": null,
-        "evidenceReference": null
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-04T22:28:52Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
       },
       "banking": {
-        "status": "pending",
-        "verifiedAtUtc": null,
-        "evidenceReference": null
+        "status": "processing",
+        "verifiedAtUtc": "2026-08-04T22:28:52Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
       }
     },
     "appStoreServerNotifications": {
@@ -362,7 +369,13 @@
       "productStatus": "confirmed_in_app_store_connect",
       "firstSubmission": true,
       "attachedToVersion": false,
-      "reviewNotesConfigured": false,
+      "reviewNotes": {
+        "status": "saved_in_app_store_connect",
+        "appleSubscriptionId": "6798020349",
+        "credentialFree": true,
+        "savedAtUtc": "2026-08-04T22:13:34Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#subscription-review-notes"
+      },
       "reviewScreenshotShotId": "07-subscription-offer",
       "reviewScreenshotUpload": {
         "status": "pending",
@@ -382,11 +395,21 @@
       "productionMappingStatus": "pending",
       "appStoreConnectApiKeyStatus": "pending",
       "subscriptionKeyStatus": "pending",
-      "customerReadWritePermissionStatus": "pending",
+      "customerReadWritePermissionStatus": "confirmed_in_revenuecat",
+      "apiV2Key": {
+        "label": "CUT Replit Production",
+        "apiVersion": "v2",
+        "customerInformationPermission": "read_write",
+        "projectConfigurationPermission": "read_only",
+        "chartsPermission": "no_access",
+        "keyValueViewedDuringVerification": false,
+        "verifiedAtUtc": "2026-08-04T22:13:34Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat"
+      },
       "restoreAfterAccountDeletion": {
-        "dashboardBehavior": "pending",
-        "dashboardVerifiedAtUtc": null,
-        "dashboardEvidenceReference": null,
+        "dashboardBehavior": "transfer_to_new_app_user_id",
+        "dashboardVerifiedAtUtc": "2026-08-04T22:13:34Z",
+        "dashboardEvidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat",
         "nativeQaStatus": "pending",
         "nativeQaTestedAtUtc": null,
         "nativeQaEvidenceReference": null

@@ -14,7 +14,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LegalSupportLinks } from "@/components/LegalSupportLinks";
 import { useColors } from "@/hooks/useColors";
-import { SUBSCRIPTION_OFFER_READY_LAYOUT } from "@/lib/subscription-offer-layout";
+import {
+  isSubscriptionOfferReadyLayoutEligible,
+  SUBSCRIPTION_OFFER_READY_LAYOUT,
+} from "@/lib/subscription-offer-layout";
 import { formatPlanBilling } from "@/lib/subscription";
 import { useSubscriptionGate } from "@/lib/subscription-gate";
 import { runSubscriptionSignOut } from "@/lib/subscription-provider-state";
@@ -82,13 +85,12 @@ export default function SubscriptionScreen() {
       plan.introductoryText,
     ]),
   );
-  const compactReadyLayoutEligible =
-    readyOfferVisible &&
-    viewportWidth >=
-      SUBSCRIPTION_OFFER_READY_LAYOUT.minimumCompactViewportWidthPoints &&
-    viewportHeight >=
-      SUBSCRIPTION_OFFER_READY_LAYOUT.minimumCompactViewportHeightPoints &&
-    fontScale <= SUBSCRIPTION_OFFER_READY_LAYOUT.maximumCompactFontScale;
+  const compactReadyLayoutEligible = isSubscriptionOfferReadyLayoutEligible({
+    readyOfferVisible,
+    viewportWidthPoints: viewportWidth,
+    viewportHeightPoints: viewportHeight,
+    fontScale,
+  });
   const compactReadyLayout =
     compactReadyLayoutEligible && !compactOverflowDetected;
   const actionBusy = busyAction !== null;

@@ -73,6 +73,7 @@ const initialLaunchMigrationComparison = Object.freeze({
 });
 const validationClock = () => new Date("2026-08-04T00:00:00Z");
 const productionPublicOrigin = "https://cut-production-public.com";
+const appStoreConnectAppId = "6798020879";
 
 const automatedGateIds = [
   "frozen_install",
@@ -719,7 +720,7 @@ async function createRepository(
   const easConfig = {
     cli: { requireCommit: true },
     submit: pinnedRouting
-      ? { production: { ios: { ascAppId: "1234567890" } } }
+      ? { production: { ios: { ascAppId: appStoreConnectAppId } } }
       : { production: {} },
   };
   const previousJournal = {
@@ -3479,7 +3480,7 @@ test("cross-checks TestFlight BUILD_SHA", async (t) => {
 
 test("requires byte-identical pinned routing and cli.requireCommit", () => {
   const pinned = Buffer.from(
-    '{"cli":{"requireCommit":true},"submit":{"production":{"ios":{"ascAppId":"1234567890"}}}}\n',
+    `{"cli":{"requireCommit":true},"submit":{"production":{"ios":{"ascAppId":"${appStoreConnectAppId}"}}}}\n`,
   );
   assert.doesNotThrow(() =>
     validatePinnedRoutingBytes({ buildBytes: pinned, evidenceBytes: pinned }),
@@ -3493,7 +3494,7 @@ test("requires byte-identical pinned routing and cli.requireCommit", () => {
     expectCode("eas_json_changed_since_build"),
   );
   const noCommitLock = Buffer.from(
-    '{"cli":{"requireCommit":false},"submit":{"production":{"ios":{"ascAppId":"1234567890"}}}}\n',
+    `{"cli":{"requireCommit":false},"submit":{"production":{"ios":{"ascAppId":"${appStoreConnectAppId}"}}}}\n`,
   );
   assert.throws(
     () =>
@@ -3513,6 +3514,17 @@ test("requires byte-identical pinned routing and cli.requireCommit", () => {
         evidenceBytes: unpinned,
       }),
     expectCode("production_ios_asc_app_id_not_pinned"),
+  );
+  const mismatchedApp = Buffer.from(
+    '{"cli":{"requireCommit":true},"submit":{"production":{"ios":{"ascAppId":"1234567890"}}}}\n',
+  );
+  assert.throws(
+    () =>
+      validatePinnedRoutingBytes({
+        buildBytes: mismatchedApp,
+        evidenceBytes: mismatchedApp,
+      }),
+    expectCode("production_ios_asc_app_id_mismatch"),
   );
 });
 

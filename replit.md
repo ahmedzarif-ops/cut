@@ -50,6 +50,10 @@ PostgreSQL as the source of truth.
   `PUBLIC_APP_ORIGIN` — owner-approved canonical HTTPS origin for the public
   site; it must exactly equal the sole canonical `CORS_ALLOWED_ORIGINS` value
   so landing/legal, API CORS, and Clerk cannot drift onto different hosts;
+  `BUILD_SHA` — exact full lowercase 40-character Git SHA of the approved
+  deployed candidate; production startup rejects missing, uppercase,
+  placeholder, or shortened values, and `/status` exposes this exact identity
+  for bounded post-deploy verification;
   `BASE_PATH` — leave absent/empty or set exactly `/`; any mounted production
   path fails startup;
   `API_MAX_INSTANCES` — actual

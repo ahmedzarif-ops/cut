@@ -21,6 +21,7 @@ const MAX_IMAGES = 20;
 const CLERK_PROXY_PATH = "/api/__clerk";
 const CLERK_PROXY_HEALTH_PATH = "/v1/proxy-health";
 const CLERK_DOMAIN_ID = /^[A-Za-z0-9_-]{1,128}$/u;
+const FULL_GIT_SHA = /^(?!0{40}$)[0-9a-f]{40}$/u;
 const SURFACE_TYPES = new Set([
   "public-indexed",
   "internal",
@@ -355,6 +356,22 @@ function hasOkJsonBody(body) {
   }
 }
 
+function hasExactBuildStatusBody(body, expectedBuildSha) {
+  try {
+    const parsed = JSON.parse(body);
+    return Boolean(
+      parsed &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed) &&
+      Object.keys(parsed).length === 2 &&
+      parsed.status === "ok" &&
+      parsed.build_sha === expectedBuildSha,
+    );
+  } catch {
+    return false;
+  }
+}
+
 function hasHealthyClerkProxyBody(body) {
   try {
     const parsed = JSON.parse(body);
@@ -408,6 +425,26 @@ function validateSurfaceExpectation(surfaceType, expect) {
       !CLERK_DOMAIN_ID.test(expect.clerkDomainId))
   ) {
     throw new DeployVerificationError("invalid_clerk_domain_id");
+  }
+  if (
+    expect.buildSha !== undefined &&
+    (typeof expect.buildSha !== "string" || !FULL_GIT_SHA.test(expect.buildSha))
+  ) {
+    throw new DeployVerificationError("invalid_build_sha");
+  }
+  if (
+    expect.buildSha !== undefined &&
+    (surfaceType !== "json-readiness" ||
+      (expect.path !== undefined && expect.path !== "/status"))
+  ) {
+    throw new DeployVerificationError("invalid_build_sha_target");
+  }
+  if (
+    surfaceType === "json-readiness" &&
+    expect.path === "/status" &&
+    expect.buildSha === undefined
+  ) {
+    throw new DeployVerificationError("build_sha_required");
   }
 }
 
@@ -496,6 +533,12 @@ export function evaluateSurface(input) {
             header(headers, "cache-control"),
           ),
         );
+        if (expect.buildSha !== undefined) {
+          add(
+            "exact BUILD_SHA",
+            hasExactBuildStatusBody(body, expect.buildSha),
+          );
+        }
       }
       break;
     case "auth-guard":
@@ -548,6 +591,12 @@ export async function verifyUrl(url, surfaceType, expect = {}, options = {}) {
     surfaceType === "clerk-proxy-health"
       ? clerkProxyHealthUrl(proxyBaseTarget, expect.clerkDomainId, options)
       : proxyBaseTarget;
+  const effectiveExpectation = {
+    ...expect,
+    url: target.href,
+    path: target.pathname,
+  };
+  validateSurfaceExpectation(surfaceType, effectiveExpectation);
   const requestOptions =
     surfaceType === "clerk-proxy-health"
       ? {
@@ -586,7 +635,7 @@ export async function verifyUrl(url, surfaceType, expect = {}, options = {}) {
     body,
     robotsTxt,
     sitemapXml,
-    expect: { url: target.href, path: target.pathname, ...expect },
+    expect: effectiveExpectation,
   });
 
   if (surfaceType === "cut-public-root") {
@@ -685,6 +734,9 @@ function parseArgv(argv) {
     } else if (rest[index] === "--clerk-domain-id") {
       expect.clerkDomainId = optionValue(rest, index);
       index += 1;
+    } else if (rest[index] === "--build-sha") {
+      expect.buildSha = optionValue(rest, index);
+      index += 1;
     } else if (rest[index] === "--timeout-ms") {
       options.timeoutMs = parsePositiveInteger(
         optionValue(rest, index),
@@ -711,7 +763,8 @@ function usage() {
   return [
     "usage: node deploy-verify.mjs <url> <surfaceType> [options]",
     "surfaceType: public-indexed | internal | go | redirect | json-health | json-readiness | auth-guard | clerk-proxy-health | cut-public-root",
-    "options: --anchor id --image path --redirect-to path --redirect-status N --robots-prefix path --clerk-domain-id id --timeout-ms N --max-response-bytes N --allow-local-http",
+    "options: --anchor id --image path --redirect-to path --redirect-status N --robots-prefix path --clerk-domain-id id --build-sha sha --timeout-ms N --max-response-bytes N --allow-local-http",
+    "the public /status json-readiness check requires --build-sha with the exact full lowercase deployment SHA",
     "--allow-local-http permits HTTP only for localhost/loopback development tests; staging and production remain HTTPS-only",
   ].join("\n");
 }

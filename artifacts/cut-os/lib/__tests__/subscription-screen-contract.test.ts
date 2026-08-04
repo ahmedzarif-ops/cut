@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
-  APP_STORE_69_PORTRAIT_HEIGHT_POINTS,
+  APP_STORE_69_MINIMUM_PORTRAIT_HEIGHT_POINTS,
+  APP_STORE_69_PORTRAIT_VIEWPORTS,
+  isSubscriptionOfferReadyLayoutEligible,
   SUBSCRIPTION_OFFER_READY_LAYOUT,
   subscriptionOfferReadyVerticalBudgetPoints,
 } from "../subscription-offer-layout";
@@ -67,13 +69,36 @@ describe("subscription screen App Store contract", () => {
     );
   });
 
-  it("keeps the settled 6.9-inch offer inside a deterministic vertical budget", () => {
+  it("covers every accepted 6.9-inch portrait viewport", () => {
+    expect(APP_STORE_69_PORTRAIT_VIEWPORTS).toEqual([
+      { widthPoints: 420, heightPoints: 912 },
+      { widthPoints: 430, heightPoints: 932 },
+      { widthPoints: 440, heightPoints: 956 },
+    ]);
+    expect(APP_STORE_69_MINIMUM_PORTRAIT_HEIGHT_POINTS).toBe(912);
+    expect(
+      SUBSCRIPTION_OFFER_READY_LAYOUT.minimumCompactViewportHeightPoints,
+    ).toBe(APP_STORE_69_MINIMUM_PORTRAIT_HEIGHT_POINTS);
+
+    for (const viewport of APP_STORE_69_PORTRAIT_VIEWPORTS) {
+      expect(
+        isSubscriptionOfferReadyLayoutEligible({
+          readyOfferVisible: true,
+          viewportWidthPoints: viewport.widthPoints,
+          viewportHeightPoints: viewport.heightPoints,
+          fontScale: 1,
+        }),
+      ).toBe(true);
+    }
+  });
+
+  it("keeps the settled offer inside every accepted vertical budget", () => {
     const layout = SUBSCRIPTION_OFFER_READY_LAYOUT;
     const budget = subscriptionOfferReadyVerticalBudgetPoints();
 
-    expect(budget).toBeLessThanOrEqual(
-      APP_STORE_69_PORTRAIT_HEIGHT_POINTS - 120,
-    );
+    for (const { heightPoints } of APP_STORE_69_PORTRAIT_VIEWPORTS) {
+      expect(budget).toBeLessThanOrEqual(heightPoints - 120);
+    }
     for (const target of [
       layout.topActionMinHeight,
       layout.purchaseButtonMinHeight,
@@ -100,13 +125,13 @@ describe("subscription screen App Store contract", () => {
     }
     expect(subscriptionScreenSource).toContain("{!readyOfferVisible ? (");
     expect(subscriptionScreenSource).toContain(
-      "SUBSCRIPTION_OFFER_READY_LAYOUT.minimumCompactViewportWidthPoints",
+      "isSubscriptionOfferReadyLayoutEligible({",
     );
     expect(subscriptionScreenSource).toContain(
-      "SUBSCRIPTION_OFFER_READY_LAYOUT.minimumCompactViewportHeightPoints",
+      "viewportWidthPoints: viewportWidth",
     );
     expect(subscriptionScreenSource).toContain(
-      "SUBSCRIPTION_OFFER_READY_LAYOUT.maximumCompactFontScale",
+      "viewportHeightPoints: viewportHeight",
     );
     expect(subscriptionScreenSource).toContain("{plan.description}");
     expect(subscriptionScreenSource).toContain(
@@ -145,6 +170,56 @@ describe("subscription screen App Store contract", () => {
       ),
     );
     expect(subscriptionScreenSource).toContain("<ScrollView");
+  });
+
+  it("falls back to scrolling without hiding mandatory offer disclosures", () => {
+    const layout = SUBSCRIPTION_OFFER_READY_LAYOUT;
+    expect(
+      isSubscriptionOfferReadyLayoutEligible({
+        readyOfferVisible: false,
+        viewportWidthPoints: layout.minimumCompactViewportWidthPoints,
+        viewportHeightPoints: layout.minimumCompactViewportHeightPoints,
+        fontScale: 1,
+      }),
+    ).toBe(false);
+    expect(
+      isSubscriptionOfferReadyLayoutEligible({
+        readyOfferVisible: true,
+        viewportWidthPoints: layout.minimumCompactViewportWidthPoints,
+        viewportHeightPoints: layout.minimumCompactViewportHeightPoints - 1,
+        fontScale: 1,
+      }),
+    ).toBe(false);
+    expect(
+      isSubscriptionOfferReadyLayoutEligible({
+        readyOfferVisible: true,
+        viewportWidthPoints: layout.minimumCompactViewportWidthPoints - 1,
+        viewportHeightPoints: layout.minimumCompactViewportHeightPoints,
+        fontScale: 1,
+      }),
+    ).toBe(false);
+    expect(
+      isSubscriptionOfferReadyLayoutEligible({
+        readyOfferVisible: true,
+        viewportWidthPoints: layout.minimumCompactViewportWidthPoints,
+        viewportHeightPoints: layout.minimumCompactViewportHeightPoints,
+        fontScale: layout.maximumCompactFontScale + 0.01,
+      }),
+    ).toBe(false);
+
+    expect(subscriptionScreenSource).toContain("<ScrollView");
+    expect(subscriptionScreenSource).toContain(
+      "style={[s.disclosure, compactReadyLayout && s.readyDisclosure]}",
+    );
+    expect(subscriptionScreenSource).toMatch(
+      /Payment is charged to your Apple ID\.[\s\S]*?auto-renewable subscription[\s\S]*?renews until canceled\.[\s\S]*?<LegalSupportLinks variant="compact" \/>/u,
+    );
+    expect(subscriptionScreenSource).toContain(
+      'accessibilityLabel="Restore purchases"',
+    );
+    expect(subscriptionScreenSource).toContain(
+      'accessibilityLabel="Manage App Store subscription"',
+    );
   });
 
   it("keeps Privacy Policy, Terms of Use, and Support controls", () => {

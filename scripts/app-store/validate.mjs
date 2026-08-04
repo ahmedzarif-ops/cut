@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { inflateSync } from "node:zlib";
 
 import {
+  CUT_OS_APP_STORE_CONNECT_APP_ID,
   EasSubmitConfigurationError,
   validateEasSubmitConfig,
 } from "../../ops/scripts/eas-submit-config-verify.mjs";
@@ -21,6 +22,19 @@ export const APP_STORE_RELEASE_EVIDENCE_TARGETS = Object.freeze([
   "app_review",
   "public_release",
 ]);
+export const EXPECTED_APPLE_NUMERIC_IDENTIFIERS = Object.freeze({
+  appId: CUT_OS_APP_STORE_CONNECT_APP_ID,
+  subscriptionGroupId: "22286645",
+  subscriptionId: "6798020349",
+});
+const EXPECTED_APPLE_IDENTIFIER_KEYS = Object.freeze([
+  "appId",
+  "subscriptionGroupId",
+  "subscriptionId",
+  "verifiedAtUtc",
+  "evidenceReference",
+]);
+const APPLE_NUMERIC_ID_PATTERN = /^[1-9][0-9]*$/u;
 
 export function verifyAppStoreReleaseEvidenceBoundary({
   repoRoot = DEFAULT_REPO_ROOT,
@@ -121,6 +135,7 @@ const EXPECTED_SUBMISSION_KEYS = Object.freeze([
   "status",
   "updated",
   "references",
+  "appleIdentifiers",
   "listing",
   "ownerControlledFields",
   "availability",
@@ -430,6 +445,13 @@ const EXPECTED_REVIEW_SCREENSHOT_UPLOAD_KEYS = Object.freeze([
   "uploadedAtUtc",
   "evidenceReference",
 ]);
+const EXPECTED_SUBSCRIPTION_REVIEW_NOTES_KEYS = Object.freeze([
+  "status",
+  "appleSubscriptionId",
+  "credentialFree",
+  "savedAtUtc",
+  "evidenceReference",
+]);
 const EXPECTED_SUBSCRIPTION_APPROVAL_KEYS = Object.freeze([
   "owner",
   "appStoreConnectConfirmed",
@@ -451,6 +473,16 @@ const EXPECTED_REVENUECAT_RESTORE_AFTER_DELETION_KEYS = Object.freeze([
   "nativeQaStatus",
   "nativeQaTestedAtUtc",
   "nativeQaEvidenceReference",
+]);
+const EXPECTED_REVENUECAT_API_V2_KEY_KEYS = Object.freeze([
+  "label",
+  "apiVersion",
+  "customerInformationPermission",
+  "projectConfigurationPermission",
+  "chartsPermission",
+  "keyValueViewedDuringVerification",
+  "verifiedAtUtc",
+  "evidenceReference",
 ]);
 const REVENUECAT_TRANSFER_TO_NEW_APP_USER_ID = "transfer_to_new_app_user_id";
 const SUPPORTED_SUBSCRIPTION_DURATIONS = Object.freeze([
@@ -565,11 +597,27 @@ const EXPECTED_TESTFLIGHT_KEYS = Object.freeze([
   "distributionScope",
   "betaAppDescription",
   "whatToTest",
+  "feedbackEmail",
   "feedbackEmailConfiguredInAppStoreConnect",
+  "internalGroup",
   "externalBetaReview",
   "exactBuildEvidence",
   "approval",
 ]);
+const EXPECTED_TESTFLIGHT_INTERNAL_GROUP_KEYS = Object.freeze([
+  "name",
+  "status",
+  "automaticDistribution",
+  "testerCount",
+  "buildCount",
+  "assignedAppStoreConnectBuildId",
+  "assignmentVerifiedAtUtc",
+  "assignmentEvidenceReference",
+  "verifiedAtUtc",
+  "evidenceReference",
+]);
+const EXPECTED_TESTFLIGHT_INTERNAL_GROUP_NAME = "CUT OS Internal QA";
+const EXPECTED_TESTFLIGHT_FEEDBACK_EMAIL = "ahmed.zarif@gmail.com";
 const EXPECTED_TESTFLIGHT_APPROVAL_KEYS = Object.freeze([
   "owner",
   "mobileQa",
@@ -583,7 +631,6 @@ const EXPECTED_EXTERNAL_BETA_REVIEW_KEYS = Object.freeze([
 ]);
 const EXPECTED_TESTFLIGHT_BUILD_EVIDENCE_KEYS = Object.freeze([
   ...EXACT_BUILD_IDENTITY_FIELDS,
-  "internalGroupConfigured",
   "testedAtUtc",
   "qaReportReference",
   "purchaseQaReportReference",
@@ -957,6 +1004,7 @@ function validateConfirmationEvidenceRecord({
   label,
   required,
   requirementLabel,
+  allowedStatuses = ["pending", "confirmed"],
   check,
 }) {
   check(
@@ -964,8 +1012,10 @@ function validateConfirmationEvidenceRecord({
     `${label} must contain exactly status, verifiedAtUtc, and evidenceReference`,
   );
   check(
-    ["pending", "confirmed"].includes(value?.status),
-    `${label}.status must be pending or confirmed`,
+    allowedStatuses.includes(value?.status),
+    allowedStatuses.includes("processing")
+      ? `${label}.status must be pending, processing, or confirmed`
+      : `${label}.status must be pending or confirmed`,
   );
   check(
     value?.verifiedAtUtc === null || validIsoTimestamp(value?.verifiedAtUtc),
@@ -982,6 +1032,17 @@ function validateConfirmationEvidenceRecord({
       `${label} pending status requires null verification evidence`,
     );
   }
+  if (value?.status === "processing") {
+    check(
+      validIsoTimestamp(value?.verifiedAtUtc),
+      `${label} processing status requires verifiedAtUtc`,
+    );
+    check(
+      typeof value?.evidenceReference === "string" &&
+        value.evidenceReference.trim().length > 0,
+      `${label} processing status requires evidenceReference`,
+    );
+  }
 
   if (required) {
     check(
@@ -989,7 +1050,7 @@ function validateConfirmationEvidenceRecord({
       `${requirementLabel} requires ${label}.status confirmed`,
     );
   }
-  if (required || value?.status === "confirmed") {
+  if (value?.status === "confirmed") {
     check(
       validIsoTimestamp(value?.verifiedAtUtc),
       `${label} confirmed status requires verifiedAtUtc`,
@@ -1563,6 +1624,10 @@ function validateAppleCommerceReadiness({
       label: `${label}.${field}`,
       required: confirmationRequired,
       requirementLabel,
+      allowedStatuses:
+        field === "paidAppsAgreement" || field === "banking"
+          ? ["pending", "processing", "confirmed"]
+          : ["pending", "confirmed"],
       check,
     });
   }
@@ -2460,7 +2525,13 @@ function validateAppReview({
   );
 }
 
-function validateSubscription({ value, listing, release, check }) {
+function validateSubscription({
+  value,
+  listing,
+  appleIdentifiers,
+  release,
+  check,
+}) {
   check(isObject(value), "submission.subscription must be an object");
   if (!isObject(value)) return;
 
@@ -2792,7 +2863,7 @@ function validateSubscription({ value, listing, release, check }) {
       "productStatus",
       "firstSubmission",
       "attachedToVersion",
-      "reviewNotesConfigured",
+      "reviewNotes",
       "reviewScreenshotShotId",
       "reviewScreenshotUpload",
     ]),
@@ -2806,11 +2877,7 @@ function validateSubscription({ value, listing, release, check }) {
       `subscription.appStoreConnect.${field} is invalid`,
     );
   }
-  for (const field of [
-    "firstSubmission",
-    "attachedToVersion",
-    "reviewNotesConfigured",
-  ]) {
+  for (const field of ["firstSubmission", "attachedToVersion"]) {
     check(
       typeof appStoreConnect?.[field] === "boolean",
       `subscription.appStoreConnect.${field} must be a boolean`,
@@ -2820,6 +2887,55 @@ function validateSubscription({ value, listing, release, check }) {
     appStoreConnect?.firstSubmission === true,
     "subscription.appStoreConnect.firstSubmission must remain true for v1",
   );
+  const reviewNotes = appStoreConnect?.reviewNotes;
+  check(
+    hasExactKeys(reviewNotes, EXPECTED_SUBSCRIPTION_REVIEW_NOTES_KEYS),
+    "subscription.appStoreConnect.reviewNotes must contain exactly the required keys",
+  );
+  check(
+    ["pending", "saved_in_app_store_connect"].includes(reviewNotes?.status),
+    "subscription.appStoreConnect.reviewNotes.status is invalid",
+  );
+  check(
+    reviewNotes?.appleSubscriptionId === null ||
+      (typeof reviewNotes?.appleSubscriptionId === "string" &&
+        APPLE_NUMERIC_ID_PATTERN.test(reviewNotes.appleSubscriptionId)),
+    "subscription.appStoreConnect.reviewNotes.appleSubscriptionId must be null or a non-zero numeric string",
+  );
+  check(
+    typeof reviewNotes?.credentialFree === "boolean",
+    "subscription.appStoreConnect.reviewNotes.credentialFree must be a boolean",
+  );
+  check(
+    reviewNotes?.savedAtUtc === null ||
+      validIsoTimestamp(reviewNotes?.savedAtUtc),
+    "subscription.appStoreConnect.reviewNotes.savedAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    nullableNonEmptyString(reviewNotes?.evidenceReference),
+    "subscription.appStoreConnect.reviewNotes.evidenceReference must be null or non-empty",
+  );
+  if (reviewNotes?.status === "pending") {
+    check(
+      reviewNotes?.appleSubscriptionId === null &&
+        reviewNotes?.credentialFree === false &&
+        reviewNotes?.savedAtUtc === null &&
+        reviewNotes?.evidenceReference === null,
+      "pending subscription Review Notes require null Apple identity and evidence and credentialFree false",
+    );
+  } else if (reviewNotes?.status === "saved_in_app_store_connect") {
+    check(
+      reviewNotes?.appleSubscriptionId === appleIdentifiers?.subscriptionId,
+      "saved subscription Review Notes must bind submission.appleIdentifiers.subscriptionId",
+    );
+    check(
+      reviewNotes?.credentialFree === true &&
+        validIsoTimestamp(reviewNotes?.savedAtUtc) &&
+        typeof reviewNotes?.evidenceReference === "string" &&
+        reviewNotes.evidenceReference.trim().length > 0,
+      "saved subscription Review Notes require credential-free UTC evidence",
+    );
+  }
   check(
     appStoreConnect?.reviewScreenshotShotId === "07-subscription-offer",
     "subscription review screenshot must remain shot 07-subscription-offer",
@@ -2879,6 +2995,7 @@ function validateSubscription({ value, listing, release, check }) {
       "appStoreConnectApiKeyStatus",
       "subscriptionKeyStatus",
       "customerReadWritePermissionStatus",
+      "apiV2Key",
       "restoreAfterAccountDeletion",
       "verifiedAtUtc",
       "evidenceReference",
@@ -2902,13 +3019,53 @@ function validateSubscription({ value, listing, release, check }) {
     "productionMappingStatus",
     "appStoreConnectApiKeyStatus",
     "subscriptionKeyStatus",
-    "customerReadWritePermissionStatus",
   ]) {
     check(
       ["pending", "verified"].includes(revenueCat?.[field]),
       `subscription.revenueCat.${field} must be pending or verified`,
     );
   }
+  check(
+    ["pending", "confirmed_in_revenuecat", "verified"].includes(
+      revenueCat?.customerReadWritePermissionStatus,
+    ),
+    "subscription.revenueCat.customerReadWritePermissionStatus must be pending, confirmed_in_revenuecat, or verified",
+  );
+  const revenueCatApiV2Key = revenueCat?.apiV2Key;
+  check(
+    hasExactKeys(revenueCatApiV2Key, EXPECTED_REVENUECAT_API_V2_KEY_KEYS),
+    "subscription.revenueCat.apiV2Key must contain exactly the required keys",
+  );
+  check(
+    revenueCatApiV2Key?.label === "CUT Replit Production",
+    "subscription.revenueCat.apiV2Key.label must remain CUT Replit Production",
+  );
+  check(
+    revenueCatApiV2Key?.apiVersion === "v2",
+    "subscription.revenueCat.apiV2Key.apiVersion must remain v2",
+  );
+  check(
+    revenueCatApiV2Key?.customerInformationPermission === "read_write",
+    "subscription.revenueCat.apiV2Key.customerInformationPermission must remain read_write",
+  );
+  check(
+    revenueCatApiV2Key?.projectConfigurationPermission === "read_only",
+    "subscription.revenueCat.apiV2Key.projectConfigurationPermission must remain read_only",
+  );
+  check(
+    revenueCatApiV2Key?.chartsPermission === "no_access",
+    "subscription.revenueCat.apiV2Key.chartsPermission must remain no_access",
+  );
+  check(
+    revenueCatApiV2Key?.keyValueViewedDuringVerification === false,
+    "subscription.revenueCat.apiV2Key.keyValueViewedDuringVerification must remain false",
+  );
+  check(
+    validIsoTimestamp(revenueCatApiV2Key?.verifiedAtUtc) &&
+      typeof revenueCatApiV2Key?.evidenceReference === "string" &&
+      revenueCatApiV2Key.evidenceReference.trim().length > 0,
+    "subscription.revenueCat.apiV2Key requires non-secret dashboard UTC evidence",
+  );
   check(
     revenueCat?.verifiedAtUtc === null ||
       validIsoTimestamp(revenueCat?.verifiedAtUtc),
@@ -3132,12 +3289,19 @@ function validateSubscription({ value, listing, release, check }) {
       `${prefix} requires subscription.appStoreConnect.${field} confirmation`,
     );
   }
-  for (const field of ["attachedToVersion", "reviewNotesConfigured"]) {
-    check(
-      appStoreConnect?.[field] === true,
-      `${prefix} requires subscription.appStoreConnect.${field}`,
-    );
-  }
+  check(
+    appStoreConnect?.attachedToVersion === true,
+    `${prefix} requires subscription.appStoreConnect.attachedToVersion`,
+  );
+  check(
+    reviewNotes?.status === "saved_in_app_store_connect" &&
+      reviewNotes?.appleSubscriptionId === appleIdentifiers?.subscriptionId &&
+      reviewNotes?.credentialFree === true &&
+      validIsoTimestamp(reviewNotes?.savedAtUtc) &&
+      typeof reviewNotes?.evidenceReference === "string" &&
+      reviewNotes.evidenceReference.trim().length > 0,
+    `${prefix} requires credential-free subscription Review Notes saved against the canonical Apple subscription ID`,
+  );
   check(
     screenshotUpload?.status === "uploaded_in_app_store_connect",
     `${prefix} requires subscription review screenshot uploaded in App Store Connect`,
@@ -3947,6 +4111,33 @@ export function validateMetadata({
       `submission.references.${key} must remain ${expected}`,
     );
   }
+  const appleIdentifiers = submission?.appleIdentifiers;
+  check(
+    hasExactKeys(appleIdentifiers, EXPECTED_APPLE_IDENTIFIER_KEYS),
+    "submission.appleIdentifiers must contain exactly the required keys",
+  );
+  for (const [field, expected] of Object.entries(
+    EXPECTED_APPLE_NUMERIC_IDENTIFIERS,
+  )) {
+    check(
+      typeof appleIdentifiers?.[field] === "string" &&
+        APPLE_NUMERIC_ID_PATTERN.test(appleIdentifiers[field]),
+      `submission.appleIdentifiers.${field} must be a non-zero numeric string`,
+    );
+    check(
+      appleIdentifiers?.[field] === expected,
+      `submission.appleIdentifiers.${field} must remain ${expected}`,
+    );
+  }
+  check(
+    validIsoTimestamp(appleIdentifiers?.verifiedAtUtc),
+    "submission.appleIdentifiers.verifiedAtUtc must be a UTC ISO timestamp",
+  );
+  check(
+    typeof appleIdentifiers?.evidenceReference === "string" &&
+      appleIdentifiers.evidenceReference.trim().length > 0,
+    "submission.appleIdentifiers.evidenceReference must be non-empty",
+  );
   const listing = submission?.listing;
   check(isObject(listing), "submission.listing must be an object");
   if (!isObject(listing)) return errors;
@@ -4387,6 +4578,7 @@ export function validateMetadata({
   validateSubscription({
     value: submission.subscription,
     listing,
+    appleIdentifiers,
     release,
     check,
   });
@@ -4899,9 +5091,117 @@ export function validateTestFlightSubmission({
     }
   }
   check(
+    record.feedbackEmail === EXPECTED_TESTFLIGHT_FEEDBACK_EMAIL,
+    `TestFlight feedbackEmail must remain ${EXPECTED_TESTFLIGHT_FEEDBACK_EMAIL}`,
+  );
+  check(
     typeof record.feedbackEmailConfiguredInAppStoreConnect === "boolean",
     "TestFlight feedbackEmailConfiguredInAppStoreConnect must be a boolean",
   );
+  const exactBuild = record.exactBuildEvidence;
+  const internalGroup = record.internalGroup;
+  check(
+    hasExactKeys(internalGroup, EXPECTED_TESTFLIGHT_INTERNAL_GROUP_KEYS),
+    "TestFlight internalGroup must contain exactly the required keys",
+  );
+  check(
+    ["pending", "configured"].includes(internalGroup?.status),
+    "TestFlight internalGroup.status must be pending or configured",
+  );
+  check(
+    internalGroup?.name === null ||
+      (typeof internalGroup?.name === "string" &&
+        internalGroup.name.trim().length > 0),
+    "TestFlight internalGroup.name must be null or non-empty",
+  );
+  check(
+    internalGroup?.automaticDistribution === null ||
+      typeof internalGroup?.automaticDistribution === "boolean",
+    "TestFlight internalGroup.automaticDistribution must be null or a boolean",
+  );
+  for (const field of ["testerCount", "buildCount"]) {
+    check(
+      Number.isInteger(internalGroup?.[field]) && internalGroup[field] >= 0,
+      `TestFlight internalGroup.${field} must be a non-negative integer`,
+    );
+  }
+  check(
+    internalGroup?.assignedAppStoreConnectBuildId === null ||
+      literalProviderId(internalGroup?.assignedAppStoreConnectBuildId),
+    "TestFlight internalGroup.assignedAppStoreConnectBuildId must be null or a literal non-placeholder provider ID",
+  );
+  check(
+    internalGroup?.assignmentVerifiedAtUtc === null ||
+      validIsoTimestamp(internalGroup?.assignmentVerifiedAtUtc),
+    "TestFlight internalGroup.assignmentVerifiedAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    nullableNonEmptyString(internalGroup?.assignmentEvidenceReference),
+    "TestFlight internalGroup.assignmentEvidenceReference must be null or non-empty",
+  );
+  if (internalGroup?.buildCount === 0) {
+    check(
+      internalGroup?.assignedAppStoreConnectBuildId === null &&
+        internalGroup?.assignmentVerifiedAtUtc === null &&
+        internalGroup?.assignmentEvidenceReference === null,
+      "zero-build TestFlight internalGroup requires null build-assignment identity and evidence",
+    );
+  }
+  const groupAssignmentRecorded =
+    internalGroup?.assignedAppStoreConnectBuildId !== null ||
+    internalGroup?.assignmentVerifiedAtUtc !== null ||
+    internalGroup?.assignmentEvidenceReference !== null;
+  if (groupAssignmentRecorded) {
+    check(
+      internalGroup?.buildCount > 0 &&
+        literalProviderId(internalGroup?.assignedAppStoreConnectBuildId) &&
+        validIsoTimestamp(internalGroup?.assignmentVerifiedAtUtc) &&
+        typeof internalGroup?.assignmentEvidenceReference === "string" &&
+        internalGroup.assignmentEvidenceReference.trim().length > 0,
+      "recorded TestFlight internalGroup build assignment requires a build count, literal build ID, UTC, and evidence",
+    );
+    check(
+      internalGroup?.assignedAppStoreConnectBuildId ===
+        exactBuild?.appStoreConnectBuildId,
+      "TestFlight internalGroup assigned build must match exactBuildEvidence.appStoreConnectBuildId",
+    );
+    check(
+      validIsoTimestamp(internalGroup?.verifiedAtUtc) &&
+        validIsoTimestamp(internalGroup?.assignmentVerifiedAtUtc) &&
+        Date.parse(internalGroup.assignmentVerifiedAtUtc) >=
+          Date.parse(internalGroup.verifiedAtUtc),
+      "TestFlight internalGroup assignmentVerifiedAtUtc must not precede internalGroup.verifiedAtUtc",
+    );
+  }
+  check(
+    internalGroup?.verifiedAtUtc === null ||
+      validIsoTimestamp(internalGroup?.verifiedAtUtc),
+    "TestFlight internalGroup.verifiedAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    nullableNonEmptyString(internalGroup?.evidenceReference),
+    "TestFlight internalGroup.evidenceReference must be null or non-empty",
+  );
+  if (internalGroup?.status === "pending") {
+    check(
+      internalGroup?.name === null &&
+        internalGroup?.automaticDistribution === null &&
+        internalGroup?.testerCount === 0 &&
+        internalGroup?.buildCount === 0 &&
+        internalGroup?.verifiedAtUtc === null &&
+        internalGroup?.evidenceReference === null,
+      "pending TestFlight internalGroup requires null configuration evidence and zero counts",
+    );
+  } else if (internalGroup?.status === "configured") {
+    check(
+      internalGroup?.name === EXPECTED_TESTFLIGHT_INTERNAL_GROUP_NAME &&
+        internalGroup?.automaticDistribution === false &&
+        validIsoTimestamp(internalGroup?.verifiedAtUtc) &&
+        typeof internalGroup?.evidenceReference === "string" &&
+        internalGroup.evidenceReference.trim().length > 0,
+      "configured TestFlight internalGroup must bind CUT OS Internal QA with automatic distribution off and UTC evidence",
+    );
+  }
 
   const externalBetaReview = record.externalBetaReview;
   check(
@@ -4920,7 +5220,6 @@ export function validateTestFlightSubmission({
     "TestFlight externalBetaReview.required must match distributionScope",
   );
 
-  const exactBuild = record.exactBuildEvidence;
   check(
     hasExactKeys(exactBuild, EXPECTED_TESTFLIGHT_BUILD_EVIDENCE_KEYS),
     "TestFlight exactBuildEvidence must contain exactly the required keys",
@@ -4943,10 +5242,6 @@ export function validateTestFlightSubmission({
       `TestFlight exactBuildEvidence.${field} must be null or non-empty`,
     );
   }
-  check(
-    typeof exactBuild?.internalGroupConfigured === "boolean",
-    "TestFlight exactBuildEvidence.internalGroupConfigured must be a boolean",
-  );
   check(
     exactBuild?.testedAtUtc === null ||
       validIsoTimestamp(exactBuild?.testedAtUtc),
@@ -4986,8 +5281,27 @@ export function validateTestFlightSubmission({
       `${prefix} requires the TestFlight feedback email configured in App Store Connect`,
     );
     check(
-      exactBuild?.internalGroupConfigured === true,
-      `${prefix} requires a configured internal TestFlight group`,
+      internalGroup?.status === "configured" &&
+        internalGroup?.name === EXPECTED_TESTFLIGHT_INTERNAL_GROUP_NAME &&
+        internalGroup?.testerCount > 0 &&
+        internalGroup?.buildCount > 0,
+      `${prefix} requires the configured internal TestFlight group to contain a tester and build`,
+    );
+    check(
+      literalProviderId(internalGroup?.assignedAppStoreConnectBuildId) &&
+        validIsoTimestamp(internalGroup?.assignmentVerifiedAtUtc) &&
+        typeof internalGroup?.assignmentEvidenceReference === "string" &&
+        internalGroup.assignmentEvidenceReference.trim().length > 0 &&
+        internalGroup.assignedAppStoreConnectBuildId ===
+          exactBuild?.appStoreConnectBuildId,
+      `${prefix} requires the internal TestFlight group assignment bound to exactBuildEvidence.appStoreConnectBuildId with UTC evidence`,
+    );
+    check(
+      validIsoTimestamp(internalGroup?.assignmentVerifiedAtUtc) &&
+        validIsoTimestamp(exactBuild?.testedAtUtc) &&
+        Date.parse(exactBuild.testedAtUtc) >=
+          Date.parse(internalGroup.assignmentVerifiedAtUtc),
+      `${prefix} requires exactBuildEvidence.testedAtUtc at or after the internal-group assignment verification`,
     );
     check(
       validIsoTimestamp(exactBuild?.testedAtUtc),
@@ -5636,18 +5950,19 @@ export function validateBundle({
     ...validateAppReviewNotesDraft({ markdown: appReviewRunbook }),
   ];
 
-  if (releaseRequired) {
-    try {
-      validateEasSubmitConfig(easConfig);
-    } catch (error) {
-      const code =
-        error instanceof EasSubmitConfigurationError
-          ? error.code
-          : "verification_failed";
-      errors.push(
-        `release mode requires deterministic EAS submit routing (${code})`,
-      );
-    }
+  try {
+    validateEasSubmitConfig(easConfig, {
+      expectedAscAppId: submission?.appleIdentifiers?.appId,
+    });
+  } catch (error) {
+    const code =
+      error instanceof EasSubmitConfigurationError
+        ? error.code
+        : "verification_failed";
+    const prefix = releaseRequired ? "release mode" : "working record";
+    errors.push(
+      `${prefix} requires deterministic EAS submit routing (${code})`,
+    );
   }
   return errors;
 }
