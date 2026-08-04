@@ -2,7 +2,7 @@
 
 **Initial verification:** 2026-08-04T21:33:17Z
 
-**Latest live update:** 2026-08-04T22:28:52Z
+**Latest live update:** 2026-08-04T23:08:08Z
 
 **Method:** Direct confirmation in the live Apple Developer and App Store
 Connect interfaces, plus checked-in routing validation.
@@ -17,12 +17,11 @@ App Review, or public-release approval.
 - Team ID: `6JP2ZDM4HC`.
 - Membership renewal date shown by Apple: August 4, 2027.
 - The Paid Apps Agreement shows an effective period of August 4, 2026 through
-  August 3, 2027, with live status `Processing`. It is not represented as fully
-  active while that status remains.
-- The bank account status is `Processing`.
+  August 3, 2027, with live status `Active`.
+- The bank account status is `Active`.
 - The United States Form W-9 status is `Active`, submitted August 4, 2026. The
   tax-form gate is confirmed with this non-sensitive live evidence.
-- Agreement completion and banking remain pending release gates.
+- Apple commerce readiness is confirmed from the three live `Active` statuses.
 
 No private address, phone number, agreement response, tax value, banking value,
 or account credential is stored in this evidence.
@@ -138,8 +137,7 @@ submitted or released.
 - The first subscription must still be attached to version 1.0.0 with the
   approved review screenshot. Its factual credential-free Review Notes are
   already saved.
-- Paid Apps Agreement activation and banking completion remain processing
-  gates. The W-9 tax gate is confirmed active.
+- Paid Apps Agreement, banking, and W-9 tax readiness are confirmed active.
 - Public Privacy, Terms, and Support pages, content-rights and copyright answers,
   age-rating answers, regulated-medical-device declaration, final legal and
   qualified nutrition review, exact signed-build QA, TestFlight, App Review

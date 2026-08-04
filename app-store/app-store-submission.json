@@ -156,7 +156,7 @@
     "appTaxCategory": null,
     "dsaStatus": null,
     "appleCommerceReadiness": {
-      "status": "pending",
+      "status": "confirmed",
       "developerProgramMembership": {
         "status": "confirmed",
         "verifiedAtUtc": "2026-08-04T21:33:17Z",
@@ -168,18 +168,18 @@
         "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
       },
       "paidAppsAgreement": {
-        "status": "processing",
-        "verifiedAtUtc": "2026-08-04T22:28:52Z",
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-04T23:08:08Z",
         "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
       },
       "taxForms": {
         "status": "confirmed",
-        "verifiedAtUtc": "2026-08-04T22:28:52Z",
+        "verifiedAtUtc": "2026-08-04T23:08:08Z",
         "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
       },
       "banking": {
-        "status": "processing",
-        "verifiedAtUtc": "2026-08-04T22:28:52Z",
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-04T23:08:08Z",
         "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
       }
     },

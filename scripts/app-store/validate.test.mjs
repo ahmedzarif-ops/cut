@@ -168,11 +168,15 @@ test("committed working App Store records preserve approved and pending scopes",
       .status,
     "confirmed",
   );
+  assert.equal(
+    submission.commercialAndLegal.appleCommerceReadiness.status,
+    "confirmed",
+  );
   assert.deepEqual(
     submission.commercialAndLegal.appleCommerceReadiness.paidAppsAgreement,
     {
-      status: "processing",
-      verifiedAtUtc: "2026-08-04T22:28:52Z",
+      status: "confirmed",
+      verifiedAtUtc: "2026-08-04T23:08:08Z",
       evidenceReference:
         "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account",
     },
@@ -181,7 +185,7 @@ test("committed working App Store records preserve approved and pending scopes",
     submission.commercialAndLegal.appleCommerceReadiness.taxForms,
     {
       status: "confirmed",
-      verifiedAtUtc: "2026-08-04T22:28:52Z",
+      verifiedAtUtc: "2026-08-04T23:08:08Z",
       evidenceReference:
         "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account",
     },
@@ -189,8 +193,8 @@ test("committed working App Store records preserve approved and pending scopes",
   assert.deepEqual(
     submission.commercialAndLegal.appleCommerceReadiness.banking,
     {
-      status: "processing",
-      verifiedAtUtc: "2026-08-04T22:28:52Z",
+      status: "confirmed",
+      verifiedAtUtc: "2026-08-04T23:08:08Z",
       evidenceReference:
         "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account",
     },
@@ -631,10 +635,10 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
       "release mode requires commercialAndLegal.status confirmed_in_app_store_connect",
     ),
   );
-  assert.ok(
-    errors.includes(
-      "release mode requires commercialAndLegal.appleCommerceReadiness.paidAppsAgreement.status confirmed",
-    ),
+  assert.equal(
+    errors.some((error) => error.includes("appleCommerceReadiness")),
+    false,
+    "the confirmed live Apple commerce readiness must be retained",
   );
   assert.ok(
     errors.includes(
@@ -1070,8 +1074,13 @@ test("Apple commerce readiness is structured and evidence-gated", () => {
   );
 
   const missingProcessingEvidence = clone(inputs.submission);
-  missingProcessingEvidence.commercialAndLegal.appleCommerceReadiness.paidAppsAgreement.evidenceReference =
-    null;
+  const processingReadiness =
+    missingProcessingEvidence.commercialAndLegal.appleCommerceReadiness;
+  processingReadiness.status = "pending";
+  Object.assign(processingReadiness.paidAppsAgreement, {
+    status: "processing",
+    evidenceReference: null,
+  });
   assert.ok(
     validateMetadata({
       ...inputs,
