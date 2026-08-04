@@ -186,8 +186,8 @@ native/App Store acceptance.
   provider or database calls. The public-site build remains zero-JavaScript and
   does not generate or require the development-only `static-build` preview.
 - App Store records: **PASS** in working mode; target-aware strict validation
-  intentionally rejects **216** unresolved requirements for `app_review` and
-  **215** for `public_release`, covering owner, provider, legal, screenshot,
+  intentionally rejects **192** unresolved requirements for `app_review` and
+  **191** for `public_release`, covering owner, provider, legal, screenshot,
   exact-build, and App Store Connect evidence.
 - Native release configuration: **PASS** — the generated iOS Info.plist uses a
   light-content status bar over the dark splash, Clerk Expo is pinned to 4.2.0,
@@ -251,9 +251,13 @@ launch gate.
   `codex/app-store-v1`. Resolve the remote SHA and latest exact-head required
   checks live; do not treat a commit embedded in this tracked file as current
   release evidence.
-- Apple Developer membership still displays **Z A (Pending)** and says the
-  completed purchase may take up to 48 hours to process. Do not repeat the
-  purchase while it remains pending.
+- Apple Developer Program membership is active as an Individual account for
+  Account Holder Zarif Ahmed. The explicit bundle ID, CUT OS App Store Connect
+  app, free U.S.-only Public distribution, iPhone-only compatibility choices,
+  manual release, and exact $4.99 monthly/no-trial subscription are saved.
+  Production EAS submission routing is pinned to Apple app ID `6798020879`.
+  Paid Apps Agreement, tax, banking, legal, exact-build, submission, and
+  release gates remain open.
 - Replit hosting is owner-approved up to **$20/month before tax** and phone
   verification is complete. The clean workspace matches the exact source
   checkpoint. The one-machine $15 Reserved VM remains stopped and unpublished,
@@ -264,33 +268,29 @@ launch gate.
   without entering source. Proxy health and exact production security/iOS
   settings remain post-deployment and signed-device evidence gates.
 - Replit contains a least-privilege RevenueCat API v2 key plus the exact CUT
-  project, entitlement, and offering REST IDs. The Apple app REST ID and real
-  App Store product mapping remain absent until Apple membership and App Store
-  Connect activate, so production continues to fail closed.
+  project, entitlement, and offering REST IDs. The Apple product now exists,
+  but the RevenueCat Apple app, credential upload, app REST ID, and exact
+  product mapping remain absent, so production continues to fail closed.
 
 ## Highest-priority next slice
 
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
-1. Once Apple activates App Store Connect, create the recorded free Public
-   iPhone-only app with SKU `cut-ios-v1`, Mac/Vision compatibility opted out,
-   and one U.S.-only $4.99 monthly/no-trial subscription using the exact
-   45-character description and `use_app_name`; then map the exact Apple product
-   in RevenueCat. Family Sharing remains off and release manual.
-2. Verify Apple's activated personal seller name and have qualified counsel
-   review the owner's selected individual-seller path and intended Texas sole
-   proprietorship under the sensitive-data/legal-entity guidance before
-   submission.
+1. With explicit owner authorization at the credential action, upload the
+   secured Apple In-App Purchase signing credential to RevenueCat, create the
+   Apple app mapping, bind the exact product/entitlement/offering, and record
+   the public iOS SDK key and app REST ID only in their approved destinations.
+2. Have the Account Holder review and personally accept the Paid Apps Agreement,
+   then complete Apple's tax and banking setup. Have qualified counsel review
+   the selected individual-seller/Texas-sole-proprietor path before submission.
 3. Publish owner/counsel-approved Privacy, Terms, and Support pages and supply
    their final HTTPS destinations to the production EAS environment.
-4. After the real App Store app and product exist, create the RevenueCat Apple
-   app, configure its Apple credentials and public iOS SDK key, bind the exact
-   app REST ID/product/offering, and capture controlled evidence without
-   exposing secrets in the repository or binary. Optional App Store Server
-   Notifications can follow after first release.
-5. Link the intended Apple and Expo/EAS projects, configure the eight validated
-   production values, and create an internal TestFlight build.
+4. Complete the still-provisional age-rating and regulated-medical-device
+   answers only after legal, qualified health/nutrition, and final-binary review.
+5. Link the intended Apple and Expo/EAS projects, configure the validated
+   production values, and create an internal TestFlight build after the
+   RevenueCat mapping and public legal URLs are ready.
 6. Complete native-device acceptance for `adult-18-v1`, including deep links,
    offline/relaunch, shared-device account switching, stale-cache clearing,
    deletion in every eligibility state, legal/support links, and VoiceOver.
@@ -322,12 +322,11 @@ and approved the free-download, U.S.-only $4.99 monthly/no-trial,
 Family-Sharing-off, manual-release offer. The corrected 45-character
 description, `use_app_name`, Public distribution, and iPhone-only Mac/Vision
 opt-outs are recorded under the standing delegated launch instruction. The
-seller path and intended Texas sole proprietorship require Apple seller-name
-verification and counsel review because Guideline 5.1.1(ix) directs
+seller path and intended Texas sole proprietorship require eventual public
+seller-display verification and counsel review because Guideline 5.1.1(ix) directs
 sensitive-data apps toward legal-entity submission. Preliminary name screening
 also found a crowded same-market `CUT` field, so qualified `CUT OS` clearance
-remains open. Apple activation,
-financial agreements/tax/banking, Apple signing and RevenueCat Apple
+remains open. Paid Apps terms, tax/banking, Apple signing and RevenueCat Apple
 credentials, RevenueCat Apple-connection/restore authorization and prepared-key
 ratification, EAS/Apple authentication, TestFlight
 distribution, App Store questionnaire/privacy publication, Submit for Review,

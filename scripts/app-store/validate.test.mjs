@@ -132,9 +132,10 @@ test("committed working App Store records preserve approved and pending scopes",
   }
   assert.deepEqual(submission.availability.distributionMethod, {
     decision: "public",
-    status: "pending_app_store_connect_confirmation",
-    savedAtUtc: null,
-    evidenceReference: null,
+    status: "confirmed_in_app_store_connect",
+    savedAtUtc: "2026-08-04T21:33:17Z",
+    evidenceReference:
+      "app-store/evidence/apple-live-configuration-2026-08-04.md#distribution",
   });
   for (const field of [
     "appleSiliconMacAvailability",
@@ -142,11 +143,28 @@ test("committed working App Store records preserve approved and pending scopes",
   ]) {
     assert.deepEqual(submission.availability[field], {
       decision: "do_not_make_available",
-      status: "pending_app_store_connect_confirmation",
-      savedAtUtc: null,
-      evidenceReference: null,
+      status: "confirmed_in_app_store_connect",
+      savedAtUtc: "2026-08-04T21:33:17Z",
+      evidenceReference:
+        "app-store/evidence/apple-live-configuration-2026-08-04.md#distribution",
     });
   }
+  assert.equal(submission.availability.approval.appStoreConnectConfirmed, true);
+  assert.equal(
+    submission.commercialAndLegal.appleCommerceReadiness
+      .developerProgramMembership.status,
+    "confirmed",
+  );
+  assert.equal(
+    submission.commercialAndLegal.appleCommerceReadiness.accountHolderAccess
+      .status,
+    "confirmed",
+  );
+  assert.equal(
+    submission.commercialAndLegal.appleCommerceReadiness.paidAppsAgreement
+      .status,
+    "pending",
+  );
   assert.equal(submission.commercialAndLegal.appDownloadPrice, "free_download");
   assert.equal(
     submission.subscription.productId,
@@ -167,6 +185,16 @@ test("committed working App Store records preserve approved and pending scopes",
     "use_app_name",
   );
   assert.equal(submission.subscription.approval.owner, true);
+  assert.equal(
+    submission.subscription.appStoreConnect.groupStatus,
+    "confirmed_in_app_store_connect",
+  );
+  assert.equal(
+    submission.subscription.appStoreConnect.productStatus,
+    "confirmed_in_app_store_connect",
+  );
+  assert.equal(submission.subscription.approval.appStoreConnectConfirmed, true);
+  assert.equal(submission.subscription.approval.revenueCatVerified, false);
   assert.equal(
     submission.commercialAndLegal.appStoreServerNotifications.status,
     "not_configured_optional_for_initial_release",
@@ -457,10 +485,12 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
     ),
   );
   assert.ok(errors.includes("release mode requires listing.copyright"));
-  assert.ok(
+  assert.equal(
     errors.includes(
       "release mode requires initial territories confirmed in App Store Connect",
     ),
+    false,
+    "the committed App Store Connect territory confirmation must be retained",
   );
   assert.equal(
     errors.some((error) => error.includes("territory catalog")),
@@ -540,10 +570,12 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
       "release mode requires TestFlight status ready_for_app_review",
     ),
   );
-  assert.ok(
+  assert.equal(
     errors.includes(
       "release mode requires deterministic EAS submit routing (production_ios_asc_app_id_not_pinned)",
     ),
+    false,
+    "the committed production submit profile must pin the live App Store Connect app ID",
   );
 
   for (const duplicate of [
@@ -914,7 +946,11 @@ test("Apple commerce readiness is structured and evidence-gated", () => {
   const submission = clone(inputs.submission);
   const readiness = submission.commercialAndLegal.appleCommerceReadiness;
 
-  readiness.developerProgramMembership.status = "confirmed";
+  Object.assign(readiness.developerProgramMembership, {
+    status: "confirmed",
+    verifiedAtUtc: null,
+    evidenceReference: null,
+  });
   let errors = validateMetadata({ ...inputs, submission });
   assert.ok(
     errors.includes(
@@ -1556,7 +1592,9 @@ test("initial territories must be explicit, valid, unique, and approved", () => 
   );
 
   submission.listing.initialTerritories = ["CA"];
+  submission.availability.status = "pending_app_store_connect_confirmation";
   submission.availability.approval.owner = false;
+  submission.availability.approval.appStoreConnectConfirmed = false;
   const releaseErrors = validateMetadata({
     ...inputs,
     submission,

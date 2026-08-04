@@ -56,9 +56,9 @@
         "evidenceReference": null
       },
       "appStoreConnectNameAcceptance": {
-        "status": "pending",
-        "verifiedAtUtc": null,
-        "evidenceReference": null
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-04T21:33:17Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#app-and-identity"
       },
       "ownerApproval": {
         "status": "pending",
@@ -118,28 +118,28 @@
     "subscription.localizations.en-US.customAppName"
   ],
   "availability": {
-    "status": "pending_app_store_connect_confirmation",
+    "status": "confirmed_in_app_store_connect",
     "distributionMethod": {
       "decision": "public",
-      "status": "pending_app_store_connect_confirmation",
-      "savedAtUtc": null,
-      "evidenceReference": null
+      "status": "confirmed_in_app_store_connect",
+      "savedAtUtc": "2026-08-04T21:33:17Z",
+      "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#distribution"
     },
     "appleSiliconMacAvailability": {
       "decision": "do_not_make_available",
-      "status": "pending_app_store_connect_confirmation",
-      "savedAtUtc": null,
-      "evidenceReference": null
+      "status": "confirmed_in_app_store_connect",
+      "savedAtUtc": "2026-08-04T21:33:17Z",
+      "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#distribution"
     },
     "appleVisionProAvailability": {
       "decision": "do_not_make_available",
-      "status": "pending_app_store_connect_confirmation",
-      "savedAtUtc": null,
-      "evidenceReference": null
+      "status": "confirmed_in_app_store_connect",
+      "savedAtUtc": "2026-08-04T21:33:17Z",
+      "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#distribution"
     },
     "approval": {
       "owner": true,
-      "appStoreConnectConfirmed": false
+      "appStoreConnectConfirmed": true
     }
   },
   "commercialAndLegal": {
@@ -151,14 +151,14 @@
     "appleCommerceReadiness": {
       "status": "pending",
       "developerProgramMembership": {
-        "status": "pending",
-        "verifiedAtUtc": null,
-        "evidenceReference": null
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-04T21:33:17Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
       },
       "accountHolderAccess": {
-        "status": "pending",
-        "verifiedAtUtc": null,
-        "evidenceReference": null
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-04T21:33:17Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
       },
       "paidAppsAgreement": {
         "status": "pending",
@@ -326,18 +326,18 @@
     "productReferenceName": "CUT OS Pro Monthly",
     "productId": "com.zarifahmed.cut.pro.monthly",
     "duration": "1_month",
-    "priceScheduleEvidenceReference": null,
+    "priceScheduleEvidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#subscription",
     "usPricing": {
       "storefront": "US",
       "currency": "USD",
       "amount": "4.99",
       "effectiveStatus": "pending",
       "effectiveAtUtc": null,
-      "evidenceReference": null,
+      "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#subscription",
       "ownerDecisionRevision": "owner-offer-2026-08-04-v2",
       "ownerDecisionEvidenceReference": "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription"
     },
-    "availabilityEvidenceReference": null,
+    "availabilityEvidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#subscription",
     "introductoryOfferDecision": "none",
     "introductoryOfferTerms": {
       "duration": null,
@@ -358,8 +358,8 @@
       }
     },
     "appStoreConnect": {
-      "groupStatus": "pending",
-      "productStatus": "pending",
+      "groupStatus": "confirmed_in_app_store_connect",
+      "productStatus": "confirmed_in_app_store_connect",
       "firstSubmission": true,
       "attachedToVersion": false,
       "reviewNotesConfigured": false,
@@ -408,7 +408,7 @@
     },
     "approval": {
       "owner": true,
-      "appStoreConnectConfirmed": false,
+      "appStoreConnectConfirmed": true,
       "revenueCatVerified": false,
       "nativeQaVerified": false
     }

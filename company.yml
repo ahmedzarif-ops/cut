@@ -4,7 +4,7 @@
 
 company:
   name: "CUT"
-  legal_entity: "Zarif Ahmed (Texas sole proprietor)" # no separate entity; exact public operator spelling authorized 2026-08-04
+  legal_entity: "Zarif Ahmed (individual operator; Texas sole-proprietorship path under review)" # no separate entity; exact public operator spelling authorized 2026-08-04
   domain: "" # no custom domain; the Replit provider address is not yet owner-approved
   one_liner: "CUT is an adults-only mobile app that gives lifters one practical daily cut check-in across weigh-ins and balanced meals."
 
@@ -15,7 +15,7 @@ owner:
 
 offer:
   summary: "A paid App Store subscription for one daily next action, consistent weigh-ins, six curated balanced-meal choices, meal logging, and daily nutrition totals."
-  pricing_notes: "Owner-approved v1: free download; one US-only $4.99/month subscription; no trial; Family Sharing off; manual release. App Store Connect creation and live price evidence remain pending."
+  pricing_notes: "Owner-approved v1: free download; one US-only $4.99/month subscription; no trial; Family Sharing off; manual release. The exact App Store Connect app, subscription, price, and availability records were saved on 2026-08-04; Paid Apps Agreement, tax, banking, RevenueCat mapping, exact-build QA, and submission remain pending."
   booking_link: ""
 
 icp:

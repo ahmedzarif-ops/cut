@@ -32,8 +32,8 @@
   one-plan paywall has a tested conservative 6.9-inch layout budget while
   preserving its real offer, account actions, renewal disclosure, legal/support
   links, and accessible targets. Exact signed-device capture remains pending.
-- Target-aware strict validation currently rejects **216** unresolved gates for
-  `app_review` and **215** for `public_release`, covering external, owner, legal,
+- Target-aware strict validation currently rejects **192** unresolved gates for
+  `app_review` and **191** for `public_release`, covering external, owner, legal,
   exact-build, screenshot, and App Store Connect evidence.
 - Release evidence requires structured monitoring approvals and a closed,
   recovery-bound migration classification; it forbids application-only rollback
@@ -80,17 +80,21 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   Replit production deployment or $15 recurring server charge has started; the
   one-machine draft remains stopped and unpublished, with development-data copy
   off and subject to an immediate pre-publish recheck.
-- The owner reports paying Apple's $99 membership fee. Apple activation and App
-  Store Connect access remain pending; do not repeat the purchase.
+- Apple Developer Program membership is active as an Individual account with
+  Zarif Ahmed as Account Holder. App Store Connect access and the CUT OS app
+  record are active; Paid Apps Agreement, tax, banking, legal, exact-build,
+  submission, and release gates remain open. Production EAS submission routing
+  is pinned to Apple app ID `6798020879`.
 - RevenueCat now has a least-privilege server API v2 key plus the exact CUT
   project, entitlement, and offering REST IDs configured directly in Replit.
   The existing Test Store product remains test-only. The owner-approved real
   offer is a free download with `com.zarifahmed.cut.pro.monthly` at $4.99/month,
   no trial, Family Sharing off, United States only initially, and manual
-  release. The real Apple app, product mapping, and iOS SDK key remain pending
-  Apple activation. The dashboard currently shows **Transfer to new App User
-  ID**, but controlled production evidence and exact-build
-  restore-after-deletion QA remain required.
+  release. The real Apple app and subscription now exist. RevenueCat Apple-app
+  creation, the authorized Apple credential upload, public iOS SDK key, app REST
+  ID, and exact product mapping remain pending. The dashboard currently shows
+  **Transfer to new App User ID**, but controlled production evidence and
+  exact-build restore-after-deletion QA remain required.
 
 ## RUNNING QUEUE
 
@@ -100,12 +104,12 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
    Publishing draft still says Reserved VM after every sync. The cost ceiling is
    approved, but do not publish until the Apple/RevenueCat/database production
    preflight can pass and the development-data copy setting is rechecked off.
-3. Continue read-only Apple activation checks. After activation, verify the
-   actual team/seller type before creating any App Store record.
-4. After Apple activates, create the exact App Store Connect app/subscription
-   records and RevenueCat Apple app mapping; do not request the already-recorded
-   offer, seller path, operator, public email, U.S.-only/manual-release, or
-   iPhone-only choices again.
+3. Keep the live Apple membership/app/subscription evidence current and obtain
+   owner action for the Paid Apps Agreement, tax, and banking setup.
+4. With explicit owner authorization at the credential action, upload the
+   secured Apple In-App Purchase credential to RevenueCat, create the Apple app,
+   and bind the exact product, entitlement, offering, public iOS SDK key, and app
+   REST ID without exposing secrets.
 5. Complete Replit production database, Clerk proxy/security, and RevenueCat
    Apple configuration only after their exact prerequisites can pass.
 6. Build the exact signed TestFlight candidate and complete physical-iPhone
@@ -119,9 +123,10 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
 - The approved v1 subscription identifier is
   `com.zarifahmed.cut.pro.monthly`; runtime fails closed and accepts only one
   $4.99 U.S. `P1M`, no-introductory-offer product mapped to `CUT_OS_PRO`.
-  App Store Connect creation remains pending Apple activation. If the offer
-  changes, update and reverify the owner decision, source, configuration, and
-  tests before any signed build.
+  The exact App Store Connect product and U.S. price are saved; first-version
+  attachment, review material, RevenueCat mapping, and exact-build evidence
+  remain pending. If the offer changes, update and reverify the owner decision,
+  source, configuration, and tests before any signed build.
 - Local StoreKit/RevenueCat state never grants paid access without the
   server-authoritative entitlement.
 - Exactly one always-on API machine is required until rate limiting and deletion
@@ -134,7 +139,8 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
 ## OWNER-CONTROLLED GATES
 
 - Replit approval phrase: **Approve Replit up to $20/month before tax**.
-- Activated Apple seller-name verification and Account Holder access.
+- Final public seller-display verification and qualified-counsel review of the
+  individual seller path.
 - Standard-versus-custom EULA, app tax category, optional subscription tax
   override, DSA status, copyright holder/year, content-rights declaration, and
   final product-name clearance.

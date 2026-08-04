@@ -14,15 +14,16 @@ that engineering must not make for the owner.
 
 ## Decision 1 — Apple seller and legal operator
 
-**Status:** Owner selected an individual seller account and supplied the public
-legal-operator name; Apple activation, activated seller-name verification, and
-qualified-counsel review remain pending.
+**Status:** Apple's Individual membership and Account Holder access are active;
+the personal seller path and legal operator are recorded, while qualified-
+counsel review remains pending.
 
-**Verified August 4, 2026:** The owner reports completing Apple's **$99 USD per
-membership year** payment. Apple's live account page recognizes the enrollment
-but still says purchase processing may take up to 48 hours. App Store Connect
-does not yet expose My Apps, and its business area currently redirects to an
-invalid-user state. Do not repeat the purchase while activation is pending.
+**Verified August 4, 2026:** Apple's live account shows an active Individual
+membership for Account Holder Zarif Ahmed, Team ID `6JP2ZDM4HC`, renewing
+August 4, 2027. App Store Connect access is active and the exact CUT OS app
+record has been created. The non-secret live configuration evidence is in
+`app-store/evidence/apple-live-configuration-2026-08-04.md`; private membership
+contact information is deliberately excluded.
 
 Apple App Review Guideline 5.1.1(ix) says apps requiring sensitive user
 information should be submitted by a legal entity rather than an individual
@@ -41,8 +42,8 @@ is **Zarif Ahmed**, and the owner privately supplied the applicable Texas county
 for the sole-proprietorship/DBA review. The owner supplied the name in response
 to the request for the name as it should appear publicly. This authorizes that
 exact spelling for the working App Store and legal-page records; it does not
-authorize publishing the county or claim that Apple has activated or will
-display the identical seller name.
+authorize publishing the county or resolve qualified-counsel review of the
+individual seller path.
 
 Texas Secretary of State guidance says a sole proprietorship generally does not
 need a state formation filing. If the business operates as `CUT OS` rather than
@@ -57,12 +58,10 @@ and [assumed-name FAQ](https://www.sos.state.tx.us/corp/namefilingsfaqs.shtml).
 
 Still required before submission:
 
-- confirmation of the personal legal seller name Apple activates and displays;
 - whether the applicable Texas county requires a `CUT OS` assumed-name filing
   and the exact county process;
 - whether qualified counsel approves the selected individual path or documents
-  an alternative;
-- who has Account Holder authority.
+  an alternative.
 
 If the owner chooses an individual membership for speed, Apple will display the
 owner's personal legal name as the seller. The organization path instead needs
@@ -70,13 +69,14 @@ a legal entity, D-U-N-S Number, organization-domain email and website, and a
 person with authority to bind the organization.
 
 Do not form an entity, repeat the Apple payment, or accept agreements
-automatically. When Apple activates the membership, record the actual seller
-name and individual/organization team type before creating the app record.
+automatically. Paid Apps Agreement acceptance, tax, and banking remain separate
+owner-controlled gates.
 
 ## Decision 2 — first real subscription
 
-**Status:** Exact launch offer is recorded; App Store Connect creation and live
-price evidence remain pending.
+**Status:** The exact launch offer, App Store Connect subscription, U.S. price,
+and availability are saved; RevenueCat mapping, first-version attachment,
+review assets, exact-build QA, submission, and release remain pending.
 
 Recommended focused launch configuration:
 
@@ -94,8 +94,9 @@ Recommended focused launch configuration:
 **Recorded owner decision:** Approved the exact free-download, one-product
 United States launch with **$4.99 USD per month**, no trial, Family Sharing off,
 and manual public release. The approved immutable Product ID and internal and
-customer-facing names are the values above. This approval does not claim that
-the product or price has been created or accepted in App Store Connect.
+customer-facing names are the values above. This approval is now matched by the
+saved App Store Connect records documented in
+`app-store/evidence/apple-live-configuration-2026-08-04.md#subscription`.
 
 **Field-limit correction recorded August 4, 2026:** Apple's live App Store
 Connect reference limits the localizable In-App Purchase description to 45
@@ -107,9 +108,9 @@ the `use_app_name` display option are selected. The machine record binds every
 offer term to this decision so changing price, duration, names, trial, Family
 Sharing, description, or app-name display fails validation.
 
-Do not create a different App Store product or price. Creation of this exact
-record may proceed only after Apple activates App Store Connect; retain the
-saved Apple values and non-secret evidence.
+Do not create a different App Store product or price. The exact record exists;
+retain the saved Apple values and non-secret evidence, and do not attach or
+submit a different product.
 
 Apple treats these as separate fields; do not copy one label into every field by
 assumption. Any additional locale remains unapproved until its exact display
@@ -130,16 +131,14 @@ Replit. The existing Test Store product remains test-only and cannot collect
 the approved live subscription revenue.
 
 This key preparation is a completed technical fact, not owner approval. The
-real Apple app, App Store product mapping, Apple public iOS SDK key, and
-`REVENUECAT_APP_REST_ID` cannot be created or verified until Apple activates
-App Store Connect and the exact app/subscription records exist. This preparation
-does not approve or claim the production Apple connection, restore policy, or
-key ratification.
+real Apple app and subscription now exist. The RevenueCat Apple app, authorized
+Apple credential upload, product mapping, Apple public iOS SDK key, and
+`REVENUECAT_APP_REST_ID` remain pending. This preparation does not approve or
+claim the production Apple connection, restore policy, or key ratification.
 
 The production project must also use RevenueCat's **Transfer to new App User
 ID** restore behavior. The live dashboard currently displays that setting, but
-controlled evidence and owner approval remain pending until the exact Apple
-identifiers exist.
+controlled evidence and owner approval remain pending.
 It is required so an Apple subscription that continues after CUT account
 deletion can move to a replacement CUT account after Restore, without leaving
 the deleted account's old App User ID entitled. The dashboard setting and the
@@ -196,10 +195,11 @@ decisions.
 
 ## Decision 5 — App Store commercial and legal configuration
 
-**Status:** Owner approved the free-download, United States-only, manual-release
-commercial shape; EULA, tax, DSA, counsel, and App Store Connect confirmation
-remain pending. Optional App Store Server Notifications are explicitly omitted
-from the initial release rather than treated as a submission gate.
+**Status:** The owner-approved free-download, United States-only, public,
+iPhone-only, manual-release commercial settings are saved in App Store Connect.
+Paid Apps terms, EULA, tax, banking, DSA, counsel review, and full commercial
+approval remain pending. Optional App Store Server Notifications are explicitly
+omitted from the initial release rather than treated as a submission gate.
 
 The owner must explicitly choose and record:
 
@@ -212,11 +212,12 @@ The owner must explicitly choose and record:
   must still confirm the submitted answer;
 - evidence that each choice was saved in App Store Connect.
 
-The working records contain the approved free-download, United States-only,
-manual-release choices while keeping the unresolved EULA, tax, DSA, counsel,
-and App Store Connect evidence fields `null` or pending. The notifications
-record explicitly states `not_configured_optional_for_initial_release` with no
-URL or fabricated evidence.
+The working records retain controlled evidence for the saved free-download,
+United States-only, public, compatibility, and manual-release choices while
+keeping the unresolved Paid Apps terms, EULA, tax, banking, DSA, counsel, and
+overall commercial approval fields pending. The notifications record explicitly
+states `not_configured_optional_for_initial_release` with no URL or fabricated
+evidence.
 Engineering has fixed the v1 delivery architecture to RevenueCat direct because
 the API does not implement an Apple notification receiver; the exact dashboard
 URL may be configured after the RevenueCat iOS app exists, but it is not an
@@ -344,7 +345,8 @@ inventing a paid approval.
 
 ## Decision 9 — App Store distribution and compatibility surfaces
 
-**Status:** Launch choices recorded; App Store Connect confirmation pending.
+**Status:** Launch choices are saved and confirmed in App Store Connect;
+signed-build QA and release remain pending.
 
 Apple records the app's distribution method separately from territory
 availability and can make an iPhone/iPad app available on Apple-silicon Macs and
@@ -360,10 +362,9 @@ preserving the intended public iPhone launch.
 
 These are routine, non-financial launch selections made under the owner's
 standing instruction to continue independently and ask only for financial or
-sensitive decisions. The machine record now carries all three choices with
-owner-side approval while keeping Apple confirmation pending. After App Store
-Connect becomes available, retain the saved values, UTC, and non-secret
-evidence reference for each field.
+sensitive decisions. The machine record carries all three choices with owner
+approval and live App Store Connect confirmation at
+`app-store/evidence/apple-live-configuration-2026-08-04.md#distribution`.
 
 ## Decision 10 — public product name
 
@@ -391,8 +392,8 @@ brand. See the USPTO's
 These are intentionally deferred until the prerequisites are ready:
 
 - EAS cloud build if it can consume paid quota or incur cost.
-- Production hosting/database provider and exact recurring cost cap (still
-  awaiting an unambiguous selection).
+- Replit production publishing under the approved **$20/month before tax**
+  ceiling; deployment remains deferred until production preflight passes.
 - Any Clerk trial, billing method, or paid-plan upgrade if production cannot use
   the existing no-cost plan.
 - Apple agreements, tax, and banking.

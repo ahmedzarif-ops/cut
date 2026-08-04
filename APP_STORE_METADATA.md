@@ -13,19 +13,19 @@ here is a substitute for owner, legal, or App Review approval.
 
 ## Product and audience
 
-| Field                 | Working position                                                                                          | Release gate                                                                                                      |
-| --------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Product               | CUT OS                                                                                                    | Name clearance and owner approval remain open.                                                                    |
-| Seller/legal operator | Zarif Ahmed; individual seller selected; no separate entity; Texas sole proprietorship                    | Verify Apple's activated seller name and obtain counsel review of the selected individual path before submission. |
-| Primary audience      | Adults age 18 and older who lift; owner confirmed the 18+ launch position                                 | Must appear consistently in product copy, Terms/EULA, support material, and review notes.                         |
-| Eligibility policy    | `adult-18-v1`                                                                                             | Server and release-build bypass tests must pass.                                                                  |
-| Primary category      | Health & Fitness                                                                                          | Owner must confirm against the final feature set.                                                                 |
-| Made for Kids         | No                                                                                                        | Do not select the Kids category.                                                                                  |
-| Public description    | Must state that CUT OS is for adults 18+ and provides general wellness/fitness guidance, not medical care | Final copy requires owner, legal, and qualified health/nutrition review.                                          |
-| Support URL           | Pending; validated in-app configuration is implemented                                                    | Owner must supply and verify a public, functional HTTPS page before submission.                                   |
-| Privacy Policy URL    | Pending; validated in-app configuration is implemented                                                    | Owner/counsel must publish and verify the required HTTPS policy before submission.                                |
-| Terms/EULA            | Pending; validated in-app Terms link is implemented                                                       | Owner/counsel must choose and publish the final 18+ terms/EULA position.                                          |
-| Age Suitability URL   | Optional; pending owner decision                                                                          | If supplied, it must explain the adults-only policy and self-declared gate accurately.                            |
+| Field                 | Working position                                                                                          | Release gate                                                                                             |
+| --------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Product               | CUT OS                                                                                                    | Name clearance and owner approval remain open.                                                           |
+| Seller/legal operator | Zarif Ahmed; active Individual membership and Account Holder; Texas sole-proprietorship path under review | Verify Apple's eventual public seller display and obtain counsel review of the selected individual path. |
+| Primary audience      | Adults age 18 and older who lift; owner confirmed the 18+ launch position                                 | Must appear consistently in product copy, Terms/EULA, support material, and review notes.                |
+| Eligibility policy    | `adult-18-v1`                                                                                             | Server and release-build bypass tests must pass.                                                         |
+| Primary category      | Health & Fitness; saved in App Store Connect                                                              | Owner/reviewers must confirm against the final feature set.                                              |
+| Made for Kids         | No                                                                                                        | Do not select the Kids category.                                                                         |
+| Public description    | Must state that CUT OS is for adults 18+ and provides general wellness/fitness guidance, not medical care | Final copy requires owner, legal, and qualified health/nutrition review.                                 |
+| Support URL           | Pending; validated in-app configuration is implemented                                                    | Owner must supply and verify a public, functional HTTPS page before submission.                          |
+| Privacy Policy URL    | Pending; validated in-app configuration is implemented                                                    | Owner/counsel must publish and verify the required HTTPS policy before submission.                       |
+| Terms/EULA            | Pending; validated in-app Terms link is implemented                                                       | Owner/counsel must choose and publish the final 18+ terms/EULA position.                                 |
+| Age Suitability URL   | Optional; pending owner decision                                                                          | If supplied, it must explain the adults-only policy and self-declared gate accurately.                   |
 
 A preliminary U.S. knock-out screen on August 4, 2026 found no exact `CUT OS`
 result but did find a crowded same-market `CUT` field, including live federal
@@ -81,39 +81,39 @@ The defaults below are safe working positions for the initial English (U.S.)
 means the field is unresolved or intentionally omitted, never that Codex should
 invent a value.
 
-| App Store Connect field    | Provisional v1 value                         | Release gate                                                                                                                        |
-| -------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| App name                   | CUT OS                                       | Name clearance and owner approval remain open.                                                                                      |
-| Bundle ID                  | `com.zarifahmed.cut`                         | Must match the signed archive and existing App Store Connect record.                                                                |
-| App version                | `1.0.0`                                      | Must match the submitted build.                                                                                                     |
-| Primary language           | English (U.S.) / `en-US`                     | Confirm in App Store Connect.                                                                                                       |
-| Subtitle                   | Daily weigh-ins & meal logging               | Owner/reviewer approval remains open.                                                                                               |
-| Description                | Focused v1 listing copy above                | Owner, legal, nutrition, and final-binary review remain open.                                                                       |
-| Keywords                   | Draft above                                  | Recheck byte limit and owner approval before submission.                                                                            |
-| Primary category           | Health & Fitness                             | Owner must confirm against the final feature set.                                                                                   |
-| Secondary category         | None                                         | Safe v1 omission unless the owner selects a supported second category.                                                              |
-| Made for Kids              | No                                           | Do not select the Kids category.                                                                                                    |
-| Promotional text           | Focused v1 promotional copy above            | Owner/reviewer approval remains open; keep it aligned with verified shipped behavior.                                               |
-| Marketing URL              | Omit for initial v1                          | Optional; do not add until a public, accurate marketing page exists.                                                                |
-| What's New                 | Not applicable to the initial 1.0 submission | Supply truthful release notes for later versions.                                                                                   |
-| Support URL                | Unresolved                                   | Owner must supply and verify a public, functional HTTPS page.                                                                       |
-| Privacy Policy URL         | Unresolved                                   | Owner/counsel must publish and verify the required HTTPS policy.                                                                    |
-| Terms/EULA URL             | Unresolved                                   | Owner/counsel must approve and publish the final 18+ terms position.                                                                |
-| Age Suitability URL        | Omit unless owner approves one               | Optional; if supplied, it must describe the self-declared 18+ gate accurately.                                                      |
-| Seller/legal operator      | Zarif Ahmed; individual sole proprietor      | Verify Apple's activated personal seller name matches the owner-supplied record and obtain counsel review before submission.        |
-| SKU                        | `cut-ios-v1`                                 | Internal identifier selected under standing launch authority; confirm the exact value before creating Apple's immutable app record. |
-| Copyright                  | Unresolved                                   | Owner supplies the correct year and rights holder.                                                                                  |
-| Content-rights declaration | Unresolved                                   | Owner/counsel answer from the final catalog, artwork, copy, and licensed content.                                                   |
-| Initial territories        | United States only (`US`)                    | Owner-approved; select only the U.S. storefront and retain evidence of the saved App Store Connect availability.                    |
-| App distribution method    | Public                                       | Routine launch choice recorded; retain saved App Store Connect UTC evidence before App Review.                                      |
-| Apple silicon Mac          | Do Not Make Available                        | iPhone-only v1 choice recorded; retain saved App Store Connect UTC evidence.                                                        |
-| Apple Vision Pro           | Do Not Make Available                        | iPhone-only v1 choice recorded; retain saved App Store Connect UTC evidence.                                                        |
-| App download price         | Free download                                | Owner-approved; confirm the saved App Store Connect value.                                                                          |
-| License agreement          | Unresolved                                   | Owner/counsel chooses Apple's standard EULA or an approved custom EULA.                                                             |
-| App tax category           | Unresolved                                   | Owner/counsel/finance confirms the value; the subscription inherits it unless an explicit override is approved.                     |
-| DSA trader status          | Unresolved                                   | Owner/counsel confirms trader or non-trader; Apple still requires the declaration when distribution excludes the EU.                |
-| Server Notifications       | Omit for initial v1                          | Optional. If added later, use RevenueCat's full production URL; Apple's sandbox field may be empty and fall back to production.     |
-| Release method             | Manual release                               | Keep manual until the owner explicitly approves both submission and public release in App Store Connect.                            |
+| App Store Connect field    | Provisional v1 value                          | Release gate                                                                                                                    |
+| -------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| App name                   | CUT OS; App Store Connect record created      | Apple accepted the record; name clearance and owner approval remain open.                                                       |
+| Bundle ID                  | `com.zarifahmed.cut`                          | Must match the signed archive and existing App Store Connect record.                                                            |
+| App version                | `1.0.0`                                       | Must match the submitted build.                                                                                                 |
+| Primary language           | English (U.S.) / `en-US`; saved               | Reconfirm against the exact submitted version.                                                                                  |
+| Subtitle                   | Daily weigh-ins & meal logging; saved         | Owner/reviewer and exact-build claims approval remain open.                                                                     |
+| Description                | Focused v1 listing copy above                 | Owner, legal, nutrition, and final-binary review remain open.                                                                   |
+| Keywords                   | Draft above                                   | Recheck byte limit and owner approval before submission.                                                                        |
+| Primary category           | Health & Fitness; saved                       | Owner/reviewers must confirm against the final feature set.                                                                     |
+| Secondary category         | None                                          | Safe v1 omission unless the owner selects a supported second category.                                                          |
+| Made for Kids              | No                                            | Do not select the Kids category.                                                                                                |
+| Promotional text           | Focused v1 promotional copy above             | Owner/reviewer approval remains open; keep it aligned with verified shipped behavior.                                           |
+| Marketing URL              | Omit for initial v1                           | Optional; do not add until a public, accurate marketing page exists.                                                            |
+| What's New                 | Not applicable to the initial 1.0 submission  | Supply truthful release notes for later versions.                                                                               |
+| Support URL                | Unresolved                                    | Owner must supply and verify a public, functional HTTPS page.                                                                   |
+| Privacy Policy URL         | Unresolved                                    | Owner/counsel must publish and verify the required HTTPS policy.                                                                |
+| Terms/EULA URL             | Unresolved                                    | Owner/counsel must approve and publish the final 18+ terms position.                                                            |
+| Age Suitability URL        | Omit unless owner approves one                | Optional; if supplied, it must describe the self-declared 18+ gate accurately.                                                  |
+| Seller/legal operator      | Zarif Ahmed; active Individual Account Holder | Verify Apple's eventual public seller display and obtain counsel review before submission.                                      |
+| SKU                        | `cut-ios-v1`; immutable app record created    | Must match the existing App Store Connect record.                                                                               |
+| Copyright                  | Unresolved                                    | Owner supplies the correct year and rights holder.                                                                              |
+| Content-rights declaration | Unresolved                                    | Owner/counsel answer from the final catalog, artwork, copy, and licensed content.                                               |
+| Initial territories        | United States only (`US`); saved              | Controlled evidence retained; keep other storefronts unavailable for v1.                                                        |
+| App distribution method    | Public; saved                                 | Controlled evidence retained; signed-build and submission gates remain open.                                                    |
+| Apple silicon Mac          | Do Not Make Available; saved                  | Keep disabled until platform-specific QA is approved.                                                                           |
+| Apple Vision Pro           | Do Not Make Available; saved                  | Keep disabled until platform-specific QA is approved.                                                                           |
+| App download price         | Free download; saved                          | Paid Apps terms, tax, banking, and subscription release remain open.                                                            |
+| License agreement          | Unresolved                                    | Owner/counsel chooses Apple's standard EULA or an approved custom EULA.                                                         |
+| App tax category           | Unresolved                                    | Owner/counsel/finance confirms the value; the subscription inherits it unless an explicit override is approved.                 |
+| DSA trader status          | Unresolved                                    | Owner/counsel confirms trader or non-trader; Apple still requires the declaration when distribution excludes the EU.            |
+| Server Notifications       | Omit for initial v1                           | Optional. If added later, use RevenueCat's full production URL; Apple's sandbox field may be empty and fall back to production. |
+| Release method             | Manual release; saved                         | Keep manual until the owner explicitly approves both submission and public release in App Store Connect.                        |
 
 These three availability choices are explicit because Apple can otherwise make
 an iPhone/iPad app available through additional distribution or compatibility
@@ -121,7 +121,10 @@ surfaces. CUT's current launch QA is iPhone-only. The machine record therefore
 records Public [distribution](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/set-distribution-methods),
 [Apple silicon Mac availability](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/manage-availability-of-iphone-and-ipad-apps-on-macs-with-apple-silicon),
 and [Apple Vision Pro availability](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/manage-availability-of-iphone-and-ipad-apps-on-apple-vision-pro)
-as Do Not Make Available. Saved App Store Connect evidence is still pending.
+as Do Not Make Available. These distribution and compatibility selections were
+saved in App Store Connect on August 4, 2026; controlled non-secret evidence is
+retained in
+`app-store/evidence/apple-live-configuration-2026-08-04.md#distribution`.
 
 Across the machine records, these URL fields use closed schemas. Support,
 Privacy, Terms, Marketing, Accessibility, and Age Suitability URLs must be
@@ -156,11 +159,12 @@ non-secret evidence reference. The exact-build claims review also carries the
 canonical version/build/Git/EAS/App Store Connect identity and must match the
 TestFlight record.
 
-`commercialAndLegal.appleCommerceReadiness` separately keeps Apple Developer
-Program membership, Account Holder access, the Paid Apps Agreement, tax forms,
-and banking pending until each has a confirmation UTC and controlled non-secret
-evidence reference. All five must be confirmed for release. Never store account,
-agreement, tax, or banking credentials or values in this record.
+`commercialAndLegal.appleCommerceReadiness` records Apple Developer Program
+membership and Account Holder access as confirmed. The Paid Apps Agreement, tax
+forms, and banking remain pending until each has a confirmation UTC and
+controlled non-secret evidence reference. All five must be confirmed for
+release. Never store account, agreement, tax, or banking credentials or values
+in this record.
 
 ## Age rating and questionnaire
 
@@ -333,15 +337,16 @@ not prove the submitted archive.
 ## Structured subscription, review, TestFlight, and accessibility gates
 
 The machine record now carries the owner-approved subscription group/product
-reference names, immutable product ID, monthly duration, proposed U.S. USD
+reference names, immutable product ID, monthly duration, saved U.S. USD
 price, no-introductory-offer decision, Family Sharing disabled, English (U.S.)
 display names, exact 45-character description, and `use_app_name` selection.
 Apple's live reference limits the localizable description to 45 characters; the
 initially approved 54-character sentence must not be entered. The exact
 corrected offer is bound to its recorded decision by working validation. The
-live price schedule/effective-date evidence remains unresolved. The subscription
-tax category inherits the required app-level category unless an explicit
-override is approved.
+U.S. $4.99 Current Pricing record and U.S.-only availability are saved with
+controlled evidence; public/effective revenue status remains pending. The
+subscription tax category inherits the required app-level category unless an
+explicit override is approved.
 Release requires App Store Connect confirmation, attachment to version 1.0,
 review notes, an uploaded review screenshot whose SHA-256 equals approved shot
 07, verified RevenueCat mapping, exact-build StoreKit/Purchase QA/TestFlight
