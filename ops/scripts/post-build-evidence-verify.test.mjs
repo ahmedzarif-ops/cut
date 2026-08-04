@@ -30,12 +30,27 @@ const script = fileURLToPath(
 const releaseManifestTemplate = fileURLToPath(
   new URL("../../RELEASE_EVIDENCE_MANIFEST_TEMPLATE.md", import.meta.url),
 );
-const releaseManifestPath = "release-evidence/1.0.0-1-20260803T120000Z.md";
+const ciWorkflow = fileURLToPath(
+  new URL("../../.github/workflows/ci.yml", import.meta.url),
+);
+const appReviewReleaseManifestPath =
+  "release-evidence/1.0.0-1-app-review-20260803T120000Z.md";
+const publicReleaseManifestPath =
+  "release-evidence/1.0.0-1-public-release-20260803T120000Z.md";
+const releaseManifestPath = appReviewReleaseManifestPath;
 const exactBuildIdentity = Object.freeze({
   appVersion: "1.0.0",
   buildNumber: "1",
   easBuildId: "eas-build-01234567",
   appStoreConnectBuildId: "asc-build-01234567",
+});
+const databaseMigrationSql = "select 1;\n";
+const databaseMigrationRevision = Object.freeze({
+  tag: "0010_minimize_v1_profile",
+  createdAt: 1785790800000,
+  sha256: createHash("sha256")
+    .update(Buffer.from(databaseMigrationSql, "utf8"))
+    .digest("hex"),
 });
 const validationClock = () => new Date("2026-08-04T00:00:00Z");
 
@@ -137,12 +152,12 @@ function approved(id) {
   };
 }
 
-function completeReleaseControl(buildSha) {
+function completeReleaseControl(buildSha, target = "app_review") {
   return {
     schemaVersion: 1,
     status: "FINAL",
     releaseId: "cut-os-1.0.0-1",
-    target: "app_review",
+    target,
     createdAtUtc: "2026-08-03T10:00:00Z",
     finalizedAtUtc: "2026-08-03T13:00:00Z",
     releaseLead: "release-lead",
@@ -158,6 +173,7 @@ function completeReleaseControl(buildSha) {
       previousProductionApiRevision: "production-api-r16",
       publicLegalRevision: "public-legal-r9",
       previousPublicLegalRevision: "public-legal-r8",
+      databaseMigrationRevision: { ...databaseMigrationRevision },
       easBuildId: exactBuildIdentity.easBuildId,
       appStoreConnectBuildId: exactBuildIdentity.appStoreConnectBuildId,
     },
@@ -331,6 +347,113 @@ The evidence commit identity and later owner decisions are recorded externally.
 `;
 }
 
+function draftReleaseManifest(target, releaseId = "cut-os-1.0.0-1") {
+  const control = completeReleaseControl("BUILD_SHA_PENDING", target);
+  control.status = "DRAFT";
+  control.releaseId = releaseId;
+  return completeReleaseManifest("BUILD_SHA_PENDING", control).replace(
+    "- Manifest status: `FINAL`",
+    "- Manifest status: `DRAFT`",
+  );
+}
+
+function submissionForClerkState(
+  testModeState,
+  { updated = "2026-08-03" } = {},
+) {
+  return {
+    status: "approved_for_submission",
+    updated,
+    listing: { appName: "CUT OS", releaseMethod: "manual" },
+    appReview: {
+      status: "ready_for_review",
+      clerkReviewAccess: {
+        strategy: "clerk_production_test_mode_reserved_email_code",
+        clientTrustEnabled: true,
+        allReviewAccountsUseReservedTestEmail: true,
+        fixedCodePolicy: "clerk_reserved_424242",
+        exactBuildClientTrustFlowVerified: true,
+        testModeState,
+        verifiedAtUtc:
+          testModeState === "enabled_for_app_review"
+            ? "2026-08-03T12:45:00Z"
+            : "2026-08-03T13:15:00Z",
+        evidenceReference:
+          testModeState === "enabled_for_app_review"
+            ? "clerk/app-review-access"
+            : "clerk/public-release-access",
+        shutdownControl: {
+          primaryOwner: "release-lead",
+          backupOwner: "security-owner",
+          bothHaveProductionClerkAccess: true,
+          statusSource: "exact_app_store_connect_submission",
+          statusMonitoringConfigured: true,
+          escalationConfigured: true,
+          closureSloMinutes: 15,
+          accessPreflightAtUtc: "2026-08-03T12:40:00Z",
+          accessPreflightEvidenceReference: "clerk/shutdown-access-preflight",
+          triggerObservedAtUtc:
+            testModeState === "enabled_for_app_review"
+              ? null
+              : "2026-08-03T13:05:00Z",
+          testModeDisabledAtUtc:
+            testModeState === "enabled_for_app_review"
+              ? null
+              : "2026-08-03T13:10:00Z",
+          shutdownEvidenceReference:
+            testModeState === "enabled_for_app_review"
+              ? null
+              : "clerk/test-mode-shutdown",
+        },
+      },
+      appleWorkflow:
+        testModeState === "enabled_for_app_review"
+          ? {
+              state: "ready_for_review",
+              submissionReference: "asc-submission-v1",
+              appVersionIncluded: true,
+              subscriptionIncluded: true,
+              subscriptionGroupIncluded: true,
+              manualReleaseSelected: true,
+              appVersionStatus: "ready_for_review",
+              submissionSection: "drafts",
+              reviewActive: false,
+              allSubmittedItemsAccepted: false,
+              verifiedAtUtc: "2026-08-03T12:50:00Z",
+              evidenceReference: "apple/app-review-draft-ready",
+            }
+          : {
+              state: "approved_pending_developer_release",
+              submissionReference: "asc-submission-v1",
+              appVersionIncluded: true,
+              subscriptionIncluded: true,
+              subscriptionGroupIncluded: true,
+              manualReleaseSelected: true,
+              appVersionStatus: "pending_developer_release",
+              submissionSection: "completed",
+              reviewActive: false,
+              allSubmittedItemsAccepted: true,
+              verifiedAtUtc: "2026-08-03T13:20:00Z",
+              evidenceReference: "apple/public-release-approved",
+            },
+      accountStates: Object.fromEntries(
+        ["fullAccess", "purchase", "adultGate", "restricted", "deletion"].map(
+          (id) => [
+            id,
+            {
+              status: "verified_fresh",
+              nonExpiring: true,
+              noMfaOrOutOfBandTrap: true,
+              testedAtUtc: "2026-08-03T12:45:00Z",
+              evidenceReference: `accounts/app-review-${id}`,
+            },
+          ],
+        ),
+      ),
+    },
+  };
+}
+
 function git(repoRoot, ...args) {
   const result = spawnSync("git", args, {
     cwd: repoRoot,
@@ -356,7 +479,23 @@ async function commitAll(repoRoot, message) {
   return git(repoRoot, "rev-parse", "HEAD");
 }
 
-async function createRepository(t, { pinnedRouting = true } = {}) {
+async function createRepository(
+  t,
+  {
+    pinnedRouting = true,
+    appReviewDraftTarget = "app_review",
+    publicReleaseDraftTarget = "public_release",
+    appReviewDraftReleaseId = "cut-os-1.0.0-1",
+    publicReleaseDraftReleaseId = "cut-os-1.0.0-1",
+    appReviewDraftContents,
+    publicReleaseDraftContents,
+    includePublicReleaseDraft = true,
+    includeMigrationJournal = true,
+    migrationJournalContents,
+    migrationSqlContents = databaseMigrationSql,
+    additionalInitialFiles = [],
+  } = {},
+) {
   const repoRoot = await mkdtemp(
     path.join(os.tmpdir(), "cut-post-build-evidence-"),
   );
@@ -381,13 +520,59 @@ async function createRepository(t, { pinnedRouting = true } = {}) {
     ],
     ["app-store/screenshots/manifest.json", '{"shots":[]}\n'],
     ["app-store/app-store-connect-territories.json", "{}\n"],
-    [releaseManifestPath, "# Release evidence\n\nStatus: DRAFT\n"],
+    [
+      releaseManifestPath,
+      appReviewDraftContents ??
+        draftReleaseManifest(appReviewDraftTarget, appReviewDraftReleaseId),
+    ],
+    ...(includePublicReleaseDraft
+      ? [
+          [
+            publicReleaseManifestPath,
+            publicReleaseDraftContents ??
+              draftReleaseManifest(
+                publicReleaseDraftTarget,
+                publicReleaseDraftReleaseId,
+              ),
+          ],
+        ]
+      : []),
+    ...(includeMigrationJournal
+      ? [
+          [
+            "lib/db/migrations/meta/_journal.json",
+            migrationJournalContents ??
+              `${JSON.stringify(
+                {
+                  version: "7",
+                  dialect: "postgresql",
+                  entries: [
+                    {
+                      idx: 0,
+                      version: "7",
+                      when: databaseMigrationRevision.createdAt,
+                      tag: databaseMigrationRevision.tag,
+                      breakpoints: true,
+                    },
+                  ],
+                },
+                null,
+                2,
+              )}\n`,
+          ],
+        ]
+      : []),
+    [
+      `lib/db/migrations/${databaseMigrationRevision.tag}.sql`,
+      migrationSqlContents,
+    ],
     ["APP_REVIEW_RUNBOOK.md", "# Review\n"],
     ["PURCHASE_QA_REPORT.md", "# Purchase QA\n"],
     ["QA_REPORT.md", "# QA\n"],
     ["pnpm-lock.yaml", "lockfileVersion: '9.0'\n"],
     [".github/workflows/release.yml", "name: release\n"],
     ["ops/scripts/check.mjs", "export const ready = true;\n"],
+    ...additionalInitialFiles,
   ];
   for (const [relativePath, contents] of initialFiles) {
     await writeRepoFile(repoRoot, relativePath, contents);
@@ -403,6 +588,9 @@ async function writeEvidenceCommit(
     checksumMatches = true,
     manifestReferencesScreenshot = true,
     manifestContents,
+    manifestPath = releaseManifestPath,
+    releaseTarget = "app_review",
+    submission = submissionForClerkState("enabled_for_app_review"),
     testFlightBuildSha = buildSha,
   } = {},
 ) {
@@ -410,7 +598,7 @@ async function writeEvidenceCommit(
   await writeRepoFile(
     repoRoot,
     "app-store/app-store-submission.json",
-    '{"status":"evidence-complete"}\n',
+    `${JSON.stringify(submission, null, 2)}\n`,
   );
   await writeRepoFile(
     repoRoot,
@@ -433,19 +621,60 @@ async function writeEvidenceCommit(
     Buffer.from([0x89, 0x50, 0x4e, 0x47]),
   );
   const manifest = Buffer.from(
-    manifestContents ?? completeReleaseManifest(buildSha),
+    manifestContents ??
+      completeReleaseManifest(
+        buildSha,
+        completeReleaseControl(buildSha, releaseTarget),
+      ),
     "utf8",
   );
-  await writeRepoFile(repoRoot, releaseManifestPath, manifest);
+  await writeRepoFile(repoRoot, manifestPath, manifest);
   const digest = checksumMatches
     ? createHash("sha256").update(manifest).digest("hex")
     : "0".repeat(64);
   await writeRepoFile(
     repoRoot,
-    `${releaseManifestPath}.sha256`,
-    `${digest}  ${releaseManifestPath}\n`,
+    `${manifestPath}.sha256`,
+    `${digest}  ${manifestPath}\n`,
   );
   return commitAll(repoRoot, "post-build evidence");
+}
+
+async function writePublicReleaseTransition(
+  repoRoot,
+  buildSha,
+  {
+    manifestPath = publicReleaseManifestPath,
+    releaseId = "cut-os-1.0.0-1",
+    releaseTarget = "public_release",
+    finalizedAtUtc = "2026-08-03T13:30:00Z",
+    mutateControl,
+    submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    }),
+  } = {},
+) {
+  await writeRepoFile(
+    repoRoot,
+    "app-store/app-store-submission.json",
+    `${JSON.stringify(submission, null, 2)}\n`,
+  );
+  const control = completeReleaseControl(buildSha, releaseTarget);
+  control.releaseId = releaseId;
+  control.finalizedAtUtc = finalizedAtUtc;
+  if (typeof mutateControl === "function") mutateControl(control);
+  const manifest = Buffer.from(
+    completeReleaseManifest(buildSha, control),
+    "utf8",
+  );
+  await writeRepoFile(repoRoot, manifestPath, manifest);
+  const digest = createHash("sha256").update(manifest).digest("hex");
+  await writeRepoFile(
+    repoRoot,
+    `${manifestPath}.sha256`,
+    `${digest}  ${manifestPath}\n`,
+  );
+  return commitAll(repoRoot, "public release evidence");
 }
 
 function expectCode(code) {
@@ -493,6 +722,7 @@ test("accepts a complete, identity-bound release manifest", () => {
         ...exactBuildIdentity,
         gitCommit: buildSha,
       },
+      expectedDatabaseMigrationRevision: databaseMigrationRevision,
       clock: validationClock,
     }),
     { releaseId: "cut-os-1.0.0-1", target: "app_review" },
@@ -533,6 +763,11 @@ test("the release manifest template carries canonical control JSON", () => {
     "monitoring",
     "rollback",
   ]);
+  assert.deepEqual(Object.keys(control.deployments.databaseMigrationRevision), [
+    "tag",
+    "createdAt",
+    "sha256",
+  ]);
   const navigation = template.slice(
     template.indexOf(endMarker) + endMarker.length,
   );
@@ -541,6 +776,26 @@ test("the release manifest template carries canonical control JSON", () => {
     ["<40 lowercase hex SHA>", "<40 lowercase hex SHA>"],
   );
   assert.doesNotMatch(navigation, /<PASS\/FAIL>|<APPROVED\/BLOCKED>/u);
+});
+
+test("release-evidence CI retains full history and proves current-base ancestry", () => {
+  const workflow = readFileSync(ciWorkflow, "utf8");
+  const releaseEvidenceJob = workflow.slice(
+    workflow.indexOf("release-evidence:"),
+  );
+  assert.match(releaseEvidenceJob, /fetch-depth:\s*0\b/u);
+  assert.match(
+    releaseEvidenceJob,
+    /ref:\s*\$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/u,
+  );
+  assert.match(releaseEvidenceJob, /github\.event\.pull_request\.base\.sha/u);
+  assert.match(releaseEvidenceJob, /github\.event\.pull_request\.base\.ref/u);
+  assert.match(releaseEvidenceJob, /github\.event\.before/u);
+  assert.match(releaseEvidenceJob, /GIT_REF:\s*\$\{\{ github\.ref \}\}/u);
+  assert.match(
+    releaseEvidenceJob,
+    /node ops\/scripts\/release-main-ancestry-verify\.mjs/u,
+  );
 });
 
 test("release manifest content fails closed on incomplete critical evidence", async (t) => {
@@ -559,6 +814,7 @@ test("release manifest content fails closed on incomplete critical evidence", as
           ),
           expectedBuildSha: buildSha,
           exactBuildEvidence,
+          expectedDatabaseMigrationRevision: databaseMigrationRevision,
           clock: validationClock,
         }),
       expectCode(code),
@@ -705,6 +961,21 @@ test("release manifest content fails closed on incomplete critical evidence", as
     });
   });
 
+  for (const [field, value] of [
+    ["tag", "0009_previous_migration"],
+    ["createdAt", databaseMigrationRevision.createdAt - 1],
+    ["sha256", "0".repeat(64)],
+  ]) {
+    await t.test(`database migration ${field} mismatch`, () => {
+      const control = completeReleaseControl(buildSha);
+      control.deployments.databaseMigrationRevision[field] = value;
+      expectInvalid({
+        control,
+        code: "release_manifest_database_migration_identity_mismatch",
+      });
+    });
+  }
+
   await t.test("evidence timestamp after finalization", () => {
     const control = completeReleaseControl(buildSha);
     control.monitoring.coverage.atUtc = "2026-08-03T13:00:01Z";
@@ -795,6 +1066,7 @@ test("accepts fractional-second UTC and staging-only no-upload evidence", () => 
         ...exactBuildIdentity,
         gitCommit: buildSha,
       },
+      expectedDatabaseMigrationRevision: databaseMigrationRevision,
       clock: validationClock,
     }),
     { releaseId: "cut-os-1.0.0-1", target: "staging" },
@@ -810,6 +1082,835 @@ test("accepts exactly one clean, content- and checksum-bound evidence child", as
     changedPathCount: 6,
     releaseTarget: "app_review",
   });
+});
+
+test("release evidence derives the exact database migration from BUILD_SHA", async (t) => {
+  await t.test("missing migration journal", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t, {
+      includeMigrationJournal: false,
+    });
+    await writeEvidenceCommit(repoRoot, buildSha);
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("build_database_migration_identity_invalid"),
+    );
+  });
+
+  await t.test("malformed migration journal", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t, {
+      migrationJournalContents: '{"entries":[]}\n',
+    });
+    await writeEvidenceCommit(repoRoot, buildSha);
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("build_database_migration_identity_invalid"),
+    );
+  });
+
+  await t.test("migration SQL bytes", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t, {
+      migrationSqlContents: "select 2;\n",
+    });
+    await writeEvidenceCommit(repoRoot, buildSha);
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("release_manifest_database_migration_identity_mismatch"),
+    );
+  });
+});
+
+test("both release manifests must be declared DRAFT at BUILD_SHA", async (t) => {
+  await t.test("missing paired public-release draft", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t, {
+      includePublicReleaseDraft: false,
+    });
+    await writeEvidenceCommit(repoRoot, buildSha);
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_paired_public_release_draft_invalid"),
+    );
+  });
+
+  await t.test("duplicate paired public-release drafts", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t, {
+      additionalInitialFiles: [
+        [
+          "release-evidence/duplicate-public-release.md",
+          draftReleaseManifest("public_release"),
+        ],
+      ],
+    });
+    await writeEvidenceCommit(repoRoot, buildSha);
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_paired_public_release_draft_invalid"),
+    );
+  });
+
+  await t.test("App Review draft", async (t) => {
+    const invalidDraft = draftReleaseManifest("app_review").replace(
+      "- Manifest status: `DRAFT`",
+      "- Manifest status: `FINAL`",
+    );
+    const { buildSha, repoRoot } = await createRepository(t, {
+      appReviewDraftContents: invalidDraft,
+    });
+    await writeEvidenceCommit(repoRoot, buildSha);
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("release_manifest_build_draft_invalid"),
+    );
+  });
+
+  await t.test("public-release draft", async (t) => {
+    const invalidDraft = draftReleaseManifest("public_release").replace(
+      '"status": "DRAFT"',
+      '"status": "FINAL"',
+    );
+    const { buildSha, repoRoot } = await createRepository(t, {
+      publicReleaseDraftContents: invalidDraft,
+    });
+    await writeEvidenceCommit(repoRoot, buildSha);
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_paired_public_release_draft_invalid"),
+    );
+  });
+});
+
+test("App Review evidence is fresh at its immutable manifest finalization", async (t) => {
+  await t.test("Clerk review-window evidence", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const submission = submissionForClerkState("enabled_for_app_review");
+    submission.appReview.clerkReviewAccess.verifiedAtUtc =
+      "2026-08-03T13:00:01Z";
+    await writeEvidenceCommit(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_evidence_snapshot_invalid"),
+    );
+  });
+
+  await t.test("Clerk review-window state", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const submission = submissionForClerkState("enabled_for_app_review");
+    submission.appReview.clerkReviewAccess.testModeState =
+      "disabled_for_public_release";
+    await writeEvidenceCommit(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_evidence_snapshot_invalid"),
+    );
+  });
+
+  await t.test("Clerk shutdown-access preflight", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const submission = submissionForClerkState("enabled_for_app_review");
+    submission.appReview.clerkReviewAccess.shutdownControl.backupOwner =
+      "release-lead";
+    await writeEvidenceCommit(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_evidence_snapshot_invalid"),
+    );
+  });
+
+  await t.test("Clerk preflight must be fresh at finalization", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const submission = submissionForClerkState("enabled_for_app_review");
+    submission.appReview.clerkReviewAccess.shutdownControl.accessPreflightAtUtc =
+      "2026-08-02T12:59:59Z";
+    await writeEvidenceCommit(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_evidence_snapshot_invalid"),
+    );
+  });
+
+  await t.test("Clerk preflight cannot follow finalization", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const submission = submissionForClerkState("enabled_for_app_review");
+    submission.appReview.clerkReviewAccess.shutdownControl.accessPreflightAtUtc =
+      "2026-08-03T13:00:01Z";
+    await writeEvidenceCommit(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_evidence_snapshot_invalid"),
+    );
+  });
+
+  await t.test("Clerk closure fields must remain empty", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const submission = submissionForClerkState("enabled_for_app_review");
+    submission.appReview.clerkReviewAccess.shutdownControl.triggerObservedAtUtc =
+      "2026-08-03T12:50:00Z";
+    await writeEvidenceCommit(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_evidence_snapshot_invalid"),
+    );
+  });
+
+  await t.test("Clerk calendar timestamp", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const submission = submissionForClerkState("enabled_for_app_review");
+    submission.appReview.clerkReviewAccess.verifiedAtUtc =
+      "2026-02-30T12:45:00Z";
+    await writeEvidenceCommit(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_evidence_snapshot_invalid"),
+    );
+  });
+
+  await t.test("review-account evidence", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const submission = submissionForClerkState("enabled_for_app_review");
+    submission.appReview.accountStates.fullAccess.testedAtUtc =
+      "2026-08-03T13:00:01Z";
+    await writeEvidenceCommit(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_evidence_snapshot_invalid"),
+    );
+  });
+
+  await t.test("Apple Drafts-section evidence", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const submission = submissionForClerkState("enabled_for_app_review");
+    submission.appReview.appleWorkflow.verifiedAtUtc = "2026-08-03T13:00:01Z";
+    await writeEvidenceCommit(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_evidence_snapshot_invalid"),
+    );
+  });
+
+  await t.test("Apple Drafts-section endpoint", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const submission = submissionForClerkState("enabled_for_app_review");
+    submission.appReview.appleWorkflow.reviewActive = true;
+    await writeEvidenceCommit(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_evidence_snapshot_invalid"),
+    );
+  });
+
+  await t.test("Apple calendar timestamp", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const submission = submissionForClerkState("enabled_for_app_review");
+    submission.appReview.appleWorkflow.verifiedAtUtc = "2026-08-03T24:00:00Z";
+    await writeEvidenceCommit(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("app_review_evidence_snapshot_invalid"),
+    );
+  });
+});
+
+test("accepts one constrained public-release transition after App Review", async (t) => {
+  const { buildSha, repoRoot } = await createRepository(t);
+  const appReviewEvidenceSha = await writeEvidenceCommit(repoRoot, buildSha);
+  const postBuildEvidenceSha = await writePublicReleaseTransition(
+    repoRoot,
+    buildSha,
+  );
+
+  assert.equal(
+    git(repoRoot, "rev-parse", `${postBuildEvidenceSha}^`),
+    appReviewEvidenceSha,
+  );
+  assert.equal(
+    git(repoRoot, "rev-parse", `${appReviewEvidenceSha}^`),
+    buildSha,
+  );
+  assert.deepEqual(verifyPostBuildEvidenceBoundary({ repoRoot }), {
+    buildSha,
+    postBuildEvidenceSha,
+    changedPathCount: 3,
+    releaseTarget: "public_release",
+  });
+});
+
+test("public release requires a separate App Review evidence parent", async (t) => {
+  await t.test("direct public-release evidence", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha, {
+      manifestPath: publicReleaseManifestPath,
+      releaseTarget: "public_release",
+      submission: submissionForClerkState("disabled_for_public_release"),
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_requires_app_review_evidence_parent"),
+    );
+  });
+
+  await t.test("non-App-Review evidence parent", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t, {
+      appReviewDraftTarget: "staging",
+    });
+    await writeEvidenceCommit(repoRoot, buildSha, {
+      releaseTarget: "staging",
+    });
+    await writePublicReleaseTransition(repoRoot, buildSha);
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_requires_app_review_evidence_parent"),
+    );
+  });
+});
+
+test("public-release transition preserves immutable submission and build evidence", async (t) => {
+  await t.test(
+    "submission fields outside updated and Clerk access",
+    async (t) => {
+      const { buildSha, repoRoot } = await createRepository(t);
+      await writeEvidenceCommit(repoRoot, buildSha);
+      const submission = submissionForClerkState(
+        "disabled_for_public_release",
+        { updated: "2026-08-04" },
+      );
+      submission.listing.appName = "Changed after App Review";
+      await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+      assert.throws(
+        () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+        expectCode("public_release_submission_changed_immutable_fields"),
+      );
+    },
+  );
+
+  await t.test("historical review account evidence", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.accountStates.fullAccess.testedAtUtc =
+      "2026-08-04T13:15:00Z";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_submission_changed_immutable_fields"),
+    );
+  });
+
+  await t.test("TestFlight build identity", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const testFlight = JSON.parse(
+      git(repoRoot, "show", `HEAD:${"app-store/testflight-submission.json"}`),
+    );
+    testFlight.exactBuildEvidence.easBuildId = "changed-eas-build";
+    await writeRepoFile(
+      repoRoot,
+      "app-store/testflight-submission.json",
+      `${JSON.stringify(testFlight)}\n`,
+    );
+    await writePublicReleaseTransition(repoRoot, buildSha);
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_transition_build_identity_mismatch"),
+    );
+  });
+
+  await t.test("production deployment identity", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    await writePublicReleaseTransition(repoRoot, buildSha, {
+      mutateControl: (control) => {
+        control.deployments.productionApiRevision = "production-api-r18";
+      },
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_transition_control_identity_mismatch"),
+    );
+  });
+
+  await t.test("database migration identity", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    await writePublicReleaseTransition(repoRoot, buildSha, {
+      mutateControl: (control) => {
+        control.deployments.databaseMigrationRevision.sha256 = "0".repeat(64);
+      },
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("release_manifest_database_migration_identity_mismatch"),
+    );
+  });
+});
+
+test("public-release transition has a strict target, identity, and path surface", async (t) => {
+  await t.test("Clerk test mode must be disabled", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    await writePublicReleaseTransition(repoRoot, buildSha, {
+      submission: submissionForClerkState("enabled_for_app_review", {
+        updated: "2026-08-04",
+      }),
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_transition_state_invalid"),
+    );
+  });
+
+  await t.test("Client Trust must remain enabled", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.clerkReviewAccess.clientTrustEnabled = false;
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_clerk_transition_changed_immutable_fields"),
+    );
+  });
+
+  await t.test("Clerk strategy is immutable", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.clerkReviewAccess.fixedCodePolicy = "changed";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_clerk_transition_changed_immutable_fields"),
+    );
+  });
+
+  await t.test("Clerk shutdown owners are immutable", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.clerkReviewAccess.shutdownControl.primaryOwner =
+      "changed-release-lead";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_clerk_transition_changed_immutable_fields"),
+    );
+  });
+
+  await t.test("Clerk shutdown preflight is immutable", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.clerkReviewAccess.shutdownControl.accessPreflightEvidenceReference =
+      "changed/preflight";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_clerk_transition_changed_immutable_fields"),
+    );
+  });
+
+  await t.test("Clerk shutdown accepts exactly 15 minutes", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    const access = submission.appReview.clerkReviewAccess;
+    access.shutdownControl.triggerObservedAtUtc = "2026-08-03T13:00:01Z";
+    access.shutdownControl.testModeDisabledAtUtc = "2026-08-03T13:15:01Z";
+    access.verifiedAtUtc = "2026-08-03T13:20:00Z";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.doesNotThrow(() =>
+      verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+    );
+  });
+
+  await t.test("Clerk shutdown rejects 15 minutes plus 1 ms", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    const access = submission.appReview.clerkReviewAccess;
+    access.shutdownControl.triggerObservedAtUtc = "2026-08-03T13:00:01Z";
+    access.shutdownControl.testModeDisabledAtUtc = "2026-08-03T13:15:01.001Z";
+    access.verifiedAtUtc = "2026-08-03T13:20:00Z";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_clerk_shutdown_evidence_invalid"),
+    );
+  });
+
+  await t.test("Clerk shutdown exceeds the 15-minute SLO", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    const access = submission.appReview.clerkReviewAccess;
+    access.shutdownControl.triggerObservedAtUtc = "2026-08-03T13:00:01Z";
+    access.shutdownControl.testModeDisabledAtUtc = "2026-08-03T13:16:01Z";
+    access.verifiedAtUtc = "2026-08-03T13:20:00Z";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_clerk_shutdown_evidence_invalid"),
+    );
+  });
+
+  await t.test("Clerk shutdown timestamps cannot be inverted", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.clerkReviewAccess.shutdownControl.triggerObservedAtUtc =
+      "2026-08-03T13:11:00Z";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_clerk_shutdown_evidence_invalid"),
+    );
+  });
+
+  await t.test("Clerk shutdown trigger must follow App Review", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.clerkReviewAccess.shutdownControl.triggerObservedAtUtc =
+      "2026-08-03T12:59:00Z";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_clerk_shutdown_evidence_invalid"),
+    );
+  });
+
+  await t.test("Clerk shutdown must precede public finalization", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    const access = submission.appReview.clerkReviewAccess;
+    access.shutdownControl.triggerObservedAtUtc = "2026-08-03T13:20:00Z";
+    access.shutdownControl.testModeDisabledAtUtc = "2026-08-03T13:30:01Z";
+    access.verifiedAtUtc = "2026-08-03T13:30:00Z";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_clerk_shutdown_evidence_invalid"),
+    );
+  });
+
+  await t.test("Clerk shutdown requires closure evidence", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.clerkReviewAccess.shutdownControl.shutdownEvidenceReference =
+      null;
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_clerk_shutdown_evidence_invalid"),
+    );
+  });
+
+  await t.test(
+    "Clerk shutdown evidence reference must be distinct",
+    async (t) => {
+      const { buildSha, repoRoot } = await createRepository(t);
+      await writeEvidenceCommit(repoRoot, buildSha);
+      const submission = submissionForClerkState(
+        "disabled_for_public_release",
+        {
+          updated: "2026-08-04",
+        },
+      );
+      const shutdown = submission.appReview.clerkReviewAccess.shutdownControl;
+      shutdown.shutdownEvidenceReference =
+        shutdown.accessPreflightEvidenceReference;
+      await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+      assert.throws(
+        () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+        expectCode("public_release_clerk_shutdown_evidence_invalid"),
+      );
+    },
+  );
+
+  await t.test("Clerk shutdown timestamps must be fresh", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.clerkReviewAccess.verifiedAtUtc =
+      "2026-08-04T13:15:00Z";
+    await writePublicReleaseTransition(repoRoot, buildSha, {
+      finalizedAtUtc: "2026-08-04T13:30:00Z",
+      submission,
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_clerk_shutdown_evidence_invalid"),
+    );
+  });
+
+  await t.test("Clerk closure evidence must advance", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.clerkReviewAccess.verifiedAtUtc =
+      "2026-08-03T12:45:00Z";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_transition_evidence_not_advanced"),
+    );
+  });
+
+  await t.test(
+    "Clerk closure evidence must use a distinct reference",
+    async (t) => {
+      const { buildSha, repoRoot } = await createRepository(t);
+      await writeEvidenceCommit(repoRoot, buildSha);
+      const submission = submissionForClerkState(
+        "disabled_for_public_release",
+        { updated: "2026-08-04" },
+      );
+      submission.appReview.clerkReviewAccess.evidenceReference =
+        " clerk/app-review-access ";
+      await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+      assert.throws(
+        () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+        expectCode("public_release_transition_evidence_not_advanced"),
+      );
+    },
+  );
+
+  await t.test("calendar-only transition dates must be real", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-09-31",
+    });
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_transition_evidence_not_advanced"),
+    );
+  });
+
+  await t.test("Apple submission identity is immutable", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.appleWorkflow.submissionReference =
+      "asc-different-draft";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_apple_workflow_changed_immutable_fields"),
+    );
+  });
+
+  await t.test("manual release selection is immutable", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.appleWorkflow.manualReleaseSelected = false;
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_apple_workflow_changed_immutable_fields"),
+    );
+  });
+
+  await t.test("Apple Completed section must be exact", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.appleWorkflow.submissionSection = "drafts";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_apple_workflow_state_invalid"),
+    );
+  });
+
+  await t.test("Apple approval evidence must advance", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.appleWorkflow.verifiedAtUtc = "2026-08-03T12:59:59Z";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_apple_workflow_evidence_not_advanced"),
+    );
+  });
+
+  await t.test("Apple approval evidence reference must advance", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.appReview.appleWorkflow.evidenceReference =
+      " apple/app-review-draft-ready ";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_apple_workflow_evidence_not_advanced"),
+    );
+  });
+
+  await t.test(
+    "Clerk closure evidence must be fresh at finalization",
+    async (t) => {
+      const { buildSha, repoRoot } = await createRepository(t);
+      await writeEvidenceCommit(repoRoot, buildSha);
+      await writePublicReleaseTransition(repoRoot, buildSha, {
+        finalizedAtUtc: "2026-08-04T13:30:00Z",
+      });
+      assert.throws(
+        () =>
+          verifyPostBuildEvidenceBoundary({
+            buildSha,
+            repoRoot,
+            clock: () => new Date("2026-08-05T00:00:00Z"),
+          }),
+        expectCode("public_release_transition_evidence_not_advanced"),
+      );
+    },
+  );
+
+  await t.test("release target", async (t) => {
+    const invalidTargetManifestPath =
+      "release-evidence/second-app-review-target.md";
+    const { buildSha, repoRoot } = await createRepository(t, {
+      additionalInitialFiles: [
+        [invalidTargetManifestPath, draftReleaseManifest("app_review")],
+      ],
+    });
+    await writeEvidenceCommit(repoRoot, buildSha);
+    await writePublicReleaseTransition(repoRoot, buildSha, {
+      manifestPath: invalidTargetManifestPath,
+      releaseTarget: "app_review",
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_transition_target_required"),
+    );
+  });
+
+  await t.test("release ID", async (t) => {
+    const differentReleaseId = "cut-os-1.0.0-1-different";
+    const differentReleaseManifestPath =
+      "release-evidence/different-public-release.md";
+    const { buildSha, repoRoot } = await createRepository(t, {
+      additionalInitialFiles: [
+        [
+          differentReleaseManifestPath,
+          draftReleaseManifest("public_release", differentReleaseId),
+        ],
+      ],
+    });
+    await writeEvidenceCommit(repoRoot, buildSha);
+    await writePublicReleaseTransition(repoRoot, buildSha, {
+      manifestPath: differentReleaseManifestPath,
+      releaseId: differentReleaseId,
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_transition_manifest_identity_invalid"),
+    );
+  });
+
+  await t.test("non-transition evidence file", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    await writeRepoFile(
+      repoRoot,
+      "app-store/app-store-connect-territories.json",
+      '{"changed":true}\n',
+    );
+    await writePublicReleaseTransition(repoRoot, buildSha);
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("post_build_path_or_operation_not_allowlisted"),
+    );
+  });
+
+  await t.test("public-release manifest must exist at BUILD_SHA", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    await writePublicReleaseTransition(repoRoot, buildSha, {
+      manifestPath:
+        "release-evidence/1.0.0-1-public-release-created-too-late.md",
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("post_build_path_or_operation_not_allowlisted"),
+    );
+  });
+
+  await t.test("App Review manifest remains immutable", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    await writePublicReleaseTransition(repoRoot, buildSha, {
+      manifestPath: appReviewReleaseManifestPath,
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("post_build_path_or_operation_not_allowlisted"),
+    );
+  });
+});
+
+test("rejects a third post-build evidence commit", async (t) => {
+  const { buildSha, repoRoot } = await createRepository(t);
+  await writeEvidenceCommit(repoRoot, buildSha);
+  await writePublicReleaseTransition(repoRoot, buildSha);
+  await writeRepoFile(
+    repoRoot,
+    "app-store/app-store-submission.json",
+    `${JSON.stringify(
+      submissionForClerkState("disabled_for_public_release", {
+        updated: "2026-08-05",
+      }),
+      null,
+      2,
+    )}\n`,
+  );
+  await commitAll(repoRoot, "third evidence commit");
+  assert.throws(
+    () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+    expectCode("evidence_commit_must_directly_follow_build_sha"),
+  );
 });
 
 test("rejects tracked and untracked dirt", async (t) => {
@@ -828,7 +1929,7 @@ test("rejects tracked and untracked dirt", async (t) => {
   }
 });
 
-test("requires the evidence SHA to be the single direct child of BUILD_SHA", async (t) => {
+test("rejects an incomplete second evidence commit", async (t) => {
   const { buildSha, repoRoot } = await createRepository(t);
   await writeEvidenceCommit(repoRoot, buildSha);
   await writeRepoFile(
@@ -839,7 +1940,7 @@ test("requires the evidence SHA to be the single direct child of BUILD_SHA", asy
   await commitAll(repoRoot, "second evidence commit");
   assert.throws(
     () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
-    expectCode("evidence_commit_must_directly_follow_build_sha"),
+    expectCode("exact_release_manifest_and_checksum_required"),
   );
 });
 

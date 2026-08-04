@@ -9,8 +9,8 @@
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
 - The agent must not self-merge the pull request; the owner merges or explicitly
   overrides that repository rule.
-- The current repository checkpoint passes **1002 automated tests** (86 release
-  operations, 40 App Store, 33 domain, 4 database, 386 mobile, and 453 API), all
+- The current repository checkpoint passes **1,077 automated tests** (158 release
+  operations, 43 App Store, 33 domain, 4 database, 386 mobile, and 453 API), all
   TypeScript checks, generated-code drift, working App Store validation,
   changed-file formatting, `.replit`/migration parsing and drift checks, Expo
   dependency health, and the clean zero-JavaScript Replit production-build
@@ -25,8 +25,9 @@
   exact-build restore QA remain evidence gates. Database/migration and shutdown
   timeout relationships are cross-tested, and Metro gets only reviewed public
   values with dotenv loading forced off.
-- Strict release validation currently rejects **275** unresolved external,
-  owner, legal, exact-build, screenshot, and App Store Connect evidence gates.
+- Target-aware strict validation currently rejects **286** unresolved gates for
+  `app_review` and **285** for `public_release`, covering external, owner, legal,
+  exact-build, screenshot, and App Store Connect evidence.
 - Clean Expo iOS prebuild and CocoaPods installation pass with fail-closed scene-
   lifecycle and iOS 17 pod-target plugins. An unsigned Xcode 27 Release app also
   compiled and remained alive on iOS 27 with an active `UIWindowScene`; this was
@@ -37,6 +38,16 @@
   Client Trust, bot protection, and lockout protection enabled. Production
   Strict/Native API configuration and signed physical-iPhone evidence remain
   release gates.
+- App Review access is now a target-bound release gate: its controlled window
+  requires Clerk production test mode, Client Trust, five reserved synthetic
+  accounts, and exact-build new-device proof; public release separately
+  requires production test mode off while Client Trust remains on. The verifier
+  accepts only `BUILD_SHA -> APP_REVIEW_EVIDENCE_SHA ->
+PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
+  non-allowlisted submission field across the transition, freezes release ID
+  plus build/deployment identity across target manifests, and rejects a third
+  evidence commit. Only root `updated`, target-state Clerk/Apple evidence, and
+  the Clerk shutdown-closure triplet may advance in the submission record.
 - Sign-up has separate 18+ and provisional Terms/Privacy controls. Legal launch
   gate 3A remains open until counsel approves the exact language and durable
   policy-version/timestamp evidence design.

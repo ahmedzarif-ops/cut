@@ -236,6 +236,8 @@ const EXPECTED_APP_REVIEW_KEYS = Object.freeze([
   "signInRequired",
   "credentialPolicy",
   "configuration",
+  "clerkReviewAccess",
+  "appleWorkflow",
   "finalResolvedNotesEvidence",
   "accountStates",
   "exactBuild",
@@ -259,6 +261,70 @@ const EXPECTED_APP_REVIEW_CONFIGURATION_KEYS = Object.freeze([
   "notesConfigured",
   "primaryDemoAccountConfigured",
   "additionalSyntheticAccountsConfiguredInNotes",
+]);
+const EXPECTED_CLERK_REVIEW_ACCESS_KEYS = Object.freeze([
+  "strategy",
+  "clientTrustEnabled",
+  "allReviewAccountsUseReservedTestEmail",
+  "fixedCodePolicy",
+  "exactBuildClientTrustFlowVerified",
+  "testModeState",
+  "verifiedAtUtc",
+  "evidenceReference",
+  "shutdownControl",
+]);
+const EXPECTED_CLERK_SHUTDOWN_CONTROL_KEYS = Object.freeze([
+  "primaryOwner",
+  "backupOwner",
+  "bothHaveProductionClerkAccess",
+  "statusSource",
+  "statusMonitoringConfigured",
+  "escalationConfigured",
+  "closureSloMinutes",
+  "accessPreflightAtUtc",
+  "accessPreflightEvidenceReference",
+  "triggerObservedAtUtc",
+  "testModeDisabledAtUtc",
+  "shutdownEvidenceReference",
+]);
+const CLERK_SHUTDOWN_STATUS_SOURCE = "exact_app_store_connect_submission";
+const CLERK_SHUTDOWN_SLO_MINUTES = 15;
+const CLERK_REVIEW_ACCESS_STRATEGY =
+  "clerk_production_test_mode_reserved_email_code";
+const CLERK_REVIEW_FIXED_CODE_POLICY = "clerk_reserved_424242";
+const CLERK_REVIEW_TEST_MODE_STATES = Object.freeze([
+  "pending",
+  "enabled_for_app_review",
+  "disabled_for_public_release",
+]);
+const EXPECTED_APPLE_WORKFLOW_KEYS = Object.freeze([
+  "state",
+  "submissionReference",
+  "appVersionIncluded",
+  "subscriptionIncluded",
+  "subscriptionGroupIncluded",
+  "manualReleaseSelected",
+  "appVersionStatus",
+  "submissionSection",
+  "reviewActive",
+  "allSubmittedItemsAccepted",
+  "verifiedAtUtc",
+  "evidenceReference",
+]);
+const APPLE_WORKFLOW_STATES = Object.freeze([
+  "pending",
+  "ready_for_review",
+  "approved_pending_developer_release",
+]);
+const APPLE_APP_VERSION_STATUSES = Object.freeze([
+  "pending",
+  "ready_for_review",
+  "pending_developer_release",
+]);
+const APPLE_SUBMISSION_SECTIONS = Object.freeze([
+  "pending",
+  "drafts",
+  "completed",
 ]);
 const EXPECTED_REVIEW_ACCOUNT_KEYS = Object.freeze([
   "fullAccess",
@@ -1421,6 +1487,7 @@ function validateAppReview({
   value,
   listing,
   release,
+  releaseTarget,
   nowMs,
   notesTemplateSha256,
   check,
@@ -1454,6 +1521,468 @@ function validateAppReview({
     check(
       typeof value.configuration?.[key] === "boolean",
       `appReview.configuration.${key} must be a boolean`,
+    );
+  }
+
+  const clerkReviewAccess = value.clerkReviewAccess;
+  check(
+    hasExactKeys(clerkReviewAccess, EXPECTED_CLERK_REVIEW_ACCESS_KEYS),
+    "appReview.clerkReviewAccess must contain exactly the required non-secret release-access keys",
+  );
+  check(
+    clerkReviewAccess?.strategy === CLERK_REVIEW_ACCESS_STRATEGY,
+    `appReview.clerkReviewAccess.strategy must remain ${CLERK_REVIEW_ACCESS_STRATEGY}`,
+  );
+  check(
+    clerkReviewAccess?.fixedCodePolicy === CLERK_REVIEW_FIXED_CODE_POLICY,
+    `appReview.clerkReviewAccess.fixedCodePolicy must remain ${CLERK_REVIEW_FIXED_CODE_POLICY}`,
+  );
+  for (const field of [
+    "clientTrustEnabled",
+    "allReviewAccountsUseReservedTestEmail",
+    "exactBuildClientTrustFlowVerified",
+  ]) {
+    check(
+      typeof clerkReviewAccess?.[field] === "boolean",
+      `appReview.clerkReviewAccess.${field} must be a boolean`,
+    );
+  }
+  check(
+    CLERK_REVIEW_TEST_MODE_STATES.includes(clerkReviewAccess?.testModeState),
+    "appReview.clerkReviewAccess.testModeState is invalid",
+  );
+  check(
+    clerkReviewAccess?.verifiedAtUtc === null ||
+      validIsoTimestamp(clerkReviewAccess?.verifiedAtUtc),
+    "appReview.clerkReviewAccess.verifiedAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    nullableNonEmptyString(clerkReviewAccess?.evidenceReference),
+    "appReview.clerkReviewAccess.evidenceReference must be null or non-empty",
+  );
+  const shutdownControl = clerkReviewAccess?.shutdownControl;
+  check(
+    hasExactKeys(shutdownControl, EXPECTED_CLERK_SHUTDOWN_CONTROL_KEYS),
+    "appReview.clerkReviewAccess.shutdownControl must contain exactly the required non-secret shutdown keys",
+  );
+  for (const field of ["primaryOwner", "backupOwner"]) {
+    check(
+      nullableNonEmptyString(shutdownControl?.[field]),
+      `appReview.clerkReviewAccess.shutdownControl.${field} must be null or non-empty`,
+    );
+  }
+  for (const field of [
+    "bothHaveProductionClerkAccess",
+    "statusMonitoringConfigured",
+    "escalationConfigured",
+  ]) {
+    check(
+      typeof shutdownControl?.[field] === "boolean",
+      `appReview.clerkReviewAccess.shutdownControl.${field} must be a boolean`,
+    );
+  }
+  check(
+    shutdownControl?.statusSource === CLERK_SHUTDOWN_STATUS_SOURCE,
+    `appReview.clerkReviewAccess.shutdownControl.statusSource must remain ${CLERK_SHUTDOWN_STATUS_SOURCE}`,
+  );
+  check(
+    shutdownControl?.closureSloMinutes === CLERK_SHUTDOWN_SLO_MINUTES,
+    `appReview.clerkReviewAccess.shutdownControl.closureSloMinutes must remain ${CLERK_SHUTDOWN_SLO_MINUTES}`,
+  );
+  for (const field of [
+    "accessPreflightAtUtc",
+    "triggerObservedAtUtc",
+    "testModeDisabledAtUtc",
+  ]) {
+    check(
+      shutdownControl?.[field] === null ||
+        validIsoTimestamp(shutdownControl?.[field]),
+      `appReview.clerkReviewAccess.shutdownControl.${field} must be null or a UTC ISO timestamp`,
+    );
+  }
+  for (const field of [
+    "accessPreflightEvidenceReference",
+    "shutdownEvidenceReference",
+  ]) {
+    check(
+      nullableNonEmptyString(shutdownControl?.[field]),
+      `appReview.clerkReviewAccess.shutdownControl.${field} must be null or non-empty`,
+    );
+  }
+  if (clerkReviewAccess?.testModeState === "pending") {
+    for (const field of [
+      "clientTrustEnabled",
+      "allReviewAccountsUseReservedTestEmail",
+      "exactBuildClientTrustFlowVerified",
+    ]) {
+      check(
+        clerkReviewAccess?.[field] === false,
+        `pending appReview.clerkReviewAccess must keep ${field} false`,
+      );
+    }
+    for (const field of ["verifiedAtUtc", "evidenceReference"]) {
+      check(
+        clerkReviewAccess?.[field] === null,
+        `pending appReview.clerkReviewAccess must keep ${field} null`,
+      );
+    }
+    for (const field of ["primaryOwner", "backupOwner"]) {
+      check(
+        shutdownControl?.[field] === null,
+        `pending appReview.clerkReviewAccess.shutdownControl must keep ${field} null`,
+      );
+    }
+    for (const field of [
+      "bothHaveProductionClerkAccess",
+      "statusMonitoringConfigured",
+      "escalationConfigured",
+    ]) {
+      check(
+        shutdownControl?.[field] === false,
+        `pending appReview.clerkReviewAccess.shutdownControl must keep ${field} false`,
+      );
+    }
+    for (const field of [
+      "accessPreflightAtUtc",
+      "accessPreflightEvidenceReference",
+      "triggerObservedAtUtc",
+      "testModeDisabledAtUtc",
+      "shutdownEvidenceReference",
+    ]) {
+      check(
+        shutdownControl?.[field] === null,
+        `pending appReview.clerkReviewAccess.shutdownControl must keep ${field} null`,
+      );
+    }
+  } else {
+    check(
+      validIsoTimestamp(clerkReviewAccess?.verifiedAtUtc) &&
+        typeof clerkReviewAccess?.evidenceReference === "string" &&
+        clerkReviewAccess.evidenceReference.trim().length > 0,
+      "configured appReview.clerkReviewAccess requires UTC and non-secret evidence",
+    );
+    if (
+      validIsoTimestamp(clerkReviewAccess?.verifiedAtUtc) &&
+      Number.isFinite(nowMs)
+    ) {
+      const verifiedAtMs = Date.parse(clerkReviewAccess.verifiedAtUtc);
+      if (verifiedAtMs > nowMs) {
+        check(
+          false,
+          "appReview.clerkReviewAccess.verifiedAtUtc cannot be in the future",
+        );
+      } else {
+        check(
+          nowMs - verifiedAtMs <= MAX_REVIEW_ACCOUNT_EVIDENCE_AGE_MS,
+          "appReview.clerkReviewAccess evidence must be no more than 24 hours old",
+        );
+      }
+    }
+    check(
+      typeof shutdownControl?.primaryOwner === "string" &&
+        shutdownControl.primaryOwner.trim().length > 0 &&
+        typeof shutdownControl?.backupOwner === "string" &&
+        shutdownControl.backupOwner.trim().length > 0 &&
+        shutdownControl.primaryOwner.trim() !==
+          shutdownControl.backupOwner.trim(),
+      "configured Clerk review access requires distinct primary and backup shutdown owners",
+    );
+    for (const field of [
+      "bothHaveProductionClerkAccess",
+      "statusMonitoringConfigured",
+      "escalationConfigured",
+    ]) {
+      check(
+        shutdownControl?.[field] === true,
+        `configured Clerk review access requires shutdownControl.${field}`,
+      );
+    }
+    check(
+      validIsoTimestamp(shutdownControl?.accessPreflightAtUtc) &&
+        typeof shutdownControl?.accessPreflightEvidenceReference === "string" &&
+        shutdownControl.accessPreflightEvidenceReference.trim().length > 0,
+      "configured Clerk review access requires shutdown-access preflight UTC and evidence",
+    );
+    if (
+      validIsoTimestamp(shutdownControl?.accessPreflightAtUtc) &&
+      Number.isFinite(nowMs)
+    ) {
+      const accessPreflightMs = Date.parse(
+        shutdownControl.accessPreflightAtUtc,
+      );
+      if (accessPreflightMs > nowMs) {
+        check(
+          false,
+          "appReview.clerkReviewAccess.shutdownControl.accessPreflightAtUtc cannot be in the future",
+        );
+      } else if (
+        clerkReviewAccess?.testModeState === "enabled_for_app_review"
+      ) {
+        check(
+          nowMs - accessPreflightMs <= MAX_REVIEW_ACCOUNT_EVIDENCE_AGE_MS,
+          "Clerk shutdown-access preflight evidence must be no more than 24 hours old for app_review",
+        );
+      }
+    }
+    if (clerkReviewAccess?.testModeState === "enabled_for_app_review") {
+      for (const field of [
+        "triggerObservedAtUtc",
+        "testModeDisabledAtUtc",
+        "shutdownEvidenceReference",
+      ]) {
+        check(
+          shutdownControl?.[field] === null,
+          `enabled App Review access must keep shutdownControl.${field} null`,
+        );
+      }
+    } else if (
+      clerkReviewAccess?.testModeState === "disabled_for_public_release"
+    ) {
+      check(
+        validIsoTimestamp(shutdownControl?.triggerObservedAtUtc) &&
+          validIsoTimestamp(shutdownControl?.testModeDisabledAtUtc) &&
+          typeof shutdownControl?.shutdownEvidenceReference === "string" &&
+          shutdownControl.shutdownEvidenceReference.trim().length > 0,
+        "disabled public-release access requires trigger, disablement, and shutdown evidence",
+      );
+      check(
+        typeof shutdownControl?.shutdownEvidenceReference !== "string" ||
+          typeof shutdownControl?.accessPreflightEvidenceReference !==
+            "string" ||
+          shutdownControl.shutdownEvidenceReference.trim() !==
+            shutdownControl.accessPreflightEvidenceReference.trim(),
+        "Clerk shutdown evidence must be distinct from access-preflight evidence",
+      );
+      if (
+        validIsoTimestamp(shutdownControl?.triggerObservedAtUtc) &&
+        validIsoTimestamp(shutdownControl?.testModeDisabledAtUtc)
+      ) {
+        const triggerMs = Date.parse(shutdownControl.triggerObservedAtUtc);
+        const disabledMs = Date.parse(shutdownControl.testModeDisabledAtUtc);
+        if (validIsoTimestamp(shutdownControl?.accessPreflightAtUtc)) {
+          check(
+            Date.parse(shutdownControl.accessPreflightAtUtc) <= triggerMs,
+            "Clerk shutdown-access preflight must precede the observed submission-state trigger",
+          );
+        }
+        check(
+          disabledMs >= triggerMs &&
+            disabledMs - triggerMs <= CLERK_SHUTDOWN_SLO_MINUTES * 60 * 1000,
+          `Clerk production test mode must be disabled within ${CLERK_SHUTDOWN_SLO_MINUTES} minutes of the observed submission-state trigger`,
+        );
+        check(
+          !validIsoTimestamp(clerkReviewAccess?.verifiedAtUtc) ||
+            disabledMs <= Date.parse(clerkReviewAccess.verifiedAtUtc),
+          "Clerk shutdown verification cannot predate test-mode disablement",
+        );
+        if (Number.isFinite(nowMs)) {
+          check(
+            triggerMs <= nowMs && disabledMs <= nowMs,
+            "Clerk shutdown timestamps cannot be in the future",
+          );
+          check(
+            nowMs - disabledMs <= MAX_REVIEW_ACCOUNT_EVIDENCE_AGE_MS,
+            "Clerk shutdown evidence must be no more than 24 hours old",
+          );
+        }
+      }
+    }
+  }
+
+  const clerkAccessTarget = release
+    ? releaseTarget
+    : value.status === "ready_for_review"
+      ? "app_review"
+      : null;
+  if (clerkAccessTarget === "app_review") {
+    check(
+      clerkReviewAccess?.testModeState === "enabled_for_app_review",
+      "app_review release target requires Clerk production test mode enabled_for_app_review",
+    );
+    check(
+      clerkReviewAccess?.clientTrustEnabled === true,
+      "app_review release target requires Clerk Client Trust enabled",
+    );
+    check(
+      clerkReviewAccess?.allReviewAccountsUseReservedTestEmail === true,
+      "app_review release target requires all Clerk review accounts to use reserved +clerk_test email addresses",
+    );
+    check(
+      clerkReviewAccess?.exactBuildClientTrustFlowVerified === true,
+      "app_review release target requires exact-build Client Trust verification with Clerk's reserved fixed code",
+    );
+  } else if (clerkAccessTarget === "public_release") {
+    check(
+      clerkReviewAccess?.testModeState === "disabled_for_public_release",
+      "public_release target requires Clerk production test mode disabled_for_public_release",
+    );
+    check(
+      clerkReviewAccess?.clientTrustEnabled === true,
+      "public_release target requires Clerk Client Trust to remain enabled",
+    );
+  }
+
+  const appleWorkflow = value.appleWorkflow;
+  check(
+    hasExactKeys(appleWorkflow, EXPECTED_APPLE_WORKFLOW_KEYS),
+    "appReview.appleWorkflow must contain exactly the required non-secret Apple workflow keys",
+  );
+  check(
+    APPLE_WORKFLOW_STATES.includes(appleWorkflow?.state),
+    "appReview.appleWorkflow.state is invalid",
+  );
+  check(
+    APPLE_APP_VERSION_STATUSES.includes(appleWorkflow?.appVersionStatus),
+    "appReview.appleWorkflow.appVersionStatus is invalid",
+  );
+  check(
+    APPLE_SUBMISSION_SECTIONS.includes(appleWorkflow?.submissionSection),
+    "appReview.appleWorkflow.submissionSection is invalid",
+  );
+  check(
+    nullableNonEmptyString(appleWorkflow?.submissionReference),
+    "appReview.appleWorkflow.submissionReference must be null or non-empty",
+  );
+  for (const field of [
+    "appVersionIncluded",
+    "subscriptionIncluded",
+    "subscriptionGroupIncluded",
+    "manualReleaseSelected",
+    "reviewActive",
+    "allSubmittedItemsAccepted",
+  ]) {
+    check(
+      typeof appleWorkflow?.[field] === "boolean",
+      `appReview.appleWorkflow.${field} must be a boolean`,
+    );
+  }
+  check(
+    appleWorkflow?.verifiedAtUtc === null ||
+      validIsoTimestamp(appleWorkflow?.verifiedAtUtc),
+    "appReview.appleWorkflow.verifiedAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    nullableNonEmptyString(appleWorkflow?.evidenceReference),
+    "appReview.appleWorkflow.evidenceReference must be null or non-empty",
+  );
+
+  if (appleWorkflow?.state === "pending") {
+    check(
+      appleWorkflow?.submissionReference === null,
+      "pending appReview.appleWorkflow must keep submissionReference null",
+    );
+    for (const field of [
+      "appVersionIncluded",
+      "subscriptionIncluded",
+      "subscriptionGroupIncluded",
+      "manualReleaseSelected",
+      "reviewActive",
+      "allSubmittedItemsAccepted",
+    ]) {
+      check(
+        appleWorkflow?.[field] === false,
+        `pending appReview.appleWorkflow must keep ${field} false`,
+      );
+    }
+    check(
+      appleWorkflow?.appVersionStatus === "pending",
+      "pending appReview.appleWorkflow must keep appVersionStatus pending",
+    );
+    check(
+      appleWorkflow?.submissionSection === "pending",
+      "pending appReview.appleWorkflow must keep submissionSection pending",
+    );
+    for (const field of ["verifiedAtUtc", "evidenceReference"]) {
+      check(
+        appleWorkflow?.[field] === null,
+        `pending appReview.appleWorkflow must keep ${field} null`,
+      );
+    }
+  } else {
+    check(
+      typeof appleWorkflow?.submissionReference === "string" &&
+        appleWorkflow.submissionReference.trim().length > 0 &&
+        validIsoTimestamp(appleWorkflow?.verifiedAtUtc) &&
+        typeof appleWorkflow?.evidenceReference === "string" &&
+        appleWorkflow.evidenceReference.trim().length > 0,
+      "configured appReview.appleWorkflow requires a submission reference, UTC, and non-secret evidence",
+    );
+    if (
+      validIsoTimestamp(appleWorkflow?.verifiedAtUtc) &&
+      Number.isFinite(nowMs)
+    ) {
+      const verifiedAtMs = Date.parse(appleWorkflow.verifiedAtUtc);
+      if (verifiedAtMs > nowMs) {
+        check(
+          false,
+          "appReview.appleWorkflow.verifiedAtUtc cannot be in the future",
+        );
+      } else {
+        check(
+          nowMs - verifiedAtMs <= MAX_REVIEW_ACCOUNT_EVIDENCE_AGE_MS,
+          "appReview.appleWorkflow evidence must be no more than 24 hours old",
+        );
+      }
+    }
+  }
+
+  for (const field of [
+    "appVersionIncluded",
+    "subscriptionIncluded",
+    "subscriptionGroupIncluded",
+    "manualReleaseSelected",
+  ]) {
+    if (
+      clerkAccessTarget === "app_review" ||
+      clerkAccessTarget === "public_release"
+    ) {
+      check(
+        appleWorkflow?.[field] === true,
+        `${clerkAccessTarget} target requires appReview.appleWorkflow.${field}`,
+      );
+    }
+  }
+  if (clerkAccessTarget === "app_review") {
+    check(
+      appleWorkflow?.state === "ready_for_review",
+      "app_review target requires Apple workflow state ready_for_review",
+    );
+    check(
+      appleWorkflow?.appVersionStatus === "ready_for_review",
+      "app_review target requires Apple app version status ready_for_review",
+    );
+    check(
+      appleWorkflow?.submissionSection === "drafts",
+      "app_review target requires the Apple submission to remain in Drafts",
+    );
+    check(
+      appleWorkflow?.reviewActive === false,
+      "app_review target requires no active Apple review before owner submission",
+    );
+    check(
+      appleWorkflow?.allSubmittedItemsAccepted === false,
+      "app_review target must not claim Apple acceptance before owner submission",
+    );
+  } else if (clerkAccessTarget === "public_release") {
+    check(
+      appleWorkflow?.state === "approved_pending_developer_release",
+      "public_release target requires Apple workflow state approved_pending_developer_release",
+    );
+    check(
+      appleWorkflow?.appVersionStatus === "pending_developer_release",
+      "public_release target requires Apple app version status pending_developer_release",
+    );
+    check(
+      appleWorkflow?.submissionSection === "completed",
+      "public_release target requires the Apple submission to appear in Completed",
+    );
+    check(
+      appleWorkflow?.reviewActive === false,
+      "public_release target requires no active Apple review",
+    );
+    check(
+      appleWorkflow?.allSubmittedItemsAccepted === true,
+      "public_release target requires all submitted items accepted",
     );
   }
 
@@ -1589,13 +2118,13 @@ function validateAppReview({
       );
       check(
         record.noMfaOrOutOfBandTrap === true,
-        `${label} verified_fresh evidence requires no MFA or out-of-band access trap`,
+        `${label} verified_fresh evidence requires no user-configured MFA or out-of-band delivery trap and a successful fixed-code Client Trust challenge`,
       );
       if (validIsoTimestamp(record.testedAtUtc) && Number.isFinite(nowMs)) {
         const testedAtMs = Date.parse(record.testedAtUtc);
         if (testedAtMs > nowMs) {
           check(false, `${label}.testedAtUtc cannot be in the future`);
-        } else {
+        } else if (clerkAccessTarget !== "public_release") {
           check(
             nowMs - testedAtMs <= MAX_REVIEW_ACCOUNT_EVIDENCE_AGE_MS,
             `${label} verified_fresh evidence must be no more than 24 hours old`,
@@ -1655,7 +2184,9 @@ function validateAppReview({
         validIsoTimestamp(record?.testedAtUtc) &&
         typeof record?.evidenceReference === "string" &&
         record.evidenceReference.trim().length > 0,
-      `${prefix} requires fresh evidence for appReview.accountStates.${key}`,
+      clerkAccessTarget === "public_release"
+        ? `${prefix} requires retained historical evidence for appReview.accountStates.${key}`
+        : `${prefix} requires fresh evidence for appReview.accountStates.${key}`,
     );
   }
   check(
@@ -2610,10 +3141,27 @@ function validRevenueCatNotificationUrl(value) {
 }
 
 function validIsoTimestamp(value) {
+  if (
+    typeof value !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value)
+  ) {
+    return false;
+  }
+  const parsed = new Date(value);
   return (
-    typeof value === "string" &&
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value) &&
-    !Number.isNaN(Date.parse(value))
+    Number.isFinite(parsed.valueOf()) &&
+    parsed.toISOString().slice(0, 19) === value.slice(0, 19)
+  );
+}
+
+function validIsoDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/u.test(value)) {
+    return false;
+  }
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return (
+    Number.isFinite(parsed.valueOf()) &&
+    parsed.toISOString().slice(0, 10) === value
   );
 }
 
@@ -2792,6 +3340,7 @@ export function validateMetadata({
   notesTemplateSha256 = null,
   clock = () => new Date(),
   release = false,
+  releaseTarget = null,
 }) {
   const errors = [];
   const check = (condition, message) => {
@@ -2816,9 +3365,14 @@ export function validateMetadata({
     "submission.status is invalid",
   );
   release = release || submission.status === "approved_for_submission";
+  if (release) {
+    check(
+      APP_STORE_RELEASE_EVIDENCE_TARGETS.includes(releaseTarget),
+      "release mode requires an authoritative app_review or public_release evidence target",
+    );
+  }
   check(
-    /^\d{4}-\d{2}-\d{2}$/u.test(submission.updated ?? "") &&
-      !Number.isNaN(Date.parse(`${submission.updated}T00:00:00Z`)),
+    validIsoDate(submission.updated),
     "submission.updated must be an ISO calendar date",
   );
   check(
@@ -3231,6 +3785,7 @@ export function validateMetadata({
     value: submission.appReview,
     listing,
     release,
+    releaseTarget,
     nowMs,
     notesTemplateSha256,
     check,
@@ -3723,8 +4278,7 @@ export function validateTestFlightSubmission({
     "TestFlight status must be working_not_approved or ready_for_app_review",
   );
   check(
-    /^\d{4}-\d{2}-\d{2}$/u.test(record.updated ?? "") &&
-      !Number.isNaN(Date.parse(`${record.updated}T00:00:00Z`)),
+    validIsoDate(record.updated),
     "TestFlight updated must be an ISO calendar date",
   );
   check(
@@ -4398,6 +4952,7 @@ export function validateScreenshotManifest({
 export function validateBundle({
   repoRoot = DEFAULT_REPO_ROOT,
   release = false,
+  releaseTarget = null,
   clock = () => new Date(),
 } = {}) {
   const submission = readJson(
@@ -4436,6 +4991,7 @@ export function validateBundle({
       notesTemplateSha256,
       clock,
       release: releaseRequired,
+      releaseTarget,
     }),
     ...validateScreenshotManifest({
       manifest: screenshotManifest,
@@ -4482,28 +5038,32 @@ function main() {
   }
 
   const release = process.argv.includes("--release");
+  let releaseTarget = null;
+  let releaseBoundaryError = null;
+  if (release) {
+    try {
+      const evidence = verifyAppStoreReleaseEvidenceBoundary({
+        repoRoot: DEFAULT_REPO_ROOT,
+      });
+      releaseTarget = evidence.releaseTarget;
+    } catch (error) {
+      const code =
+        error instanceof PostBuildEvidenceError
+          ? error.code
+          : "verification_failed";
+      releaseBoundaryError = `release mode requires a valid post-build evidence boundary (${code})`;
+    }
+  }
   let errors;
   try {
-    errors = validateBundle({ release });
+    errors = validateBundle({ release, releaseTarget });
   } catch (error) {
     console.error(`App Store validation could not run: ${error.message}`);
     process.exitCode = 1;
     return;
   }
 
-  if (errors.length === 0 && release) {
-    try {
-      verifyAppStoreReleaseEvidenceBoundary({ repoRoot: DEFAULT_REPO_ROOT });
-    } catch (error) {
-      const code =
-        error instanceof PostBuildEvidenceError
-          ? error.code
-          : "verification_failed";
-      errors.push(
-        `release mode requires a valid post-build evidence boundary (${code})`,
-      );
-    }
-  }
+  if (releaseBoundaryError !== null) errors.push(releaseBoundaryError);
 
   if (errors.length > 0) {
     console.error(

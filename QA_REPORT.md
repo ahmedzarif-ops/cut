@@ -6,7 +6,7 @@
 
 ## Current launch addendum — August 4, 2026
 
-- **1002/1002 automated tests pass:** 86 release operations, 40 App Store, 33
+- **1,077/1,077 automated tests pass:** 158 release operations, 43 App Store, 33
   domain, 4 database, 386 mobile, and 453 API.
 - Root TypeScript, generated-code drift, working App Store validation,
   changed-file formatting, `.replit` parsing, migration drift, Expo dependency
@@ -25,9 +25,16 @@
 - Database statements, startup migrations, API/public-server shutdown, and
   readiness recovery now have cross-tested timeout boundaries. Metro receives
   an allowlist with dotenv loading disabled instead of the server environment.
-- Strict release validation intentionally fails with **275** diagnostics until
-  owner, legal, production-service, exact-build, screenshot, and App Store
-  Connect evidence is complete.
+- Target-aware strict validation intentionally fails with **286** diagnostics
+  for `app_review` and **285** for `public_release` until owner, legal,
+  production-service, exact-build, screenshot, and App Store Connect evidence
+  is complete.
+- The evidence verifier now accepts only the immutable
+  `BUILD_SHA -> APP_REVIEW_EVIDENCE_SHA -> PUBLIC_RELEASE_EVIDENCE_SHA` chain.
+  The transition preserves the first manifest, build/deployment identity,
+  screenshots, account attestations, and every submission field except root
+  `updated`, the target-state Clerk/Apple evidence fields, and the three Clerk
+  shutdown-closure fields.
 - Clean Expo iOS prebuild is idempotent with the CUT scene-lifecycle and pod-
   target plugins. The generated Podfile passes Ruby parsing and CocoaPods 1.16.2;
   all 256 current pod deployment-target settings resolve to iOS 17.0, a simulated

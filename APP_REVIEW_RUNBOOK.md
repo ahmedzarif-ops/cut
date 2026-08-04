@@ -2,7 +2,7 @@
 
 **Status:** Working review package; not approved or ready for submission
 
-**Updated:** August 3, 2026
+**Updated:** August 4, 2026
 
 Use this runbook to prepare the exact CUT OS 1.0 review path, capture truthful
 screenshots from the release build, and write the App Review notes. It does not
@@ -60,13 +60,54 @@ review-account credentials in the final App Review Notes. Never put any review
 credential in this file, source control, screenshots, or support tickets, and
 never reuse a production, owner, employee, or customer credential.
 
-| Account            | Required state immediately before submission                                                                                                                                                                                                     | Purpose                                                                                                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Full-access review | Email verified; no MFA or out-of-band step; current `adult-18-v1` status `eligible`; `CUT_OS_PRO` active through the real server-authoritative RevenueCat path; onboarding complete; display name `Reviewer`; empty current-day weight and meals | Primary product tour and the exact daily flow. The entitlement must not be a client or API bypass. Record `[ENTITLEMENT_PROVISIONING_METHOD]` in the private release record. |
-| Purchase review    | Email verified; no MFA; current adult status `eligible`; no `CUT_OS_PRO`; onboarding incomplete; no stale Apple/RevenueCat entitlement                                                                                                           | Apple purchase, secure server refresh, and first onboarding.                                                                                                                 |
-| Adult-gate review  | Email verified; no MFA; adult status `unverified`; no entitlement; onboarding incomplete                                                                                                                                                         | Self-declared 18+ path. Recreate/reset only through an approved test process because the first decision is permanent for that identity under v1.                             |
-| Restricted review  | Email verified; no MFA; adult status `ineligible`; no entitlement; no private health/nutrition data                                                                                                                                              | Adults-only stop screen, restricted Settings, legal/support, sign-out, and deletion availability.                                                                            |
-| Deletion review    | Email verified; no MFA; `eligible`; any entitlement state is documented; synthetic profile only                                                                                                                                                  | Destructive account-deletion review without destroying another review account.                                                                                               |
+| Account            | Required state immediately before submission                                                                                                                                                                                                                                                                                  | Purpose                                                                                                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full-access review | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; current `adult-18-v1` status `eligible`; `CUT_OS_PRO` active through the real server-authoritative RevenueCat path; onboarding complete; display name `Reviewer`; empty current-day weight and meals | Primary product tour and the exact daily flow. The entitlement must not be a client or API bypass. Record `[ENTITLEMENT_PROVISIONING_METHOD]` in the private release record. |
+| Purchase review    | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; current adult status `eligible`; no `CUT_OS_PRO`; onboarding incomplete; no stale Apple/RevenueCat entitlement                                                                                       | Apple purchase, secure server refresh, and first onboarding.                                                                                                                 |
+| Adult-gate review  | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; adult status `unverified`; no entitlement; onboarding incomplete                                                                                                                                     | Self-declared 18+ path. Recreate/reset only through an approved test process because the first decision is permanent for that identity under v1.                             |
+| Restricted review  | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; adult status `ineligible`; no entitlement; no private health/nutrition data                                                                                                                          | Adults-only stop screen, restricted Settings, legal/support, sign-out, and deletion availability.                                                                            |
+| Deletion review    | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; `eligible`; any entitlement state is documented; synthetic profile only                                                                                                                              | Destructive account-deletion review without destroying another review account.                                                                                               |
+
+### Clerk review-access lifecycle
+
+The selected fastest review strategy uses Clerk's documented production test
+mode only during the bounded submission window: it begins after
+owner/security approval when the exact internal TestFlight build is ready for
+pre-submission review-access QA, and continues only while that authorized
+submission awaits or undergoes App Review. On a new physical device, sign in
+with each reserved review account and enter `424242` when Client Trust requests
+the email code. No verification email should be delivered. If any account,
+factor, or code behaves differently, stop and do not submit.
+
+The `app_review` evidence commit must attest the enabled review-window state,
+Client Trust, all five reserved accounts, the exact-build new-device result,
+UTC, and a controlled non-secret evidence reference. Monitor authentication and
+reserved-account activity throughout the window. Before finalizing it, populate
+`appReview.clerkReviewAccess.shutdownControl` with distinct primary and backup
+owners, proof both can access the production Clerk instance, status source
+`exact_app_store_connect_submission`, active status monitoring and escalation,
+the fixed 15-minute SLO, and a fresh UTC access preflight plus controlled
+evidence reference. Keep `triggerObservedAtUtc`, `testModeDisabledAtUtc`, and
+`shutdownEvidenceReference` null. The release lead owns the status watch, the
+security owner is backup, and the authoritative source is the exact version and
+submission in App Store Connect's **Drafts** section. Disable production test
+mode immediately, and no later than 15 minutes, whenever that submission leaves
+its authorized waiting/in-review states, including Accepted, Pending Developer
+Release, Rejected, Unresolved Issues, Invalid Binary, developer withdrawal or
+removal, or abandonment; also disable it on unexpected reserved-account
+activity. Contain and investigate unexpected activity before any later attempt.
+
+For an approved version configured for manual release, wait for **Pending
+Developer Release**, then prepare the distinct pre-created `public_release` manifest as
+the direct child of the immutable App Review evidence commit. That target must
+prove test mode is off and Client Trust remains on while retaining the five
+account attestations as historical review-window evidence. Preserve the entire
+shutdown plan and fill only its closure triplet: the observed App Store Connect
+trigger time, the Clerk disablement time no more than 15 minutes later, and a
+distinct controlled closure-evidence reference. Both times must follow App
+Review evidence finalization and precede public-release finalization. A
+rejection or resubmission requires a new signed candidate and fresh authorized
+review window; never leave or re-enable test mode merely for convenience.
 
 For each account, perform a real sign-in from the submitted build within 24
 hours of submission. Confirm that credentials do not expire during review and
@@ -81,9 +122,10 @@ weigh-in.” Never reset production data with an undocumented manual database
 edit.
 
 Record each successful production sign-in no more than 24 hours before
-submission and attest that the account is non-expiring for the review window
-with no MFA or out-of-band challenge. A stale timestamp or either missing
-attestation blocks release.
+submission and attest that the account is non-expiring for the review window,
+has no user-configured MFA or out-of-band delivery trap, and completes the
+fixed-code Client Trust challenge. A stale timestamp or any missing attestation
+blocks release.
 
 ## Exact reviewer navigation scripts
 
@@ -298,9 +340,11 @@ Review contact: [REVIEW_CONTACT_NAME], [REVIEW_CONTACT_PHONE],
 
 ACCESS
 Primary credentials are in App Store Connect's Sign-in Information. That
-account is email verified, has no MFA, is adult eligible and onboarded, has
-CUT_OS_PRO through [VERIFIED_ENTITLEMENT_PROVISIONING_METHOD], and starts with
-no current-day weigh-in or meal.
+account is email verified, has no user MFA, is adult eligible and onboarded,
+has CUT_OS_PRO through [VERIFIED_ENTITLEMENT_PROVISIONING_METHOD], and starts
+with no current-day weigh-in or meal. If Client Trust asks for an email code
+after the password, enter 424242. This is the fixed code for the reserved
+synthetic review accounts; no email is delivered.
 
 Additional purpose-built review accounts:
 Purchase: username [PURCHASE_REVIEW_USERNAME], password [PURCHASE_REVIEW_PASSWORD]
@@ -435,8 +479,21 @@ Submit for Review**.
       saved.
 - [ ] The immutable product ID, group, duration, price, localizations, and trial
       decision are owner-approved, exactly configured, and recorded.
-- [ ] The first subscription and the exact release build are attached to the
-      same review submission.
+- [ ] With recorded owner authorization, **Add for Review** assembled the exact
+      release build in one submission under **Drafts**. On the first
+      subscription, **Add for Review** selected that existing draft, and its
+      unapproved subscription group was added in the submission modal. The
+      version is **Ready for Review**, and **Submit for Review** has not been
+      used before final evidence validation.
+- [ ] `appReview.appleWorkflow` records that exact submission reference,
+      `submissionSection: "drafts"`, all three included items, manual release,
+      **Ready for Review**, no active review, UTC, and controlled evidence no
+      more than 24 hours old.
+- [ ] Exact-head CI passes for `APP_REVIEW_EVIDENCE_SHA`; `main` is non-force
+      fast-forwarded to that exact SHA without a GitHub merge/squash/rebase/
+      merge-queue action; push-to-`main` CI passes; remote `main` equals that
+      SHA; and current-clock validation plus production probes are fresh before
+      **Submit for Review**.
 - [ ] RevenueCat's Apple app/bundle, Apple credentials, product mapping,
       `CUT_OS_PRO`, current offering/package, public iOS key, server v2 key/
       resource IDs, and Server Notifications v2 endpoints are verified in both
@@ -482,6 +539,27 @@ Submit for Review**.
       remain available for the full review window, and are documented only in
       secret storage and Apple's designated Sign-in Information/App Review
       Notes fields.
+- [ ] For the `app_review` target, Clerk production test mode is enabled only
+      for the active review window, Client Trust remains enabled, all five
+      accounts use reserved `+clerk_test` addresses, and the exact TestFlight
+      build completes the new-device code flow with `424242` and no delivery.
+      After approval and before manual public release, production test mode is
+      disabled and the separate `public_release` evidence proves it remains
+      disabled while Client Trust remains enabled. Its Apple workflow evidence
+      must prove the same submission now appears in **Completed**, every
+      submitted item was accepted, no review is active, and the app is **Pending
+      Developer Release**.
+- [ ] `shutdownControl` freezes distinct primary/backup owners, both owners'
+      production Clerk access preflight, exact-submission status source,
+      monitoring, escalation, and the 15-minute SLO. Its closure triplet is null
+      at `app_review`; `public_release` records the observed trigger, disablement
+      within 15 minutes, and distinct closure evidence without changing the
+      frozen plan.
+- [ ] `main` remains frozen at `APP_REVIEW_EVIDENCE_SHA` throughout review. For
+      manual release, `PUBLIC_RELEASE_EVIDENCE_SHA` is its direct child, passes
+      exact-head CI, is non-force fast-forwarded from exact A to exact P, passes
+      push CI, equals remote `main`, and has fresh validation/probes before
+      **Release This Version**.
 - [ ] Every review account was freshly tested on the exact submitted
       version/build within 24 hours of submission; the private evidence records
       account alias, required state, build, tester, UTC time, and result without

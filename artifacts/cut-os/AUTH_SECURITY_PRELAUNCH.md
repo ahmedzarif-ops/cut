@@ -15,6 +15,36 @@ resend, an invalid or expired code, restart, and final session activation work
 against the production tenant. Do not disable Client Trust merely to bypass
 that verification.
 
+## App Review fixed-code access window
+
+CUT has no social/OAuth sign-in path and must not register a guessed
+`cut-os://` Clerk callback. The production instance still requires Native API
+and the iOS application registration for `com.zarifahmed.cut`.
+
+Clerk documents two separate facts: Client Trust can require `email_code` on a
+new device, and production test mode makes reserved `+clerk_test` addresses use
+the fixed verification code `424242` without delivering an email. Clerk labels
+production test mode **highly discouraged** and does not explicitly guarantee
+the combined Client Trust/test-mode behavior on one documentation page. CUT
+therefore treats the combination as an exact-build fact to prove, not an
+assumption or a mobile-app bypass.
+
+For an `app_review` evidence target, the controlled release record must prove
+that production test mode is enabled only for the active review window, Client
+Trust remains enabled, all five synthetic review accounts use reserved test
+addresses, `424242` completes the Client Trust email-code flow from a new
+physical device, and the fixed-code instruction is present in App Review Notes.
+For `public_release`, the record must instead prove that production test mode is
+disabled while Client Trust remains enabled. Never ship a Clerk Testing Token,
+secret-key session endpoint, hardcoded account, or client-side authentication
+bypass.
+
+Official provider references:
+
+- https://clerk.com/docs/guides/secure/client-trust
+- https://clerk.com/docs/guides/development/testing/test-emails-and-phones
+- https://clerk.com/docs/guides/development/deployment/production
+
 ## Password recovery and account-enumeration protection
 
 ### Selected App Store architecture

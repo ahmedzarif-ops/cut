@@ -17,7 +17,7 @@
     "test:app-store": "node --test scripts/app-store/validate.test.mjs",
     "verify:deploy": "node ops/scripts/deploy-verify.mjs",
     "verify:post-build-evidence": "node ops/scripts/post-build-evidence-verify.mjs",
-    "test:release-ops": "node --test ops/scripts/deploy-verify.test.mjs ops/scripts/post-build-evidence-verify.test.mjs ops/scripts/production-migration-policy.test.mjs",
+    "test:release-ops": "node --test ops/scripts/deploy-verify.test.mjs ops/scripts/post-build-evidence-verify.test.mjs ops/scripts/production-migration-policy.test.mjs ops/scripts/release-main-ancestry-verify.test.mjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "test": "pnpm run test:release-ops && pnpm run test:app-store && pnpm -r --if-present run test"

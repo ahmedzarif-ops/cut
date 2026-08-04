@@ -50,20 +50,30 @@ pnpm run validate:app-store:release
 ```
 
 The gate derives the 40-character lowercase `BUILD_SHA` from the committed
-TestFlight exact-build record; it accepts no command-line Git ref. The current
-clean commit must be its single direct child and may contain only the verifier's
-operation- and mode-constrained evidence files. The integrated release command
-also verifies the adjacent release-manifest checksum, manifest-bound regular
-PNG captures, and byte-identical pinned EAS routing. Record the evidence commit
-SHA and result outside the finalized manifest.
+TestFlight exact-build record; it accepts no command-line Git ref. The clean
+target must be either the direct `app_review` evidence child of `BUILD_SHA` or
+the direct `public_release` transition child of that fully revalidated App
+Review commit. Each may contain only the verifier's target-specific operation-,
+mode-, and semantic-constrained evidence. The integrated release command also
+verifies pre-BUILD_SHA target-specific `DRAFT` manifests, adjacent manifest
+checksums, manifest-bound regular PNG captures, unchanged target records, exact
+release/build/API/legal identity, the BUILD_SHA-derived database migration, and
+byte-identical pinned EAS routing. Record each evidence SHA and result outside
+its finalized manifest.
 
-CI runs this release gate in a dedicated job that checks out the exact pull
-request head with its parent; the ordinary pull-request merge checkout is not
-valid evidence. Rebase onto the target branch before establishing `BUILD_SHA`.
-After the signed build exists, preserve the exact
-`BUILD_SHA -> POST_BUILD_EVIDENCE_SHA` commits and integrate them into `main` by
-fast-forward only. Squash, merge-commit, rebase-merge, amend, or any other SHA
-rewrite requires a new signed candidate.
+CI runs this release gate in a dedicated job that checks out the exact event
+head with full history; the ordinary pull-request merge checkout is not valid
+evidence. It binds a pull request to fetched `origin/main` or a push to its
+nonzero `before` SHA. Before `BUILD_SHA`, create both target drafts and bring the
+candidate up to date with `main`. Pass exact-head CI on
+`APP_REVIEW_EVIDENCE_SHA`, non-force fast-forward `main` to that exact SHA, wait
+for push CI, confirm the remote SHA, and rerun validation/probes before
+submission. Freeze `main` there throughout review. After approval, create
+`PUBLIC_RELEASE_EVIDENCE_SHA` directly on A and repeat the exact-head CI,
+non-force fast-forward, push CI, remote-SHA, and fresh-validator sequence before
+release. GitHub merge, squash, rebase-and-merge, merge-queue, force-push, amend,
+an unrelated intervening commit, or any SHA rewrite requires a new signed
+candidate.
 
 The exact submitted build is one canonical identity: app version, Apple build
 number, full Git commit, EAS build ID, and App Store Connect build ID. Copy that
@@ -93,9 +103,23 @@ Other fail-closed bindings are deliberate:
   Agreement, tax forms, and banking must each be confirmed with UTC and a
   controlled non-secret evidence reference. Do not store financial values or
   credentials;
-- each review account must have a successful production sign-in within the
-  preceding 24 hours, be non-expiring for the review window, and have no MFA or
-  out-of-band challenge;
+- for `app_review`, each review account must have a successful production
+  sign-in within the preceding 24 hours, be non-expiring for the review window,
+  and have no user MFA or out-of-band delivery trap. That target requires Clerk
+  production test mode enabled only for the review window, Client Trust still
+  enabled, all five accounts attested as reserved `+clerk_test` addresses, and
+  exact-build proof that fixed code `424242` completes a new-device challenge.
+  Its `shutdownControl` freezes distinct primary/backup owners, proof both have
+  production Clerk access, exact-submission status monitoring and escalation,
+  a 15-minute SLO, and fresh preflight evidence while its closure fields remain
+  null; the separate `public_release` target requires test mode disabled and
+  Client Trust still enabled while retaining the account records and shutdown
+  plan as historical App Review evidence. Only its trigger, disablement, and
+  distinct closure-evidence fields may then advance. The target-bound Apple
+  workflow must progress from the same Ready-for-Review submission in
+  **Drafts** to that submission in **Completed**, with every item accepted, no
+  active review, manual release selected, and the app in Pending Developer
+  Release;
 - final App Review Notes are attested with the credential-free template hash,
   resolved UTF-8 byte count, zero remaining placeholders, measurement time,
   save state, and a controlled evidence reference. Never store a hash or copy of

@@ -116,6 +116,28 @@ test("committed working App Store records validate", () => {
   assert.deepEqual(validateBundle(), []);
 });
 
+test("calendar-only record dates reject normalized invalid dates", () => {
+  const inputs = validationInputs();
+  for (const invalidDate of ["2026-02-30", "2026-04-31"]) {
+    const submission = clone(inputs.submission);
+    submission.updated = invalidDate;
+    assert.ok(
+      validateMetadata({ ...inputs, submission }).includes(
+        "submission.updated must be an ISO calendar date",
+      ),
+    );
+
+    const record = readJson("app-store/testflight-submission.json");
+    record.updated = invalidDate;
+    assert.ok(
+      validateTestFlightSubmission({
+        record,
+        expectedAppVersion: "1.0.0",
+      }).includes("TestFlight updated must be an ISO calendar date"),
+    );
+  }
+});
+
 test("App Store release evidence requires an App Review or public-release target", () => {
   assert.deepEqual(APP_STORE_RELEASE_EVIDENCE_TARGETS, [
     "app_review",
@@ -203,6 +225,11 @@ test("the initial listing screenshot story includes a clear paid subscription of
 test("release mode stays fail closed while owner, privacy, and screenshot gates are open", () => {
   const errors = validateBundle({ release: true });
   assert.ok(errors.length > 20);
+  assert.ok(
+    errors.includes(
+      "release mode requires an authoritative app_review or public_release evidence target",
+    ),
+  );
   assert.ok(
     errors.includes(
       "release mode requires submission.status approved_for_submission",
@@ -1402,6 +1429,38 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
     record.testedAtUtc = evidenceTime;
     record.evidenceReference = `evidence/review-account-${key}`;
   }
+  Object.assign(appReview.clerkReviewAccess, {
+    clientTrustEnabled: true,
+    allReviewAccountsUseReservedTestEmail: true,
+    exactBuildClientTrustFlowVerified: true,
+    testModeState: "enabled_for_app_review",
+    verifiedAtUtc: evidenceTime,
+    evidenceReference: "evidence/clerk-review-access",
+  });
+  Object.assign(appReview.clerkReviewAccess.shutdownControl, {
+    primaryOwner: "release-lead",
+    backupOwner: "security-owner",
+    bothHaveProductionClerkAccess: true,
+    statusMonitoringConfigured: true,
+    escalationConfigured: true,
+    accessPreflightAtUtc: evidenceTime,
+    accessPreflightEvidenceReference:
+      "evidence/clerk-shutdown-access-preflight",
+  });
+  Object.assign(appReview.appleWorkflow, {
+    state: "ready_for_review",
+    submissionReference: "asc-submission-v1",
+    appVersionIncluded: true,
+    subscriptionIncluded: true,
+    subscriptionGroupIncluded: true,
+    manualReleaseSelected: true,
+    appVersionStatus: "ready_for_review",
+    submissionSection: "drafts",
+    reviewActive: false,
+    allSubmittedItemsAccepted: false,
+    verifiedAtUtc: evidenceTime,
+    evidenceReference: "evidence/apple-draft-ready-for-review",
+  });
   Object.assign(appReview.exactBuild, exactBuildIdentity);
   appReview.exactBuild.verifiedAtUtc = evidenceTime;
   appReview.exactBuild.navigationEvidenceReference =
@@ -1510,6 +1569,7 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
     ...inputs,
     submission,
     release: true,
+    releaseTarget: "app_review",
   });
   const gateErrors = errors.filter((error) =>
     /commercialAndLegal|appReview|subscription|RevenueCat|accessibility/u.test(
@@ -1659,7 +1719,477 @@ test("verified_fresh App Review accounts are bounded to the injected 24-hour clo
   account.noMfaOrOutOfBandTrap = false;
   assert.ok(
     validateMetadata({ ...inputs, submission }).includes(
-      "appReview.accountStates.fullAccess verified_fresh evidence requires no MFA or out-of-band access trap",
+      "appReview.accountStates.fullAccess verified_fresh evidence requires no user-configured MFA or out-of-band delivery trap and a successful fixed-code Client Trust challenge",
+    ),
+  );
+
+  account.noMfaOrOutOfBandTrap = true;
+  account.testedAtUtc = "2026-08-02T23:59:59Z";
+  const publicReleaseErrors = validateMetadata({
+    ...inputs,
+    submission,
+    release: true,
+    releaseTarget: "public_release",
+  });
+  assert.equal(
+    publicReleaseErrors.includes(
+      "appReview.accountStates.fullAccess verified_fresh evidence must be no more than 24 hours old",
+    ),
+    false,
+  );
+  assert.equal(
+    publicReleaseErrors.includes(
+      "release mode requires retained historical evidence for appReview.accountStates.fullAccess",
+    ),
+    false,
+  );
+
+  account.status = "pending";
+  account.nonExpiring = false;
+  account.noMfaOrOutOfBandTrap = false;
+  account.testedAtUtc = null;
+  account.evidenceReference = null;
+  assert.ok(
+    validateMetadata({
+      ...inputs,
+      submission,
+      release: true,
+      releaseTarget: "public_release",
+    }).includes(
+      "release mode requires retained historical evidence for appReview.accountStates.fullAccess",
+    ),
+  );
+});
+
+test("Clerk review access is closed, fresh, and bound to the authoritative release target", () => {
+  const inputs = validationInputs();
+  const submission = clone(inputs.submission);
+  const access = submission.appReview.clerkReviewAccess;
+  const shutdown = access.shutdownControl;
+  const clerkAccessErrors = (releaseTarget) =>
+    validateMetadata({
+      ...inputs,
+      submission,
+      release: true,
+      releaseTarget,
+    }).filter((error) =>
+      /appReview\.clerkReviewAccess|Clerk|shutdownControl/u.test(error),
+    );
+
+  assert.equal(
+    validateMetadata({
+      ...inputs,
+      submission,
+      releaseTarget: "app_review",
+    }).some((error) =>
+      /app_review release target|public_release target/u.test(error),
+    ),
+    false,
+  );
+
+  Object.assign(access, {
+    clientTrustEnabled: true,
+    allReviewAccountsUseReservedTestEmail: true,
+    exactBuildClientTrustFlowVerified: true,
+    testModeState: "enabled_for_app_review",
+    verifiedAtUtc: "2026-08-03T23:59:00Z",
+    evidenceReference: "evidence/clerk-review-access",
+  });
+  Object.assign(shutdown, {
+    primaryOwner: "release-lead",
+    backupOwner: "security-owner",
+    bothHaveProductionClerkAccess: true,
+    statusMonitoringConfigured: true,
+    escalationConfigured: true,
+    accessPreflightAtUtc: "2026-08-03T23:30:00Z",
+    accessPreflightEvidenceReference:
+      "evidence/clerk-shutdown-access-preflight",
+  });
+  assert.deepEqual(clerkAccessErrors("app_review"), []);
+
+  shutdown.statusSource = "manual_guess";
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "appReview.clerkReviewAccess.shutdownControl.statusSource must remain exact_app_store_connect_submission",
+    ),
+  );
+  shutdown.statusSource = "exact_app_store_connect_submission";
+  shutdown.closureSloMinutes = 20;
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "appReview.clerkReviewAccess.shutdownControl.closureSloMinutes must remain 15",
+    ),
+  );
+  shutdown.closureSloMinutes = 15;
+  for (const field of [
+    "bothHaveProductionClerkAccess",
+    "statusMonitoringConfigured",
+    "escalationConfigured",
+  ]) {
+    shutdown[field] = false;
+    assert.ok(
+      clerkAccessErrors("app_review").includes(
+        `configured Clerk review access requires shutdownControl.${field}`,
+      ),
+    );
+    shutdown[field] = true;
+  }
+  shutdown.accessPreflightAtUtc = "2026-08-02T23:29:59Z";
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "Clerk shutdown-access preflight evidence must be no more than 24 hours old for app_review",
+    ),
+  );
+  shutdown.accessPreflightAtUtc = "2026-08-04T00:00:01Z";
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "appReview.clerkReviewAccess.shutdownControl.accessPreflightAtUtc cannot be in the future",
+    ),
+  );
+  shutdown.accessPreflightAtUtc = "2026-08-03T23:30:00Z";
+  shutdown.triggerObservedAtUtc = "2026-08-03T23:45:00Z";
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "enabled App Review access must keep shutdownControl.triggerObservedAtUtc null",
+    ),
+  );
+  shutdown.triggerObservedAtUtc = null;
+
+  access.testModeState = "disabled_for_public_release";
+  Object.assign(shutdown, {
+    triggerObservedAtUtc: "2026-08-03T23:45:00Z",
+    testModeDisabledAtUtc: "2026-08-03T23:55:00Z",
+    shutdownEvidenceReference: "evidence/clerk-test-mode-shutdown",
+  });
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "app_review release target requires Clerk production test mode enabled_for_app_review",
+    ),
+  );
+  assert.deepEqual(clerkAccessErrors("public_release"), []);
+
+  shutdown.triggerObservedAtUtc = "2026-08-03T23:40:00Z";
+  shutdown.testModeDisabledAtUtc = "2026-08-03T23:55:00Z";
+  assert.deepEqual(clerkAccessErrors("public_release"), []);
+  shutdown.testModeDisabledAtUtc = "2026-08-03T23:55:00.001Z";
+  assert.ok(
+    clerkAccessErrors("public_release").includes(
+      "Clerk production test mode must be disabled within 15 minutes of the observed submission-state trigger",
+    ),
+  );
+  shutdown.triggerObservedAtUtc = "2026-08-03T23:45:00Z";
+  shutdown.testModeDisabledAtUtc = "2026-08-03T23:55:00Z";
+
+  shutdown.shutdownEvidenceReference =
+    shutdown.accessPreflightEvidenceReference;
+  assert.ok(
+    clerkAccessErrors("public_release").includes(
+      "Clerk shutdown evidence must be distinct from access-preflight evidence",
+    ),
+  );
+  shutdown.shutdownEvidenceReference = "evidence/clerk-test-mode-shutdown";
+
+  shutdown.triggerObservedAtUtc = "2026-08-03T23:50:00Z";
+  shutdown.testModeDisabledAtUtc = "2026-08-03T23:59:30Z";
+  assert.ok(
+    clerkAccessErrors("public_release").includes(
+      "Clerk shutdown verification cannot predate test-mode disablement",
+    ),
+  );
+  shutdown.triggerObservedAtUtc = "2026-08-03T23:59:30Z";
+  shutdown.testModeDisabledAtUtc = "2026-08-04T00:00:01Z";
+  assert.ok(
+    clerkAccessErrors("public_release").includes(
+      "Clerk shutdown timestamps cannot be in the future",
+    ),
+  );
+  shutdown.accessPreflightAtUtc = "2026-08-02T23:30:00Z";
+  shutdown.triggerObservedAtUtc = "2026-08-02T23:45:00Z";
+  shutdown.testModeDisabledAtUtc = "2026-08-02T23:55:00Z";
+  assert.ok(
+    clerkAccessErrors("public_release").includes(
+      "Clerk shutdown evidence must be no more than 24 hours old",
+    ),
+  );
+  shutdown.accessPreflightAtUtc = "2026-08-01T23:30:00Z";
+  shutdown.triggerObservedAtUtc = "2026-08-03T23:45:00Z";
+  shutdown.testModeDisabledAtUtc = "2026-08-03T23:55:00Z";
+  assert.deepEqual(clerkAccessErrors("public_release"), []);
+  shutdown.accessPreflightAtUtc = "2026-08-03T23:30:00Z";
+
+  shutdown.accessPreflightAtUtc = "2026-08-03T23:46:00Z";
+  assert.ok(
+    clerkAccessErrors("public_release").includes(
+      "Clerk shutdown-access preflight must precede the observed submission-state trigger",
+    ),
+  );
+  shutdown.accessPreflightAtUtc = "2026-08-03T23:30:00Z";
+
+  shutdown.triggerObservedAtUtc = "2026-08-03T23:39:00Z";
+  assert.ok(
+    clerkAccessErrors("public_release").includes(
+      "Clerk production test mode must be disabled within 15 minutes of the observed submission-state trigger",
+    ),
+  );
+  shutdown.triggerObservedAtUtc = "2026-08-03T23:56:00Z";
+  assert.ok(
+    clerkAccessErrors("public_release").includes(
+      "Clerk production test mode must be disabled within 15 minutes of the observed submission-state trigger",
+    ),
+  );
+  shutdown.triggerObservedAtUtc = "2026-08-03T23:45:00Z";
+  shutdown.backupOwner = "release-lead";
+  assert.ok(
+    clerkAccessErrors("public_release").includes(
+      "configured Clerk review access requires distinct primary and backup shutdown owners",
+    ),
+  );
+  shutdown.backupOwner = "security-owner";
+
+  access.testModeState = "enabled_for_app_review";
+  assert.ok(
+    clerkAccessErrors("public_release").includes(
+      "public_release target requires Clerk production test mode disabled_for_public_release",
+    ),
+  );
+  access.testModeState = "disabled_for_public_release";
+  access.clientTrustEnabled = false;
+  assert.ok(
+    clerkAccessErrors("public_release").includes(
+      "public_release target requires Clerk Client Trust to remain enabled",
+    ),
+  );
+
+  access.clientTrustEnabled = true;
+  access.testModeState = "enabled_for_app_review";
+  shutdown.triggerObservedAtUtc = null;
+  shutdown.testModeDisabledAtUtc = null;
+  shutdown.shutdownEvidenceReference = null;
+  access.allReviewAccountsUseReservedTestEmail = false;
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "app_review release target requires all Clerk review accounts to use reserved +clerk_test email addresses",
+    ),
+  );
+  access.allReviewAccountsUseReservedTestEmail = true;
+  access.exactBuildClientTrustFlowVerified = false;
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "app_review release target requires exact-build Client Trust verification with Clerk's reserved fixed code",
+    ),
+  );
+
+  access.exactBuildClientTrustFlowVerified = true;
+  access.strategy = "arbitrary_review_bypass";
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "appReview.clerkReviewAccess.strategy must remain clerk_production_test_mode_reserved_email_code",
+    ),
+  );
+  access.strategy = "clerk_production_test_mode_reserved_email_code";
+  access.fixedCodePolicy = "custom_code";
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "appReview.clerkReviewAccess.fixedCodePolicy must remain clerk_reserved_424242",
+    ),
+  );
+
+  access.fixedCodePolicy = "clerk_reserved_424242";
+  access.verifiedAtUtc = "2026-08-02T23:59:59Z";
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "appReview.clerkReviewAccess evidence must be no more than 24 hours old",
+    ),
+  );
+  access.verifiedAtUtc = "2026-08-04T00:00:01Z";
+  const futureErrors = clerkAccessErrors("app_review");
+  assert.ok(
+    futureErrors.includes(
+      "appReview.clerkReviewAccess.verifiedAtUtc cannot be in the future",
+    ),
+  );
+  assert.equal(
+    futureErrors.includes(
+      "appReview.clerkReviewAccess evidence must be no more than 24 hours old",
+    ),
+    false,
+  );
+
+  access.verifiedAtUtc = "2026-02-30T23:59:00Z";
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "configured appReview.clerkReviewAccess requires UTC and non-secret evidence",
+    ),
+  );
+  access.verifiedAtUtc = "2026-08-03T24:00:00Z";
+  assert.ok(
+    clerkAccessErrors("app_review").includes(
+      "configured appReview.clerkReviewAccess requires UTC and non-secret evidence",
+    ),
+  );
+
+  const missingKey = clone(inputs.submission);
+  delete missingKey.appReview.clerkReviewAccess.fixedCodePolicy;
+  assert.ok(
+    validateMetadata({ ...inputs, submission: missingKey }).includes(
+      "appReview.clerkReviewAccess must contain exactly the required non-secret release-access keys",
+    ),
+  );
+  const extraKey = clone(inputs.submission);
+  extraKey.appReview.clerkReviewAccess.actualReviewEmail = "must-not-be-stored";
+  assert.ok(
+    validateMetadata({ ...inputs, submission: extraKey }).includes(
+      "appReview.clerkReviewAccess must contain exactly the required non-secret release-access keys",
+    ),
+  );
+
+  const missingShutdownKey = clone(inputs.submission);
+  delete missingShutdownKey.appReview.clerkReviewAccess.shutdownControl
+    .closureSloMinutes;
+  assert.ok(
+    validateMetadata({ ...inputs, submission: missingShutdownKey }).includes(
+      "appReview.clerkReviewAccess.shutdownControl must contain exactly the required non-secret shutdown keys",
+    ),
+  );
+
+  assert.ok(
+    validateMetadata({
+      ...inputs,
+      submission,
+      release: true,
+      releaseTarget: "internal_testflight",
+    }).includes(
+      "release mode requires an authoritative app_review or public_release evidence target",
+    ),
+  );
+});
+
+test("Apple workflow evidence is closed, fresh, and bound to the authoritative release target", () => {
+  const inputs = validationInputs();
+  const submission = clone(inputs.submission);
+  const workflow = submission.appReview.appleWorkflow;
+  const workflowErrors = (releaseTarget, release = true) =>
+    validateMetadata({
+      ...inputs,
+      submission,
+      release,
+      releaseTarget,
+    }).filter((error) =>
+      /appReview\.appleWorkflow|Apple workflow|Apple app version|Apple submission|active Apple review|Apple acceptance|submitted items accepted/u.test(
+        error,
+      ),
+    );
+
+  assert.deepEqual(workflowErrors(null, false), []);
+
+  Object.assign(workflow, {
+    state: "ready_for_review",
+    submissionReference: "asc-submission-v1",
+    appVersionIncluded: true,
+    subscriptionIncluded: true,
+    subscriptionGroupIncluded: true,
+    manualReleaseSelected: true,
+    appVersionStatus: "ready_for_review",
+    submissionSection: "drafts",
+    reviewActive: false,
+    allSubmittedItemsAccepted: false,
+    verifiedAtUtc: "2026-08-03T23:59:00Z",
+    evidenceReference: "evidence/apple-draft-ready-for-review",
+  });
+  assert.deepEqual(workflowErrors("app_review"), []);
+
+  submission.appReview.status = "ready_for_review";
+  assert.deepEqual(workflowErrors(null, false), []);
+
+  Object.assign(workflow, {
+    state: "approved_pending_developer_release",
+    appVersionStatus: "pending_developer_release",
+    submissionSection: "completed",
+    allSubmittedItemsAccepted: true,
+    evidenceReference: "evidence/apple-approved-for-manual-release",
+  });
+  assert.deepEqual(workflowErrors("public_release"), []);
+
+  workflow.submissionSection = "accepted";
+  assert.ok(
+    workflowErrors("public_release").includes(
+      "appReview.appleWorkflow.submissionSection is invalid",
+    ),
+  );
+  workflow.submissionSection = "completed";
+  workflow.reviewActive = true;
+  assert.ok(
+    workflowErrors("public_release").includes(
+      "public_release target requires no active Apple review",
+    ),
+  );
+  workflow.reviewActive = false;
+  workflow.manualReleaseSelected = false;
+  assert.ok(
+    workflowErrors("public_release").includes(
+      "public_release target requires appReview.appleWorkflow.manualReleaseSelected",
+    ),
+  );
+  workflow.manualReleaseSelected = true;
+  workflow.allSubmittedItemsAccepted = false;
+  assert.ok(
+    workflowErrors("public_release").includes(
+      "public_release target requires all submitted items accepted",
+    ),
+  );
+
+  workflow.allSubmittedItemsAccepted = true;
+  workflow.verifiedAtUtc = "2026-08-02T23:59:59Z";
+  assert.ok(
+    workflowErrors("public_release").includes(
+      "appReview.appleWorkflow evidence must be no more than 24 hours old",
+    ),
+  );
+  workflow.verifiedAtUtc = "2026-08-04T00:00:01Z";
+  const futureErrors = workflowErrors("public_release");
+  assert.ok(
+    futureErrors.includes(
+      "appReview.appleWorkflow.verifiedAtUtc cannot be in the future",
+    ),
+  );
+  assert.equal(
+    futureErrors.includes(
+      "appReview.appleWorkflow evidence must be no more than 24 hours old",
+    ),
+    false,
+  );
+  workflow.verifiedAtUtc = "2026-02-30T23:59:00Z";
+  assert.ok(
+    workflowErrors("public_release").includes(
+      "configured appReview.appleWorkflow requires a submission reference, UTC, and non-secret evidence",
+    ),
+  );
+  workflow.verifiedAtUtc = "2026-08-03T24:00:00Z";
+  assert.ok(
+    workflowErrors("public_release").includes(
+      "configured appReview.appleWorkflow requires a submission reference, UTC, and non-secret evidence",
+    ),
+  );
+
+  const closedPending = clone(inputs.submission);
+  closedPending.appReview.appleWorkflow.appVersionIncluded = true;
+  assert.ok(
+    validateMetadata({ ...inputs, submission: closedPending }).includes(
+      "pending appReview.appleWorkflow must keep appVersionIncluded false",
+    ),
+  );
+  const missingKey = clone(inputs.submission);
+  delete missingKey.appReview.appleWorkflow.manualReleaseSelected;
+  assert.ok(
+    validateMetadata({ ...inputs, submission: missingKey }).includes(
+      "appReview.appleWorkflow must contain exactly the required non-secret Apple workflow keys",
+    ),
+  );
+  const extraKey = clone(inputs.submission);
+  extraKey.appReview.appleWorkflow.appleAccountEmail = "must-not-be-stored";
+  assert.ok(
+    validateMetadata({ ...inputs, submission: extraKey }).includes(
+      "appReview.appleWorkflow must contain exactly the required non-secret Apple workflow keys",
     ),
   );
 });

@@ -160,6 +160,44 @@
       "primaryDemoAccountConfigured": false,
       "additionalSyntheticAccountsConfiguredInNotes": false
     },
+    "clerkReviewAccess": {
+      "strategy": "clerk_production_test_mode_reserved_email_code",
+      "clientTrustEnabled": false,
+      "allReviewAccountsUseReservedTestEmail": false,
+      "fixedCodePolicy": "clerk_reserved_424242",
+      "exactBuildClientTrustFlowVerified": false,
+      "testModeState": "pending",
+      "verifiedAtUtc": null,
+      "evidenceReference": null,
+      "shutdownControl": {
+        "primaryOwner": null,
+        "backupOwner": null,
+        "bothHaveProductionClerkAccess": false,
+        "statusSource": "exact_app_store_connect_submission",
+        "statusMonitoringConfigured": false,
+        "escalationConfigured": false,
+        "closureSloMinutes": 15,
+        "accessPreflightAtUtc": null,
+        "accessPreflightEvidenceReference": null,
+        "triggerObservedAtUtc": null,
+        "testModeDisabledAtUtc": null,
+        "shutdownEvidenceReference": null
+      }
+    },
+    "appleWorkflow": {
+      "state": "pending",
+      "submissionReference": null,
+      "appVersionIncluded": false,
+      "subscriptionIncluded": false,
+      "subscriptionGroupIncluded": false,
+      "manualReleaseSelected": false,
+      "appVersionStatus": "pending",
+      "submissionSection": "pending",
+      "reviewActive": false,
+      "allSubmittedItemsAccepted": false,
+      "verifiedAtUtc": null,
+      "evidenceReference": null
+    },
     "finalResolvedNotesEvidence": {
       "templateSha256": null,
       "resolvedUtf8ByteCount": null,

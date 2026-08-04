@@ -188,8 +188,19 @@ social features. Those are backlog, not submission truth.
 - [ ] Fresh-test the full-access, purchase, adult-gate, restricted, and deletion
       review accounts on the exact submitted build within 24 hours of
       submission; attest that each remains non-expiring for the review window
-      and has no MFA or out-of-band trap. Keep credentials outside the
-      repository and record only aliases, UTC, and non-secret evidence.
+      and has no user MFA or out-of-band delivery trap. For `app_review`, enable
+      Clerk production test mode only for the active review window, retain
+      Client Trust, use reserved `+clerk_test` accounts, and prove on a new
+      physical device that `424242` completes the email-code challenge without
+      delivery. For `public_release`, prove production test mode is disabled
+      and Client Trust remains enabled. Disable test mode immediately on
+      any exact-submission exit from its authorized waiting/in-review states,
+      including Accepted, Pending Developer Release, Rejected, Unresolved
+      Issues, Invalid Binary, withdrawal, removal, or abandonment, or on
+      unexpected reserved-account activity. The release lead owns the status
+      watch, the security owner is backup, and the maximum response is 15
+      minutes. Keep credentials outside the repository and record only aliases,
+      UTC, and non-secret evidence.
 - [ ] Complete the iPhone Accessibility Nutrition Label evaluation across the
       recorded common tasks and all nine Apple feature labels. A supported
       feature must cover every canonical common task; only Captions and Audio
@@ -277,12 +288,37 @@ social features. Those are backlog, not submission truth.
 7. Upload internal TestFlight; pass the critical matrix on real devices.
 8. Finish privacy, nutrition, legal, icon, screenshots, metadata, initial
    territories, regulated-medical-device declarations, and review-account
-   evidence; pass the release-mode App Store validator.
-9. Attach the first subscription and release build; owner approves Submit for
-   Review.
-10. Fix only review blockers, re-run critical tests, and release manually after
-    final owner approval.
-11. Monitor purchases, restore failures, auth, writes, deletion, crashes, and
+   evidence. In App Store Connect, select the exact build, choose manual
+   release, and save the metadata, privacy, age, accessibility, and App Review
+   information.
+9. With recorded owner authorization, use **Add for Review** on the app version
+   to create or select one submission in **Drafts**. On the first subscription,
+   choose **Add for Review**, select that existing draft, and add its unapproved
+   subscription group in the submission modal. Verify all three items and
+   **Ready for Review**; record the same submission reference, `drafts` section,
+   included-item flags, manual-release choice, inactive-review state, UTC, and
+   controlled evidence in `appReview.appleWorkflow`; do not submit yet.
+10. Finalize immutable `app_review` evidence with its preflighted 15-minute Clerk
+    shutdown plan, pass exact-head pull-request CI, and non-force fast-forward
+    `main` to that exact SHA. After push-to-`main` CI, remote-SHA confirmation,
+    current-clock validation, and fresh production probes, the owner may use the
+    separate **Submit for Review** action on that verified draft. Do not use a
+    GitHub merge, squash, rebase-and-merge, or merge-queue action.
+11. After submission, keep the bounded Clerk review window only while it is
+    awaiting or undergoing review. On approval, rejection, withdrawal, removal,
+    abandonment, or unexpected reserved-account activity, disable production
+    test mode immediately. A rejected/resubmitted candidate repeats the signed
+    build and fresh evidence process. Freeze `main` at the App Review evidence
+    SHA; any unrelated advance also stops this candidate and closes test mode.
+12. For an approved version configured for manual release, confirm **Pending Developer
+    Release**, Client Trust on, Clerk production test mode off, healthy probes,
+    and unchanged exact-build identity. Finalize and validate the immutable
+    `public_release` transition with the same submission in **Completed**, every
+    item accepted, no active review, and fresh evidence. `main` must still equal
+    the App Review evidence SHA; fast-forward it to the exact public-release SHA,
+    wait for push CI, confirm the remote SHA, rerun validation/probes, obtain
+    separate owner approval, then release within the evidence window.
+13. Monitor purchases, restore failures, auth, writes, deletion, crashes, and
     support closely after launch.
 
 ## Official references
@@ -294,7 +330,9 @@ social features. Those are backlog, not submission truth.
 - [Auto-renewable subscription information fields](https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/auto-renewable-subscription-information)
 - [Accessibility Nutrition Labels](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/)
 - [TestFlight overview](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/)
+- [Submit an app](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app)
 - [Submit an in-app purchase](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/)
+- [Select an App Store version release option](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/select-an-app-store-version-release-option)
 - [Offering account deletion](https://developer.apple.com/support/offering-account-deletion-in-your-app/)
 - [RevenueCat Expo installation](https://www.revenuecat.com/docs/getting-started/installation/expo)
 - [RevenueCat Apple App Privacy](https://www.revenuecat.com/docs/platform-resources/apple-platform-resources/apple-app-privacy)

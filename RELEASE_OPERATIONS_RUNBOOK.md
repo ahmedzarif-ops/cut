@@ -14,12 +14,14 @@ App Review, or release publicly without the recorded approval for that action.
 ## Release invariants
 
 - Build and upload only from a clean, immutable `BUILD_SHA` that pins routing
-  and passed the required CI gates. A later `POST_BUILD_EVIDENCE_SHA` may add
-  only machine-allowlisted non-runtime evidence before App Review submission.
-- Start a new copy of `RELEASE_EVIDENCE_MANIFEST_TEMPLATE.md` before touching a
-  shared environment. One manifest represents one `BUILD_SHA`, its evidence-only
-  descendant, API deployment, database revision, EAS build, and Apple build
-  number.
+  and passed the required CI gates. Its App Store evidence history is exactly
+  `BUILD_SHA -> APP_REVIEW_EVIDENCE_SHA -> PUBLIC_RELEASE_EVIDENCE_SHA`; each
+  evidence commit may contain only its machine-allowlisted non-runtime changes.
+- Before establishing `BUILD_SHA`, create distinct `app_review` and
+  `public_release` draft copies of `RELEASE_EVIDENCE_MANIFEST_TEMPLATE.md`. They
+  represent one release ID, build, API deployment, database revision, EAS build,
+  and Apple build number at two different evidence targets. Missing either
+  pre-created draft after signing requires a new candidate.
 - Treat the manifest's canonical `CUT_OS_RELEASE_CONTROL_V1` JSON as the sole
   editable release record. Do not duplicate identities, results, approvals,
   timestamps, or evidence references in the navigation prose below it. Detailed
@@ -97,18 +99,25 @@ implemented, durable managed scheduler or queue first.
 ## 1. Open the release record
 
 1. Create the repository-local evidence directory with
-   `mkdir -p release-evidence`, then copy
-   `RELEASE_EVIDENCE_MANIFEST_TEMPLATE.md` to a new, uniquely named file.
-   Recommended name: `release-evidence/<version>-<build>-<UTC timestamp>.md`.
-2. Set its status to `DRAFT` and record the release lead, target, UTC creation
-   time, Git commit, and clean-worktree result.
+   `mkdir -p release-evidence`. For an App Store candidate, copy
+   `RELEASE_EVIDENCE_MANIFEST_TEMPLATE.md` to two distinct, uniquely named
+   files, one for `app_review` and one for `public_release`. Recommended names:
+   `release-evidence/<release-id>-app-review-<UTC>.md` and
+   `release-evidence/<release-id>-public-release-<UTC>.md`.
+2. Before the remote build number and Apple IDs exist, set both to `DRAFT` with
+   the same release ID, their explicit target, release lead, and UTC creation
+   time. Leave build, EAS, and App Store Connect identity placeholders to be
+   resolved after the remote build; never guess them. Record the candidate Git
+   commit and clean-worktree result separately. A non-App-Store target uses one
+   uniquely named draft.
 3. Link the approved scope and every issue included in the candidate.
 4. Record the exact environment aliases and provider deployment commands that
    the authorized owner will use. Do not leave a deploy command to improvisation
    during the release window.
-5. Record the previous known-good API deployment, database revision, public-site
-   deployment, and mobile build. If any identifier is unknown, rollback is not
-   ready.
+5. Record the previous known-good API and public-site deployments, the exact
+   BUILD_SHA-derived database-migration tuple, its approved recovery point, and
+   the previous mobile build. If any required identity is unknown, rollback is
+   not ready.
 
 ## 2. Local and CI preflight
 
@@ -350,18 +359,24 @@ does not guess a hosting command.
    pnpm run verify:deploy -- <PRODUCTION_PUBLIC_ORIGIN>/ cut-public-root
    ```
 
-10. Exercise one authorized production review account without recording its
-    credentials or health/nutrition response data.
-11. Execute the approved password-recovery enumeration battery against the exact
+10. Exercise one controlled, non-review production smoke account from its
+    already trusted device without recording credentials or health/nutrition
+    response data. Do not use any reserved App Review identity before the
+    authorized test-mode window begins.
+11. Record owner/security approval for the bounded Clerk App Review access plan.
+    Keep production test mode disabled at this stage; the review window and its
+    new-device proof cannot begin until the exact internal TestFlight build
+    exists. Never add a runtime bypass or Testing Token.
+12. Execute the approved password-recovery enumeration battery against the exact
     production Clerk tenant. Record only the non-secret tenant alias and sanitized
     evidence references for generic response parity, response-envelope parity,
     timing parity, rate-limit behavior, provider failures, and safe abuse logging.
     Never record tested email identifiers, reset codes, passwords, response
     bodies, or identifier-linked raw timings.
-12. Observe every agreed signal for the predeclared production window. Record the
+13. Observe every agreed signal for the predeclared production window. Record the
     actual readings or linked dashboards, not screenshots containing personal
     data.
-13. Only after the observation gate passes may the owner authorize the production
+14. Only after the observation gate passes may the owner authorize the production
     EAS build and internal TestFlight upload described in
     `EAS_RELEASE_RUNBOOK.md`.
 
@@ -466,77 +481,160 @@ The owner authorizes all Apple actions. Engineering may prepare the evidence:
    sign-out, and recovery traverse the enabled proxy on a physical device. Record
    only pass/fail, build/device/OS class, UTC, and sanitized evidence; never the
    echoed IP, account identifier, cookie, code, response body, or raw log.
-7. Execute the fixed matrices in `PURCHASE_QA_REPORT.md`, `QA_REPORT.md`, and
+7. Apply the owner/security-approved Clerk App Review window only now: enable
+   production test mode, retain Client Trust, and use only the five reserved
+   synthetic accounts. From a new physical device running this exact internal
+   TestFlight build, prove that `424242` completes the Client Trust email-code
+   challenge without delivery. Record only aliases, build/device/OS class, UTC,
+   result, and a controlled non-secret evidence reference. Stop on any mismatch.
+8. Execute the fixed matrices in `PURCHASE_QA_REPORT.md`, `QA_REPORT.md`, and
    `APP_REVIEW_RUNBOOK.md` on the exact build. Record device model/OS, result,
    timestamp, and tester name or approved alias without device IDs in the
    per-release manifest or controlled references; do not edit these shared
    procedures after `BUILD_SHA`.
-8. Confirm `authenticationSecurity` in
+9. Confirm `authenticationSecurity` in
    `app-store/app-store-submission.json` names the selected Clerk-supported
    recovery architecture, links every required production-tenant evidence item,
    and has all four attributable approvals. A generic client message alone does
    not satisfy this gate.
-9. After the exact-build screenshots are captured, selected, SHA-256 bound,
-   reviewed for personal data, the listing exact-build claims review is bound to
-   the same TestFlight identity, and every owner-controlled commercial/legal,
-   metadata, privacy, full age-questionnaire, App Review account, subscription,
-   accessibility, and security field is evidenced and approved, remeasure the
-   resolved App Review Notes below 4,000 UTF-8 bytes. Complete the manifest's
-   canonical `CUT_OS_RELEASE_CONTROL_V1` JSON block without changing its keys or
-   fixed control IDs. This JSON is the sole editable release record; do not add
-   parallel human-readable outcome or approval tables. It must bind the
-   TestFlight build identities and contain
-   passing automated, safety, recovery, smoke, monitoring/alert-test, and
-   post-action evidence plus attributable approvals. Resolve every Markdown
-   placeholder and required checkbox. Finalize the one existing per-release
-   manifest and generate its adjacent checksum, then commit those with only the
-   existing App Store evidence JSON updates and newly added,
-   manifest-referenced `100644` PNGs. This single direct child of `BUILD_SHA` is
-   `POST_BUILD_EVIDENCE_SHA`; captured files must never be symlinks. From its
-   clean checkout run:
+10. In App Store Connect, select the exact processed build, choose **Manually
+    release this version**, and save every required metadata, privacy, age,
+    accessibility, and App Review field. Record only controlled non-secret
+    confirmations and stop on any build mismatch.
+11. With recorded owner authorization, use **Add for Review** on the app version
+    to create or select one submission in **Drafts**. On the first subscription,
+    choose **Add for Review**, select that existing draft, and add the unapproved
+    subscription group in the submission modal. Verify the exact app version,
+    subscription, and group appear together and the app version is **Ready for
+    Review**. Do not use **Submit for Review** yet.
+12. After the exact-build screenshots are captured, selected, SHA-256 bound,
+    reviewed for personal data, the listing exact-build claims review is bound to
+    the same TestFlight identity, and every owner-controlled commercial/legal,
+    metadata, privacy, full age-questionnaire, App Review account, subscription,
+    accessibility, and security field is evidenced and approved, remeasure the
+    resolved App Review Notes below 4,000 UTF-8 bytes. Complete the manifest's
+    canonical `CUT_OS_RELEASE_CONTROL_V1` JSON block without changing its keys or
+    fixed control IDs. This JSON is the sole editable release record; do not add
+    parallel human-readable outcome or approval tables. It must bind the
+    TestFlight build identities and contain
+    passing automated, safety, recovery, smoke, monitoring/alert-test, and
+    post-action evidence plus attributable approvals. Resolve every Markdown
+    placeholder and required checkbox. In
+    `appReview.clerkReviewAccess.shutdownControl`, freeze distinct primary and
+    backup owners, prove both have production Clerk access, select
+    `exact_app_store_connect_submission` as the status source, enable monitoring
+    and escalation, retain the 15-minute SLO, and record a fresh access preflight
+    UTC/evidence reference. Keep the trigger, disablement, and closure-evidence
+    fields null. Finalize the pre-created App Review
+    manifest with target `app_review` and generate its adjacent checksum, then
+    commit those with only the existing App Store evidence JSON updates and
+    newly added, manifest-referenced `100644` PNGs. Leave the distinct
+    pre-created public-release draft byte-identical. This single direct child of
+    `BUILD_SHA` is `APP_REVIEW_EVIDENCE_SHA`; captured files must never be
+    symlinks. From its clean checkout run:
 
-   ```sh
-   pnpm run validate:app-store:release
-   ```
+```sh
+pnpm run validate:app-store:release
+```
 
-   The App Store release command accepts only canonical manifest target
-   `app_review` or `public_release`; it rejects `staging` and
-   `internal_testflight`. The general `pnpm run verify:post-build-evidence`
-   command remains available for non-App-Store evidence boundaries. Never use a
-   staging target to carry an upload N/A decision into the App Store gate.
+The authoritative target at this commit is `app_review`; the command rejects
+`staging` and `internal_testflight`. The general
+`pnpm run verify:post-build-evidence` command remains available for
+non-App-Store evidence boundaries. Never use a staging target to carry an
+upload N/A decision into the App Store gate.
 
-   The gate derives `BUILD_SHA` from the committed TestFlight record and accepts
-   no command-line Git ref. Record `POST_BUILD_EVIDENCE_SHA` and the result
-   outside the finalized manifest. The integrated boundary proves
-   the exact direct-parent relationship, a clean tree, operation/mode-constrained
-   evidence files, manifest-bound regular PNGs, the release-manifest checksum
-   and canonical content, required sections and checked controls, complete
-   passing release evidence, exact TestFlight/deployment identity bindings,
-   byte-identical `eas.json`, `cli.requireCommit: true`, TestFlight `BUILD_SHA`,
-   and pinned `ascAppId`. Any runtime, config, dependency, lockfile, migration,
-   workflow, script, or shared-procedure change requires a new `BUILD_SHA`,
-   repeated preflights, signed build, and upload.
+The gate derives `BUILD_SHA` from the committed TestFlight record and accepts
+no command-line Git ref. Record `APP_REVIEW_EVIDENCE_SHA` and the result
+outside the finalized manifest. The integrated boundary proves
+the exact direct-parent relationship, a clean tree, operation/mode-constrained
+evidence files, manifest-bound regular PNGs, the release-manifest checksum
+and canonical content, required sections and checked controls, complete
+passing release evidence, exact TestFlight/deployment identity bindings,
+byte-identical `eas.json`, `cli.requireCommit: true`, TestFlight `BUILD_SHA`,
+and pinned `ascAppId`. Any runtime, config, dependency, lockfile, migration,
+workflow, script, or shared-procedure change requires a new `BUILD_SHA`,
+repeated preflights, signed build, and upload.
 
-   UTC evidence timestamps may use whole or fractional seconds with `Z`. Except
-   for the restore-drill timestamp, each must fall between record creation and
-   finalization. Finalization may not be future-dated, and the restore drill must
-   be no more than 90 days old at finalization.
+UTC evidence timestamps may use whole or fractional seconds with `Z`. Except
+for the restore-drill timestamp, each must fall between record creation and
+finalization. Finalization may not be future-dated, and the restore drill must
+be no more than 90 days old at finalization.
 
-   CI validates a pull request's exact head in the dedicated **Release evidence
-   boundary** job because GitHub's synthetic pull-request merge commit is not
-   the evidence commit. Rebase onto the intended `main` tip before establishing
-   `BUILD_SHA`. After signing, preserve the exact `BUILD_SHA` direct-parent
-   `POST_BUILD_EVIDENCE_SHA` pair: no squash, merge commit, rebase merge, amend,
-   or other history rewrite is permitted. Integrate it into `main` by
-   fast-forward only and require the push-to-`main` evidence job to pass.
+CI validates a pull request's exact head in the dedicated **Release evidence
+boundary** job because GitHub's synthetic pull-request merge commit is not the
+evidence commit. Before signing `BUILD_SHA`, fetch `main`, prove the fetched tip
+is an ancestor of the candidate, record that tip externally, and verify branch
+protection permits an owner-approved, exact-SHA, non-force fast-forward. Make
+**Release evidence boundary** a required status check. Rebase only before
+establishing `BUILD_SHA`. If protection blocks that path, stop; only the owner
+may authorize a narrowly scoped temporary bypass, and it must be restored after
+the exact SHA lands. A merge-button workaround is prohibited.
 
-10. Re-run production probes, including `clerk-proxy-health`, immediately before
-    handoff to App Review.
-11. Owner records the Submit for App Review decision in the external handoff.
-    Submission and manual public release are separate approvals.
-12. Never amend the finalized evidence manifest or its checksum. Any correction
-    creates a new build candidate; the strict boundary does not permit a second
-    post-build evidence commit.
+After signing, preserve the exact
+`BUILD_SHA -> APP_REVIEW_EVIDENCE_SHA -> PUBLIC_RELEASE_EVIDENCE_SHA` chain.
+Pass exact-head pull-request CI on `APP_REVIEW_EVIDENCE_SHA`, then fast-forward
+`main` to that exact SHA without `--force`; do not use GitHub merge-commit,
+squash, rebase-and-merge, or merge-queue paths. Wait for push-to-`main` CI and
+prove remote `main` equals `APP_REVIEW_EVIDENCE_SHA`. Re-run the current-clock
+validator and production probes before the owner may authorize **Submit for
+Review**.
+
+Freeze `main` at `APP_REVIEW_EVIDENCE_SHA` throughout review. An unrelated
+advance means stop or withdraw, disable Clerk production test mode, and create a
+new signed candidate. After approval, create `PUBLIC_RELEASE_EVIDENCE_SHA`
+directly on the App Review evidence commit, pass exact-head pull-request CI,
+fast-forward `main` from the exact App Review SHA to the exact public-release
+SHA, wait for push-to-`main` CI, and prove remote `main` equals the public-release
+SHA. Re-run the current-clock validator and production probes before separate
+authorization for **Release This Version**. Any force push, amend, intervening
+commit, or rewritten SHA requires a new candidate.
+
+13. Re-run the integrated release validator and production probes, including
+    `clerk-proxy-health`, immediately before handoff to App Review. The owner must
+    use **Submit for Review** within 24 hours of every bounded Clerk, review-
+    account, and Apple-workflow timestamp; stale immutable evidence requires a
+    new signed candidate.
+14. Owner records the Submit for App Review decision in the external handoff,
+    confirms the just-run gate still passes, then uses **Submit for Review** on
+    the verified draft. Draft assembly, submission, and manual public release
+    are separate approvals.
+15. After submission, keep production test mode enabled only while the
+    authorized submission is awaiting or undergoing review, with authentication
+    and reserved-account monitoring active. The release lead owns the App Store
+    Connect status watch, the security owner is backup, and the maximum closure
+    response is 15 minutes. Disable immediately when the exact submission leaves
+    its authorized states, including Accepted, Pending Developer Release,
+    Rejected, Unresolved Issues, Invalid Binary, withdrawal, removal, or
+    abandonment, or on unexpected reserved-account activity.
+    The `app_review` record must already freeze the two owners, their production
+    access preflight, exact-submission status source, monitoring, escalation,
+    15-minute SLO, and keep the three closure fields null.
+    A rejection or resubmission requires a new signed candidate, fresh
+    manifests, and a newly authorized review window.
+16. If Apple approves the version configured for manual release, verify
+    **Pending Developer Release**, unchanged exact-build identity, healthy production probes, Clerk
+    production test mode off, and Client Trust on. Preserve the historical App
+    Review account attestations. In `app-store/app-store-submission.json`, the
+    public transition may advance only root `updated`; Clerk `testModeState`,
+    `verifiedAtUtc`, and `evidenceReference`; shutdown `triggerObservedAtUtc`,
+    `testModeDisabledAtUtc`, and `shutdownEvidenceReference`; and Apple `state`,
+    `appVersionStatus`, `submissionSection`, `allSubmittedItemsAccepted`,
+    `verifiedAtUtc`, and `evidenceReference`. The shutdown trigger must be after
+    App Review evidence finalization, disablement must follow within 15 minutes,
+    and its evidence reference must differ from the access preflight. Preserve
+    all other submission fields, including the owners/access plan, Apple
+    submission reference, included-item flags, manual-release choice, and
+    inactive-review flag. Finalize the distinct pre-created
+    `public_release` manifest with the same release ID/build, add its checksum,
+    and commit only those changes as the direct child of
+    `APP_REVIEW_EVIDENCE_SHA`. From clean `PUBLIC_RELEASE_EVIDENCE_SHA`, rerun
+    `pnpm run validate:app-store:release` immediately before the release action.
+    Only after it passes may the owner separately authorize **Release This
+    Version** and confirm the dialog within 24 hours of the Clerk and Apple
+    closure evidence. Stale immutable evidence requires a new candidate.
+17. Never amend either finalized evidence manifest or checksum. A correction,
+    missing draft, changed runtime/build fact, broken ancestry, or third
+    evidence commit requires a new signed candidate.
 
 ## Sanitized evidence rules
 

@@ -123,9 +123,16 @@ not a public-launch readiness claim.
   files. Working records validate in CI; the release validator intentionally
   refuses submission until every owner, live App Store Connect, qualified
   review, and real-capture gate is complete.
-- The release operations package now includes a reproducible evidence manifest,
-  staging/production/rollback runbook, and bounded sanitized deployment probes
-  for health, readiness, auth guards, indexing, redirects, and internal routes.
+- Each release candidate must create both App Store target manifests in `DRAFT`
+  before `BUILD_SHA`; the verifier enforces the exact
+  `BUILD_SHA -> app_review -> public_release` evidence chain. The public
+  submission transition may advance only root `updated`; the three top-level
+  Clerk closure fields; the three shutdown-closure fields; and the six
+  target-state Apple fields. All other submission data is frozen. Across the
+  two manifests, release ID, build identity, and deployment identity are
+  immutable while target-specific evidence may be finalized in its own phase.
+  Staging/production/rollback procedures and bounded sanitized probes cover
+  health, readiness, auth guards, indexing, redirects, and internal routes.
 - Malformed and oversized JSON requests now return sanitized `400`/`413`
   responses rather than becoming generic server errors.
 - pnpm is pinned to `10.34.5`, and GitHub CI now runs frozen install, generated
@@ -138,8 +145,8 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 1,002 tests** (release operations 86, App Store
-  artifacts 40, domain 33, database 4, mobile 386, API 453).
+- `pnpm run test`: **PASS — 1,077 tests** (release operations 158, App Store
+  artifacts 43, domain 33, database 4, mobile 386, API 453).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
@@ -148,9 +155,10 @@ native/App Store acceptance.
 - Replit production public-site build: **PASS** in a clean disposable snapshot;
   it validates the zero-JavaScript launch/legal handler and does not create or
   require the development-only `static-build` preview.
-- App Store records: **PASS** in working mode; strict release mode intentionally
-  rejects **275** unresolved owner, provider, legal, screenshot, exact-build,
-  and App Store Connect evidence requirements.
+- App Store records: **PASS** in working mode; target-aware strict validation
+  intentionally rejects **286** unresolved requirements for `app_review` and
+  **285** for `public_release`, covering owner, provider, legal, screenshot,
+  exact-build, and App Store Connect evidence.
 - Production release-environment preflight: **PASS** with representative
   non-secret values; missing, malformed, private, reserved, cross-origin, and
   insecure configurations fail closed in automated coverage.

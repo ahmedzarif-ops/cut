@@ -334,13 +334,20 @@ that App Store Connect will accept an oversized value.
 App Review requires five purpose-built synthetic account states: full access,
 purchase, first adult-gate decision, restricted, and deletion. Each account
 must pass a production sign-in within 24 hours of submission and be attested as
-non-expiring for the review window with no MFA or out-of-band trap. Fresh
-exact-build evidence records only account aliases, result, UTC, and evidence
-reference; credentials must remain in App Store Connect or approved secret
-storage. The final text copied from `APP_REVIEW_RUNBOOK.md` must remain within
-4,000 UTF-8 bytes after every placeholder is resolved. Save only the
-credential-free template SHA-256 and final measurement/save attestation—never a
-hash or copy of the resolved credential-bearing text.
+non-expiring for the review window with no user MFA or out-of-band delivery
+trap. The selected Clerk strategy uses reserved `+clerk_test` accounts and
+fixed code `424242` only while production test mode is explicitly enabled for
+App Review. Client Trust remains enabled. The exact TestFlight build must prove
+the new-device flow. Production test mode must be disabled immediately after
+approval, rejection, withdrawal, removal from review, abandonment, or
+unexpected reserved-account activity. After approval, the disabled state is
+separately evidenced before manual public release. Fresh exact-build evidence
+records only account aliases, result, UTC, and evidence reference; credentials
+must remain in App Store Connect or approved secret storage. The final text
+copied from `APP_REVIEW_RUNBOOK.md` must remain within 4,000 UTF-8 bytes after
+every placeholder is resolved. Save only the credential-free template SHA-256
+and final measurement/save attestation—never a hash or copy of the resolved
+credential-bearing text.
 
 `app-store/testflight-submission.json` separately records beta copy, internal
 group configuration, exact version/build/full Git commit/EAS build ID/App Store
@@ -375,6 +382,9 @@ approval; a drafted decision alone is not evidence that Apple received it.
   Connect's Sign-in Information. Put any additional purpose-built synthetic
   path-specific accounts in App Review Notes, because Apple exposes only one
   Sign-in Information pair.
+- State that a new device may ask for the review code `424242`, that no email is
+  delivered for the reserved synthetic accounts, and verify that instruction
+  against the exact submitted build before saving the notes.
 - Explain the `unverified` (`428`) and `ineligible` (`403`) server behavior and
   provide a controlled under-18 test path without exposing real personal data.
 - Explain account deletion, subscription management, and any review-only setup.

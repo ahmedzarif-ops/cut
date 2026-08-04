@@ -103,7 +103,11 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          fetch-depth: 2
+          # A public-release evidence transition is the second evidence commit:
+          # BUILD_SHA -> app_review -> public_release.
+          # Full history is also required to prove the candidate contains the
+          # current PR base, or that a push to main was non-force-forward.
+          fetch-depth: 0
           persist-credentials: false
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
@@ -128,6 +132,17 @@ jobs:
       - name: Validate the exact approved release evidence commit
         if: steps.release-state.outputs.required == 'true'
         run: node scripts/app-store/validate.mjs --release
+
+      - name: Confirm the release candidate contains required main history
+        if: steps.release-state.outputs.required == 'true'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EXPECTED_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          GIT_REF: ${{ github.ref }}
+        run: node ops/scripts/release-main-ancestry-verify.mjs
 
       - name: Confirm release evidence is not yet required
         if: steps.release-state.outputs.required != 'true'

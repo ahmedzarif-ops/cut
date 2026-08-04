@@ -1,8 +1,11 @@
 # CUT OS — release evidence manifest
 
-> Template: copy this file for one release candidate. Do not put secrets,
-> credentials, DSNs, customer/tester identifiers, health/nutrition data, request
-> or response bodies, or raw environment/log output in this record.
+> Template: use one copy per evidence target. Before an App Store `BUILD_SHA`,
+> create distinct draft copies for `app_review` and `public_release`; reserve the
+> same release ID and explicit targets, then bind both to the exact build when
+> its remote identities exist. Do not put secrets, credentials, DSNs,
+> customer/tester identifiers, health/nutrition data, request or response
+> bodies, or raw environment/log output in either record.
 
 ## Manifest control
 
@@ -56,6 +59,11 @@ than 90 days old at finalization.
     "previousProductionApiRevision": "<deployment ID or N/A — reason — approver>",
     "publicLegalRevision": "<deployment ID>",
     "previousPublicLegalRevision": "<deployment ID or N/A — reason — approver>",
+    "databaseMigrationRevision": {
+      "tag": "<latest BUILD_SHA Drizzle migration tag>",
+      "createdAt": "<latest BUILD_SHA Drizzle journal epoch milliseconds>",
+      "sha256": "<lowercase SHA-256 of the latest BUILD_SHA migration SQL>"
+    },
     "easBuildId": "<TestFlight EAS build ID>",
     "appStoreConnectBuildId": "<TestFlight App Store Connect build ID>"
   },
@@ -569,9 +577,13 @@ Finalization rules:
 1. Resolve every angle-bracket placeholder in the canonical JSON and the two
    required `BUILD_SHA` acknowledgment lines below. Use
    `N/A — reason — approver` only where the JSON schema permits it.
-2. Set both manifest statuses to `FINAL`, set `finalizedAtUtc` to the actual
-   current UTC time, and change both recovery confirmation booleans to `true`.
-   Do not future-date finalization.
+   Replace the quoted `databaseMigrationRevision.createdAt` placeholder with
+   the journal's positive integer literal; do not leave it as a string.
+2. In the one target manifest being finalized, set its human-readable status
+   line and canonical JSON `status` to `FINAL`, set `finalizedAtUtc` to the
+   actual current UTC time, and change both recovery confirmation booleans to
+   `true`. Leave the other App Store target manifest in `DRAFT` until its own
+   phase. Do not future-date finalization.
 3. Keep release-event evidence timestamps between `createdAtUtc` and
    `finalizedAtUtc`. `restoreDrillAtUtc` may predate creation, but it must be
    no more than 90 days old at finalization.
@@ -584,15 +596,60 @@ Finalization rules:
    shasum -a 256 RELEASE_MANIFEST_PATH > RELEASE_MANIFEST_PATH.sha256
    ```
 
-6. Stage the finalized manifest, its `.sha256`, the allowlisted App Store JSON
-   evidence, and manifest-referenced PNG captures together. Commit them once as
-   the direct child of `BUILD_SHA`; this is `POST_BUILD_EVIDENCE_SHA`.
-7. Run the integrated post-build/release validator from that clean commit and
-   record `POST_BUILD_EVIDENCE_SHA`, the result, time, and owner decision outside
-   this file. A commit cannot contain its own SHA, and modifying this file after
+6. For `app_review`, stage the finalized App Review manifest, its `.sha256`, the
+   allowlisted App Store JSON evidence, and manifest-referenced PNG captures
+   together. Commit them once as the direct child of `BUILD_SHA`; this is
+   `APP_REVIEW_EVIDENCE_SHA`. Leave the pre-existing public-release draft
+   manifest byte-identical and do not add its checksum yet.
+7. The release lead owns the exact App Store Connect version/submission status
+   watch and the security owner is backup. Before finalizing `app_review`, freeze
+   distinct owners in `appReview.clerkReviewAccess.shutdownControl`, prove both
+   have production Clerk access, set status source
+   `exact_app_store_connect_submission`, enable monitoring and escalation, keep
+   the fixed 15-minute SLO, and record a fresh access-preflight UTC/evidence
+   reference. Keep its trigger, disablement, and closure-evidence fields null.
+   Disable Clerk production test
+   mode immediately, and no later than 15 minutes, whenever it leaves the
+   authorized waiting/in-review states, including Accepted, Pending Developer
+   Release, Rejected, Unresolved Issues, Invalid Binary, withdrawal, removal, or
+   abandonment, or on unexpected reserved-account activity. For
+   `public_release`, additionally require Apple approval, no active review
+   session, and **Pending Developer Release**. Retain Client Trust. In
+   `app-store/app-store-submission.json`, advance only root `updated`; Clerk
+   `testModeState`, `verifiedAtUtc`, and `evidenceReference`; shutdown
+   `triggerObservedAtUtc`, `testModeDisabledAtUtc`, and
+   `shutdownEvidenceReference`; and Apple `state`, `appVersionStatus`,
+   `submissionSection`, `allSubmittedItemsAccepted`, `verifiedAtUtc`, and
+   `evidenceReference`. Preserve all other submission fields. The shutdown
+   trigger must follow App Review evidence finalization, disablement must follow
+   within 15 minutes and precede public finalization, and closure evidence must
+   differ from access-preflight evidence. Keep
+   the five App Review account attestations as immutable historical evidence of
+   the completed review-access window. Finalize the distinct public-release
+   manifest and add its adjacent checksum. Commit
+   only those changes as the direct child of `APP_REVIEW_EVIDENCE_SHA`; this is
+   `PUBLIC_RELEASE_EVIDENCE_SHA`. Do not modify the finalized App Review
+   manifest/checksum, TestFlight record, screenshots, territory record, or any
+   runtime/procedure file.
+   Before submission, pass exact-head CI on `APP_REVIEW_EVIDENCE_SHA`,
+   non-force fast-forward `main` to that exact SHA, wait for push CI, confirm the
+   remote SHA, and rerun current-clock validation/probes. Freeze `main` there
+   throughout review. After approval, pass exact-head CI on
+   `PUBLIC_RELEASE_EVIDENCE_SHA`, fast-forward `main` directly from A to P, wait
+   for push CI, confirm the remote SHA, and rerun validation/probes before
+   release. GitHub merge, squash, rebase-and-merge, merge-queue, force-push, and
+   intervening-commit paths are prohibited for both evidence commits.
+8. A `staging` or `internal_testflight` record uses one target manifest and the
+   general evidence verifier as a direct child of its build SHA; it cannot pass
+   the App Store release validator or enter the two-target App Store chain.
+9. Run the integrated post-build/release validator from the clean target commit
+   and record its SHA, result, time, and owner decision outside the manifest. A
+   commit cannot contain its own SHA, and modifying a manifest after
    checksumming would invalidate the checksum.
-8. Never amend a finalized manifest. A correction requires a new build candidate
-   and a new manifest whose controlled evidence names the superseded record.
+10. Never amend a finalized manifest. A correction, missing pre-created target
+    manifest, changed build/runtime fact, or non-fast-forward history requires a
+    new build candidate and new manifests whose controlled evidence names the
+    superseded record.
 
 ## Candidate identity
 
@@ -648,8 +705,11 @@ codes, passwords, response bodies, or raw timing samples.
 
 ## Database migration and recovery
 
-The canonical `backupRecovery` object is the sole migration, backup, restore,
-RPO/RTO, and recovery-approval record.
+The canonical `deployments.databaseMigrationRevision` tuple binds the latest
+Drizzle journal tag, epoch, and SQL bytes at immutable `BUILD_SHA`. The
+`backupRecovery.databaseReadiness` and production API-readiness smoke evidence
+prove the deployed database matches it; the rest of `backupRecovery` is the
+backup, restore, RPO/RTO, and recovery-approval record.
 
 - [ ] No concurrent manual migration will run during API startup migration.
 - [ ] Previous API rollback is forbidden unless schema compatibility is proven.
@@ -702,9 +762,10 @@ integrated-validator outcome only in the external handoff.
 
 ## Post-commit decisions
 
-The immutable repository manifest ends when its checksum and the allowlisted
-evidence are committed as `POST_BUILD_EVIDENCE_SHA`. Record the integrated
-release-validator result, that SHA, final probes, Submit for App Review decision,
-App Review outcome, manual public-release decision, and any later incident in the
-controlled external handoff. Do not amend this file or add another post-build
-evidence commit.
+This immutable target manifest ends when its checksum and allowlisted evidence
+are committed as `APP_REVIEW_EVIDENCE_SHA` or
+`PUBLIC_RELEASE_EVIDENCE_SHA`. Record the integrated-validator result, that SHA,
+final probes, App Review submission decision/outcome, manual public-release
+decision, and any later incident in the controlled external handoff. Never
+amend either target manifest; the App Store chain permits the one constrained
+public-release child after App Review and rejects any third evidence commit.
