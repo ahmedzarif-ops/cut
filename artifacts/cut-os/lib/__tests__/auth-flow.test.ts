@@ -4,12 +4,17 @@ import {
   clerkOperationSucceeded,
   createExclusiveOperationRunner,
   getPasswordSignInNextStep,
+  getPasswordSignUpNextStep,
   PASSWORD_RESET_REQUEST_NOTICE,
   requestPasswordResetEmailCode,
   resetSignInAttempt,
+  resetSignUpAttempt,
   runPasswordSignIn,
+  runPasswordSignUp,
   sendSignInEmailCode,
+  sendSignUpEmailCode,
   verifySignInEmailCode,
+  verifySignUpEmailCode,
 } from "../auth-flow";
 
 function deferred<T>() {
@@ -35,18 +40,178 @@ describe("authentication flows", () => {
     ).resolves.toBe(false);
   });
 
-  it("does not send a sign-up follow-up operation after a Clerk error", async () => {
-    const nextOperation = vi.fn(async () => ({ error: null }));
-    const firstOperationSucceeded = await clerkOperationSucceeded(async () => ({
-      error: new Error("not accepted"),
-    }));
+  it("continues password sign-up only with email verification", () => {
+    expect(
+      getPasswordSignUpNextStep({
+        status: "complete",
+        missingFields: [],
+        unverifiedFields: [],
+      }),
+    ).toEqual({ kind: "complete" });
+    expect(
+      getPasswordSignUpNextStep({
+        status: "missing_requirements",
+        missingFields: [],
+        unverifiedFields: ["email_address"],
+      }),
+    ).toEqual({ kind: "email_code" });
+  });
 
-    if (firstOperationSucceeded) {
-      await clerkOperationSucceeded(nextOperation);
-    }
+  it.each([
+    ["another missing field", ["first_name"], ["email_address"]],
+    ["another unverified field", [], ["email_address", "phone_number"]],
+    ["no email verification", [], []],
+  ])("fails closed for sign-up with %s", (_caseName, missing, unverified) => {
+    expect(
+      getPasswordSignUpNextStep({
+        status: "missing_requirements",
+        missingFields: missing,
+        unverifiedFields: unverified,
+      }),
+    ).toEqual({ kind: "unsupported" });
+  });
 
-    expect(firstOperationSucceeded).toBe(false);
-    expect(nextOperation).not.toHaveBeenCalled();
+  it("does not send a sign-up code after account creation fails", async () => {
+    const sendEmailCode = vi.fn(async () => ({ error: null }));
+    const finalize = vi.fn(async () => ({ error: null }));
+
+    await expect(
+      runPasswordSignUp({
+        createAccount: async () => ({ error: new Error("not accepted") }),
+        getStatus: () => "missing_requirements",
+        getMissingFields: () => [],
+        getUnverifiedFields: () => ["email_address"],
+        sendEmailCode,
+        finalize,
+      }),
+    ).resolves.toEqual({ kind: "account_failed" });
+    expect(sendEmailCode).not.toHaveBeenCalled();
+    expect(finalize).not.toHaveBeenCalled();
+  });
+
+  it("finalizes a complete sign-up without sending a code", async () => {
+    const sendEmailCode = vi.fn(async () => ({ error: null }));
+    const finalize = vi.fn(async () => ({ error: null }));
+
+    await expect(
+      runPasswordSignUp({
+        createAccount: async () => ({ error: null }),
+        getStatus: () => "complete",
+        getMissingFields: () => [],
+        getUnverifiedFields: () => [],
+        sendEmailCode,
+        finalize,
+      }),
+    ).resolves.toEqual({ kind: "signed_up" });
+    expect(sendEmailCode).not.toHaveBeenCalled();
+    expect(finalize).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps sign-up verification available after delivery fails", async () => {
+    await expect(
+      runPasswordSignUp({
+        createAccount: async () => ({ error: null }),
+        getStatus: () => "missing_requirements",
+        getMissingFields: () => [],
+        getUnverifiedFields: () => ["email_address"],
+        sendEmailCode: async () => ({ error: new Error("offline") }),
+        finalize: async () => ({ error: null }),
+      }),
+    ).resolves.toEqual({ kind: "email_code_send_failed" });
+  });
+
+  it("fails closed before sending a code for unsupported sign-up requirements", async () => {
+    const sendEmailCode = vi.fn(async () => ({ error: null }));
+    const finalize = vi.fn(async () => ({ error: null }));
+
+    await expect(
+      runPasswordSignUp({
+        createAccount: async () => ({ error: null }),
+        getStatus: () => "missing_requirements",
+        getMissingFields: () => ["protect_check"],
+        getUnverifiedFields: () => ["email_address"],
+        sendEmailCode,
+        finalize,
+      }),
+    ).resolves.toEqual({ kind: "unsupported" });
+    expect(sendEmailCode).not.toHaveBeenCalled();
+    expect(finalize).not.toHaveBeenCalled();
+  });
+
+  it("allows sign-up email delivery and reset to be retried", async () => {
+    const sendEmailCode = vi
+      .fn()
+      .mockResolvedValueOnce({ error: new Error("offline") })
+      .mockResolvedValueOnce({ error: null });
+
+    await expect(sendSignUpEmailCode({ sendEmailCode })).resolves.toEqual({
+      kind: "failed",
+    });
+    await expect(sendSignUpEmailCode({ sendEmailCode })).resolves.toEqual({
+      kind: "sent",
+    });
+    await expect(
+      resetSignUpAttempt({ reset: async () => ({ error: null }) }),
+    ).resolves.toEqual({ kind: "reset" });
+  });
+
+  it("retries sign-up finalization without verifying an accepted code twice", async () => {
+    let status = "missing_requirements";
+    const verifyEmailCode = vi.fn(async () => {
+      status = "complete";
+      return { error: null };
+    });
+    const finalize = vi
+      .fn()
+      .mockResolvedValueOnce({ error: new Error("offline") })
+      .mockResolvedValueOnce({ error: null });
+    const input = {
+      verifyEmailCode,
+      getStatus: () => status,
+      finalize,
+    };
+
+    await expect(verifySignUpEmailCode(input)).resolves.toEqual({
+      kind: "finalize_failed",
+    });
+    await expect(verifySignUpEmailCode(input)).resolves.toEqual({
+      kind: "signed_up",
+    });
+    expect(verifyEmailCode).toHaveBeenCalledTimes(1);
+    expect(finalize).toHaveBeenCalledTimes(2);
+  });
+
+  it("serializes sign-up and prevents stale account creation from sending a code", async () => {
+    let active = true;
+    const pendingAccount = deferred<{ error: null }>();
+    const sendEmailCode = vi.fn(async () => ({ error: null }));
+    const finalize = vi.fn(async () => ({ error: null }));
+    const runner = createExclusiveOperationRunner({
+      isActive: () => active,
+      onBusyChange: () => undefined,
+    });
+
+    const signUp = runner.run(({ isCurrent }) =>
+      runPasswordSignUp({
+        createAccount: () => pendingAccount.promise,
+        getStatus: () => "missing_requirements",
+        getMissingFields: () => [],
+        getUnverifiedFields: () => ["email_address"],
+        sendEmailCode,
+        finalize,
+        isCurrent,
+      }),
+    );
+    await expect(runner.run(async () => "must not run")).resolves.toEqual({
+      kind: "busy",
+    });
+
+    active = false;
+    runner.invalidate();
+    pendingAccount.resolve({ error: null });
+    await expect(signUp).resolves.toEqual({ kind: "stale" });
+    expect(sendEmailCode).not.toHaveBeenCalled();
+    expect(finalize).not.toHaveBeenCalled();
   });
 
   it("finishes a password sign-in that needs no additional verification", () => {

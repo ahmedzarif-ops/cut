@@ -5,10 +5,9 @@
  * authentication on custom domains and .replit.app deployments without
  * requiring CNAME DNS configuration.
  *
- * AUTH CONFIGURATION: To manage users, enable/disable login providers
- * (Google, GitHub, etc.), change app branding, or configure OAuth credentials,
- * use the Auth pane in the workspace toolbar. There is no external Clerk
- * dashboard — all auth configuration is done through the Auth pane.
+ * AUTH CONFIGURATION: Manage the production instance, login methods, domains,
+ * branding, and proxy activation in Clerk's dashboard. Keep the server-only
+ * secret key in the API deployment and never expose it to the mobile client.
  *
  * IMPORTANT:
  * - Only active in production (Clerk proxying doesn't work for dev instances)

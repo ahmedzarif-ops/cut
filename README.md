@@ -64,6 +64,9 @@ real App Store purchases.
 | `EXPO_PUBLIC_TERMS_URL`              | cut-os EAS release            | Public Terms of Use opened from sign-up and Settings            |
 | `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Public support page opened from Settings                        |
 | `PUBLIC_APP_ORIGIN`                  | cut-os public server          | Canonical public HTTPS origin used for Expo preview deep links  |
+| `CORS_ALLOWED_ORIGINS`               | api-server                    | Explicit comma-separated HTTPS browser origins                  |
+| `CLERK_PROXY_URL`                    | cut-os Replit build           | Relative API proxy path; production value is `/api/__clerk`     |
+| `LEGAL_SITE_PUBLICATION_STATUS`      | cut-os public server          | `draft` until approved legal sources and hashes are recorded    |
 | `PORT`                               | api-server                    | Listen port (Replit-provided)                                   |
 | `API_MAX_INSTANCES`                  | api-server production         | Actual platform max; only `1` is supported until shared limits  |
 | `API_RATE_LIMIT`                     | api-server production         | Optional requests/minute integer `1`-`10000`; default `100`     |
@@ -82,6 +85,12 @@ only in the API deployment. The development script derives the API and Clerk
 values automatically, but an EAS build does not inherit that shell mapping.
 See `EAS_RELEASE_RUNBOOK.md`.
 
+`CLERK_PROXY_URL` is the relative server route used only while Replit assembles
+its browser/development configuration. EAS does not inherit it: native builds
+require the full same-origin `EXPO_PUBLIC_CLERK_PROXY_URL`. Keep
+`LEGAL_SITE_PUBLICATION_STATUS=draft` until the exact Privacy, Terms, and
+Support sources have owner/counsel approval and the committed hash gate passes.
+
 Any build profile that configures `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` must
 also configure the exact `EXPO_PUBLIC_REVENUECAT_PRODUCT_ID`; a preview or Test
 Store build with an unbound catalog fails validation instead of reaching a
@@ -94,6 +103,10 @@ control: the release record must prove the provider maximum is one, and a
 multi-replica deployment requires a real shared rate-limit store first.
 The account-deletion worker runs once immediately at startup, then waits for
 each non-overlapping run to settle before scheduling the next bounded retry.
+Because that retry scheduler lives in the API process, launch also requires a
+provider-verified always-on minimum of one API machine; a scale-to-zero service
+is not sufficient even when its maximum is one. `API_MAX_INSTANCES=1` is only a
+runtime assertion and is not proof of either provider control-plane setting.
 Production rejects retry intervals outside 1 second through 5 minutes rather
 than passing unsafe values to the Node timer.
 

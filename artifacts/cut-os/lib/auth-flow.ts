@@ -17,6 +17,9 @@ export type PasswordSignInNextStep =
     }
   | { kind: "unsupported" };
 
+export type PasswordSignUpNextStep =
+  { kind: "complete" } | { kind: "email_code" } | { kind: "unsupported" };
+
 export interface CurrentOperation {
   isCurrent: () => boolean;
 }
@@ -41,6 +44,15 @@ export type PasswordSignInOutcome =
   | { kind: "email_code_send_failed"; safeIdentifier: string | null }
   | { kind: "stale" };
 
+export type PasswordSignUpOutcome =
+  | { kind: "signed_up" }
+  | { kind: "account_failed" }
+  | { kind: "finalize_failed" }
+  | { kind: "unsupported" }
+  | { kind: "email_code_sent" }
+  | { kind: "email_code_send_failed" }
+  | { kind: "stale" };
+
 export type EmailCodeSendOutcome =
   { kind: "sent" } | { kind: "failed" } | { kind: "stale" };
 
@@ -50,8 +62,16 @@ export type EmailCodeVerificationOutcome =
   | { kind: "finalize_failed" }
   | { kind: "stale" };
 
+export type SignUpEmailCodeVerificationOutcome =
+  | { kind: "signed_up" }
+  | { kind: "verification_failed" }
+  | { kind: "finalize_failed" }
+  | { kind: "stale" };
+
 export type ResetSignInOutcome =
   { kind: "reset" } | { kind: "failed" } | { kind: "stale" };
+
+export type ResetSignUpOutcome = ResetSignInOutcome;
 
 const operationIsCurrent = () => true;
 
@@ -103,6 +123,36 @@ export function getPasswordSignInNextStep({
     kind: "email_code",
     safeIdentifier: safeIdentifier || null,
   };
+}
+
+/**
+ * Password sign-up may finish immediately or require only verification of the
+ * supplied email address. Any additional Clerk requirement fails closed until
+ * CUT has an explicit, tested UI for it.
+ */
+export function getPasswordSignUpNextStep({
+  status,
+  missingFields,
+  unverifiedFields,
+}: {
+  status: string | null | undefined;
+  missingFields: readonly string[];
+  unverifiedFields: readonly string[];
+}): PasswordSignUpNextStep {
+  if (status === "complete") {
+    return { kind: "complete" };
+  }
+
+  if (
+    status !== "missing_requirements" ||
+    missingFields.length > 0 ||
+    unverifiedFields.length !== 1 ||
+    unverifiedFields[0] !== "email_address"
+  ) {
+    return { kind: "unsupported" };
+  }
+
+  return { kind: "email_code" };
 }
 
 /**
@@ -167,6 +217,53 @@ export async function sendSignInEmailCode({
   const sent = await clerkOperationSucceeded(sendEmailCode);
   if (!isCurrent()) return { kind: "stale" };
   return sent ? { kind: "sent" } : { kind: "failed" };
+}
+
+export const sendSignUpEmailCode = sendSignInEmailCode;
+
+export async function runPasswordSignUp({
+  createAccount,
+  getStatus,
+  getMissingFields,
+  getUnverifiedFields,
+  sendEmailCode,
+  finalize,
+  isCurrent = operationIsCurrent,
+}: {
+  createAccount: ClerkOperation;
+  getStatus: () => string | null | undefined;
+  getMissingFields: () => readonly string[];
+  getUnverifiedFields: () => readonly string[];
+  sendEmailCode: ClerkOperation;
+  finalize: ClerkOperation;
+  isCurrent?: () => boolean;
+}): Promise<PasswordSignUpOutcome> {
+  if (!isCurrent()) return { kind: "stale" };
+  const accountCreated = await clerkOperationSucceeded(createAccount);
+  if (!isCurrent()) return { kind: "stale" };
+  if (!accountCreated) return { kind: "account_failed" };
+
+  const nextStep = getPasswordSignUpNextStep({
+    status: getStatus(),
+    missingFields: getMissingFields(),
+    unverifiedFields: getUnverifiedFields(),
+  });
+  if (nextStep.kind === "unsupported") return { kind: "unsupported" };
+
+  if (nextStep.kind === "complete") {
+    const finalized = await clerkOperationSucceeded(finalize);
+    if (!isCurrent()) return { kind: "stale" };
+    return finalized ? { kind: "signed_up" } : { kind: "finalize_failed" };
+  }
+
+  const sendOutcome = await sendSignUpEmailCode({ sendEmailCode, isCurrent });
+  if (sendOutcome.kind === "stale") return sendOutcome;
+  return {
+    kind:
+      sendOutcome.kind === "sent"
+        ? "email_code_sent"
+        : "email_code_send_failed",
+  };
 }
 
 export async function runPasswordSignIn({
@@ -242,6 +339,13 @@ export async function verifySignInEmailCode({
   return finalized ? { kind: "signed_in" } : { kind: "finalize_failed" };
 }
 
+export async function verifySignUpEmailCode(
+  input: Parameters<typeof verifySignInEmailCode>[0],
+): Promise<SignUpEmailCodeVerificationOutcome> {
+  const outcome = await verifySignInEmailCode(input);
+  return outcome.kind === "signed_in" ? { kind: "signed_up" } : outcome;
+}
+
 export async function resetSignInAttempt({
   reset,
   isCurrent = operationIsCurrent,
@@ -254,6 +358,8 @@ export async function resetSignInAttempt({
   if (!isCurrent()) return { kind: "stale" };
   return resetSucceeded ? { kind: "reset" } : { kind: "failed" };
 }
+
+export const resetSignUpAttempt = resetSignInAttempt;
 
 /**
  * Deliberately returns no account-specific outcome. The caller must always show

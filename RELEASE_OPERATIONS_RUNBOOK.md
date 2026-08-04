@@ -55,17 +55,17 @@ connection values. If any identity is ambiguous, stop.
 
 ## Environment contract
 
-| Property             | Staging                                              | Production                                            |
-| -------------------- | ---------------------------------------------------- | ----------------------------------------------------- |
-| Purpose              | Production-like rehearsal with test data             | App Review and customers                              |
-| Database             | Isolated, disposable test data; same migration chain | Approved production database with verified recovery   |
-| Clerk                | Development/test instance; no FAPI proxy             | Exact production instance and enabled canonical proxy |
-| RevenueCat/StoreKit  | Test/Sandbox configuration                           | Exact approved project and App Store products         |
-| API and legal hosts  | Stable HTTPS staging hosts                           | Stable owner-approved HTTPS hosts                     |
-| Public app origin    | Explicit canonical `PUBLIC_APP_ORIGIN`               | Owner-approved canonical `PUBLIC_APP_ORIGIN`          |
-| API limiter topology | Recorded actual provider maximum                     | Provider maximum one; `API_MAX_INSTANCES=1`           |
-| Mobile distribution  | Internal development/preview build only              | Production EAS build, then internal TestFlight first  |
-| Monitoring           | Same signal names and probes as production           | Approved alert destinations and escalation owner      |
+| Property             | Staging                                              | Production                                                |
+| -------------------- | ---------------------------------------------------- | --------------------------------------------------------- |
+| Purpose              | Production-like rehearsal with test data             | App Review and customers                                  |
+| Database             | Isolated, disposable test data; same migration chain | Approved production database with verified recovery       |
+| Clerk                | Development/test instance; no FAPI proxy             | Exact production instance and enabled canonical proxy     |
+| RevenueCat/StoreKit  | Test/Sandbox configuration                           | Exact approved project and App Store products             |
+| API and legal hosts  | Stable HTTPS staging hosts                           | Stable owner-approved HTTPS hosts                         |
+| Public app origin    | Explicit canonical `PUBLIC_APP_ORIGIN`               | Owner-approved canonical `PUBLIC_APP_ORIGIN`              |
+| API process topology | Recorded actual provider minimum and maximum         | Always-on minimum one; maximum one; `API_MAX_INSTANCES=1` |
+| Mobile distribution  | Internal development/preview build only              | Production EAS build, then internal TestFlight first      |
+| Monitoring           | Same signal names and probes as production           | Approved alert destinations and escalation owner          |
 
 Do not call an environment production-like until its service map, migration
 revision, health probes, auth guard, legal resources, and monitoring signals are
@@ -80,6 +80,14 @@ release record proves the provider maximum is actually one and records the
 edge/abuse controls that cover a restart reset. Do not set the variable to `1`
 while leaving the provider able to scale higher. Multi-replica release requires
 an implemented, tested shared limiter store; no placeholder backend name counts.
+
+The account-deletion retry scheduler is also process-local. The provider must
+keep at least one API machine running continuously; an autoscale service that
+can reach zero is not launch-safe even if its maximum is one. Record direct
+control-plane evidence of both the always-on minimum and the one-machine
+maximum. A process environment value, health-check ping, or informal traffic
+assumption is not proof of either setting. A scale-to-zero launch requires an
+implemented, durable managed scheduler or queue first.
 
 ## 1. Open the release record
 
@@ -204,15 +212,16 @@ pnpm --filter @workspace/cut-os run validate:legal-site:live
    native QA, poor-network, adult-eligibility, deletion, purchase, restore,
    relaunch, shared-device, and accessibility scripts in `QA_REPORT.md` and
    `PURCHASE_QA_REPORT.md`.
-8. Record provider-console evidence that staging and production are each capped
-   at one API machine. On staging, use two genuinely distinct external client
-   connections; do not spoof `X-Forwarded-For`. Prove client A receives `429`
-   at the configured threshold while client B retains its own allowance. Then
-   perform one authorized API restart, record that the process-local counter
-   resets as expected, and prove the limiter re-engages at the threshold after
-   restart. Record the provider edge/abuse control that covers this reset gap.
-   A missing provider cap, shared client bucket, non-reengaging limiter, or
-   absent edge control blocks release.
+8. Record provider-console evidence that staging and production each keep an
+   always-on minimum of one API machine and are capped at one API machine. On
+   staging, use two genuinely distinct external client connections; do not
+   spoof `X-Forwarded-For`. Prove client A receives `429` at the configured
+   threshold while client B retains its own allowance. Then perform one
+   authorized API restart, record that the process-local counter resets as
+   expected, and prove the limiter re-engages at the threshold after restart.
+   Record the provider edge/abuse control that covers this reset gap. A missing
+   provider cap, shared client bucket, non-reengaging limiter, or absent edge
+   control blocks release.
 9. Observe staging for the predeclared window and compare error rate, latency,
    readiness, database pool behavior, provider failures, and worker health with
    the approved staging baseline. Fill the actual baseline and acceptable
@@ -249,9 +258,10 @@ applicable with a reason:
 - database recovery evidence and rollback matrix;
 - monitoring owners, destinations, baselines, thresholds, and observation
   window;
-- provider-console proof of a one-machine API maximum, the exact
-  `API_MAX_INSTANCES=1` startup setting, staging restart behavior, two-distinct-
-  client isolation, and an approved edge control for the restart reset gap;
+- provider-console proof of an always-on one-machine API minimum and maximum,
+  the exact `API_MAX_INSTANCES=1` startup setting, staging restart behavior,
+  two-distinct-client isolation, and an approved edge control for the restart
+  reset gap;
 - current review account and App Review instructions;
 - one selected Clerk-supported password-recovery architecture, provider-support
   evidence, implementation evidence, and an approved production-tenant test
@@ -282,9 +292,10 @@ does not guess a hosting command.
 3. Deploy the API candidate. If the provider supports a no-traffic revision or
    canary, verify it before promotion; otherwise record that capability as
    unavailable rather than pretending a canary occurred.
-4. Reconfirm from the provider control plane that the API maximum is still one
-   and that the running revision has `API_MAX_INSTANCES=1`; a value in the
-   process environment is not evidence of the provider setting.
+4. Reconfirm from the provider control plane that the API minimum and maximum
+   are both still one and that the running revision has
+   `API_MAX_INSTANCES=1`; a value in the process environment is not evidence of
+   either provider setting.
 5. Watch startup logs for the sanitized migration failure codes listed below.
    Confirm `/api/readyz` succeeds before routing normal traffic.
 6. Run the same API liveness, readiness, and auth-guard commands used in staging,

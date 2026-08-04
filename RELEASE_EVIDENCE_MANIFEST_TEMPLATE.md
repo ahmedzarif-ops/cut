@@ -627,8 +627,9 @@ record.
 ## API limiter topology and live abuse gate
 
 The canonical `releaseSafetyChecks.limiter_live_abuse` record is authoritative.
-Its controlled evidence must cover the provider one-machine maximum, live
-two-client isolation, restart-reset behavior, and the approved edge control.
+Its controlled evidence must cover the provider always-on one-machine minimum
+and one-machine maximum, live two-client isolation, restart-reset behavior, and
+the approved edge control.
 Never include client IPs, forwarding headers, raw logs, or response bodies here.
 
 ## Clerk production proxy activation

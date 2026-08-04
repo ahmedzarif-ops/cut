@@ -16,9 +16,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LegalSupportLinks } from "@/components/LegalSupportLinks";
 import { useColors } from "@/hooks/useColors";
-import { clerkOperationSucceeded } from "@/lib/auth-flow";
+import {
+  createExclusiveOperationRunner,
+  resetSignUpAttempt,
+  runPasswordSignUp,
+  sendSignUpEmailCode,
+  verifySignUpEmailCode,
+} from "@/lib/auth-flow";
 
 const SIGN_UP_LEGAL_LINK_IDS = ["terms", "privacyPolicy"] as const;
+type SignUpStep = "account" | "email-code" | "finalize";
 
 export default function SignUpScreen() {
   const { signUp, errors, fetchStatus } = useSignUp();
@@ -31,77 +38,206 @@ export default function SignUpScreen() {
   const [password, setPassword] = React.useState("");
   const [code, setCode] = React.useState("");
   const [adultConfirmed, setAdultConfirmed] = React.useState(false);
-  const [pendingVerification, setPendingVerification] = React.useState(false);
+  const [step, setStep] = React.useState<SignUpStep>("account");
   const [verificationNotice, setVerificationNotice] = React.useState<
     string | null
   >(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [localBusy, setLocalBusy] = React.useState(false);
+  const mountedRef = React.useRef(true);
+  const operationRunnerRef = React.useRef<ReturnType<
+    typeof createExclusiveOperationRunner
+  > | null>(null);
+  if (operationRunnerRef.current === null) {
+    operationRunnerRef.current = createExclusiveOperationRunner({
+      isActive: () => mountedRef.current,
+      onBusyChange: setLocalBusy,
+    });
+  }
+  const operationRunner = operationRunnerRef.current;
 
-  const busy = fetchStatus === "fetching";
-  const createDisabled = !emailAddress || !password || !adultConfirmed || busy;
+  React.useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      operationRunner.invalidate();
+    };
+  }, [operationRunner]);
+
+  const busy = localBusy || fetchStatus === "fetching";
+  const createDisabled =
+    !emailAddress.trim() || !password || !adultConfirmed || busy;
+  const codeDisabled = busy || (step === "email-code" && !code.trim());
 
   const handleSubmit = async () => {
     if (createDisabled) return;
-    setSubmitError(null);
-    setVerificationNotice(null);
-    const accountCreated = await clerkOperationSucceeded(() =>
-      signUp.password({ emailAddress, password }),
-    );
-    if (!accountCreated) {
-      setSubmitError(
-        "Couldn't create your account. Try another email or a stronger password.",
-      );
-      return;
-    }
+    const submittedEmail = emailAddress.trim();
+    const submittedPassword = password;
 
-    setPendingVerification(true);
-    const codeSent = await clerkOperationSucceeded(() =>
-      signUp.verifications.sendEmailCode(),
-    );
-    if (!codeSent) {
-      setSubmitError(
-        "We couldn't send a verification code. Tap Send a new code to try again.",
-      );
-      return;
-    }
-    setVerificationNotice(`We sent a 6-digit code to ${emailAddress}.`);
+    await operationRunner.run(async ({ isCurrent }) => {
+      setSubmitError(null);
+      setVerificationNotice(null);
+      const outcome = await runPasswordSignUp({
+        createAccount: () =>
+          signUp.password({
+            emailAddress: submittedEmail,
+            password: submittedPassword,
+          }),
+        getStatus: () => signUp.status,
+        getMissingFields: () => signUp.missingFields,
+        getUnverifiedFields: () => signUp.unverifiedFields,
+        sendEmailCode: () => signUp.verifications.sendEmailCode(),
+        finalize: () =>
+          signUp.finalize({
+            navigate: () => {
+              if (isCurrent()) router.replace("/today");
+            },
+          }),
+        isCurrent,
+      });
+      if (!isCurrent() || outcome.kind === "stale") return;
+
+      if (outcome.kind === "account_failed") {
+        setSubmitError(
+          "Couldn't create your account. Try another email or a stronger password.",
+        );
+        return;
+      }
+      if (outcome.kind === "unsupported") {
+        setPassword("");
+        setSubmitError(
+          "This account requires a sign-up step that CUT doesn't support yet.",
+        );
+        return;
+      }
+      if (outcome.kind === "finalize_failed") {
+        setPassword("");
+        setStep("finalize");
+        setSubmitError(
+          "Your account was created, but we couldn't finish signing you in. Tap Finish signing in to try again.",
+        );
+        return;
+      }
+      if (
+        outcome.kind === "email_code_sent" ||
+        outcome.kind === "email_code_send_failed"
+      ) {
+        setEmailAddress(submittedEmail);
+        setPassword("");
+        setCode("");
+        setStep("email-code");
+        if (outcome.kind === "email_code_sent") {
+          setVerificationNotice(`We sent a 6-digit code to ${submittedEmail}.`);
+        } else {
+          setSubmitError(
+            "We couldn't send a verification code. Tap Send a new code to try again.",
+          );
+        }
+      }
+    });
   };
 
   const handleVerify = async () => {
-    if (!code || busy) return;
-    setSubmitError(null);
-    const codeVerified = await clerkOperationSucceeded(() =>
-      signUp.verifications.verifyEmailCode({ code }),
-    );
-    if (!codeVerified || signUp.status !== "complete") {
-      setSubmitError("That code didn't work. Request a new one and try again.");
-      return;
-    }
+    if (codeDisabled) return;
+    const submittedCode = code.trim();
 
-    const finalized = await clerkOperationSucceeded(() =>
-      signUp.finalize({ navigate: () => router.replace("/today") }),
-    );
-    if (!finalized) {
-      setSubmitError(
-        "Your email was verified, but we couldn't finish signing you in. Return to sign in and try again.",
-      );
-    }
+    await operationRunner.run(async ({ isCurrent }) => {
+      setSubmitError(null);
+      const outcome = await verifySignUpEmailCode({
+        verifyEmailCode: () =>
+          signUp.verifications.verifyEmailCode({ code: submittedCode }),
+        getStatus: () => signUp.status,
+        finalize: () =>
+          signUp.finalize({
+            navigate: () => {
+              if (isCurrent()) router.replace("/today");
+            },
+          }),
+        isCurrent,
+      });
+      if (!isCurrent() || outcome.kind === "stale") return;
+
+      if (outcome.kind === "verification_failed") {
+        setSubmitError(
+          "That code didn't work. Request a new one and try again.",
+        );
+      } else if (outcome.kind === "finalize_failed") {
+        setStep("finalize");
+        setSubmitError(
+          "Your email was verified, but we couldn't finish signing you in. Tap Finish signing in to try again.",
+        );
+      }
+    });
   };
 
   const handleResend = async () => {
     if (busy) return;
-    setSubmitError(null);
-    setVerificationNotice(null);
-    const codeSent = await clerkOperationSucceeded(() =>
-      signUp.verifications.sendEmailCode(),
-    );
-    if (!codeSent) {
-      setSubmitError(
-        "We couldn't send a new verification code. Check your connection and try again.",
-      );
-      return;
-    }
-    setVerificationNotice(`A new 6-digit code was sent to ${emailAddress}.`);
+    await operationRunner.run(async ({ isCurrent }) => {
+      setSubmitError(null);
+      setVerificationNotice(null);
+      const outcome = await sendSignUpEmailCode({
+        sendEmailCode: () => signUp.verifications.sendEmailCode(),
+        isCurrent,
+      });
+      if (!isCurrent() || outcome.kind === "stale") return;
+
+      if (outcome.kind === "failed") {
+        setSubmitError(
+          "We couldn't send a new verification code. Check your connection and try again.",
+        );
+      } else {
+        setCode("");
+        setVerificationNotice(
+          `A new 6-digit code was sent to ${emailAddress}.`,
+        );
+      }
+    });
+  };
+
+  const useDifferentEmail = async () => {
+    if (busy) return;
+    await operationRunner.run(async ({ isCurrent }) => {
+      setSubmitError(null);
+      const outcome = await resetSignUpAttempt({
+        reset: () => signUp.reset(),
+        isCurrent,
+      });
+      if (!isCurrent() || outcome.kind === "stale") return;
+
+      if (outcome.kind === "failed") {
+        setSubmitError(
+          "We couldn't restart account creation. Close this screen and try again.",
+        );
+        return;
+      }
+
+      setEmailAddress("");
+      setPassword("");
+      setCode("");
+      setAdultConfirmed(false);
+      setStep("account");
+      setVerificationNotice(null);
+    });
+  };
+
+  const returnToSignIn = async () => {
+    if (busy) return;
+    await operationRunner.run(async ({ isCurrent }) => {
+      setSubmitError(null);
+      const outcome = await resetSignUpAttempt({
+        reset: () => signUp.reset(),
+        isCurrent,
+      });
+      if (!isCurrent() || outcome.kind === "stale") return;
+
+      if (outcome.kind === "failed") {
+        setSubmitError(
+          "We couldn't restart sign-in. Close this screen and try again.",
+        );
+        return;
+      }
+      router.replace("/sign-in");
+    });
   };
 
   return (
@@ -120,30 +256,50 @@ export default function SignUpScreen() {
           <Text style={s.brandMarkText}>CUT</Text>
         </View>
 
-        {pendingVerification ? (
+        {step !== "account" ? (
           <>
-            <Text style={s.title}>Verify your email</Text>
-            <Text style={s.subtitle}>
-              {verificationNotice ??
-                "Request a verification code, then enter it here to continue."}
+            <Text accessibilityRole="header" style={s.title}>
+              {step === "email-code"
+                ? "Verify your email"
+                : "Finish signing in"}
             </Text>
-
-            <Text style={s.label}>Verification code</Text>
-            <TextInput
-              accessibilityLabel="Email verification code"
-              style={s.input}
-              autoComplete="one-time-code"
-              keyboardType="number-pad"
-              placeholder="123456"
-              placeholderTextColor={c.mutedForeground}
-              value={code}
-              onChangeText={setCode}
-            />
-            {errors.fields.code && (
-              <Text accessibilityRole="alert" style={s.error}>
-                {errors.fields.code.message}
+            <Text style={s.subtitle}>
+              {step === "email-code"
+                ? "Enter the email code to finish creating your account."
+                : "Your account is ready. Try once more to finish signing in."}
+            </Text>
+            {step === "email-code" && verificationNotice ? (
+              <Text
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+                style={s.notice}
+              >
+                {verificationNotice}
               </Text>
-            )}
+            ) : null}
+
+            {step === "email-code" ? (
+              <>
+                <Text style={s.label}>Verification code</Text>
+                <TextInput
+                  accessibilityLabel="Email verification code"
+                  style={s.input}
+                  autoComplete="one-time-code"
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  placeholder="123456"
+                  placeholderTextColor={c.mutedForeground}
+                  value={code}
+                  onChangeText={setCode}
+                  editable={!busy}
+                />
+                {errors.fields.code && (
+                  <Text accessibilityRole="alert" style={s.error}>
+                    {errors.fields.code.message}
+                  </Text>
+                )}
+              </>
+            ) : null}
             {submitError && (
               <Text accessibilityRole="alert" style={s.error}>
                 {submitError}
@@ -151,42 +307,82 @@ export default function SignUpScreen() {
             )}
 
             <Pressable
+              accessibilityLabel={
+                step === "email-code"
+                  ? "Verify and continue"
+                  : "Finish signing in"
+              }
               accessibilityRole="button"
-              accessibilityState={{ disabled: busy || !code, busy }}
+              accessibilityState={{ disabled: codeDisabled, busy }}
               style={({ pressed }) => [
                 s.button,
-                (busy || !code) && s.buttonDisabled,
-                pressed && !busy && !!code && s.buttonPressed,
+                codeDisabled && s.buttonDisabled,
+                pressed && !codeDisabled && s.buttonPressed,
               ]}
               onPress={handleVerify}
-              disabled={busy || !code}
+              disabled={codeDisabled}
             >
               {busy ? (
                 <ActivityIndicator color={c.primaryForeground} />
               ) : (
-                <Text style={s.buttonText}>Verify & continue</Text>
+                <Text style={s.buttonText}>
+                  {step === "email-code"
+                    ? "Verify & continue"
+                    : "Finish signing in"}
+                </Text>
               )}
             </Pressable>
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: busy, busy }}
-              disabled={busy}
-              style={[s.secondaryButton, busy && s.buttonDisabled]}
-              onPress={handleResend}
-            >
-              <Text style={s.secondaryButtonText}>Send a new code</Text>
-            </Pressable>
+            {step === "email-code" ? (
+              <>
+                <Pressable
+                  accessibilityLabel="Send a new code"
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: busy, busy }}
+                  disabled={busy}
+                  style={[s.secondaryButton, busy && s.buttonDisabled]}
+                  onPress={handleResend}
+                >
+                  <Text style={s.secondaryButtonText}>Send a new code</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel="Use a different email"
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: busy }}
+                  disabled={busy}
+                  style={[s.secondaryButton, busy && s.buttonDisabled]}
+                  onPress={useDifferentEmail}
+                >
+                  <Text style={s.secondaryButtonText}>
+                    Use a different email
+                  </Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable
+                accessibilityLabel="Return to sign in"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: busy }}
+                disabled={busy}
+                style={[s.secondaryButton, busy && s.buttonDisabled]}
+                onPress={returnToSignIn}
+              >
+                <Text style={s.secondaryButtonText}>Return to sign in</Text>
+              </Pressable>
+            )}
           </>
         ) : (
           <>
-            <Text style={s.title}>Create your account</Text>
+            <Text accessibilityRole="header" style={s.title}>
+              Create your account
+            </Text>
             <Text style={s.subtitle}>
               CUT OS is available only to people age 18 or older.
             </Text>
 
             <Text style={s.label}>Email</Text>
             <TextInput
+              accessibilityLabel="Account email"
               style={s.input}
               autoCapitalize="none"
               autoComplete="email"
@@ -195,22 +391,30 @@ export default function SignUpScreen() {
               placeholderTextColor={c.mutedForeground}
               value={emailAddress}
               onChangeText={setEmailAddress}
+              editable={!busy}
             />
             {errors.fields.emailAddress && (
-              <Text style={s.error}>{errors.fields.emailAddress.message}</Text>
+              <Text accessibilityRole="alert" style={s.error}>
+                {errors.fields.emailAddress.message}
+              </Text>
             )}
 
             <Text style={s.label}>Password</Text>
             <TextInput
+              accessibilityLabel="Password"
               style={s.input}
               secureTextEntry
+              autoComplete="new-password"
               placeholder="At least 8 characters"
               placeholderTextColor={c.mutedForeground}
               value={password}
               onChangeText={setPassword}
+              editable={!busy}
             />
             {errors.fields.password && (
-              <Text style={s.error}>{errors.fields.password.message}</Text>
+              <Text accessibilityRole="alert" style={s.error}>
+                {errors.fields.password.message}
+              </Text>
             )}
 
             <Pressable
@@ -246,6 +450,7 @@ export default function SignUpScreen() {
             )}
 
             <Pressable
+              accessibilityLabel="Create account"
               accessibilityRole="button"
               accessibilityState={{ disabled: createDisabled, busy }}
               style={({ pressed }) => [
@@ -333,6 +538,18 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontFamily: "Inter_400Regular",
       fontSize: 13,
       marginTop: 8,
+    },
+    notice: {
+      color: c.foreground,
+      backgroundColor: c.secondary,
+      borderColor: c.border,
+      borderWidth: 1,
+      borderRadius: c.radius,
+      fontFamily: "Inter_400Regular",
+      fontSize: 14,
+      lineHeight: 20,
+      marginBottom: 4,
+      padding: 14,
     },
     confirmationRow: {
       minHeight: 48,

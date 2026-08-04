@@ -174,11 +174,38 @@ adding external testers does, including review contact, demo access, notes, and
 review of the selected build. Credentials remain only in App Store Connect or
 approved secret storage.
 
+## Decision 7 — production hosting and database spend
+
+**Status:** Awaiting provider sign-in, live price inspection, and owner approval.
+
+The API's current rate limits and account-deletion retry scheduler are
+process-local. The fastest safe launch topology therefore keeps exactly one API
+machine running continuously: provider minimum one, provider maximum one, and
+the matching `API_MAX_INSTANCES=1` runtime assertion. An autoscale service that
+can reach zero is not sufficient for the deletion retry guarantee even if its
+maximum is one.
+
+Production also requires managed PostgreSQL with verified TLS, backups or
+point-in-time recovery, and a successful restore drill. No production host or
+database has been purchased or deployed yet.
+
+**Working recommendation:** use one stable HTTPS host for the API, Clerk proxy,
+landing page, Privacy, Terms, and Support. A stable `.replit.app` address is
+technically sufficient for the narrow U.S. launch if the owner and counsel
+approve it; a custom domain is not an engineering prerequisite. Inspect the
+provider's exact recurring price before choosing the always-on topology and
+database.
+
+Do not change a paid plan, add a payment method, create a paid database, or
+start a billable deployment until the owner approves the exact provider,
+configuration, and recurring cost cap shown at checkout.
+
 ## Later explicit approvals
 
 These are intentionally deferred until the prerequisites are ready:
 
 - EAS cloud build if it can consume paid quota or incur cost.
+- Production hosting/database provider and exact recurring cost cap.
 - Apple agreements, tax, and banking.
 - App download price, EULA, tax categories, DSA status, App Store Server
   Notifications, and subscription App Name Display Option.
