@@ -255,11 +255,12 @@ Use only the Deletion review account; this path is destructive.
 ## Screenshot capture plan
 
 Capture raw screenshots only from the exact submitted TestFlight/release build
-on a supported physical iPhone after native QA passes. Use synthetic data, a
-non-identifying display name, the real StoreKit-localized offer, and the final
-public legal URLs. Do not use Expo Go, the web mockup, a reconstructed mock,
-placeholder prices, a debug overlay, personal data, or a screen from another
-build.
+on a supported physical iPhone after native QA passes. Retain each raw capture
+in controlled evidence outside `app-store/screenshots/files/`. Use synthetic
+data, a non-identifying display name, the real StoreKit-localized offer, and the
+final public legal URLs. Do not use Expo Go, the web mockup, a reconstructed
+mock, placeholder prices, a debug overlay, personal data, or a screen from
+another build.
 
 Use one canonical build identity everywhere: app version, Apple build number,
 full Git commit, EAS build ID, and App Store Connect build ID. The TestFlight,
@@ -271,9 +272,20 @@ SHA-256; changing the bytes invalidates the approval. The App Store Connect IAP
 review upload must use the approved bytes for shot `07-subscription-offer` and
 record that same hash.
 
+Apple accepts no screenshot alpha channel. The controlled preparation command
+decodes and re-encodes every source so unknown metadata and trailing compressed
+payloads cannot reach the upload. Only an exact canonical sRGB declaration may
+survive; any embedded color profile requires a separate reviewed conversion. If
+the source is RGBA, the command may strip only a fully opaque alpha channel
+after proving every decoded alpha sample is 255 and that the output RGB pixels
+are identical. Any true transparency, unsupported encoding, resizing,
+cropping, compositing, or overwrite fails closed. Follow `app-store/README.md`,
+retain the raw capture plus its JSON preparation report, and bind the manifest,
+PII review, listing upload, and IAP review upload to the prepared opaque bytes.
+
 ### Naming and evidence placeholders
 
-Use this exact filename pattern for every raw capture:
+Use this exact filename pattern for every retained raw capture:
 
 ```text
 CUTOS-v[APP_VERSION]-b[BUILD_NUMBER]-[ASC_DEVICE_SLOT]-[CAPTURE_DEVICE]-[LOCALE]-[NN]-[SHOT_SLUG].png
@@ -314,10 +326,12 @@ file's pixel dimensions before upload.
 | `10-sign-up-18plus`          | `/sign-up`; no text entered                                           | **Create your account**, 18+ notice/checkbox, Terms, Privacy, and disabled create action                                                                                                                         | Optional review evidence; never expose an email or code |
 
 Select the final public screenshot subset only after checking the current App
-Store Connect slot count and owner-approved ordering. Any marketing caption or
-frame added after raw capture must remain truthful to the shown screen and
-must not cover price, legal disclosure, allergy/estimate language, or system
-status. Keep the raw unedited captures in the release record.
+Store Connect slot count and owner-approved ordering. The v1 workflow does not
+add a marketing caption, frame, device chrome, or other visual alteration.
+Keep the raw captures and preparation reports in controlled release evidence;
+the prepared opaque files in the manifest are the exact uploaded and
+PII-reviewed bytes. Any future captioned-asset workflow requires its own
+validated file, hash, PII review, and truthful owner approval.
 
 Before freezing the submitted build, rehearse shot `07-subscription-offer` at
 the exact required App Store Connect viewport. Its heading, real offer details,

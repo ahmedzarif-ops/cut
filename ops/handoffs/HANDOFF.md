@@ -7,14 +7,13 @@
 
 - Working branch: `codex/app-store-v1`.
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
-- Exact green checkpoint:
-  `05048a1866d76053c46de620be703f5d449ed089`; GitHub CI run
-  [30944853396](https://github.com/ahmedzarif-ops/cut/actions/runs/30944853396)
-  passed both jobs on that exact commit.
+- Resolve the exact remote branch SHA and its required GitHub checks live before
+  relying on a checkpoint. A commit ID embedded in this tracked handoff would
+  become historical as soon as the handoff itself changes.
 - The agent must not self-merge the pull request; the owner merges or explicitly
   overrides that repository rule.
-- The current repository checkpoint passes **1,314 automated tests** (298 release
-  operations, 52 App Store, 33 domain, 4 database, 431 mobile, and 496 API), all
+- The current repository checkpoint passes **1,322 automated tests** (298 release
+  operations, 60 App Store, 33 domain, 4 database, 431 mobile, and 496 API), all
   TypeScript checks, generated-code drift, working App Store validation,
   changed-file formatting, `.replit`/migration parsing and drift checks, Expo
   dependency health, and the clean zero-JavaScript Replit production-build

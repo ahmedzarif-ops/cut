@@ -171,8 +171,8 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 1,314 tests** (release operations 298, App Store
-  artifacts 52, domain 33, database 4, mobile 431, API 496).
+- `pnpm run test`: **PASS — 1,322 tests** (release operations 298, App Store
+  artifacts 60, domain 33, database 4, mobile 431, API 496).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
@@ -193,8 +193,10 @@ native/App Store acceptance.
   light-content status bar over the dark splash, Clerk Expo is pinned to 4.2.0,
   and Apple autolinking contains `ClerkExpo` without the optional Google Sign-In
   pod.
-- Secret boundaries: **PASS** — 13 scanner tests and 731 tracked files with zero
-  findings. A fresh unsigned generic-iPhone Release archive also passed its
+- Secret boundaries: **PASS** — 13 scanner tests and the tracked repository had
+  zero findings at the recorded run. Recount and rescan the exact candidate
+  rather than relying on a hard-coded file total. A fresh unsigned
+  generic-iPhone Release archive also passed its
   118-file native app scan with zero findings.
 - Production release-environment preflight: **PASS** with representative
   non-secret values; missing, malformed, private, reserved, cross-origin, and
@@ -245,9 +247,10 @@ launch gate.
 
 ## Current live launch setup
 
-- Exact source checkpoint:
-  `05048a1866d76053c46de620be703f5d449ed089`; draft pull request #9 remains
-  unmerged, and GitHub CI run 30944853396 passed both jobs on that exact commit.
+- Source routing: draft pull request #9 remains unmerged on
+  `codex/app-store-v1`. Resolve the remote SHA and latest exact-head required
+  checks live; do not treat a commit embedded in this tracked file as current
+  release evidence.
 - Apple Developer membership still displays **Z A (Pending)** and says the
   completed purchase may take up to 48 hours to process. Do not repeat the
   purchase while it remains pending.

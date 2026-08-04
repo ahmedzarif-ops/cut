@@ -18,9 +18,14 @@ subscription cue and the StoreKit-localized offer details; do not imply that all
 features are free or type a price into a derived caption. The manifest therefore
 classifies shot 07 as `listing_candidate_and_in_app_purchase_review_evidence`.
 
-The 1.0 listing uses the raw screenshots from the exact signed build recorded
-in `app-store/screenshots/manifest.json`; it does not use derived captioned
-assets. This keeps the public upload identical to the checksum- and PII-reviewed
-evidence file. Do not add mock data, device chrome, feature claims, or health
-outcomes that are absent from the captured binary. A future captioned-asset
-workflow requires a separate validated file/hash/PII record before use.
+The 1.0 listing uses visually raw screenshots from the exact signed build
+recorded in `app-store/screenshots/manifest.json`; it does not use derived
+captioned assets. The controlled preparation command documented in
+`app-store/README.md` re-encodes decoded RGB pixels to remove unknown metadata
+and may strip an alpha channel only after proving every alpha sample is 255. It
+then proves the output's decoded RGB pixels are unchanged. Retain the original
+capture and preparation report in controlled evidence. The public upload
+remains identical to the prepared file bound by the manifest checksum and PII
+review. Do not add mock data, device chrome, feature claims, or health outcomes
+that are absent from the captured binary. A future captioned-asset workflow
+requires a separate validated file/hash/PII record before use.

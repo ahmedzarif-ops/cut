@@ -28,6 +28,30 @@ owner, legal, nutrition, privacy, or native QA review.
   decompression, dimensions, and transparency without relying on a
   platform-specific JPEG decoder.
 
+Apple rejects screenshot images that contain an alpha channel, while native
+capture tools may encode an otherwise fully opaque screenshot as RGBA. Retain
+each original capture in controlled evidence outside `screenshots/files/`, then
+prepare the upload copy with:
+
+```sh
+pnpm run prepare:app-store-screenshot -- /controlled/raw-capture.png 01-today-next-action.png
+```
+
+The preparation command accepts only the approved 6.9-inch PNG dimensions. It
+decodes and deterministically re-encodes both RGB and RGBA sources so hidden
+text, EXIF, unknown metadata, or trailing compressed payloads cannot reach the
+upload. It retains only an exact canonical sRGB declaration. Embedded ICC,
+gamma, chromaticity, or HDR profiles fail closed because preserving or removing
+them requires a separate reviewed color-conversion workflow. An RGBA source is
+accepted only when every decoded alpha sample is exactly 255; any transparency
+fails closed. The command then decodes its output and proves that the RGB pixels
+are identical, refuses to overwrite an existing file, and prints source,
+output, and decoded-pixel SHA-256 evidence without printing image contents.
+Preserve that JSON result with the raw capture in the controlled evidence
+reference. The manifest SHA-256 and PII review bind the prepared opaque file
+that will be uploaded. Do not resize, crop, add device chrome, add captions, or
+otherwise alter visual content.
+
 The catalog is a translation and input-sanity aid, not a submission gate. Before
 release, an authorized App Store Connect user must confirm that the owner-approved
 selected territories—United States only for v1—were saved, with UTC and
