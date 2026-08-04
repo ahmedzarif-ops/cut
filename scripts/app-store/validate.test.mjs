@@ -207,6 +207,16 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
   );
   assert.ok(
     errors.includes(
+      "release mode requires RevenueCat restore behavior transfer_to_new_app_user_id with dashboard UTC evidence",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "release mode requires verified restore-after-account-deletion native QA with UTC evidence",
+    ),
+  );
+  assert.ok(
+    errors.includes(
       "release mode requires accessibility.status evaluated_for_release",
     ),
   );
@@ -479,6 +489,48 @@ test("verified or ready states cannot omit their supporting evidence", () => {
     errors.includes(
       "evaluated accessibility requires accessibility App Store Connect saved UTC evidence",
     ),
+  );
+});
+
+test("RevenueCat restore after account deletion requires transfer behavior and native QA evidence", () => {
+  const inputs = validationInputs();
+  const submission = clone(inputs.submission);
+  const restore =
+    submission.subscription.revenueCat.restoreAfterAccountDeletion;
+
+  restore.dashboardBehavior = "keep_with_original_app_user_id";
+  assert.ok(
+    validateMetadata({ ...inputs, submission }).includes(
+      "subscription.revenueCat.restoreAfterAccountDeletion.dashboardBehavior must be pending or transfer_to_new_app_user_id",
+    ),
+  );
+
+  restore.dashboardBehavior = "transfer_to_new_app_user_id";
+  assert.ok(
+    validateMetadata({ ...inputs, submission }).includes(
+      "transfer_to_new_app_user_id RevenueCat restore behavior requires dashboard UTC evidence",
+    ),
+  );
+
+  restore.dashboardVerifiedAtUtc = "2026-08-03T23:58:00Z";
+  restore.dashboardEvidenceReference = "evidence/revenuecat-restore-behavior";
+  restore.nativeQaStatus = "verified";
+  assert.ok(
+    validateMetadata({ ...inputs, submission }).includes(
+      "verified restore-after-account-deletion native QA requires UTC evidence",
+    ),
+  );
+
+  restore.nativeQaTestedAtUtc = "2026-08-03T23:59:00Z";
+  restore.nativeQaEvidenceReference =
+    "evidence/restore-after-account-deletion-native-qa";
+  assert.equal(
+    validateMetadata({ ...inputs, submission }).some((error) =>
+      /restoreAfterAccountDeletion|restore-after-account-deletion|RevenueCat restore behavior/u.test(
+        error,
+      ),
+    ),
+    false,
   );
 });
 
@@ -884,6 +936,15 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
   subscription.revenueCat.verifiedAtUtc = evidenceTime;
   subscription.revenueCat.evidenceReference =
     "evidence/revenuecat-production-mapping";
+  Object.assign(subscription.revenueCat.restoreAfterAccountDeletion, {
+    dashboardBehavior: "transfer_to_new_app_user_id",
+    dashboardVerifiedAtUtc: evidenceTime,
+    dashboardEvidenceReference: "evidence/revenuecat-restore-behavior",
+    nativeQaStatus: "verified",
+    nativeQaTestedAtUtc: evidenceTime,
+    nativeQaEvidenceReference:
+      "evidence/restore-after-account-deletion-native-qa",
+  });
   subscription.exactBuildEvidence.storeKitOfferStatus = "verified";
   subscription.exactBuildEvidence.purchaseQaStatus = "verified";
   subscription.exactBuildEvidence.testFlightStatus = "verified";

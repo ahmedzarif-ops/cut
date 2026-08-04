@@ -23,6 +23,10 @@ any Apple Sandbox or TestFlight item.
       reference; the hash matches the actual approved PNG.
 - [ ] RevenueCat Apple app uses the same bundle ID.
 - [ ] Products map to exact entitlement `CUT_OS_PRO` and the current offering.
+- [ ] RevenueCat **Project settings → General → Restore behavior** is directly
+      verified as **Transfer to new App User ID** for production; any enabled
+      sandbox override uses the same behavior. Record UTC and controlled,
+      non-secret dashboard evidence.
 - [ ] Production build contains only the Apple public SDK key; no RevenueCat
       secret, Apple `.p8`, shared secret, or App Store Connect key is embedded.
 - [x] Development uses RevenueCat Test Store or Apple Sandbox credentials;
@@ -59,6 +63,8 @@ ___, date ___
 - [ ] Store error and interrupted/pending purchase preserve locked state and
       show a retryable, non-sensitive message.
 - [ ] Restore with an active purchase unlocks; restore with none stays locked.
+- [ ] The required restore-after-account-deletion transfer scenario below
+      passes on the exact release candidate.
 - [ ] Reinstall and second-device login restore the same internal UUID access.
 - [ ] Account switch on one device never carries entitlement across users.
 - [ ] Foreground refresh observes purchase, renewal, expiry, refund, and
@@ -96,6 +102,44 @@ EAS build ID ___, full Git commit ___, installed-build verification ___
 - [ ] No username, password, verification code, receipt, secret, or other
       credential is stored in this repository or evidence attachments; use the
       approved secret manager and App Store Connect fields.
+
+## Required restore after CUT account deletion
+
+Record: TestFlight build ___, full commit ___, App Store Connect build ID ___,
+device/iOS ___, Apple Sandbox account alias ___, original CUT account alias ___,
+replacement CUT account alias ___, tester ___, UTC ___, evidence reference ___
+
+Run this as one continuous exact-build acceptance test. Apple billing continues
+independently when a CUT account is deleted; deleting the CUT account must not
+claim to cancel, refund, or otherwise change the Apple subscription.
+
+1. [ ] With original CUT account A and the controlled Apple Sandbox account,
+       purchase the monthly product. Confirm RevenueCat and the CUT server both
+       report `CUT_OS_PRO`, and a paid server endpoint succeeds for A.
+2. [ ] Delete CUT account A in-app. Confirm deletion reaches its terminal state
+       while Apple's subscription remains active in the sandbox subscription
+       manager.
+3. [ ] Confirm A's old internal App User ID has no RevenueCat entitlement and
+       cannot authorize any CUT paid server endpoint. Record only sanitized
+       aliases/evidence, never the Apple receipt or credentials.
+4. [ ] Create eligible replacement CUT account B while the same Apple Sandbox
+       account remains signed in. Confirm B is locked before restore.
+5. [ ] Tap **Restore Purchases** as B. Confirm the SDK restore completes, CUT's
+       server refresh independently reports `CUT_OS_PRO`, and a paid server
+       endpoint succeeds for B.
+6. [ ] Re-check A's old App User ID after B unlocks. Confirm the entitlement was
+       transferred rather than shared: B has access and A remains without
+       RevenueCat or CUT server access.
+
+Do not set
+`subscription.revenueCat.restoreAfterAccountDeletion.dashboardBehavior` to
+`transfer_to_new_app_user_id` until the exact production project setting has
+direct dashboard evidence. Do not set its `nativeQaStatus` to `verified` until
+all six checks above pass on the exact release candidate with UTC and controlled
+evidence. RevenueCat documents that this project-level behavior is the default
+and recommended account-based restore choice, applies to restores and new
+purchases, and transfers access so only the new App User ID retains it:
+[RevenueCat Restore Behavior](https://www.revenuecat.com/docs/projects/restore-behavior).
 
 ### TestFlight Test Information draft
 
@@ -160,3 +204,6 @@ Do not submit or release with any of these:
 - Any RevenueCat/Apple secret in the binary, logs, API response, or repository.
 - Account deletion that cannot complete or incorrectly promises to cancel
   Apple billing.
+- Restore after account deletion that fails to unlock the replacement account,
+  shares access with the old App User ID, or bypasses server entitlement
+  confirmation.

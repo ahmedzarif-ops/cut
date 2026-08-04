@@ -28,6 +28,7 @@ const validProductionEnvironment: NodeJS.ProcessEnv = {
   REVENUECAT_PROJECT_ID: "projProduction1234",
   REVENUECAT_ENTITLEMENT_REST_ID: "entlProduction1234",
   REVENUECAT_APP_REST_ID: "appProduction1234",
+  REVENUECAT_OFFERING_REST_ID: "ofrngProduction1234",
   CORS_ALLOWED_ORIGINS: "https://api.cut.example.com",
   API_MAX_INSTANCES: "1",
   ACCOUNT_DELETION_RETRY_INTERVAL_MS: "60000",
@@ -53,6 +54,7 @@ describe("production configuration", () => {
         "REVENUECAT_PROJECT_ID",
         "REVENUECAT_ENTITLEMENT_REST_ID",
         "REVENUECAT_APP_REST_ID",
+        "REVENUECAT_OFFERING_REST_ID",
         "HTTPS_ALLOWED_ORIGIN",
         "API_MAX_INSTANCES",
       ],
@@ -139,6 +141,9 @@ describe("production configuration", () => {
     ["REVENUECAT_APP_REST_ID", "iosapp_12345678"],
     ["REVENUECAT_APP_REST_ID", "app/bad-value"],
     ["REVENUECAT_APP_REST_ID", "app_________"],
+    ["REVENUECAT_OFFERING_REST_ID", "offering_12345678"],
+    ["REVENUECAT_OFFERING_REST_ID", "ofrng/bad-value"],
+    ["REVENUECAT_OFFERING_REST_ID", "ofrng_________"],
   ] as const)("rejects malformed %s", (name, value) => {
     expect(
       validateProductionConfiguration({

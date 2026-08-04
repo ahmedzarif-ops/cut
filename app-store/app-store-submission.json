@@ -200,6 +200,14 @@
       "productionMappingStatus": "pending",
       "appStoreConnectApiKeyStatus": "pending",
       "subscriptionKeyStatus": "pending",
+      "restoreAfterAccountDeletion": {
+        "dashboardBehavior": "pending",
+        "dashboardVerifiedAtUtc": null,
+        "dashboardEvidenceReference": null,
+        "nativeQaStatus": "pending",
+        "nativeQaTestedAtUtc": null,
+        "nativeQaEvidenceReference": null
+      },
       "verifiedAtUtc": null,
       "evidenceReference": null
     },

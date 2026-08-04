@@ -15,6 +15,7 @@ export type ProductionConfigurationIssue =
   | "REVENUECAT_PROJECT_ID"
   | "REVENUECAT_ENTITLEMENT_REST_ID"
   | "REVENUECAT_APP_REST_ID"
+  | "REVENUECAT_OFFERING_REST_ID"
   | "HTTPS_ALLOWED_ORIGIN"
   | "API_MAX_INSTANCES"
   | "SHARED_RATE_LIMIT_STORE"
@@ -130,7 +131,7 @@ function isRevenueCatSecretKey(value: string | undefined): boolean {
 
 function isRevenueCatResourceId(
   value: string | undefined,
-  prefix: "proj" | "entl" | "app",
+  prefix: "proj" | "entl" | "app" | "ofrng",
 ): boolean {
   const candidate = value?.trim();
   const suffix = candidate?.slice(prefix.length);
@@ -199,6 +200,9 @@ export function validateProductionConfiguration(
   }
   if (!isRevenueCatResourceId(env.REVENUECAT_APP_REST_ID, "app")) {
     issues.push("REVENUECAT_APP_REST_ID");
+  }
+  if (!isRevenueCatResourceId(env.REVENUECAT_OFFERING_REST_ID, "ofrng")) {
+    issues.push("REVENUECAT_OFFERING_REST_ID");
   }
   if (!hasUsableHttpsAllowedOrigin(env)) {
     issues.push("HTTPS_ALLOWED_ORIGIN");

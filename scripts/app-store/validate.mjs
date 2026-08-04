@@ -273,6 +273,15 @@ const EXPECTED_SUBSCRIPTION_EXACT_BUILD_KEYS = Object.freeze([
   "testedAtUtc",
   "evidenceReference",
 ]);
+const EXPECTED_REVENUECAT_RESTORE_AFTER_DELETION_KEYS = Object.freeze([
+  "dashboardBehavior",
+  "dashboardVerifiedAtUtc",
+  "dashboardEvidenceReference",
+  "nativeQaStatus",
+  "nativeQaTestedAtUtc",
+  "nativeQaEvidenceReference",
+]);
+const REVENUECAT_TRANSFER_TO_NEW_APP_USER_ID = "transfer_to_new_app_user_id";
 const SUPPORTED_SUBSCRIPTION_DURATIONS = Object.freeze([
   "1_week",
   "1_month",
@@ -1712,6 +1721,7 @@ function validateSubscription({ value, listing, release, check }) {
       "productionMappingStatus",
       "appStoreConnectApiKeyStatus",
       "subscriptionKeyStatus",
+      "restoreAfterAccountDeletion",
       "verifiedAtUtc",
       "evidenceReference",
     ]),
@@ -1753,6 +1763,83 @@ function validateSubscription({ value, listing, release, check }) {
         typeof revenueCat?.evidenceReference === "string" &&
         revenueCat.evidenceReference.trim().length > 0,
       "verified RevenueCat Apple credentials require dashboard UTC evidence",
+    );
+  }
+
+  const restoreAfterAccountDeletion = revenueCat?.restoreAfterAccountDeletion;
+  check(
+    hasExactKeys(
+      restoreAfterAccountDeletion,
+      EXPECTED_REVENUECAT_RESTORE_AFTER_DELETION_KEYS,
+    ),
+    "subscription.revenueCat.restoreAfterAccountDeletion must contain exactly the required keys",
+  );
+  check(
+    ["pending", REVENUECAT_TRANSFER_TO_NEW_APP_USER_ID].includes(
+      restoreAfterAccountDeletion?.dashboardBehavior,
+    ),
+    "subscription.revenueCat.restoreAfterAccountDeletion.dashboardBehavior must be pending or transfer_to_new_app_user_id",
+  );
+  check(
+    restoreAfterAccountDeletion?.dashboardVerifiedAtUtc === null ||
+      validIsoTimestamp(restoreAfterAccountDeletion?.dashboardVerifiedAtUtc),
+    "subscription.revenueCat.restoreAfterAccountDeletion.dashboardVerifiedAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    nullableNonEmptyString(
+      restoreAfterAccountDeletion?.dashboardEvidenceReference,
+    ),
+    "subscription.revenueCat.restoreAfterAccountDeletion.dashboardEvidenceReference must be null or non-empty",
+  );
+  if (restoreAfterAccountDeletion?.dashboardBehavior === "pending") {
+    check(
+      restoreAfterAccountDeletion?.dashboardVerifiedAtUtc === null &&
+        restoreAfterAccountDeletion?.dashboardEvidenceReference === null,
+      "pending RevenueCat restore behavior requires dashboard verification evidence null",
+    );
+  } else if (
+    restoreAfterAccountDeletion?.dashboardBehavior ===
+    REVENUECAT_TRANSFER_TO_NEW_APP_USER_ID
+  ) {
+    check(
+      validIsoTimestamp(restoreAfterAccountDeletion?.dashboardVerifiedAtUtc) &&
+        typeof restoreAfterAccountDeletion?.dashboardEvidenceReference ===
+          "string" &&
+        restoreAfterAccountDeletion.dashboardEvidenceReference.trim().length >
+          0,
+      "transfer_to_new_app_user_id RevenueCat restore behavior requires dashboard UTC evidence",
+    );
+  }
+  check(
+    ["pending", "verified"].includes(
+      restoreAfterAccountDeletion?.nativeQaStatus,
+    ),
+    "subscription.revenueCat.restoreAfterAccountDeletion.nativeQaStatus must be pending or verified",
+  );
+  check(
+    restoreAfterAccountDeletion?.nativeQaTestedAtUtc === null ||
+      validIsoTimestamp(restoreAfterAccountDeletion?.nativeQaTestedAtUtc),
+    "subscription.revenueCat.restoreAfterAccountDeletion.nativeQaTestedAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    nullableNonEmptyString(
+      restoreAfterAccountDeletion?.nativeQaEvidenceReference,
+    ),
+    "subscription.revenueCat.restoreAfterAccountDeletion.nativeQaEvidenceReference must be null or non-empty",
+  );
+  if (restoreAfterAccountDeletion?.nativeQaStatus === "pending") {
+    check(
+      restoreAfterAccountDeletion?.nativeQaTestedAtUtc === null &&
+        restoreAfterAccountDeletion?.nativeQaEvidenceReference === null,
+      "pending restore-after-account-deletion native QA requires test evidence null",
+    );
+  } else if (restoreAfterAccountDeletion?.nativeQaStatus === "verified") {
+    check(
+      validIsoTimestamp(restoreAfterAccountDeletion?.nativeQaTestedAtUtc) &&
+        typeof restoreAfterAccountDeletion?.nativeQaEvidenceReference ===
+          "string" &&
+        restoreAfterAccountDeletion.nativeQaEvidenceReference.trim().length > 0,
+      "verified restore-after-account-deletion native QA requires UTC evidence",
     );
   }
 
@@ -1884,6 +1971,23 @@ function validateSubscription({ value, listing, release, check }) {
       typeof revenueCat?.evidenceReference === "string" &&
       revenueCat.evidenceReference.trim().length > 0,
     `${prefix} requires verified RevenueCat production mapping and Apple credential dashboard evidence`,
+  );
+  check(
+    restoreAfterAccountDeletion?.dashboardBehavior ===
+      REVENUECAT_TRANSFER_TO_NEW_APP_USER_ID &&
+      validIsoTimestamp(restoreAfterAccountDeletion?.dashboardVerifiedAtUtc) &&
+      typeof restoreAfterAccountDeletion?.dashboardEvidenceReference ===
+        "string" &&
+      restoreAfterAccountDeletion.dashboardEvidenceReference.trim().length > 0,
+    `${prefix} requires RevenueCat restore behavior transfer_to_new_app_user_id with dashboard UTC evidence`,
+  );
+  check(
+    restoreAfterAccountDeletion?.nativeQaStatus === "verified" &&
+      validIsoTimestamp(restoreAfterAccountDeletion?.nativeQaTestedAtUtc) &&
+      typeof restoreAfterAccountDeletion?.nativeQaEvidenceReference ===
+        "string" &&
+      restoreAfterAccountDeletion.nativeQaEvidenceReference.trim().length > 0,
+    `${prefix} requires verified restore-after-account-deletion native QA with UTC evidence`,
   );
   for (const field of [
     "storeKitOfferStatus",

@@ -21,16 +21,22 @@ PostgreSQL as the source of truth.
 - Required env: `DATABASE_URL` — Postgres connection string;
   `CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` — Clerk auth;
   `REVENUECAT_SECRET_API_KEY`, `REVENUECAT_PROJECT_ID`,
-  `REVENUECAT_ENTITLEMENT_REST_ID`, and `REVENUECAT_APP_REST_ID` — server-only
-  RevenueCat REST API v2 authorization/configuration. Production startup reads
-  the exact entitlement, documented iOS app identity, and attached product
-  list. It refuses to bind on semantic/auth/configuration mismatch unless the
-  sole active product is the monthly, no-trial
+  `REVENUECAT_ENTITLEMENT_REST_ID`, `REVENUECAT_APP_REST_ID`, and
+  `REVENUECAT_OFFERING_REST_ID` — server-only RevenueCat REST API v2
+  authorization/configuration. Copy all four resource IDs from RevenueCat.
+  The least-privilege secret key needs app, entitlement, offering, package, and
+  product read access in addition to the customer access used by the API.
+  Production startup reads the exact entitlement, documented iOS app identity,
+  attached product list, and expanded configured offering. It refuses to bind
+  on semantic/auth/configuration mismatch unless the sole active product is the
+  monthly, no-trial
   `com.zarifahmed.cut.pro.monthly` for `CUT_OS_PRO` and bundle ID
-  `com.zarifahmed.cut`; Apple credential status is verified separately from
-  controlled RevenueCat-dashboard evidence because the documented read API
-  does not expose it; transient provider failures leave account APIs up in a
-  sanitized degraded state while subscription checks continue to fail closed;
+  `com.zarifahmed.cut`, and the exact active current offering has one package
+  mapping that same RevenueCat product resource; Apple credential status is
+  verified separately from controlled RevenueCat-dashboard evidence because
+  the documented read API does not expose it; transient provider failures leave
+  account APIs up in a sanitized degraded state while subscription checks
+  continue to fail closed;
   `PUBLIC_APP_ORIGIN` — owner-approved canonical
   HTTPS origin for the production public server; `API_MAX_INSTANCES` — actual
   API platform maximum (currently must be `1` until shared rate limiting

@@ -77,10 +77,11 @@ real App Store purchases.
 | `REVENUECAT_PROJECT_ID`              | api-server                    | RevenueCat REST API v2 project resource ID (`proj...`)          |
 | `REVENUECAT_ENTITLEMENT_REST_ID`     | api-server                    | RevenueCat v2 entitlement resource ID (`entl...`)               |
 | `REVENUECAT_APP_REST_ID`             | api-server                    | RevenueCat v2 iOS app resource ID (`app...`)                    |
+| `REVENUECAT_OFFERING_REST_ID`        | api-server                    | RevenueCat v2 current offering resource ID (`ofrng...`)         |
 
 All eight `EXPO_PUBLIC_*` release values must be configured and verified in the
 production EAS environment before TestFlight. They are public app
-configuration, never secret storage. The four RevenueCat server values belong
+configuration, never secret storage. The five RevenueCat server values belong
 only in the API deployment. The development script derives the API and Clerk
 values automatically, but an EAS build does not inherit that shell mapping.
 See `EAS_RELEASE_RUNBOOK.md`.

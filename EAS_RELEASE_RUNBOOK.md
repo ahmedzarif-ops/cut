@@ -28,21 +28,25 @@ Every `EXPO_PUBLIC_*` value is embedded in the app and must be treated as
 public. Never place `CLERK_SECRET_KEY`, `DATABASE_URL`, Apple credentials, or
 any other server secret in an `EXPO_PUBLIC_*` variable. The API deployment
 separately requires `REVENUECAT_SECRET_API_KEY`, `REVENUECAT_PROJECT_ID`,
-`REVENUECAT_ENTITLEMENT_REST_ID`, and `REVENUECAT_APP_REST_ID`. The secret is a
-least-privilege RevenueCat REST API v2 key with customer read/write plus
-entitlement and app read access. All four are server-only and
+`REVENUECAT_ENTITLEMENT_REST_ID`, `REVENUECAT_APP_REST_ID`, and
+`REVENUECAT_OFFERING_REST_ID`. The secret is a least-privilege RevenueCat REST
+API v2 key with customer read/write plus app, entitlement, offering, package,
+and product read access. All five are server-only and
 must not be placed in EAS public variables, client source, logs, or support
-material. The three resource IDs must be copied from RevenueCat rather than
-derived from dashboard URLs or the public `CUT_OS_PRO` lookup key.
+material. The four resource IDs must be copied from RevenueCat rather than
+derived from dashboard URLs or public lookup keys.
 
 Any preview or Test Store build that sets a RevenueCat iOS SDK key must also
 set the exact product ID for that offering. Production API startup verifies the
-official v2 app, entitlement, and attached-product shapes: the only active
-attached subscription must be `com.zarifahmed.cut.pro.monthly` for the exact
-iOS app, with RevenueCat duration `P1M` and no trial duration. The documented
-read response does not expose App Store Connect API-key or Apple subscription-
-key configuration, so those two settings remain a separate dashboard-evidence
-gate below. Semantic, authentication, and missing-resource failures stop startup.
+official v2 app, entitlement, attached-product, and expanded offering shapes:
+the only active attached subscription must be
+`com.zarifahmed.cut.pro.monthly` for the exact iOS app, with RevenueCat duration
+`P1M` and no trial duration. The exact configured offering must be active and
+current, with exactly one package mapping that same active RevenueCat product
+resource. The documented read response does not expose App Store Connect API-
+key or Apple subscription-key configuration, so those two settings remain a
+separate dashboard-evidence gate below. Semantic, authentication, and missing-
+resource failures stop startup.
 Transient provider timeouts, network failures, rate limits, and 5xx responses
 produce a sanitized degraded warning so account/deletion APIs remain
 available; subscription authorization continues to fail closed.
@@ -69,12 +73,15 @@ those two approved-publication checks.
 5. Create the RevenueCat project/iOS app for the exact bundle ID, connect both
    the App Store Connect API key and Apple in-app purchase/subscription key, map
    products to `CUT_OS_PRO`, create the current offering, and
+   set **Project settings → General → Restore behavior** to **Transfer to new
+   App User ID** (including the sandbox override if one is enabled), then
    configure Apple Server Notifications v2 with the full dashboard-issued
    RevenueCat URL in both the sandbox and production App Store Connect fields.
-6. Create all eight production EAS variables above and the four server-only
+6. Create all eight production EAS variables above and the five server-only
    RevenueCat v2 values (`REVENUECAT_SECRET_API_KEY`,
    `REVENUECAT_PROJECT_ID`, `REVENUECAT_ENTITLEMENT_REST_ID`, and
-   `REVENUECAT_APP_REST_ID`) in the API deployment.
+   `REVENUECAT_APP_REST_ID`, and `REVENUECAT_OFFERING_REST_ID`) in the API
+   deployment.
 7. Publish and manually open the Privacy, Terms, and Support pages on a device.
 8. Verify the production API, Clerk tenant, and RevenueCat project are the exact
    service set intended for App Review.
@@ -82,20 +89,27 @@ those two approved-publication checks.
 ## RevenueCat Apple credential and exact-build gate
 
 The production API preflight proves the documented app/bundle, entitlement,
-product, monthly duration, no-trial state, and exact associations. It cannot
+product, monthly duration, no-trial state, exact active current offering, sole
+package mapping, and exact associations. It cannot
 prove Apple credential configuration because RevenueCat's documented `GET app`
 response does not return those flags. Before the production build, an authorized
 operator must inspect the exact RevenueCat iOS app and update
 `app-store/app-store-submission.json` with all of the following non-secret
 evidence:
 
-| Evidence field                                        | Required release value                                                                   |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `subscription.revenueCat.productionMappingStatus`     | `verified` for the exact production app, `CUT_OS_PRO`, and monthly product               |
-| `subscription.revenueCat.appStoreConnectApiKeyStatus` | `verified` by direct RevenueCat-dashboard inspection                                     |
-| `subscription.revenueCat.subscriptionKeyStatus`       | `verified` for the Apple in-app purchase/subscription key by direct dashboard inspection |
-| `subscription.revenueCat.verifiedAtUtc`               | UTC time of that dashboard inspection                                                    |
-| `subscription.revenueCat.evidenceReference`           | Controlled reference to the sanitized dashboard evidence; never key material             |
+| Evidence field                                                                   | Required release value                                                                                       |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `subscription.revenueCat.productionMappingStatus`                                | `verified` for the exact production app, `CUT_OS_PRO`, and monthly product                                   |
+| `subscription.revenueCat.appStoreConnectApiKeyStatus`                            | `verified` by direct RevenueCat-dashboard inspection                                                         |
+| `subscription.revenueCat.subscriptionKeyStatus`                                  | `verified` for the Apple in-app purchase/subscription key by direct dashboard inspection                     |
+| `subscription.revenueCat.restoreAfterAccountDeletion.dashboardBehavior`          | `transfer_to_new_app_user_id`, verified in the exact production project under Project settings → General     |
+| `subscription.revenueCat.restoreAfterAccountDeletion.dashboardVerifiedAtUtc`     | UTC time of the restore-behavior inspection                                                                  |
+| `subscription.revenueCat.restoreAfterAccountDeletion.dashboardEvidenceReference` | Controlled reference to sanitized restore-behavior evidence                                                  |
+| `subscription.revenueCat.restoreAfterAccountDeletion.nativeQaStatus`             | `verified` only after the exact-build purchase → delete → replacement account → Restore transfer test passes |
+| `subscription.revenueCat.restoreAfterAccountDeletion.nativeQaTestedAtUtc`        | UTC time of that continuous exact-build test                                                                 |
+| `subscription.revenueCat.restoreAfterAccountDeletion.nativeQaEvidenceReference`  | Controlled reference proving B unlocks through server confirmation and A loses access                        |
+| `subscription.revenueCat.verifiedAtUtc`                                          | UTC time of that dashboard inspection                                                                        |
+| `subscription.revenueCat.evidenceReference`                                      | Controlled reference to the sanitized dashboard evidence; never key material                                 |
 
 Dashboard evidence alone does not prove the binary. The same release record must
 also bind `storeKitOfferStatus`, `purchaseQaStatus`, and `testFlightStatus` as
@@ -104,6 +118,18 @@ ID, and App Store Connect build ID. Missing dashboard evidence, a changed key,
 or any exact-build purchase/restore failure blocks promotion. Never save a key
 ID, issuer, private-key contents, API-key contents, screenshot containing key
 material, or raw provider response in the repository.
+
+The account-deletion restore acceptance test is mandatory because Apple billing
+continues after CUT deletes an account. On the same controlled Apple Sandbox
+account: purchase as CUT account A; delete A to terminal completion; create CUT
+account B; verify B is initially locked; Restore as B; wait for CUT's server to
+confirm `CUT_OS_PRO`; verify B's paid endpoint succeeds; and verify A's old
+internal App User ID has lost both RevenueCat and CUT server access. Record the
+exact TestFlight build and sanitized evidence in `PURCHASE_QA_REPORT.md`. Do not
+infer the dashboard setting from a successful purchase, and do not infer the QA
+result from the dashboard setting. RevenueCat documents that **Transfer to new
+App User ID** applies to both restores and purchases and leaves only the new ID
+with access: [Restore Behavior](https://www.revenuecat.com/docs/projects/restore-behavior).
 
 ## Clerk production proxy activation gate
 

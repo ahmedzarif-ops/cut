@@ -51,12 +51,16 @@
    authentication, recovery, purchase, restore, deletion, accessibility, and
    screenshot evidence before App Review.
 
-## LOCKED DECISIONS
+## LOCKED SAFETY BOUNDARIES
 
 - Audience is adults age 18 and older under `adult-18-v1`.
 - Bundle ID is `com.zarifahmed.cut`.
-- Sole v1 subscription identifier is `com.zarifahmed.cut.pro.monthly`; runtime
-  accepts only one `P1M`, no-introductory-offer product mapped to `CUT_OS_PRO`.
+- The current proposed v1 subscription identifier is
+  `com.zarifahmed.cut.pro.monthly`; until the owner approves or changes the
+  offer, runtime fails closed and accepts only one `P1M`, no-introductory-offer
+  product mapped to `CUT_OS_PRO`. This is an engineering allowlist, not approval
+  to create the paid product. If the offer changes, update and reverify the
+  source, configuration, and tests before any signed build.
 - Local StoreKit/RevenueCat state never grants paid access without the
   server-authoritative entitlement.
 - Exactly one always-on API machine is required until rate limiting and deletion

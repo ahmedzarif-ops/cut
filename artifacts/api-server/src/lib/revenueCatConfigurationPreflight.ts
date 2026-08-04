@@ -45,6 +45,7 @@ interface RevenueCatConfigurationPreflightOptions {
   projectId: string | undefined;
   entitlementRestId: string | undefined;
   appRestId: string | undefined;
+  offeringRestId: string | undefined;
   expectedEntitlementLookupKey?: string;
   expectedBundleId?: string;
   expectedProductIdentifier?: string;
@@ -66,14 +67,18 @@ function validSecretApiKey(value: string): boolean {
 
 function validResourceId(
   value: string,
-  prefix: "proj" | "entl" | "app",
+  prefix: "proj" | "entl" | "app" | "ofrng",
 ): boolean {
+  const suffix = value.slice(prefix.length);
   return (
-    value.startsWith(prefix) &&
-    value.length > prefix.length + 7 &&
+    new RegExp(`^${prefix}[A-Za-z0-9_-]{8,}$`, "u").test(value) &&
     value.length <= 255 &&
-    !/[\s/?#]/u.test(value)
+    /[A-Za-z0-9]/u.test(suffix)
   );
+}
+
+function hasNoNextPage(payload: Record<string, unknown>): boolean {
+  return payload.next_page === undefined || payload.next_page === null;
 }
 
 function cleanConfigurationValue(value: string | undefined): string {
@@ -206,24 +211,10 @@ function verifyAppPayload(
   }
 }
 
-function verifyAttachedProductsPayload(
-  payload: unknown,
+function verifyProductPayload(
+  product: unknown,
   expected: { appRestId: string; productIdentifier: string },
-): void {
-  if (
-    !isRecord(payload) ||
-    payload.object !== "list" ||
-    !Array.isArray(payload.items) ||
-    !(payload.next_page === null || typeof payload.next_page === "string") ||
-    typeof payload.url !== "string"
-  ) {
-    throw new RevenueCatConfigurationPreflightError("invalid_response");
-  }
-
-  if (payload.items.length !== 1 || payload.next_page !== null) {
-    throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
-  }
-  const product = payload.items[0];
+): string {
   if (
     !isRecord(product) ||
     typeof product.object !== "string" ||
@@ -255,21 +246,131 @@ function verifyAttachedProductsPayload(
   ) {
     throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
   }
+  return product.id;
+}
+
+function verifyAttachedProductsPayload(
+  payload: unknown,
+  expected: { appRestId: string; productIdentifier: string },
+): string {
+  if (
+    !isRecord(payload) ||
+    payload.object !== "list" ||
+    !Array.isArray(payload.items) ||
+    !(
+      payload.next_page === undefined ||
+      payload.next_page === null ||
+      typeof payload.next_page === "string"
+    ) ||
+    typeof payload.url !== "string"
+  ) {
+    throw new RevenueCatConfigurationPreflightError("invalid_response");
+  }
+
+  if (payload.items.length !== 1 || !hasNoNextPage(payload)) {
+    throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
+  }
+  return verifyProductPayload(payload.items[0], expected);
+}
+
+function verifyOfferingPayload(
+  payload: unknown,
+  expected: {
+    projectId: string;
+    offeringRestId: string;
+    appRestId: string;
+    productIdentifier: string;
+    productRestId: string;
+  },
+): void {
+  if (
+    !isRecord(payload) ||
+    typeof payload.object !== "string" ||
+    typeof payload.state !== "string" ||
+    typeof payload.id !== "string" ||
+    typeof payload.project_id !== "string" ||
+    typeof payload.is_current !== "boolean" ||
+    !isRecord(payload.packages) ||
+    payload.packages.object !== "list" ||
+    !Array.isArray(payload.packages.items) ||
+    !(
+      payload.packages.next_page === undefined ||
+      payload.packages.next_page === null ||
+      typeof payload.packages.next_page === "string"
+    ) ||
+    typeof payload.packages.url !== "string"
+  ) {
+    throw new RevenueCatConfigurationPreflightError("invalid_response");
+  }
+  if (
+    payload.object !== "offering" ||
+    payload.state !== "active" ||
+    payload.id !== expected.offeringRestId ||
+    payload.project_id !== expected.projectId ||
+    payload.is_current !== true ||
+    payload.packages.items.length !== 1 ||
+    !hasNoNextPage(payload.packages)
+  ) {
+    throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
+  }
+
+  const packagePayload = payload.packages.items[0];
+  if (
+    !isRecord(packagePayload) ||
+    packagePayload.object !== "package" ||
+    typeof packagePayload.id !== "string" ||
+    typeof packagePayload.lookup_key !== "string" ||
+    !isRecord(packagePayload.products) ||
+    packagePayload.products.object !== "list" ||
+    !Array.isArray(packagePayload.products.items) ||
+    !(
+      packagePayload.products.next_page === undefined ||
+      packagePayload.products.next_page === null ||
+      typeof packagePayload.products.next_page === "string"
+    ) ||
+    typeof packagePayload.products.url !== "string"
+  ) {
+    throw new RevenueCatConfigurationPreflightError("invalid_response");
+  }
+  if (
+    packagePayload.products.items.length !== 1 ||
+    !hasNoNextPage(packagePayload.products)
+  ) {
+    throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
+  }
+
+  const association = packagePayload.products.items[0];
+  if (
+    !isRecord(association) ||
+    typeof association.eligibility_criteria !== "string" ||
+    !Object.hasOwn(association, "product")
+  ) {
+    throw new RevenueCatConfigurationPreflightError("invalid_response");
+  }
+  const productRestId = verifyProductPayload(association.product, expected);
+  if (
+    association.eligibility_criteria !== "all" ||
+    productRestId !== expected.productRestId
+  ) {
+    throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
+  }
 }
 
 /**
- * Performs three read-only RevenueCat v2 requests. No customer is created and
+ * Performs four read-only RevenueCat v2 requests. No customer is created and
  * no entitlement is granted; a verified result requires the exact app
  * identity, entitlement, and sole active monthly/no-trial product
- * association for this binary. RevenueCat's documented read response does not
- * expose Apple credential-configuration state; release evidence verifies that
- * separately in the dashboard and on the exact build.
+ * association for this binary, plus the exact active current offering and its
+ * sole package mapping that same product. RevenueCat's documented read response
+ * does not expose Apple credential-configuration state; release evidence
+ * verifies that separately in the dashboard and on the exact build.
  */
 export async function verifyRevenueCatConfiguration({
   apiKey: rawApiKey,
   projectId: rawProjectId,
   entitlementRestId: rawEntitlementRestId,
   appRestId: rawAppRestId,
+  offeringRestId: rawOfferingRestId,
   expectedEntitlementLookupKey = REVENUECAT_ENTITLEMENT_ID,
   expectedBundleId = CUT_OS_IOS_BUNDLE_ID,
   expectedProductIdentifier = CUT_OS_MONTHLY_PRODUCT_IDENTIFIER,
@@ -281,11 +382,13 @@ export async function verifyRevenueCatConfiguration({
   const projectId = cleanConfigurationValue(rawProjectId);
   const entitlementRestId = cleanConfigurationValue(rawEntitlementRestId);
   const appRestId = cleanConfigurationValue(rawAppRestId);
+  const offeringRestId = cleanConfigurationValue(rawOfferingRestId);
   if (
     !validSecretApiKey(apiKey) ||
     !validResourceId(projectId, "proj") ||
     !validResourceId(entitlementRestId, "entl") ||
     !validResourceId(appRestId, "app") ||
+    !validResourceId(offeringRestId, "ofrng") ||
     expectedEntitlementLookupKey !== REVENUECAT_ENTITLEMENT_ID ||
     expectedBundleId !== CUT_OS_IOS_BUNDLE_ID ||
     expectedProductIdentifier !== CUT_OS_MONTHLY_PRODUCT_IDENTIFIER
@@ -294,7 +397,7 @@ export async function verifyRevenueCatConfiguration({
   }
 
   const root = baseUrl.replace(/\/$/u, "");
-  const [entitlement, app, products] = await Promise.all([
+  const [entitlement, app, products, offering] = await Promise.all([
     getProviderJson({
       url: `${root}/projects/${encodeURIComponent(projectId)}/entitlements/${encodeURIComponent(entitlementRestId)}`,
       apiKey,
@@ -313,6 +416,12 @@ export async function verifyRevenueCatConfiguration({
       fetchImpl,
       timeoutMs,
     }),
+    getProviderJson({
+      url: `${root}/projects/${encodeURIComponent(projectId)}/offerings/${encodeURIComponent(offeringRestId)}?expand=package.product`,
+      apiKey,
+      fetchImpl,
+      timeoutMs,
+    }),
   ]);
 
   verifyEntitlementPayload(entitlement, {
@@ -321,9 +430,16 @@ export async function verifyRevenueCatConfiguration({
     lookupKey: expectedEntitlementLookupKey,
   });
   verifyAppPayload(app, { projectId, appRestId, bundleId: expectedBundleId });
-  verifyAttachedProductsPayload(products, {
+  const productRestId = verifyAttachedProductsPayload(products, {
     appRestId,
     productIdentifier: expectedProductIdentifier,
+  });
+  verifyOfferingPayload(offering, {
+    projectId,
+    offeringRestId,
+    appRestId,
+    productIdentifier: expectedProductIdentifier,
+    productRestId,
   });
 }
 
@@ -346,6 +462,7 @@ export async function assertRevenueCatProductionConfiguration(
       projectId: env.REVENUECAT_PROJECT_ID,
       entitlementRestId: env.REVENUECAT_ENTITLEMENT_REST_ID,
       appRestId: env.REVENUECAT_APP_REST_ID,
+      offeringRestId: env.REVENUECAT_OFFERING_REST_ID,
       ...dependencies,
     });
     return { status: "verified" };

@@ -115,7 +115,8 @@ social features. Those are backlog, not submission truth.
 - [x] Link the app config to the existing `@zee-digipit/cut` Expo/EAS project.
 - [ ] Authenticate the local EAS CLI and verify Apple signing credentials.
 - [ ] Deploy the production API/database/Clerk combination and server-only
-      RevenueCat v2 secret, project resource ID, and entitlement resource ID.
+      RevenueCat v2 secret plus project, app, entitlement, and current-offering
+      resource IDs.
 - [ ] Configure production EAS values for API domain, live Clerk key/proxy,
       RevenueCat public Apple SDK key, Privacy, Terms, and Support.
 

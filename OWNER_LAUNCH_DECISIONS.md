@@ -89,10 +89,22 @@ Apple app and subscription exist, the owner may approve the real iOS app
 connection and creation of a least-privilege RevenueCat REST v2 server key
 limited to the customer access required by CUT OS.
 
+The production project must also use RevenueCat's **Transfer to new App User
+ID** restore behavior. This is still **pending direct dashboard verification**.
+It is required so an Apple subscription that continues after CUT account
+deletion can move to a replacement CUT account after Restore, without leaving
+the deleted account's old App User ID entitled. The dashboard setting and the
+full exact-build purchase → delete → replacement account → Restore →
+server-confirmed unlock test require separate evidence; neither is currently
+approved or verified. See RevenueCat's
+[Restore Behavior](https://www.revenuecat.com/docs/projects/restore-behavior)
+documentation.
+
 Exact approval phrase:
 
-> Approve the CUT App Store connection and least-privilege RevenueCat server
-> key after the exact Apple app and subscription identifiers are verified.
+> Approve the CUT App Store connection, RevenueCat Transfer to new App User ID
+> restore behavior, and least-privilege RevenueCat server key after the exact
+> Apple app and subscription identifiers are verified.
 
 Never paste a secret key into source code, the mobile app, screenshots, support
 messages, or this decision record.
