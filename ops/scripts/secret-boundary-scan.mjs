@@ -20,8 +20,10 @@ const VALUE_RULES = [
   },
   {
     id: "revenuecat_secret_api_key",
+    // RevenueCat's native SDK embeds two exact secret-prefix-shaped event names.
+    // Extended variants remain credential candidates and must still fail closed.
     expression:
-      /(?<![A-Za-z0-9_-])sk_(?!(?:live|test)_)(?=[A-Za-z0-9_-]{8,}(?![A-Za-z0-9_-]))(?=[A-Za-z0-9_-]*[A-Za-z0-9])[A-Za-z0-9_-]{8,}(?![A-Za-z0-9_-])/gu,
+      /(?<![A-Za-z0-9_-])sk_(?!(?:live|test)_)(?!(?:receipt_request_(?:started|finished))(?![A-Za-z0-9_-]))(?=[A-Za-z0-9_-]{8,}(?![A-Za-z0-9_-]))(?=[A-Za-z0-9_-]*[A-Za-z0-9])[A-Za-z0-9_-]{8,}(?![A-Za-z0-9_-])/gu,
   },
   {
     id: "credentialed_postgres_url",

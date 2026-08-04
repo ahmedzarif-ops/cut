@@ -28,6 +28,53 @@ const expoAutolinkingCli = resolve(
   "bin",
   "autolinking",
 );
+const mobileRuntimeDependencies = [
+  "@clerk/expo",
+  "@expo-google-fonts/inter",
+  "@expo/vector-icons",
+  "@stardazed/streams-text-encoding",
+  "@tanstack/react-query",
+  "@ungap/structured-clone",
+  "@workspace/api-client-react",
+  "@workspace/domain",
+  "expo",
+  "expo-constants",
+  "expo-crypto",
+  "expo-font",
+  "expo-haptics",
+  "expo-linking",
+  "expo-router",
+  "expo-secure-store",
+  "expo-splash-screen",
+  "expo-status-bar",
+  "expo-system-ui",
+  "expo-web-browser",
+  "react",
+  "react-dom",
+  "react-native",
+  "react-native-gesture-handler",
+  "react-native-keyboard-controller",
+  "react-native-purchases",
+  "react-native-reanimated",
+  "react-native-safe-area-context",
+  "react-native-screens",
+  "react-native-web",
+  "react-native-worklets",
+  "zod",
+] as const;
+const mobileBuildAndTestDependencies = [
+  "@babel/core",
+  "@expo/cli",
+  "@expo/ngrok",
+  "@types/react",
+  "@types/react-dom",
+  "babel-plugin-react-compiler",
+  "babel-preset-expo",
+  "expo-dev-client",
+  "expo-doctor",
+  "typescript",
+  "vitest",
+] as const;
 
 describe("native release configuration", () => {
   it("locks the App Store identity, device support, and icon", () => {
@@ -65,11 +112,29 @@ describe("native release configuration", () => {
   });
 
   it("applies Clerk's native build requirements without advertising unused Apple sign-in", () => {
-    expect(packageConfig.devDependencies["@clerk/expo"]).toBe("4.2.0");
+    expect(packageConfig.dependencies["@clerk/expo"]).toBe("4.2.0");
     expect(appConfig.expo.plugins).toContainEqual([
       "@clerk/expo",
       { appleSignIn: false },
     ]);
+  });
+
+  it("keeps runtime packages installable without development tooling", () => {
+    expect(Object.keys(packageConfig.dependencies).sort()).toEqual(
+      [...mobileRuntimeDependencies].sort(),
+    );
+    expect(Object.keys(packageConfig.devDependencies).sort()).toEqual(
+      [...mobileBuildAndTestDependencies].sort(),
+    );
+
+    for (const packageName of mobileRuntimeDependencies) {
+      expect(packageConfig.dependencies[packageName]).toBeDefined();
+      expect(packageConfig.devDependencies[packageName]).toBeUndefined();
+    }
+    for (const packageName of mobileBuildAndTestDependencies) {
+      expect(packageConfig.devDependencies[packageName]).toBeDefined();
+      expect(packageConfig.dependencies[packageName]).toBeUndefined();
+    }
   });
 
   it("keeps Clerk's optional Google Sign-In SDK out of native autolinking", () => {

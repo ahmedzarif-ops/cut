@@ -70,6 +70,42 @@ test("tracked scan detects the shortest RevenueCat key shape accepted by product
   );
 });
 
+test("secret scan permits only exact RevenueCat native receipt event literals", () => {
+  const nativeReceiptEvents = [
+    "sk_receipt_request_started",
+    "sk_receipt_request_finished",
+  ].join("\n");
+
+  assert.deepEqual(
+    inspectBytes(Buffer.from(nativeReceiptEvents), "CUTOS", "tracked"),
+    [],
+  );
+  assert.deepEqual(
+    inspectBytes(Buffer.from(nativeReceiptEvents), "CUTOS", "archive"),
+    [],
+  );
+});
+
+test("RevenueCat native receipt event variants and realistic keys remain detectable", () => {
+  const findings = inspectBytes(
+    Buffer.from(
+      [
+        ["sk", "x_receipt_request_started"].join("_"),
+        ["sk", "receipt_request_started_x"].join("_"),
+        ["sk", "receipt_request_finishedX"].join("_"),
+        revenueCatSecret(),
+      ].join("\n"),
+    ),
+    "CUTOS",
+    "archive",
+  );
+
+  assert.deepEqual(
+    findings.map(({ ruleId }) => ruleId),
+    Array(4).fill("revenuecat_secret_api_key"),
+  );
+});
+
 test("tracked scan reports credential material without returning values", () => {
   const credentialedDatabaseUrl = [
     "postgresql://cut_user:",
@@ -193,6 +229,29 @@ test("archive directory scan is recursive and rejects symlinks", async () => {
       error instanceof SecretBoundaryScanError &&
       error.code === "archive_symlink_not_allowed",
   );
+});
+
+test("archive directory scan permits native receipt events but still finds a secret", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "cut-secret-native-app-"));
+  await mkdir(path.join(root, "Frameworks"));
+  await writeFile(
+    path.join(root, "CUTOS"),
+    ["sk_receipt_request_started", "sk_receipt_request_finished"].join("\0"),
+  );
+  await writeFile(
+    path.join(root, "Frameworks", "RevenueCat"),
+    revenueCatSecret(),
+  );
+
+  const result = await scanExportedArchive(root);
+  assert.equal(result.filesScanned, 2);
+  assert.deepEqual(result.findings, [
+    {
+      ruleId: "revenuecat_secret_api_key",
+      relativePath: "Frameworks/RevenueCat",
+      byteOffset: 0,
+    },
+  ]);
 });
 
 test("tracked repository scan checks tracked worktree bytes only", async () => {
