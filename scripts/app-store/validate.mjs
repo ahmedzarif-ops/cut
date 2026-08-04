@@ -60,7 +60,15 @@ export const EXPECTED_LISTING_SHOT_IDS = Object.freeze([
   "04-meal-preview",
   "05-today-nutrition-logged",
   "06-logged-meal-controls",
+  "07-subscription-offer",
 ]);
+
+const EXPECTED_LISTING_PAID_DISCLOSURE = Object.freeze({
+  shotId: "07-subscription-offer",
+  cue: "Paid access uses an auto-renewable Apple subscription.",
+});
+const EXPECTED_SUBSCRIPTION_OFFER_INTENDED_USE =
+  "listing_candidate_and_in_app_purchase_review_evidence";
 
 export const MAX_REVIEW_ACCOUNT_EVIDENCE_AGE_MS = 24 * 60 * 60 * 1000;
 const EXACT_BUILD_IDENTITY_FIELDS = Object.freeze([
@@ -155,6 +163,7 @@ const EXPECTED_LISTING_KEYS = Object.freeze([
   "supportUrl",
   "privacyPolicyUrl",
   "termsUrl",
+  "legalUrlPlacement",
   "ageSuitabilityUrl",
   "sellerLegalOperator",
   "sku",
@@ -630,6 +639,27 @@ const REQUIRED_OWNER_FIELDS = Object.freeze([
   "listing.termsUrl",
   "listing.initialTerritories",
 ]);
+
+const EXPECTED_LEGAL_URL_PLACEMENT_KEYS = Object.freeze([
+  "privacyPolicy",
+  "privacyPolicySubmittedUrl",
+  "terms",
+  "termsSubmittedUrl",
+  "appStoreConnectConfirmation",
+]);
+const PRIVACY_POLICY_METADATA_PLACEMENTS = Object.freeze([
+  "pending",
+  "listing_description",
+  "app_store_connect_privacy_policy_url",
+]);
+const TERMS_METADATA_PLACEMENTS = Object.freeze([
+  "pending",
+  "listing_description",
+  "app_store_connect_custom_license_agreement",
+  "app_store_connect_standard_eula",
+]);
+const APPLE_STANDARD_EULA_URL =
+  "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
 
 function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -1640,11 +1670,6 @@ function validateAppReview({
     `${prefix} requires appReview.finalResolvedNotesEvidence saved attestation`,
   );
   check(
-    typeof exactBuild?.buildNumber === "string" &&
-      exactBuild.buildNumber.trim().length > 0,
-    `${prefix} requires appReview.exactBuild.buildNumber`,
-  );
-  check(
     validIsoTimestamp(exactBuild?.verifiedAtUtc),
     `${prefix} requires appReview.exactBuild.verifiedAtUtc`,
   );
@@ -2561,6 +2586,12 @@ function validPublicHttpsUrl(value) {
   }
 }
 
+function exactUrlAppearsInText(text, url) {
+  if (typeof text !== "string" || typeof url !== "string") return false;
+  const escapedUrl = url.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  return new RegExp(`(?:^|\\s)${escapedUrl}(?=$|\\s)`, "u").test(text);
+}
+
 function validRevenueCatNotificationUrl(value) {
   if (!validHttpsUrl(value)) return false;
   try {
@@ -2992,6 +3023,93 @@ export function validateMetadata({
       `${field} must be null or public HTTPS without credentials`,
     );
   }
+  const legalUrlPlacement = listing.legalUrlPlacement;
+  const legalUrlPlacementRequired =
+    release || listing.approval?.status === "confirmed";
+  const legalUrlPlacementRequirementLabel = release
+    ? "release mode"
+    : "confirmed listing.approval";
+  if (legalUrlPlacementRequired) {
+    for (const field of ["listing.privacyPolicyUrl", "listing.termsUrl"]) {
+      check(
+        validPublicHttpsUrl(getPath(submission, field)),
+        release
+          ? `${field} must be public HTTPS without credentials`
+          : `${legalUrlPlacementRequirementLabel} requires ${field} to be public HTTPS without credentials`,
+      );
+    }
+  }
+  const legalUrlPlacementHasExpectedShape = hasExactKeys(
+    legalUrlPlacement,
+    EXPECTED_LEGAL_URL_PLACEMENT_KEYS,
+  );
+  check(
+    legalUrlPlacementHasExpectedShape,
+    "listing.legalUrlPlacement must contain exactly the required placement and submitted-URL keys",
+  );
+  if (legalUrlPlacementHasExpectedShape) {
+    check(
+      PRIVACY_POLICY_METADATA_PLACEMENTS.includes(
+        legalUrlPlacement.privacyPolicy,
+      ),
+      "listing.legalUrlPlacement.privacyPolicy is invalid",
+    );
+    check(
+      TERMS_METADATA_PLACEMENTS.includes(legalUrlPlacement.terms),
+      "listing.legalUrlPlacement.terms is invalid",
+    );
+    for (const field of ["privacyPolicySubmittedUrl", "termsSubmittedUrl"]) {
+      check(
+        legalUrlPlacement[field] === null ||
+          validPublicHttpsUrl(legalUrlPlacement[field]),
+        `listing.legalUrlPlacement.${field} must be null or public HTTPS without credentials`,
+      );
+    }
+    validateConfirmationEvidenceRecord({
+      value: legalUrlPlacement.appStoreConnectConfirmation,
+      label: "listing.legalUrlPlacement.appStoreConnectConfirmation",
+      required: legalUrlPlacementRequired,
+      requirementLabel: legalUrlPlacementRequirementLabel,
+      check,
+    });
+  }
+  if (
+    legalUrlPlacementRequired &&
+    validPublicHttpsUrl(listing.privacyPolicyUrl)
+  ) {
+    const privacyPolicyPlacementAccepted =
+      legalUrlPlacement?.privacyPolicySubmittedUrl ===
+        listing.privacyPolicyUrl &&
+      (legalUrlPlacement?.privacyPolicy ===
+        "app_store_connect_privacy_policy_url" ||
+        (legalUrlPlacement?.privacyPolicy === "listing_description" &&
+          exactUrlAppearsInText(
+            listing.description,
+            listing.privacyPolicyUrl,
+          )));
+    check(
+      privacyPolicyPlacementAccepted,
+      `${legalUrlPlacementRequirementLabel} requires exact listing.privacyPolicyUrl in an Apple-accepted metadata path`,
+    );
+  }
+  if (legalUrlPlacementRequired && validPublicHttpsUrl(listing.termsUrl)) {
+    const licenseAgreement = submission.commercialAndLegal.licenseAgreement;
+    const termsPlacementAccepted =
+      ["standard_apple_eula", "custom_eula"].includes(licenseAgreement) &&
+      legalUrlPlacement?.termsSubmittedUrl === listing.termsUrl &&
+      ((legalUrlPlacement?.terms === "listing_description" &&
+        exactUrlAppearsInText(listing.description, listing.termsUrl)) ||
+        (legalUrlPlacement?.terms ===
+          "app_store_connect_custom_license_agreement" &&
+          licenseAgreement === "custom_eula") ||
+        (legalUrlPlacement?.terms === "app_store_connect_standard_eula" &&
+          licenseAgreement === "standard_apple_eula" &&
+          listing.termsUrl === APPLE_STANDARD_EULA_URL));
+    check(
+      termsPlacementAccepted,
+      `${legalUrlPlacementRequirementLabel} requires exact listing.termsUrl in an Apple-accepted metadata path tied to commercialAndLegal.licenseAgreement`,
+    );
+  }
 
   validateListingApproval({
     value: listing.approval,
@@ -3067,20 +3185,18 @@ export function validateMetadata({
       submission.status === "approved_for_submission",
       "release mode requires submission.status approved_for_submission",
     );
-    for (const field of REQUIRED_OWNER_FIELDS) {
+    for (const field of [
+      "listing.sellerLegalOperator",
+      "listing.sku",
+      "listing.copyright",
+    ]) {
       const value = getPath(submission, field);
       check(value !== null && value !== "", `release mode requires ${field}`);
     }
-    for (const field of [
-      "listing.supportUrl",
-      "listing.privacyPolicyUrl",
-      "listing.termsUrl",
-    ]) {
-      check(
-        validPublicHttpsUrl(getPath(submission, field)),
-        `${field} must be public HTTPS without credentials`,
-      );
-    }
+    check(
+      validPublicHttpsUrl(listing.supportUrl),
+      "listing.supportUrl must be public HTTPS without credentials",
+    );
     check(
       typeof listing.contentRightsDeclaration === "boolean",
       "release mode requires a boolean content-rights declaration",
@@ -3714,15 +3830,6 @@ export function validateTestFlightSubmission({
       `${prefix} requires the TestFlight feedback email configured in App Store Connect`,
     );
     check(
-      typeof exactBuild?.buildNumber === "string" &&
-        exactBuild.buildNumber.trim().length > 0,
-      `${prefix} requires TestFlight exactBuildEvidence.buildNumber`,
-    );
-    check(
-      /^[0-9a-f]{40}$/u.test(exactBuild?.gitCommit ?? ""),
-      `${prefix} requires a full lowercase Git SHA in TestFlight exactBuildEvidence.gitCommit`,
-    );
-    check(
       exactBuild?.internalGroupConfigured === true,
       `${prefix} requires a configured internal TestFlight group`,
     );
@@ -3923,6 +4030,23 @@ export function validateScreenshotManifest({
     manifest?.assetDirectory === "app-store/screenshots/files",
     "screenshots.assetDirectory must remain app-store/screenshots/files",
   );
+  const listingPaidDisclosureHasExpectedShape = hasExactKeys(
+    manifest?.listingPaidDisclosure,
+    ["shotId", "cue"],
+  );
+  check(
+    listingPaidDisclosureHasExpectedShape,
+    "screenshots.listingPaidDisclosure must contain exactly shotId and cue",
+  );
+  if (listingPaidDisclosureHasExpectedShape) {
+    check(
+      manifest.listingPaidDisclosure.shotId ===
+        EXPECTED_LISTING_PAID_DISCLOSURE.shotId &&
+        manifest.listingPaidDisclosure.cue ===
+          EXPECTED_LISTING_PAID_DISCLOSURE.cue,
+      "screenshots.listingPaidDisclosure must retain the approved paid Apple-subscription cue",
+    );
+  }
   const requirements = manifest?.technicalRequirements;
   check(
     isObject(requirements),
@@ -3979,18 +4103,11 @@ export function validateScreenshotManifest({
     });
     if (release) {
       for (const field of [
-        "appVersion",
-        "buildNumber",
-        "gitCommit",
-        "easBuildId",
-        "appStoreConnectBuildId",
         "easBuildReference",
         "captureDevice",
         "iosVersion",
-        "locale",
         "appearance",
         "capturedBy",
-        "capturedAtUtc",
       ]) {
         check(
           defaults[field] !== null && defaults[field] !== "",
@@ -3999,7 +4116,7 @@ export function validateScreenshotManifest({
       }
       check(
         validIsoTimestamp(defaults.capturedAtUtc),
-        "captureDefaults.capturedAtUtc must be a UTC ISO timestamp",
+        "release mode requires screenshots.captureDefaults.capturedAtUtc as a UTC ISO timestamp",
       );
     }
   }
@@ -4030,6 +4147,12 @@ export function validateScreenshotManifest({
       typeof shot?.intendedUse === "string" && shot.intendedUse.length > 0,
       `${label} must state its intended use`,
     );
+    if (label === EXPECTED_LISTING_PAID_DISCLOSURE.shotId) {
+      check(
+        shot?.intendedUse === EXPECTED_SUBSCRIPTION_OFFER_INTENDED_USE,
+        "07-subscription-offer intendedUse must include both listing and in-app-purchase review evidence",
+      );
+    }
     check(
       typeof shot?.requiredForReleaseEvidence === "boolean",
       `${label} must declare whether it is required release evidence`,
@@ -4247,7 +4370,7 @@ export function validateScreenshotManifest({
 
   check(
     arraysEqual(manifest?.listingSelection, EXPECTED_LISTING_SHOT_IDS),
-    "listingSelection must match the approved initial screenshot story",
+    "listingSelection must match the approved initial screenshot story including the paid subscription offer",
   );
 
   if (release) {

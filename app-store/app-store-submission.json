@@ -30,6 +30,17 @@
     "supportUrl": null,
     "privacyPolicyUrl": null,
     "termsUrl": null,
+    "legalUrlPlacement": {
+      "privacyPolicy": "pending",
+      "privacyPolicySubmittedUrl": null,
+      "terms": "pending",
+      "termsSubmittedUrl": null,
+      "appStoreConnectConfirmation": {
+        "status": "pending",
+        "verifiedAtUtc": null,
+        "evidenceReference": null
+      }
+    },
     "ageSuitabilityUrl": null,
     "sellerLegalOperator": null,
     "sku": null,

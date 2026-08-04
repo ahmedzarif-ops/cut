@@ -42,6 +42,14 @@ jobs:
         run: pnpm run validate:app-store
       - name: Build the production API bundle
         run: pnpm --filter @workspace/api-server run build
+      - name: Verify the Replit production public-site build contract
+        env:
+          LEGAL_SITE_PUBLICATION_STATUS: draft
+          NODE_ENV: production
+          PUBLIC_APP_ORIGIN: https://ci.cutos.app
+        run: |
+          pnpm --filter @workspace/cut-os run build
+          test ! -e artifacts/cut-os/static-build
       - name: Verify committed database migrations match the schema
         run: |
           pnpm --filter @workspace/db run generate

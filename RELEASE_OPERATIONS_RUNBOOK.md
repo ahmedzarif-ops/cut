@@ -124,6 +124,7 @@ pnpm run typecheck
 pnpm run test
 pnpm run validate:app-store
 pnpm --filter @workspace/api-server run build
+PUBLIC_APP_ORIGIN=<PUBLIC_ORIGIN> LEGAL_SITE_PUBLICATION_STATUS=<draft-or-approved> pnpm --filter @workspace/cut-os run build
 pnpm --filter @workspace/db run generate
 git diff --exit-code -- lib/db/migrations
 git status --porcelain --untracked-files=all -- lib/db/migrations
@@ -213,6 +214,12 @@ deep link, and `404` responses from origin-absolute and mounted
 `/manifest`, `/ios/manifest.json`, and `/android/manifest.json` paths. The
 automated server contract protects this boundary; the live check proves the
 deployed process is actually using production mode.
+
+The Replit production build is intentionally validation-only: it constructs the
+same launch/legal request handler used at runtime and must not start Metro or
+generate an Expo `static-build`. `build:preview` is development-only. Production
+does not require that preview directory because it refuses every preview route;
+preview mode continues to fail startup if its static bundle is absent.
 
 6. With the approved staging legal URLs supplied through the normal environment
    mechanism, run:

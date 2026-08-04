@@ -272,9 +272,11 @@ function OnboardingForm({
     <View style={s.chipRow}>
       {options.map((option) => {
         const active = option === selected;
+        const label = LABELS[option] ?? option;
         return (
           <Pressable
             key={option}
+            accessibilityLabel={label}
             accessibilityRole="button"
             accessibilityState={{ selected: active, disabled: busy }}
             disabled={busy}
@@ -287,7 +289,8 @@ function OnboardingForm({
             onPress={() => onSelect(option)}
           >
             <Text style={[s.chipText, active && s.chipTextActive]}>
-              {LABELS[option] ?? option}
+              {active ? "✓ " : ""}
+              {label}
             </Text>
           </Pressable>
         );
@@ -457,12 +460,15 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     col: { flex: 1 },
     chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     chip: {
+      minHeight: 44,
       backgroundColor: c.secondary,
       borderColor: c.inputBorder,
       borderWidth: 1,
       borderRadius: 999,
       paddingHorizontal: 16,
       paddingVertical: 10,
+      alignItems: "center",
+      justifyContent: "center",
     },
     chipActive: { backgroundColor: c.primary, borderColor: c.primary },
     chipText: {

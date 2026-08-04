@@ -9,12 +9,13 @@
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
 - The agent must not self-merge the pull request; the owner merges or explicitly
   overrides that repository rule.
-- The current repository checkpoint passes **982 automated tests** (86 release
-  operations, 39 App Store, 33 domain, 4 database, 367 mobile, and 453 API), all
+- The current repository checkpoint passes **1002 automated tests** (86 release
+  operations, 40 App Store, 33 domain, 4 database, 386 mobile, and 453 API), all
   TypeScript checks, generated-code drift, working App Store validation,
   changed-file formatting, `.replit`/migration parsing and drift checks, Expo
-  dependency health, and a non-secret production-profile Expo bundle rehearsal.
-  That rehearsal is not signing, TestFlight, live-service, or App Store evidence.
+  dependency health, and the clean zero-JavaScript Replit production-build
+  contract. None of those checks are signing, TestFlight, live-service, or App
+  Store acceptance evidence.
 - Production ingress is pinned to one explicit canonical HTTPS origin and
   excludes Replit development-domain injection. The production public process
   serves a CSP-locked zero-JavaScript CUT page, blocks Expo preview artifacts at
@@ -24,8 +25,13 @@
   exact-build restore QA remain evidence gates. Database/migration and shutdown
   timeout relationships are cross-tested, and Metro gets only reviewed public
   values with dotenv loading forced off.
-- Strict release validation currently rejects **285** unresolved external,
+- Strict release validation currently rejects **275** unresolved external,
   owner, legal, exact-build, screenshot, and App Store Connect evidence gates.
+- Clean Expo iOS prebuild and CocoaPods installation pass with fail-closed scene-
+  lifecycle and iOS 17 pod-target plugins. An unsigned Xcode 27 Release app also
+  compiled and remained alive on iOS 27 with an active `UIWindowScene`; this was
+  a local launch rehearsal, not a signed archive, physical-device flow, or full
+  tap-through.
 - CUT password recovery now uses Clerk's prebuilt sign-in-only native and web
   flows. The Clerk development tenant has Strict enumeration protection,
   Client Trust, bot protection, and lockout protection enabled. Production

@@ -121,7 +121,9 @@
       "expo-router",
       "expo-font",
       "expo-web-browser",
-      ["@clerk/expo", { "appleSignIn": false }]
+      ["@clerk/expo", { "appleSignIn": false }],
+      "./plugins/with-ios-pod-deployment-target",
+      "./plugins/with-ios-scene-lifecycle"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -65,7 +65,7 @@ real App Store purchases.
 | `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Public support; must exactly match the App Store listing record |
 | `PUBLIC_APP_ORIGIN`                  | cut-os public server          | Canonical launch/legal origin; preview also derives deep links  |
 | `CORS_ALLOWED_ORIGINS`               | api-server                    | One canonical HTTPS origin in production; lists allowed in dev  |
-| `CLERK_PROXY_URL`                    | cut-os Replit build           | Relative API proxy path; production value is `/api/__clerk`     |
+| `CLERK_PROXY_URL`                    | cut-os development preview    | Relative API proxy path; configured value is `/api/__clerk`     |
 | `LEGAL_SITE_PUBLICATION_STATUS`      | cut-os public server          | `draft` until approved legal sources and hashes are recorded    |
 | `PORT`                               | api-server                    | Listen port (Replit-provided)                                   |
 | `API_MAX_INSTANCES`                  | api-server production         | Actual platform max; only `1` is supported until shared limits  |
@@ -87,8 +87,9 @@ values automatically, but an EAS build does not inherit that shell mapping.
 See `EAS_RELEASE_RUNBOOK.md`.
 
 `CLERK_PROXY_URL` is the relative server route used only while Replit assembles
-its browser/development configuration. EAS does not inherit it: native builds
-require the full same-origin `EXPO_PUBLIC_CLERK_PROXY_URL`. Keep
+its browser/development preview configuration. The production public-site build
+does not start Metro or bundle it. EAS does not inherit it: native builds require
+the full same-origin `EXPO_PUBLIC_CLERK_PROXY_URL`. Keep
 `LEGAL_SITE_PUBLICATION_STATUS=draft` until the exact Privacy, Terms, and
 Support sources have owner/counsel approval and the committed hash gate passes.
 

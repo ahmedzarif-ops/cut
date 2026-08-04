@@ -1,6 +1,6 @@
 # CUT OS — Work Status
 
-**Updated:** August 3, 2026
+**Updated:** August 4, 2026
 
 **Working branch:** `codex/app-store-v1`
 
@@ -138,12 +138,19 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 565 tests across 59 files** (release operations 15,
-  App Store artifacts 14, domain 33, database 4, mobile 239, API 260).
+- `pnpm run test`: **PASS — 1,002 tests** (release operations 86, App Store
+  artifacts 40, domain 33, database 4, mobile 386, API 453).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
-- Production-style Expo export for iOS: **PASS — 1,756 modules; 7.37 MB Hermes bundle; 17 MB disposable export**.
+- Expo iOS bundle rehearsal: **PASS — 1,756 modules; 7.37 MB Hermes bundle;
+  17 MB disposable export**. This was not a native archive or App Store build.
+- Replit production public-site build: **PASS** in a clean disposable snapshot;
+  it validates the zero-JavaScript launch/legal handler and does not create or
+  require the development-only `static-build` preview.
+- App Store records: **PASS** in working mode; strict release mode intentionally
+  rejects **275** unresolved owner, provider, legal, screenshot, exact-build,
+  and App Store Connect evidence requirements.
 - Production release-environment preflight: **PASS** with representative
   non-secret values; missing, malformed, private, reserved, cross-origin, and
   insecure configurations fail closed in automated coverage.
@@ -171,7 +178,10 @@ native/App Store acceptance.
 - User-local day calculation, concurrent-device separation, private-cache
   controls, and device-timezone synchronization races: **PASS (automated);
   native local-midnight/travel acceptance pending**.
-- Native iOS simulator interaction: **not yet verified in this environment**.
+- Native iOS scene launch: **PARTIAL LOCAL** — an unsigned Xcode 27 Release app
+  compiled, installed, and remained alive on iOS 27 with an active
+  `UIWindowScene`. Full product flows and runtime deep-link delivery were not
+  exercised; the exact signed TestFlight build remains authoritative.
 - Real-device interaction: **not yet verified**.
 - Account deletion against a real Clerk identity: **not yet verified**.
 - RevenueCat purchase, restore, entitlement, and customer-deletion behavior:
@@ -180,7 +190,13 @@ native/App Store acceptance.
 
 ## Known environment fact
 
-The Desktop folder originally provided was an incomplete export: it lacked Git objects and the tracked `artifacts/*` application source. A clean working copy was recovered from its configured canonical origin, `github.com/ahmedzarif-ops/cut`, without overwriting the incomplete folder. This Mac currently has Command Line Tools rather than the full Xcode app, so Simulator interaction remains an explicit pre-TestFlight gate.
+The Desktop folder originally provided was an incomplete export: it lacked Git
+objects and the tracked `artifacts/*` application source. A clean working copy
+was recovered from its configured canonical origin,
+`github.com/ahmedzarif-ops/cut`, without overwriting the incomplete folder. Xcode
+27 beta and an iOS 27 simulator are now available for unsigned local rehearsal;
+physical-iPhone testing of the exact signed TestFlight build remains an explicit
+launch gate.
 
 ## Highest-priority next slice
 

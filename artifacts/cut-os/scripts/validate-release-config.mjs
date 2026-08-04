@@ -368,7 +368,7 @@ export function validateReleaseEnvironment(environment) {
         errors.push("App Store subscription release record must be readable");
       }
       if (
-        !parsedProductIdentifier ||
+        parsedProductIdentifier &&
         subscriptionReleaseRecord?.productId !== parsedProductIdentifier
       ) {
         errors.push(

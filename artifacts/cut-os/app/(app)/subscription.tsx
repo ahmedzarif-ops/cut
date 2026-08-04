@@ -263,7 +263,13 @@ export default function SubscriptionScreen() {
                         </Text>
                       ) : null}
                     </View>
-                    <View style={[s.radio, selected && s.radioSelected]} />
+                    <View
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                      style={[s.radio, selected && s.radioSelected]}
+                    >
+                      {selected ? <Text style={s.radioCheck}>✓</Text> : null}
+                    </View>
                   </View>
                   <Text style={s.planPrice}>
                     {formatPlanBilling(
@@ -592,8 +598,19 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       borderRadius: 11,
       borderColor: c.inputBorder,
       borderWidth: 2,
+      alignItems: "center",
+      justifyContent: "center",
     },
-    radioSelected: { borderColor: c.primary, borderWidth: 6 },
+    radioSelected: {
+      backgroundColor: c.primary,
+      borderColor: c.primary,
+    },
+    radioCheck: {
+      color: c.primaryForeground,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 14,
+      lineHeight: 17,
+    },
     planPrice: {
       color: c.foreground,
       fontFamily: "Inter_600SemiBold",

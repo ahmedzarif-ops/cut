@@ -21,6 +21,8 @@ run = "corepack pnpm@10.34.5 --filter @workspace/cut-os run dev"
 [services.production]
 # Required deployment input: PUBLIC_APP_ORIGIN. It is intentionally not
 # defaulted because the owner must choose the canonical public HTTPS host.
+# This validates the source-controlled production launch/legal server only.
+# Expo preview bundles remain an explicit development-only build.
 build = [ "corepack", "pnpm@10.34.5", "--filter", "@workspace/cut-os", "run", "build" ]
 run = [ "corepack", "pnpm@10.34.5", "--filter", "@workspace/cut-os", "run", "serve" ]
 

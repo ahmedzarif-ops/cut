@@ -12,6 +12,13 @@ capture review, not text overlays:
 3. `04-meal-preview` — **See estimated macros before you log**
 4. `05-today-nutrition-logged` — **Review today's nutrition totals**
 5. `06-logged-meal-controls` — **Adjust or delete logged meals**
+6. `07-subscription-offer` — **Paid access uses an auto-renewable Apple subscription**
+
+The subscription-offer screen is part of the public listing selection, not only
+App Review evidence. Its exact-build capture must show an unmistakable paid or
+subscription cue and the StoreKit-localized offer details; do not imply that all
+features are free or type a price into a derived caption. The manifest therefore
+classifies shot 07 as `listing_candidate_and_in_app_purchase_review_evidence`.
 
 The 1.0 listing uses the raw screenshots from the exact signed build recorded
 in `app-store/screenshots/manifest.json`; it does not use derived captioned

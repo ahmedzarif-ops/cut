@@ -11,6 +11,10 @@ PostgreSQL as the source of truth.
   repository instead of Replit's ambient package-manager binary.
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm --filter @workspace/cut-os run dev` — run the Expo dev server (Replit iOS simulator / Expo Go)
+- `pnpm --filter @workspace/cut-os run build` — validate the production
+  launch/legal server without generating Expo preview assets
+- `pnpm --filter @workspace/cut-os run build:preview` — explicitly generate the
+  legacy static Expo preview when that development artifact is needed
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run test` — run all vitest suites (api-server integration + cut-os unit)
 - `pnpm run build` — typecheck + build all packages
@@ -46,10 +50,17 @@ PostgreSQL as the source of truth.
   in Replit's Publishing settings; `.replit` intentionally does not pin the
   obsolete autoscale deployment target;
   `CORS_ALLOWED_ORIGINS` — explicit production HTTPS browser origin;
-  `CLERK_PROXY_URL=/api/__clerk` — relative route used by the Replit build only
-  (EAS separately needs the full `EXPO_PUBLIC_CLERK_PROXY_URL`);
+  `CLERK_PROXY_URL=/api/__clerk` — relative route used by the Replit development
+  preview only (EAS separately needs the full `EXPO_PUBLIC_CLERK_PROXY_URL`);
   `LEGAL_SITE_PUBLICATION_STATUS=draft` — keep draft until owner/counsel approval
   and the legal source-hash gate pass; never flip this as a deployment shortcut
+
+The Replit production public artifact runs the source-controlled launch and
+legal server. Its build step constructs that production handler to validate the
+canonical origin, templates, publication status, and approval hashes; it does
+not start Metro or require `static-build`. Production still returns `404` for
+all Expo manifests and preview assets. Preview mode retains the readable-static-
+root startup gate.
 
 ## Stack
 

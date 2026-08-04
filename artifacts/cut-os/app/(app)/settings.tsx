@@ -523,6 +523,7 @@ export default function SettingsScreen() {
             return (
               <Pressable
                 key={units}
+                accessibilityLabel={label}
                 accessibilityRole="button"
                 accessibilityState={{
                   selected: active,
@@ -546,6 +547,7 @@ export default function SettingsScreen() {
                   <Text
                     style={[s.unitButtonText, active && s.unitButtonTextActive]}
                   >
+                    {active ? "✓ " : ""}
                     {label}
                   </Text>
                 )}

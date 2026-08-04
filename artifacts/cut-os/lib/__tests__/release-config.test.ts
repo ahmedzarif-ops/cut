@@ -149,6 +149,9 @@ describe("release configuration validator", () => {
     ]) {
       expect(result.stderr).toContain(name);
     }
+    expect(result.stderr).not.toContain(
+      "EXPO_PUBLIC_REVENUECAT_PRODUCT_ID must match the App Store subscription release record",
+    );
   });
 
   it("rejects local infrastructure and test authentication in production", () => {

@@ -83,6 +83,12 @@ Other fail-closed bindings are deliberate:
 - public submission requires evidence-backed name clearance, exact-name
   acceptance in App Store Connect, owner/legal/nutrition review, and exact-build
   listing-claims review;
+- the exact committed Privacy and Terms URLs must be assigned to an
+  Apple-accepted metadata path. Description placement is literal-string checked,
+  each recorded submitted URL must equal its committed listing value, and Terms
+  placement is constrained by the selected standard-versus-custom license
+  agreement. Confirmed/release records require attributable UTC and evidence that
+  the exact placements were saved in App Store Connect;
 - Apple Developer Program membership, Account Holder access, Paid Apps
   Agreement, tax forms, and banking must each be confirmed with UTC and a
   controlled non-secret evidence reference. Do not store financial values or
@@ -96,7 +102,9 @@ Other fail-closed bindings are deliberate:
   the credential-bearing resolved notes in the repository;
 - a screenshot PII approval is valid only for the exact screenshot SHA-256 it
   reviewed, and the uploaded subscription-review image must be the approved
-  bytes for shot `07-subscription-offer`;
+  bytes for shot `07-subscription-offer`. That same offer shot is required in
+  the public listing story, whose review cue states clearly that paid access uses
+  an auto-renewable Apple subscription;
 - subscription evidence records the effective U.S. USD price, owner-decision
   revision/reference, any introductory-offer terms, and exact App Store Connect
   upload evidence. It separately requires direct RevenueCat-dashboard evidence

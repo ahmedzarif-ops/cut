@@ -208,8 +208,9 @@ describe("CUT OS public server", () => {
 
   it("serves the CUT launch surface and no Expo preview artifacts in production", async () => {
     const staticRoot = await createStaticRoot();
+    const missingStaticRoot = join(staticRoot, "not-built-for-production");
     const { port } = await listen({
-      staticRoot,
+      staticRoot: missingStaticRoot,
       appName: "CUT OS",
       previewMode: false,
     });
@@ -380,7 +381,7 @@ describe("CUT OS public server", () => {
     );
   });
 
-  it("reports ready only after the static build and templates initialize", async () => {
+  it("requires static assets only for preview while templates gate every mode", async () => {
     const staticRoot = await createStaticRoot();
     const { port } = await listen({ staticRoot, appName: "CUT OS" });
 
@@ -398,8 +399,16 @@ describe("CUT OS public server", () => {
     expect(() =>
       createAppServer({
         staticRoot: join(staticRoot, "missing-static-build"),
+        previewMode: true,
       }),
     ).toThrow(/Static build root is not a readable directory/u);
+    expect(() =>
+      createAppServer({
+        staticRoot: join(staticRoot, "missing-static-build"),
+        publicAppOrigin: "https://public.cutos.app",
+        previewMode: false,
+      }),
+    ).not.toThrow();
     expect(() =>
       createAppServer({
         staticRoot,

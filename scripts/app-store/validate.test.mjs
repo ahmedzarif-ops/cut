@@ -10,6 +10,7 @@ import {
   APP_STORE_RELEASE_EVIDENCE_TARGETS,
   appReviewNotesTemplateSha256,
   DEFAULT_REPO_ROOT,
+  EXPECTED_LISTING_SHOT_IDS,
   inspectImage,
   validateAppReviewNotesDraft,
   validateBundle,
@@ -19,6 +20,9 @@ import {
   validateTestFlightSubmission,
   verifyAppStoreReleaseEvidenceBoundary,
 } from "./validate.mjs";
+
+const APPLE_STANDARD_EULA_TEST_URL =
+  "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
 
 function readJson(relativePath) {
   return JSON.parse(
@@ -142,13 +146,56 @@ test("App Store release evidence requires an App Review or public-release target
   }
 });
 
-test("the initial listing screenshot story is validator-bound", () => {
+test("the initial listing screenshot story includes a clear paid subscription offer", () => {
   const manifest = readJson("app-store/screenshots/manifest.json");
-  manifest.listingSelection = ["09-settings-controls"];
+  const captionPlan = fs.readFileSync(
+    path.join(
+      DEFAULT_REPO_ROOT,
+      "app-store/screenshots/LISTING_CAPTION_PLAN.md",
+    ),
+    "utf8",
+  );
+  assert.ok(EXPECTED_LISTING_SHOT_IDS.includes("07-subscription-offer"));
+  assert.ok(manifest.listingSelection.includes("07-subscription-offer"));
+  assert.deepEqual(manifest.listingPaidDisclosure, {
+    shotId: "07-subscription-offer",
+    cue: "Paid access uses an auto-renewable Apple subscription.",
+  });
+  assert.equal(
+    manifest.shots.find((shot) => shot.id === "07-subscription-offer")
+      .intendedUse,
+    "listing_candidate_and_in_app_purchase_review_evidence",
+  );
+  assert.match(
+    captionPlan,
+    /`07-subscription-offer` — \*\*Paid access uses an auto-renewable Apple subscription\*\*/u,
+  );
+
+  manifest.listingSelection = manifest.listingSelection.filter(
+    (shotId) => shotId !== "07-subscription-offer",
+  );
 
   assert.ok(
     validateScreenshotManifest({ manifest }).includes(
-      "listingSelection must match the approved initial screenshot story",
+      "listingSelection must match the approved initial screenshot story including the paid subscription offer",
+    ),
+  );
+
+  const invalidCue = readJson("app-store/screenshots/manifest.json");
+  invalidCue.listingPaidDisclosure.cue = "Unlock more.";
+  assert.ok(
+    validateScreenshotManifest({ manifest: invalidCue }).includes(
+      "screenshots.listingPaidDisclosure must retain the approved paid Apple-subscription cue",
+    ),
+  );
+
+  const invalidIntendedUse = readJson("app-store/screenshots/manifest.json");
+  invalidIntendedUse.shots.find(
+    (shot) => shot.id === "07-subscription-offer",
+  ).intendedUse = "in_app_purchase_review_evidence";
+  assert.ok(
+    validateScreenshotManifest({ manifest: invalidIntendedUse }).includes(
+      "07-subscription-offer intendedUse must include both listing and in-app-purchase review evidence",
     ),
   );
 });
@@ -250,6 +297,36 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
       "release mode requires deterministic EAS submit routing (production_ios_asc_app_id_not_pinned)",
     ),
   );
+
+  for (const duplicate of [
+    "release mode requires listing.contentRightsDeclaration",
+    "release mode requires listing.supportUrl",
+    "release mode requires listing.privacyPolicyUrl",
+    "release mode requires listing.termsUrl",
+    "release mode requires listing.initialTerritories",
+    "release mode requires appReview.exactBuild.buildNumber",
+    "release mode requires screenshots.captureDefaults.buildNumber",
+    "release mode requires screenshots.captureDefaults.gitCommit",
+    "release mode requires screenshots.captureDefaults.easBuildId",
+    "release mode requires screenshots.captureDefaults.appStoreConnectBuildId",
+    "captureDefaults.capturedAtUtc must be a UTC ISO timestamp",
+    "release mode requires TestFlight exactBuildEvidence.buildNumber",
+    "release mode requires a full lowercase Git SHA in TestFlight exactBuildEvidence.gitCommit",
+  ]) {
+    assert.equal(errors.includes(duplicate), false, duplicate);
+  }
+
+  for (const retainedGate of [
+    "release mode requires a boolean content-rights declaration",
+    "listing.supportUrl must be public HTTPS without credentials",
+    "release mode requires at least one owner-approved initial territory",
+    "appReview.exactBuild.buildNumber is required",
+    "screenshots.captureDefaults.buildNumber is required",
+    "release mode requires screenshots.captureDefaults.capturedAtUtc as a UTC ISO timestamp",
+    "TestFlight exactBuildEvidence.buildNumber is required",
+  ]) {
+    assert.ok(errors.includes(retainedGate), retainedGate);
+  }
 });
 
 test("metadata validation catches listing and privacy-manifest drift", () => {
@@ -397,6 +474,194 @@ test("listing schema and public metadata URLs fail closed", () => {
   }
 });
 
+test("release and confirmed listings bind exact legal URLs to Apple-accepted metadata paths and the selected EULA", () => {
+  const inputs = validationInputs();
+  const submission = clone(inputs.submission);
+  const privacyError =
+    "release mode requires exact listing.privacyPolicyUrl in an Apple-accepted metadata path";
+  const termsError =
+    "release mode requires exact listing.termsUrl in an Apple-accepted metadata path tied to commercialAndLegal.licenseAgreement";
+  const confirmedPrivacyError =
+    "confirmed listing.approval requires exact listing.privacyPolicyUrl in an Apple-accepted metadata path";
+  const confirmedTermsError =
+    "confirmed listing.approval requires exact listing.termsUrl in an Apple-accepted metadata path tied to commercialAndLegal.licenseAgreement";
+  const confirmedPrivacyUrlError =
+    "confirmed listing.approval requires listing.privacyPolicyUrl to be public HTTPS without credentials";
+  const confirmedTermsUrlError =
+    "confirmed listing.approval requires listing.termsUrl to be public HTTPS without credentials";
+  const confirmationLabel =
+    "listing.legalUrlPlacement.appStoreConnectConfirmation";
+
+  const confirmedListing = clone(inputs.submission);
+  const confirmedApproval = confirmedListing.listing.approval;
+  confirmedApproval.status = "confirmed";
+  for (const field of [
+    "nameClearance",
+    "appStoreConnectNameAcceptance",
+    "ownerApproval",
+    "legalReview",
+    "nutritionReview",
+  ]) {
+    Object.assign(confirmedApproval[field], {
+      status: "confirmed",
+      verifiedAtUtc: "2026-08-03T23:59:00Z",
+      evidenceReference: `evidence/listing-${field}`,
+    });
+  }
+  Object.assign(confirmedApproval.exactBuildClaimsReview, {
+    status: "confirmed",
+    buildNumber: "1",
+    gitCommit: "0123456789abcdef0123456789abcdef01234567",
+    easBuildId: "eas-build-01234567",
+    appStoreConnectBuildId: "asc-build-01234567",
+    verifiedAtUtc: "2026-08-03T23:59:00Z",
+    evidenceReference: "evidence/listing-exact-build-claims",
+  });
+  let confirmedErrors = validateMetadata({
+    ...inputs,
+    submission: confirmedListing,
+  });
+  assert.ok(confirmedErrors.includes(confirmedPrivacyUrlError));
+  assert.ok(confirmedErrors.includes(confirmedTermsUrlError));
+
+  confirmedListing.listing.privacyPolicyUrl = "https://cutos.app/privacy";
+  confirmedListing.listing.termsUrl = "https://cutos.app/terms";
+  confirmedListing.commercialAndLegal.licenseAgreement = "custom_eula";
+  confirmedErrors = validateMetadata({
+    ...inputs,
+    submission: confirmedListing,
+  });
+  assert.ok(
+    confirmedErrors.includes(
+      `confirmed listing.approval requires ${confirmationLabel}.status confirmed`,
+    ),
+  );
+  assert.ok(confirmedErrors.includes(confirmedPrivacyError));
+  assert.ok(confirmedErrors.includes(confirmedTermsError));
+
+  confirmedListing.listing.legalUrlPlacement.privacyPolicy =
+    "app_store_connect_privacy_policy_url";
+  confirmedListing.listing.legalUrlPlacement.privacyPolicySubmittedUrl =
+    confirmedListing.listing.privacyPolicyUrl;
+  confirmedListing.listing.legalUrlPlacement.terms =
+    "app_store_connect_custom_license_agreement";
+  confirmedListing.listing.legalUrlPlacement.termsSubmittedUrl =
+    confirmedListing.listing.termsUrl;
+  Object.assign(
+    confirmedListing.listing.legalUrlPlacement.appStoreConnectConfirmation,
+    {
+      status: "confirmed",
+      verifiedAtUtc: "2026-08-03T23:59:00Z",
+      evidenceReference: "evidence/app-store-legal-url-placement",
+    },
+  );
+  confirmedErrors = validateMetadata({
+    ...inputs,
+    submission: confirmedListing,
+  });
+  assert.deepEqual(confirmedErrors, []);
+
+  confirmedListing.listing.legalUrlPlacement.termsSubmittedUrl =
+    "https://cutos.app/terms-mismatch";
+  confirmedErrors = validateMetadata({
+    ...inputs,
+    submission: confirmedListing,
+  });
+  assert.ok(confirmedErrors.includes(confirmedTermsError));
+
+  submission.listing.privacyPolicyUrl = "https://cutos.app/privacy";
+  submission.listing.termsUrl = "https://cutos.app/terms";
+  submission.commercialAndLegal.licenseAgreement = "standard_apple_eula";
+  submission.listing.legalUrlPlacement.privacyPolicy =
+    "app_store_connect_privacy_policy_url";
+  submission.listing.legalUrlPlacement.privacyPolicySubmittedUrl =
+    submission.listing.privacyPolicyUrl;
+  submission.listing.legalUrlPlacement.terms = "listing_description";
+  submission.listing.legalUrlPlacement.termsSubmittedUrl =
+    submission.listing.termsUrl;
+
+  let errors = validateMetadata({ ...inputs, submission, release: true });
+  assert.ok(
+    errors.includes(
+      `release mode requires ${confirmationLabel}.status confirmed`,
+    ),
+  );
+  Object.assign(
+    submission.listing.legalUrlPlacement.appStoreConnectConfirmation,
+    {
+      status: "confirmed",
+      verifiedAtUtc: "2026-08-03T23:59:00Z",
+      evidenceReference: "evidence/app-store-legal-url-placement",
+    },
+  );
+  errors = validateMetadata({ ...inputs, submission, release: true });
+  assert.equal(
+    errors.some((error) => error.includes(confirmationLabel)),
+    false,
+  );
+  assert.equal(errors.includes(privacyError), false);
+  assert.ok(errors.includes(termsError));
+
+  submission.listing.legalUrlPlacement.privacyPolicySubmittedUrl =
+    "https://cutos.app/privacy-wrong";
+  errors = validateMetadata({ ...inputs, submission, release: true });
+  assert.ok(errors.includes(privacyError));
+  submission.listing.legalUrlPlacement.privacyPolicySubmittedUrl =
+    submission.listing.privacyPolicyUrl;
+
+  submission.listing.description +=
+    "\n\nPrivacy Policy: https://cutos.app/privacy\nTerms of Use: https://cutos.app/terms-wrong";
+  errors = validateMetadata({ ...inputs, submission, release: true });
+  assert.ok(errors.includes(termsError));
+
+  submission.listing.description = submission.listing.description.replace(
+    "https://cutos.app/terms-wrong",
+    "https://cutos.app/terms",
+  );
+  errors = validateMetadata({ ...inputs, submission, release: true });
+  assert.equal(errors.includes(termsError), false);
+
+  submission.listing.legalUrlPlacement.privacyPolicy = "listing_description";
+  submission.listing.description = submission.listing.description.replace(
+    "https://cutos.app/privacy",
+    "https://cutos.app/privacy-wrong",
+  );
+  errors = validateMetadata({ ...inputs, submission, release: true });
+  assert.ok(errors.includes(privacyError));
+
+  submission.listing.termsUrl = APPLE_STANDARD_EULA_TEST_URL;
+  submission.listing.legalUrlPlacement.termsSubmittedUrl =
+    APPLE_STANDARD_EULA_TEST_URL;
+  submission.listing.legalUrlPlacement.terms =
+    "app_store_connect_standard_eula";
+  errors = validateMetadata({ ...inputs, submission, release: true });
+  assert.equal(errors.includes(termsError), false);
+
+  submission.listing.termsUrl = "https://cutos.app/terms";
+  submission.listing.legalUrlPlacement.termsSubmittedUrl =
+    submission.listing.termsUrl;
+  errors = validateMetadata({ ...inputs, submission, release: true });
+  assert.ok(errors.includes(termsError));
+
+  submission.listing.legalUrlPlacement.terms =
+    "app_store_connect_custom_license_agreement";
+  errors = validateMetadata({ ...inputs, submission, release: true });
+  assert.ok(errors.includes(termsError));
+
+  submission.commercialAndLegal.licenseAgreement = "custom_eula";
+  errors = validateMetadata({ ...inputs, submission, release: true });
+  assert.equal(errors.includes(termsError), false);
+
+  submission.listing.legalUrlPlacement.appStoreConnectConfirmation.evidenceReference =
+    null;
+  errors = validateMetadata({ ...inputs, submission, release: true });
+  assert.ok(
+    errors.includes(
+      `${confirmationLabel} confirmed status requires evidenceReference`,
+    ),
+  );
+});
+
 test("Apple commerce readiness is structured and evidence-gated", () => {
   const inputs = validationInputs();
   const submission = clone(inputs.submission);
@@ -478,6 +743,23 @@ test("listing approvals require name, owner, legal, nutrition, and exact-build e
     verifiedAtUtc: "2026-08-03T23:59:00Z",
     evidenceReference: "evidence/listing-exact-build-claims",
   });
+  submission.listing.privacyPolicyUrl = "https://cutos.app/privacy";
+  submission.listing.termsUrl = "https://cutos.app/terms";
+  submission.commercialAndLegal.licenseAgreement = "custom_eula";
+  Object.assign(submission.listing.legalUrlPlacement, {
+    privacyPolicy: "app_store_connect_privacy_policy_url",
+    privacyPolicySubmittedUrl: submission.listing.privacyPolicyUrl,
+    terms: "app_store_connect_custom_license_agreement",
+    termsSubmittedUrl: submission.listing.termsUrl,
+  });
+  Object.assign(
+    submission.listing.legalUrlPlacement.appStoreConnectConfirmation,
+    {
+      status: "confirmed",
+      verifiedAtUtc: "2026-08-03T23:59:00Z",
+      evidenceReference: "evidence/app-store-legal-url-placement",
+    },
+  );
   const errors = validateMetadata({ ...inputs, submission });
   assert.equal(
     errors.some((error) => error.includes("listing.approval")),

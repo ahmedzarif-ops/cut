@@ -116,6 +116,22 @@ listing values. This prevents the reviewed App Store record and the links in the
 submitted binary from drifting without printing either value in validation
 output.
 
+For release, `listing.legalUrlPlacement` must also record where Apple receives
+the exact committed Privacy and Terms URLs. Privacy may use the dedicated App
+Store Connect Privacy Policy URL field or the listing description. Terms may use
+the listing description, a custom-license-agreement body when
+`commercialAndLegal.licenseAgreement` is `custom_eula`, or Apple's standard EULA
+selection only when the committed Terms URL is Apple's canonical standard-EULA
+URL and the chosen license is `standard_apple_eula`. A description placement
+passes only when the literal committed URL appears in the submitted description.
+Each placement also records the exact submitted URL and must match the committed
+listing URL without normalization. Release and confirmed listing approval also
+require `appStoreConnectConfirmation` to be `confirmed` with a UTC verification
+time and controlled non-secret evidence reference showing those exact placements
+were saved in App Store Connect. The working record keeps both placements
+`pending`, both submitted URLs `null`, and that confirmation pending while the
+public URLs and license decision remain unresolved.
+
 `listing.approval` remains pending until name clearance, exact-name acceptance
 in App Store Connect, owner approval, legal review, qualified nutrition review,
 and exact-build claims review are each confirmed with UTC and a controlled,

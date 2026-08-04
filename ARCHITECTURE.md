@@ -22,9 +22,12 @@
 - **Mobile client** (`artifacts/cut-os`): a genuine native React Native app
   (Expo SDK 54, RN 0.81, New Architecture enabled). It is configured for the
   Replit iOS simulator and Expo Go; current native verification status is in
-  `QA_REPORT.md`. `scripts/build.js` + `server/serve.js` produce and
-  serve an Expo-updates-protocol bundle (iOS + Android JS bundles + manifests),
-  not a web build. `react-native-web` exists only for Expo's web dev preview.
+  `QA_REPORT.md`. Development may explicitly run `build:preview` to produce the
+  legacy Expo-updates-protocol preview bundle (iOS + Android JS bundles and
+  manifests). The Replit production artifact instead validates and runs the
+  source-controlled, zero-JavaScript launch/legal server without building or
+  serving Expo preview assets. Native release bundles are built through EAS;
+  `react-native-web` exists only for Expo's development preview.
 - **API server** (`artifacts/api-server`): Express 5, bundled with esbuild to
   a single ESM file. Exposed through the Replit workspace proxy under `/api`.
 - **Database**: PostgreSQL via Drizzle ORM. `lib/db` owns the schema and the

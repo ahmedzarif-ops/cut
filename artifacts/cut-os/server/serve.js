@@ -424,7 +424,10 @@ function createRequestHandler(options = {}) {
   if (typeof previewMode !== "boolean") {
     throw new Error("previewMode must be a boolean when supplied.");
   }
-  assertStaticRoot(staticRoot);
+  // Expo bundles and manifests exist only for the explicit development preview.
+  // The production process serves the source-controlled launch/legal surface
+  // and must not depend on a legacy Expo Go static build it will never expose.
+  if (previewMode) assertStaticRoot(staticRoot);
   const templates = loadTemplates(
     templateRoot,
     publicationStatus,

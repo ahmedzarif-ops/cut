@@ -1,8 +1,12 @@
 {
   "schemaVersion": 1,
   "status": "planned_not_captured",
-  "updated": "2026-08-03",
+  "updated": "2026-08-04",
   "assetDirectory": "app-store/screenshots/files",
+  "listingPaidDisclosure": {
+    "shotId": "07-subscription-offer",
+    "cue": "Paid access uses an auto-renewable Apple subscription."
+  },
   "technicalRequirements": {
     "slot": "iPhone 6.9-inch portrait",
     "acceptedFormats": ["png"],
@@ -44,7 +48,8 @@
     "03-balanced-options",
     "04-meal-preview",
     "05-today-nutrition-logged",
-    "06-logged-meal-controls"
+    "06-logged-meal-controls",
+    "07-subscription-offer"
   ],
   "reviewEvidenceSelection": [],
   "shots": [
@@ -147,7 +152,7 @@
     {
       "order": 7,
       "id": "07-subscription-offer",
-      "intendedUse": "in_app_purchase_review_evidence",
+      "intendedUse": "listing_candidate_and_in_app_purchase_review_evidence",
       "requiredForReleaseEvidence": true,
       "file": null,
       "sha256": null,

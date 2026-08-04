@@ -121,7 +121,7 @@ describe("Metro build environment", () => {
     },
   );
 
-  it("keeps build.js wired to the allowlist without logging copied values", () => {
+  it("keeps preview build.js wired to the allowlist without logging copied values", () => {
     const buildSource = readFileSync(
       new URL("./build.js", import.meta.url),
       "utf8",
