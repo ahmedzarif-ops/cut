@@ -2,7 +2,6 @@ modules = ["nodejs-24"]
 
 [deployment]
 router = "application"
-deploymentTarget = "autoscale"
 
 [deployment.postBuild]
 args = ["corepack", "pnpm@10.34.5", "store", "prune"]

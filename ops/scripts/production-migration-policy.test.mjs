@@ -60,6 +60,11 @@ test("the Replit post-merge hook is dependency-install-only", () => {
 
 test("Replit runtime commands use the repository-pinned pnpm version", () => {
   const replitConfiguration = readRepoFile(".replit");
+  assert.doesNotMatch(
+    replitConfiguration,
+    /^\s*deploymentTarget\s*=/mu,
+    "the repository must not override the provider-controlled Reserved VM deployment type",
+  );
   assert.match(
     replitConfiguration,
     /args\s*=\s*\["corepack",\s*"pnpm@10\.34\.5",\s*"store",\s*"prune"\]/u,

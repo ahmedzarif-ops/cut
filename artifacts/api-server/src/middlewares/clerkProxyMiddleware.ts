@@ -34,6 +34,22 @@ export const CLERK_PROXY_PATH = "/api/__clerk";
 export const CLERK_PROXY_TIMEOUT_MS = 10_000;
 export const CLERK_MAX_BUFFERED_RESPONSE_BYTES = 1_048_576;
 
+/**
+ * Pino's request completion log must not retain Clerk resource identifiers
+ * embedded in Frontend API paths (for example, a sign-in attempt ID). Query
+ * strings are removed from every request and the entire Clerk proxy surface is
+ * collapsed to its fixed mount point.
+ */
+export function safeRequestPathForLog(
+  requestUrl: string | undefined,
+): string | undefined {
+  const path = requestUrl?.split("?")[0];
+  if (path === CLERK_PROXY_PATH || path?.startsWith(`${CLERK_PROXY_PATH}/`)) {
+    return CLERK_PROXY_PATH;
+  }
+  return path;
+}
+
 interface ClerkProxyOptions {
   /** Test seam. Production always uses Clerk's fixed Frontend API target. */
   target?: string;

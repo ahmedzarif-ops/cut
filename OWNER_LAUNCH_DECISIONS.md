@@ -176,7 +176,8 @@ approved secret storage.
 
 ## Decision 7 — production hosting and database spend
 
-**Status:** Awaiting provider sign-in, live price inspection, and owner approval.
+**Status:** Provider sign-in and live price inspection are complete; owner cost
+approval and private phone verification remain pending.
 
 The API's current rate limits and account-deletion retry scheduler are
 process-local. The fastest safe launch topology therefore keeps exactly one API
@@ -189,16 +190,26 @@ Production also requires managed PostgreSQL with verified TLS, backups or
 point-in-time recovery, and a successful restore drill. No production host or
 database has been purchased or deployed yet.
 
+**Verified August 4, 2026:** Replit's live publishing screen offers a public
+North America Reserved VM with 0.5 vCPU and 2 GiB for **$15 USD per month** at
+`cut-ahmedzarif1.replit.app`. The production PostgreSQL database and excess
+outbound transfer are separate usage-based services. Replit supports a
+service-shutdown limit for those variable services and requires private owner
+phone verification before publishing. No phone number was entered, no code was
+sent, and no recurring deployment was started.
+
 **Working recommendation:** use one stable HTTPS host for the API, Clerk proxy,
 landing page, Privacy, Terms, and Support. A stable `.replit.app` address is
 technically sufficient for the narrow U.S. launch if the owner and counsel
-approve it; a custom domain is not an engineering prerequisite. Inspect the
-provider's exact recurring price before choosing the always-on topology and
-database.
+approve it; a custom domain is not an engineering prerequisite. The recommended
+launch authorization is the $15 Reserved VM plus a **$5/month usage-based
+service-shutdown limit**, for a combined maximum of **$20/month before tax**.
+Reaching the variable limit can suspend the database or app until the next
+billing cycle, so usage must be monitored after launch.
 
 Do not change a paid plan, add a payment method, create a paid database, or
-start a billable deployment until the owner approves the exact provider,
-configuration, and recurring cost cap shown at checkout.
+start a billable deployment until the owner explicitly says: **Approve Replit
+up to $20/month before tax**.
 
 ## Later explicit approvals
 

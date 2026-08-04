@@ -36,7 +36,9 @@ PostgreSQL as the source of truth.
   API platform maximum (currently must be `1` until shared rate limiting
   exists). Production must also use a provider-verified always-on minimum of one
   API machine because account-deletion retries are scheduled in-process; an
-  autoscale-to-zero deployment is not launch-safe;
+  autoscale-to-zero deployment is not launch-safe. Select and verify Reserved VM
+  in Replit's Publishing settings; `.replit` intentionally does not pin the
+  obsolete autoscale deployment target;
   `CORS_ALLOWED_ORIGINS` — explicit production HTTPS browser origin;
   `CLERK_PROXY_URL=/api/__clerk` — relative route used by the Replit build only
   (EAS separately needs the full `EXPO_PUBLIC_CLERK_PROXY_URL`);

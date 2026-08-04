@@ -10,6 +10,7 @@ import {
   CLERK_PROXY_PATH,
   clerkProxyMiddleware,
   getClerkProxyHost,
+  safeRequestPathForLog,
 } from "./middlewares/clerkProxyMiddleware";
 import helmet from "helmet";
 import { createApiLimiter, createClerkLimiter } from "./middlewares/rateLimit";
@@ -31,7 +32,7 @@ app.use(
         return {
           id: req.id,
           method: req.method,
-          url: req.url?.split("?")[0],
+          url: safeRequestPathForLog(req.url),
         };
       },
       res(res) {

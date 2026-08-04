@@ -50,8 +50,9 @@ social features. Those are backlog, not submission truth.
 - [x] RevenueCat customer deletion is part of the durable account-deletion
       provider workflow, including validated absence, queued-delete polling,
       multi-worker leases, stale-worker fencing, and cache invalidation.
-- [x] Email-code password recovery is implemented with account-enumeration-safe
-      request messaging and explicit Clerk-result handling.
+- [x] App Store password recovery delegates to Clerk's prebuilt native
+      sign-in-only `AuthView`; public Expo web uses Clerk's prebuilt
+      non-transferable `SignIn`, and the custom reset screen is non-launch.
 - [x] Purchase access can always be rechecked against the authoritative server;
       local StoreKit state alone never unlocks paid features.
 - [x] Production API startup validates live credentials/TLS, applies bundled

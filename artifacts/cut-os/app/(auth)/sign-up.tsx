@@ -23,6 +23,10 @@ import {
   sendSignUpEmailCode,
   verifySignUpEmailCode,
 } from "@/lib/auth-flow";
+import {
+  isSignUpSubmissionDisabled,
+  SIGN_UP_TERMS_ASSENT_COPY,
+} from "@/lib/sign-up-consent";
 
 const SIGN_UP_LEGAL_LINK_IDS = ["terms", "privacyPolicy"] as const;
 type SignUpStep = "account" | "email-code" | "finalize";
@@ -38,6 +42,7 @@ export default function SignUpScreen() {
   const [password, setPassword] = React.useState("");
   const [code, setCode] = React.useState("");
   const [adultConfirmed, setAdultConfirmed] = React.useState(false);
+  const [termsAssented, setTermsAssented] = React.useState(false);
   const [step, setStep] = React.useState<SignUpStep>("account");
   const [verificationNotice, setVerificationNotice] = React.useState<
     string | null
@@ -65,8 +70,13 @@ export default function SignUpScreen() {
   }, [operationRunner]);
 
   const busy = localBusy || fetchStatus === "fetching";
-  const createDisabled =
-    !emailAddress.trim() || !password || !adultConfirmed || busy;
+  const createDisabled = isSignUpSubmissionDisabled({
+    emailAddress,
+    password,
+    adultConfirmed,
+    termsAssented,
+    busy,
+  });
   const codeDisabled = busy || (step === "email-code" && !code.trim());
 
   const handleSubmit = async () => {
@@ -215,6 +225,7 @@ export default function SignUpScreen() {
       setPassword("");
       setCode("");
       setAdultConfirmed(false);
+      setTermsAssented(false);
       setStep("account");
       setVerificationNotice(null);
     });
@@ -437,6 +448,28 @@ export default function SignUpScreen() {
               </View>
               <Text style={s.confirmationText}>
                 I confirm I am at least 18 years old.
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityLabel={SIGN_UP_TERMS_ASSENT_COPY}
+              accessibilityState={{ checked: termsAssented, disabled: busy }}
+              disabled={busy}
+              style={({ pressed }) => [
+                s.confirmationRow,
+                busy && s.buttonDisabled,
+                pressed && !busy && s.buttonPressed,
+              ]}
+              onPress={() => setTermsAssented((current) => !current)}
+            >
+              <View
+                importantForAccessibility="no-hide-descendants"
+                style={[s.checkbox, termsAssented && s.checkboxSelected]}
+              >
+                {termsAssented ? <Text style={s.checkmark}>✓</Text> : null}
+              </View>
+              <Text style={s.confirmationText}>
+                {SIGN_UP_TERMS_ASSENT_COPY}
               </Text>
             </Pressable>
             <LegalSupportLinks

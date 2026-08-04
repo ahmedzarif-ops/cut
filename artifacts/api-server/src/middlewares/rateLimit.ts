@@ -9,6 +9,8 @@ import {
 const MINUTE_MS = 60_000;
 const API_RATE_LIMIT_DEFAULT = 100;
 const CLERK_RATE_LIMIT_DEFAULT = 30;
+export const CLERK_RATE_LIMIT_SECURITY_EVENT =
+  "clerk_frontend_api_rate_limited";
 
 function safeLimit(
   value: string | undefined,
@@ -58,7 +60,14 @@ export function createClerkLimiter(): RequestHandler {
     ),
     standardHeaders: true,
     legacyHeaders: false,
-    handler: (_req, res) => {
+    handler: (req, res) => {
+      // Record only a fixed event name. Recovery identifiers, reset codes,
+      // passwords, Clerk resource IDs, headers, and provider errors must never
+      // enter an abuse log.
+      req.log?.warn(
+        { securityEvent: CLERK_RATE_LIMIT_SECURITY_EVENT },
+        "Clerk Frontend API request rate limited",
+      );
       res.status(429).json({ error: "Too many requests" });
     },
   });

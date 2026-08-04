@@ -198,24 +198,29 @@ without documented regulatory and legal support.
 ## Authentication security prelaunch gate
 
 `artifacts/cut-os/AUTH_SECURITY_PRELAUNCH.md` is a public-launch blocker, not a
-future hardening suggestion. The current direct Clerk client recovery flow uses
-one generic message, but the additional delivery operation for an accepted
-identifier can still create observable timing differences. A client-side delay
-is not an enumeration defense.
+future hardening suggestion. The App Store recovery route now delegates to
+Clerk's documented prebuilt native `AuthView` in sign-in-only mode. CUT's
+browser/development fallback still uses one generic message, but it is not the
+release architecture and a client-side delay is not an enumeration defense.
+The Expo web recovery route also uses Clerk's prebuilt non-transferable sign-in
+component. CUT's remaining custom reset screen is a non-launch fallback.
 
-`app-store/app-store-submission.json` therefore keeps authentication security at
-`pending_supported_recovery_architecture_and_production_evidence`, with no
-architecture selected and every approval false. Release validation must remain
-blocked until all of the following are recorded:
+`app-store/app-store-submission.json` records
+`clerk_hosted_or_prebuilt_recovery` with official Clerk documentation and exact
+implementation references. Authentication security remains
+`pending_supported_recovery_architecture_and_production_evidence`, with every
+approval false. Release validation must remain blocked until all of the
+following are recorded:
 
-- one Clerk-supported hosted/prebuilt recovery path or Clerk-supported
-  server/proxy recovery architecture, with provider-support and exact
-  implementation evidence references;
+- production Clerk **Attack protection → User enumeration protection →
+  Strict**, plus Native API/application registration for the exact build;
+- physical-iPhone verification of Clerk's beta native `AuthView`, including
+  password recovery, session synchronization, and no sign-up affordance;
 - production Clerk tenant evidence for the same generic public response,
   response-envelope parity, timing parity, enumeration-resistant rate limits,
   provider-failure behavior, and abuse logging that excludes raw reset codes and
   passwords; and
-- explicit owner, security-reviewer, Clerk-support, and production-evidence
+- explicit owner, security-reviewer, provider-support, and production-evidence
   approvals.
 
 Use only non-secret tenant aliases and sanitized evidence references. Do not put

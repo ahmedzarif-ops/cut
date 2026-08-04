@@ -14,6 +14,7 @@ import {
   clerkProxyMiddleware,
   getClerkProxyHost,
   getTrustedClientIp,
+  safeRequestPathForLog,
 } from "./clerkProxyMiddleware";
 
 const ALLOWED = new Set(["cut.example.com", "dev.replit.dev"]);
@@ -206,6 +207,20 @@ describe("getTrustedClientIp", () => {
         ips: ["203.0.113.99"],
       }),
     ).toBeUndefined();
+  });
+});
+
+describe("safeRequestPathForLog", () => {
+  it("removes query strings and Clerk resource identifiers", () => {
+    expect(
+      safeRequestPathForLog(
+        "/api/__clerk/v1/client/sign_ins/sia_sensitive/attempt?code=secret",
+      ),
+    ).toBe(CLERK_PROXY_PATH);
+    expect(safeRequestPathForLog("/api/readyz?verbose=true")).toBe(
+      "/api/readyz",
+    );
+    expect(safeRequestPathForLog(undefined)).toBeUndefined();
   });
 });
 

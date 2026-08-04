@@ -334,9 +334,9 @@
     "status": "pending_supported_recovery_architecture_and_production_evidence",
     "source": "artifacts/cut-os/AUTH_SECURITY_PRELAUNCH.md",
     "risk": "password_reset_account_enumeration_timing",
-    "selectedRecoveryArchitecture": null,
-    "clerkSupportEvidenceReference": null,
-    "implementationEvidenceReference": null,
+    "selectedRecoveryArchitecture": "clerk_hosted_or_prebuilt_recovery",
+    "clerkSupportEvidenceReference": "https://clerk.com/docs/reference/expo/overview; https://clerk.com/docs/reference/expo/native-components/auth-view; https://clerk.com/docs/guides/secure/user-enumeration-protection",
+    "implementationEvidenceReference": "artifacts/cut-os/app/(auth)/forgot-password.native.tsx; artifacts/cut-os/app/(auth)/forgot-password.web.tsx; artifacts/cut-os/lib/__tests__/password-recovery-native.test.ts",
     "productionTenantEvidence": {
       "clerkTenantAlias": null,
       "testedAtUtc": null,
