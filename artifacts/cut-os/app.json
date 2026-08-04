@@ -21,6 +21,7 @@
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
+        "UIStatusBarStyle": "UIStatusBarStyleLightContent",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false
         }

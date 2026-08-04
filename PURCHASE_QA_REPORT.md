@@ -3,7 +3,7 @@
 **Status:** Automated implementation verification complete; native purchase
 acceptance not yet run
 
-**Updated:** August 3, 2026
+**Updated:** August 4, 2026
 
 This is an evidence log, not a promise. Check an item only after recording the
 build, environment, tester, date, and result. Expo Go preview mode cannot satisfy
@@ -31,7 +31,9 @@ any Apple Sandbox or TestFlight item.
       secret, Apple `.p8`, shared secret, or App Store Connect key is embedded.
 - [x] Development uses RevenueCat Test Store or Apple Sandbox credentials;
       production does not contain a Test Store key.
-- [ ] Apple Server Notifications v2 sandbox and production URLs are configured.
+- [x] Optional App Store Server Notifications are explicitly omitted for the
+      initial release. If added later, production uses RevenueCat's full URL;
+      sandbox may fall back to that production URL.
 - [ ] Archive privacy report and SDK inventory are attached to the release.
 
 ## Automated gates

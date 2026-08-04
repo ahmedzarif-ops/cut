@@ -64,7 +64,7 @@ const REQUIRED_RELEASE_SECTIONS = Object.freeze([
 const REQUIRED_CHECKED_CONTROLS = Object.freeze([
   "Git worktree was clean before build.",
   "No concurrent manual migration will run during API startup migration.",
-  "Previous API rollback is forbidden unless schema compatibility is proven.",
+  "Application-only rollback is forbidden after any completed database migration.",
 ]);
 const UPLOAD_BEARING_CONTROL =
   "EAS upload ran from clean `BUILD_SHA` before post-build evidence changes.";
@@ -114,8 +114,8 @@ const REQUIRED_APPROVALS = Object.freeze([
   "authentication_recovery",
   "subscription_product",
   "commercial_config",
-  "app_store_server_notifications",
-  "accessibility_label",
+  "app_store_server_notifications_decision",
+  "accessibility_label_decision",
   "testflight_scope",
   "export_compliance",
 ]);
@@ -155,19 +155,140 @@ const REQUIRED_APP_REVIEW_ACCOUNT_IDS = Object.freeze([
   "deletion",
 ]);
 
-const REQUIRED_MONITORING_SIGNALS = Object.freeze([
-  "api_liveness",
-  "api_readiness_latency",
-  "api_errors_latency",
-  "startup_migration",
-  "auth_failures",
-  "purchase_entitlement",
-  "account_deletion",
-  "database_backup",
-  "mobile_crash_hang",
-  "legal_support",
-  "privacy_security",
+const MONITORING_SIGNAL_RULE_CONTRACTS = Object.freeze({
+  api_liveness: Object.freeze({
+    non200_count: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "count",
+    }),
+  }),
+  api_readiness_latency: Object.freeze({
+    non200_event: Object.freeze({ mode: "any_event" }),
+    latency_ms: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "milliseconds",
+    }),
+  }),
+  api_errors_latency: Object.freeze({
+    five_xx_rate: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "percent",
+    }),
+    latency_ms: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "milliseconds",
+    }),
+  }),
+  startup_migration: Object.freeze({
+    startup_failure_event: Object.freeze({ mode: "any_event" }),
+  }),
+  auth_failures: Object.freeze({
+    unexpected_error_rate: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "percent",
+    }),
+    auth_guard_failure_event: Object.freeze({ mode: "any_event" }),
+  }),
+  purchase_entitlement: Object.freeze({
+    provider_error_event: Object.freeze({ mode: "any_event" }),
+    entitlement_anomaly_event: Object.freeze({ mode: "any_event" }),
+    purchase_restore_failure_rate: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "percent",
+    }),
+  }),
+  account_deletion: Object.freeze({
+    worker_failure_event: Object.freeze({ mode: "any_event" }),
+    request_failure_rate: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "percent",
+    }),
+    pending_age_seconds: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "seconds",
+    }),
+    retry_count: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "count",
+    }),
+  }),
+  database_backup: Object.freeze({
+    pool_saturation_ratio: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "ratio",
+    }),
+    lock_wait_ms: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "milliseconds",
+    }),
+    storage_usage_ratio: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "ratio",
+    }),
+    replication_lag_seconds: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "seconds",
+    }),
+    backup_failure_event: Object.freeze({ mode: "any_event" }),
+  }),
+  mobile_crash_hang: Object.freeze({
+    crash_hang_rate: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "percent",
+    }),
+    critical_flow_failure_rate: Object.freeze({
+      mode: "numeric",
+      comparator: "greater_than_or_equal",
+      unit: "percent",
+    }),
+  }),
+  legal_support: Object.freeze({
+    resource_failure_event: Object.freeze({ mode: "any_event" }),
+  }),
+  privacy_security: Object.freeze({
+    incident_event: Object.freeze({ mode: "any_event" }),
+  }),
+});
+
+const REQUIRED_MONITORING_SIGNALS = Object.freeze(
+  Object.keys(MONITORING_SIGNAL_RULE_CONTRACTS),
+);
+
+const MIGRATION_CLASSIFICATIONS = Object.freeze([
+  "none",
+  "additive",
+  "state_changing",
+  "destructive_incompatible",
 ]);
+
+const MONITORING_THRESHOLD_MODES = Object.freeze(["numeric", "any_event"]);
+const MONITORING_THRESHOLD_COMPARATORS = Object.freeze([
+  "greater_than_or_equal",
+  "less_than_or_equal",
+]);
+const MONITORING_THRESHOLD_UNITS = Object.freeze([
+  "count",
+  "percent",
+  "ratio",
+  "milliseconds",
+  "seconds",
+  "bytes",
+]);
+const MAX_MONITORING_WINDOW_SECONDS = 7 * 24 * 60 * 60;
 
 export const POST_BUILD_MUTABLE_EVIDENCE_PATHS = Object.freeze([
   "app-store/app-store-connect-territories.json",
@@ -229,8 +350,11 @@ function gitBlob(repoRoot, commit, relativePath) {
   return runGit(repoRoot, ["show", `${commit}:${relativePath}`]).stdout;
 }
 
-function databaseMigrationRevisionAtBuild(repoRoot, buildSha) {
-  const code = "build_database_migration_identity_invalid";
+function databaseMigrationStateAtBuild(
+  repoRoot,
+  buildSha,
+  code = "build_database_migration_identity_invalid",
+) {
   try {
     const journalEntry = treeEntry(
       repoRoot,
@@ -271,26 +395,55 @@ function databaseMigrationRevisionAtBuild(repoRoot, buildSha) {
       seenTags.add(entry.tag);
     }
 
-    const latest = journal.entries.at(-1);
-    const migrationPath = `lib/db/migrations/${latest.tag}.sql`;
-    const migrationEntry = treeEntry(repoRoot, buildSha, migrationPath);
-    if (
-      !migrationEntry ||
-      migrationEntry.mode !== "100644" ||
-      migrationEntry.type !== "blob"
-    ) {
-      fail(code);
-    }
-    const migrationBytes = gitBlob(repoRoot, buildSha, migrationPath);
-    if (migrationBytes.length === 0) fail(code);
+    const chain = journal.entries.map((entry) => {
+      const migrationPath = `lib/db/migrations/${entry.tag}.sql`;
+      const migrationEntry = treeEntry(repoRoot, buildSha, migrationPath);
+      if (
+        !migrationEntry ||
+        migrationEntry.mode !== "100644" ||
+        migrationEntry.type !== "blob"
+      ) {
+        fail(code);
+      }
+      const migrationBytes = gitBlob(repoRoot, buildSha, migrationPath);
+      if (migrationBytes.length === 0) fail(code);
+      return Object.freeze({
+        tag: entry.tag,
+        createdAt: entry.when,
+        sha256: createHash("sha256").update(migrationBytes).digest("hex"),
+      });
+    });
     return Object.freeze({
-      tag: latest.tag,
-      createdAt: latest.when,
-      sha256: createHash("sha256").update(migrationBytes).digest("hex"),
+      revision: chain.at(-1),
+      chain: Object.freeze(chain),
     });
   } catch {
     fail(code);
   }
+}
+
+function derivePreviousProductionMigrationComparison({ declaredBaseline }) {
+  const code = "previous_production_migration_baseline_invalid";
+  if (!isRecord(declaredBaseline)) fail(code);
+
+  if (declaredBaseline.state === "deployed") {
+    fail("previous_production_migration_deployed_baseline_unsupported_v1");
+  }
+  if (
+    declaredBaseline.state !== "initial_launch" ||
+    declaredBaseline.productionApiRevision !== null ||
+    declaredBaseline.buildGitSha !== null ||
+    declaredBaseline.databaseMigrationRevision !== null
+  ) {
+    fail(code);
+  }
+  return Object.freeze({
+    state: "initial_launch",
+    productionApiRevision: null,
+    buildGitSha: null,
+    databaseMigrationRevision: null,
+    hasNewMigrations: true,
+  });
 }
 
 function parseJsonBlob(repoRoot, commit, relativePath, errorCode) {
@@ -636,6 +789,139 @@ function validateApproval(value, { allowNotApplicable = false } = {}) {
   fail("release_manifest_approval_not_approved");
 }
 
+function validateMigrationClassification(value, code) {
+  requireExactKeys(
+    value,
+    ["class", "classifiedBy", "atUtc", "evidenceReference"],
+    code,
+  );
+  if (
+    !MIGRATION_CLASSIFICATIONS.includes(value.class) ||
+    !isResolvedText(value.classifiedBy) ||
+    !isUtcTimestamp(value.atUtc) ||
+    !isResolvedText(value.evidenceReference)
+  ) {
+    fail(code);
+  }
+}
+
+function validatePreviousProductionMigration(
+  value,
+  expectedMigrationComparison,
+) {
+  const code = "release_manifest_previous_production_migration_invalid";
+  requireExactKeys(
+    value,
+    [
+      "state",
+      "productionApiRevision",
+      "buildGitSha",
+      "databaseMigrationRevision",
+      "verifiedBy",
+      "verifiedAtUtc",
+      "evidenceReference",
+    ],
+    code,
+  );
+  if (
+    value.state === "deployed" ||
+    expectedMigrationComparison?.state === "deployed"
+  ) {
+    fail("previous_production_migration_deployed_baseline_unsupported_v1");
+  }
+  if (
+    !isRecord(expectedMigrationComparison) ||
+    expectedMigrationComparison.state !== "initial_launch" ||
+    expectedMigrationComparison.hasNewMigrations !== true ||
+    !isResolvedText(value.verifiedBy) ||
+    !isUtcTimestamp(value.verifiedAtUtc) ||
+    !isResolvedText(value.evidenceReference) ||
+    !isDeepStrictEqual(
+      {
+        state: value.state,
+        productionApiRevision: value.productionApiRevision,
+        buildGitSha: value.buildGitSha,
+        databaseMigrationRevision: value.databaseMigrationRevision,
+      },
+      {
+        state: expectedMigrationComparison.state,
+        productionApiRevision:
+          expectedMigrationComparison.productionApiRevision,
+        buildGitSha: expectedMigrationComparison.buildGitSha,
+        databaseMigrationRevision:
+          expectedMigrationComparison.databaseMigrationRevision,
+      },
+    )
+  ) {
+    fail(code);
+  }
+}
+
+function validateNumericMonitoringBoundary(value, code) {
+  requireExactKeys(
+    value,
+    ["comparator", "value", "unit", "windowSeconds"],
+    code,
+  );
+  if (
+    !MONITORING_THRESHOLD_COMPARATORS.includes(value.comparator) ||
+    !Number.isFinite(value.value) ||
+    value.value < 0 ||
+    !MONITORING_THRESHOLD_UNITS.includes(value.unit) ||
+    !Number.isSafeInteger(value.windowSeconds) ||
+    value.windowSeconds <= 0 ||
+    value.windowSeconds > MAX_MONITORING_WINDOW_SECONDS ||
+    (value.unit === "percent" && value.value > 100) ||
+    (value.unit === "ratio" && value.value > 1)
+  ) {
+    fail(code);
+  }
+}
+
+function validateMonitoringThresholds(value, { contract, code }) {
+  requireExactKeys(value, ["mode", "warning", "critical"], code);
+  if (
+    !MONITORING_THRESHOLD_MODES.includes(value.mode) ||
+    value.mode !== contract.mode
+  ) {
+    fail(code);
+  }
+
+  if (value.mode === "any_event") {
+    if (value.warning !== null || value.critical !== null) fail(code);
+    return;
+  }
+
+  validateNumericMonitoringBoundary(value.warning, code);
+  validateNumericMonitoringBoundary(value.critical, code);
+  if (
+    value.warning.comparator !== contract.comparator ||
+    value.warning.unit !== contract.unit ||
+    value.warning.comparator !== value.critical.comparator ||
+    value.warning.unit !== value.critical.unit ||
+    value.warning.windowSeconds !== value.critical.windowSeconds
+  ) {
+    fail(code);
+  }
+
+  const ordered =
+    value.warning.comparator === "greater_than_or_equal"
+      ? value.critical.value > value.warning.value
+      : value.critical.value < value.warning.value;
+  if (!ordered) fail(code);
+}
+
+function validateMonitoringRules(value, { signalId, code }) {
+  const contracts = MONITORING_SIGNAL_RULE_CONTRACTS[signalId];
+  const rules = requireExactRecordMap(value, Object.keys(contracts), code);
+  for (const [ruleId, thresholds] of Object.entries(rules)) {
+    validateMonitoringThresholds(thresholds, {
+      contract: contracts[ruleId],
+      code,
+    });
+  }
+}
+
 function parseReleaseControl(manifest) {
   const begin = manifest.indexOf(RELEASE_CONTROL_BEGIN);
   const end = manifest.indexOf(RELEASE_CONTROL_END);
@@ -883,6 +1169,7 @@ function validateReleaseControl(
   expectedBuildSha,
   exactBuildEvidence,
   expectedDatabaseMigrationRevision,
+  expectedMigrationComparison,
   validationTimeMilliseconds,
 ) {
   const controlCode = "release_manifest_control_invalid";
@@ -955,6 +1242,7 @@ function validateReleaseControl(
       "publicLegalRevision",
       "previousPublicLegalRevision",
       "databaseMigrationRevision",
+      "previousProductionMigration",
       "replitProductionHosting",
       "easBuildId",
       "appStoreConnectBuildId",
@@ -984,6 +1272,10 @@ function validateReleaseControl(
   ) {
     fail("release_manifest_database_migration_identity_mismatch");
   }
+  validatePreviousProductionMigration(
+    control.deployments.previousProductionMigration,
+    expectedMigrationComparison,
+  );
   validateReplitProductionHosting(control.deployments.replitProductionHosting);
   for (const field of [
     "previousProductionApiRevision",
@@ -1019,6 +1311,24 @@ function validateReleaseControl(
       control.deployments.previousPublicLegalRevision
   ) {
     fail("release_manifest_single_host_revision_mismatch");
+  }
+  const previousMigrationState =
+    control.deployments.previousProductionMigration.state;
+  const baselineProductionApiRevision =
+    control.deployments.previousProductionMigration.productionApiRevision;
+  const previousRevisionIsNotApplicable = isNotApplicable(
+    control.deployments.previousProductionApiRevision,
+  );
+  if (
+    (previousMigrationState === "initial_launch" &&
+      (!previousRevisionIsNotApplicable ||
+        baselineProductionApiRevision !== null)) ||
+    (previousMigrationState === "deployed" &&
+      (previousRevisionIsNotApplicable ||
+        baselineProductionApiRevision !==
+          control.deployments.previousProductionApiRevision))
+  ) {
+    fail("release_manifest_previous_production_migration_state_mismatch");
   }
 
   const automatedGates = requireExactRecordMap(
@@ -1059,21 +1369,31 @@ function validateReleaseControl(
   requireExactKeys(
     control.backupRecovery,
     [
+      "migrationClassification",
       "migrationRehearsal",
       "databaseReadiness",
+      "productionMigrationWindow",
+      "writesQuiesced",
       "backupCoverageAtUtc",
       "backupEvidenceReference",
+      "recoveryPoint",
       "restoreDrillAtUtc",
       "restoreDrillEvidenceReference",
       "rpo",
       "rto",
       "recoveryApproval",
-      "rollForwardProcedureReference",
-      "coordinatedRestoreProcedureReference",
+      "previousApiCompatible",
+      "previousApiCompatibilityEvidenceReference",
+      "rollForwardProcedure",
+      "coordinatedRestoreProcedure",
       "recoveryOwner",
       "noConcurrentMigrationConfirmed",
       "schemaRollbackPolicyConfirmed",
     ],
+    backupCode,
+  );
+  validateMigrationClassification(
+    control.backupRecovery.migrationClassification,
     backupCode,
   );
   validatePassingEvidence(
@@ -1081,23 +1401,132 @@ function validateReleaseControl(
     backupCode,
   );
   validatePassingEvidence(control.backupRecovery.databaseReadiness, backupCode);
+  const migrationWindowCode =
+    "release_manifest_production_migration_window_invalid";
+  requireExactKeys(
+    control.backupRecovery.productionMigrationWindow,
+    [
+      "productionApiRevision",
+      "buildGitSha",
+      "databaseId",
+      "databaseMigrationRevision",
+      "startedAtUtc",
+      "completedAtUtc",
+      "evidenceReference",
+    ],
+    migrationWindowCode,
+  );
+  requireExactKeys(
+    control.backupRecovery.writesQuiesced,
+    ["mode", "atUtc", "verifiedBy", "evidenceReference"],
+    backupCode,
+  );
+  validatePassingEvidence(
+    control.backupRecovery.rollForwardProcedure,
+    backupCode,
+  );
+  validatePassingEvidence(
+    control.backupRecovery.coordinatedRestoreProcedure,
+    backupCode,
+  );
   validateApproval(control.backupRecovery.recoveryApproval);
+  requireExactKeys(
+    control.backupRecovery.recoveryPoint,
+    ["atUtc", "evidenceReference"],
+    backupCode,
+  );
+  const migrationClass = control.backupRecovery.migrationClassification.class;
+  if (migrationClass !== "destructive_incompatible") {
+    fail("release_manifest_migration_classification_mismatch");
+  }
+  const writesQuiescedAt = Date.parse(
+    control.backupRecovery.writesQuiesced.atUtc,
+  );
+  const backupCoverage = Date.parse(control.backupRecovery.backupCoverageAtUtc);
+  const recoveryPoint = Date.parse(control.backupRecovery.recoveryPoint.atUtc);
+  const productionMigrationStarted = Date.parse(
+    control.backupRecovery.productionMigrationWindow.startedAtUtc,
+  );
+  const productionMigrationCompleted = Date.parse(
+    control.backupRecovery.productionMigrationWindow.completedAtUtc,
+  );
+  const databaseReadinessAt = Date.parse(
+    control.backupRecovery.databaseReadiness.atUtc,
+  );
   if (
+    !isUtcTimestamp(
+      control.backupRecovery.productionMigrationWindow.startedAtUtc,
+    ) ||
+    !isUtcTimestamp(
+      control.backupRecovery.productionMigrationWindow.completedAtUtc,
+    ) ||
+    !isResolvedText(
+      control.backupRecovery.productionMigrationWindow.evidenceReference,
+    ) ||
+    control.backupRecovery.productionMigrationWindow.productionApiRevision !==
+      control.deployments.productionApiRevision ||
+    control.backupRecovery.productionMigrationWindow.buildGitSha !==
+      expectedBuildSha ||
+    control.backupRecovery.productionMigrationWindow.databaseId !==
+      control.deployments.replitProductionHosting.databaseId ||
+    !isDeepStrictEqual(
+      control.backupRecovery.productionMigrationWindow
+        .databaseMigrationRevision,
+      expectedDatabaseMigrationRevision,
+    ) ||
+    backupCoverage >= productionMigrationStarted ||
+    productionMigrationStarted > productionMigrationCompleted ||
+    productionMigrationCompleted > databaseReadinessAt
+  ) {
+    fail(migrationWindowCode);
+  }
+  if (
+    control.backupRecovery.writesQuiesced.mode !==
+      "initial_launch_no_prior_writes" ||
+    !isUtcTimestamp(control.backupRecovery.writesQuiesced.atUtc) ||
+    !isResolvedText(control.backupRecovery.writesQuiesced.verifiedBy) ||
+    !isResolvedText(control.backupRecovery.writesQuiesced.evidenceReference) ||
     !isUtcTimestamp(control.backupRecovery.backupCoverageAtUtc) ||
     !isResolvedText(control.backupRecovery.backupEvidenceReference) ||
+    !isUtcTimestamp(control.backupRecovery.recoveryPoint.atUtc) ||
+    !isResolvedText(control.backupRecovery.recoveryPoint.evidenceReference) ||
     !isUtcTimestamp(control.backupRecovery.restoreDrillAtUtc) ||
     !isResolvedText(control.backupRecovery.restoreDrillEvidenceReference) ||
     !isResolvedText(control.backupRecovery.rpo) ||
     !isResolvedText(control.backupRecovery.rto) ||
-    !isResolvedText(control.backupRecovery.rollForwardProcedureReference) ||
+    typeof control.backupRecovery.previousApiCompatible !== "boolean" ||
     !isResolvedText(
-      control.backupRecovery.coordinatedRestoreProcedureReference,
+      control.backupRecovery.previousApiCompatibilityEvidenceReference,
     ) ||
     !isResolvedText(control.backupRecovery.recoveryOwner) ||
     control.backupRecovery.noConcurrentMigrationConfirmed !== true ||
-    control.backupRecovery.schemaRollbackPolicyConfirmed !== true
+    control.backupRecovery.schemaRollbackPolicyConfirmed !== true ||
+    backupCoverage <= writesQuiescedAt ||
+    recoveryPoint <= writesQuiescedAt ||
+    recoveryPoint > backupCoverage ||
+    Date.parse(control.backupRecovery.recoveryApproval.atUtc) <=
+      recoveryPoint ||
+    control.backupRecovery.previousApiCompatible !== false ||
+    control.backupRecovery.rollForwardProcedure.evidenceReference ===
+      control.backupRecovery.coordinatedRestoreProcedure.evidenceReference
   ) {
     fail(backupCode);
+  }
+  const preMigrationRecoveryEvidenceTimestamps = [
+    control.deployments.previousProductionMigration.verifiedAtUtc,
+    control.backupRecovery.migrationClassification.atUtc,
+    control.backupRecovery.migrationRehearsal.atUtc,
+    control.backupRecovery.restoreDrillAtUtc,
+    control.backupRecovery.recoveryApproval.atUtc,
+    control.backupRecovery.rollForwardProcedure.atUtc,
+    control.backupRecovery.coordinatedRestoreProcedure.atUtc,
+  ];
+  if (
+    preMigrationRecoveryEvidenceTimestamps.some(
+      (timestamp) => Date.parse(timestamp) > productionMigrationStarted,
+    )
+  ) {
+    fail("release_manifest_pre_migration_recovery_evidence_late");
   }
 
   const smokeCode = "release_manifest_smoke_evidence_invalid";
@@ -1118,6 +1547,12 @@ function validateReleaseControl(
   ]) {
     validatePassingEvidence(smokeCheck, smokeCode);
   }
+  if (
+    productionMigrationCompleted >
+    Date.parse(control.smoke.production.api_readiness.atUtc)
+  ) {
+    fail(migrationWindowCode);
+  }
 
   const monitoringCode = "release_manifest_monitoring_invalid";
   requireExactKeys(
@@ -1135,32 +1570,36 @@ function validateReleaseControl(
     REQUIRED_MONITORING_SIGNALS,
     monitoringCode,
   );
-  for (const signal of Object.values(signals)) {
+  for (const [signalId, signal] of Object.entries(signals)) {
     requireExactKeys(
       signal,
       [
-        "warningThreshold",
-        "criticalThreshold",
+        "rules",
         "destination",
         "primaryOwner",
         "backupOwner",
         "baselineEvidenceReference",
+        "approval",
         "alertTest",
       ],
       monitoringCode,
     );
     if (
       ![
-        signal.warningThreshold,
-        signal.criticalThreshold,
         signal.destination,
         signal.primaryOwner,
         signal.backupOwner,
         signal.baselineEvidenceReference,
-      ].every((value) => isResolvedText(value))
+      ].every((value) => isResolvedText(value)) ||
+      signal.primaryOwner === signal.backupOwner
     ) {
       fail(monitoringCode);
     }
+    validateMonitoringRules(signal.rules, {
+      signalId,
+      code: monitoringCode,
+    });
+    validateApproval(signal.approval);
     validatePassingEvidence(signal.alertTest, monitoringCode);
   }
   requireExactKeys(
@@ -1206,12 +1645,17 @@ function validateReleaseControl(
     !isResolvedText(control.rollback.decisionOwner) ||
     !isUtcTimestamp(control.rollback.decisionAtUtc) ||
     !isResolvedText(control.rollback.schemaSafetyEvidenceReference) ||
+    control.rollback.schemaSafetyEvidenceReference !==
+      control.backupRecovery.previousApiCompatibilityEvidenceReference ||
     control.rollback.previousApplicationRevision !==
       control.deployments.previousProductionApiRevision ||
     control.rollback.previousPublicLegalRevision !==
       control.deployments.previousPublicLegalRevision ||
     !isResolvedText(control.rollback.databaseRecoveryPointReference) ||
-    !isResolvedText(control.rollback.runbookReference)
+    control.rollback.databaseRecoveryPointReference !==
+      control.backupRecovery.recoveryPoint.evidenceReference ||
+    !isResolvedText(control.rollback.runbookReference) ||
+    Date.parse(control.rollback.decisionAtUtc) < productionMigrationCompleted
   ) {
     fail(rollbackCode);
   }
@@ -1259,6 +1703,7 @@ export function validateReleaseManifestContent({
   expectedBuildSha,
   exactBuildEvidence,
   expectedDatabaseMigrationRevision,
+  expectedMigrationComparison,
   clock = () => new Date(),
 }) {
   if (
@@ -1299,6 +1744,7 @@ export function validateReleaseManifestContent({
     expectedBuildSha,
     exactBuildEvidence,
     expectedDatabaseMigrationRevision,
+    expectedMigrationComparison,
     validationTimeMilliseconds,
   );
   return Object.freeze({
@@ -1313,7 +1759,7 @@ function verifyReleaseManifest({
   repoRoot,
   expectedBuildSha,
   exactBuildEvidence,
-  expectedDatabaseMigrationRevision,
+  expectedDatabaseMigrationState,
   clock,
 }) {
   const manifestBytes = gitBlob(repoRoot, evidenceCommit, manifestPath);
@@ -1323,14 +1769,19 @@ function verifyReleaseManifest({
   const expected = Buffer.from(`${digest}  ${manifestPath}\n`, "utf8");
   if (!checksumBytes.equals(expected))
     fail("release_manifest_checksum_invalid");
+  const control = parseReleaseControl(manifestBytes.toString("utf8"));
+  const expectedMigrationComparison =
+    derivePreviousProductionMigrationComparison({
+      declaredBaseline: control?.deployments?.previousProductionMigration,
+    });
   const releaseManifest = validateReleaseManifestContent({
     manifestBytes,
     expectedBuildSha,
     exactBuildEvidence,
-    expectedDatabaseMigrationRevision,
+    expectedDatabaseMigrationRevision: expectedDatabaseMigrationState.revision,
+    expectedMigrationComparison,
     clock,
   });
-  const control = parseReleaseControl(manifestBytes.toString("utf8"));
   return Object.freeze({
     ...releaseManifest,
     finalizedAtUtc: control.finalizedAtUtc,
@@ -1678,7 +2129,7 @@ function verifyEvidenceCommit({
   repoRoot,
   expectedBuildSha,
   exactBuildEvidence,
-  expectedDatabaseMigrationRevision,
+  expectedDatabaseMigrationState,
   clock,
   phase,
   priorEvidence = null,
@@ -1772,7 +2223,7 @@ function verifyEvidenceCommit({
     repoRoot,
     expectedBuildSha,
     exactBuildEvidence,
-    expectedDatabaseMigrationRevision,
+    expectedDatabaseMigrationState,
     clock,
   });
   const shouldReadEvidenceSubmission =
@@ -1936,7 +2387,7 @@ export function verifyPostBuildEvidenceBoundary({
     [0, 1, 128],
   );
   if (buildLookup.status !== 0) fail("build_sha_not_a_commit");
-  const expectedDatabaseMigrationRevision = databaseMigrationRevisionAtBuild(
+  const expectedDatabaseMigrationState = databaseMigrationStateAtBuild(
     resolvedRoot,
     expectedBuildSha,
   );
@@ -1950,7 +2401,7 @@ export function verifyPostBuildEvidenceBoundary({
       repoRoot: resolvedRoot,
       expectedBuildSha,
       exactBuildEvidence: testFlight.exactBuildEvidence,
-      expectedDatabaseMigrationRevision,
+      expectedDatabaseMigrationState,
       clock,
       phase: "initial",
     });
@@ -1987,7 +2438,7 @@ export function verifyPostBuildEvidenceBoundary({
       repoRoot: resolvedRoot,
       expectedBuildSha,
       exactBuildEvidence: appReviewTestFlight.exactBuildEvidence,
-      expectedDatabaseMigrationRevision,
+      expectedDatabaseMigrationState,
       clock,
       phase: "initial",
     });
@@ -2001,7 +2452,7 @@ export function verifyPostBuildEvidenceBoundary({
       repoRoot: resolvedRoot,
       expectedBuildSha,
       exactBuildEvidence: testFlight.exactBuildEvidence,
-      expectedDatabaseMigrationRevision,
+      expectedDatabaseMigrationState,
       clock,
       phase: "public_release",
       priorEvidence: appReviewEvidence,

@@ -263,8 +263,10 @@ build.
 
 Use one canonical build identity everywhere: app version, Apple build number,
 full Git commit, EAS build ID, and App Store Connect build ID. The TestFlight,
-App Review, screenshot, subscription, and accessibility records must match all
-five fields. For every screenshot PII approval, record the reviewed file's
+App Review, screenshot, and subscription records must match all five fields.
+If accessibility labels are later evaluated and published, their records must
+also match all five fields; voluntary omission has no accessibility-label build
+identity to bind. For every screenshot PII approval, record the reviewed file's
 SHA-256; changing the bytes invalidates the approval. The App Store Connect IAP
 review upload must use the approved bytes for shot `07-subscription-offer` and
 record that same hash.
@@ -298,24 +300,30 @@ file's pixel dimensions before upload.
 
 ### Shot list
 
-| Order/slug                   | Built route and prepared state                                        | Required visible evidence                                                                                                                                         | Intended use                                                      |
-| ---------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `01-today-next-action`       | `/today`; full-access account, onboarding complete, empty current day | Greeting with display name `Reviewer`, **NEXT**, **Log your morning weigh-in**, weight field, **Settings**                                                        | Listing candidate and review evidence                             |
-| `02-today-weigh-in-complete` | `/today`; current-day synthetic weigh-in saved, no meals              | **Build your first balanced meal**, **Open balanced meals**, and **WEIGH-IN COMPLETE**                                                                            | Listing candidate                                                 |
-| `03-balanced-options`        | `/meal-one`; no pending recovery marker                               | **Build your first balanced meal**, **Balanced options**, and only the actual curated meal cards                                                                  | Listing candidate                                                 |
-| `04-meal-preview`            | `/meal-one`; **Lemon Herb Chicken Grain Bowl** selected               | **YOUR MEAL**, serving control, estimated calories/protein/carbs/fat/fiber, estimate warning, and log button                                                      | Listing candidate                                                 |
-| `05-today-nutrition-logged`  | `/today`; one synthetic meal logged                                   | **NUTRITION LOGGED**, actual estimated totals, meal count/fiber, and **Review logged meals**                                                                      | Listing candidate                                                 |
-| `06-logged-meal-controls`    | `/meal-one`; one meal logged                                          | **Logged today**, actual totals, meal name, serving, **Adjust serving**, and **Delete**                                                                           | Optional listing candidate and review evidence                    |
-| `07-subscription-offer`      | `/subscription`; eligible unpaid account and StoreKit catalog loaded  | **Make the next choice simple.**, real plan title/localized price/period/intro text, **Continue —**, Restore, Manage, renewal disclosure, and legal/support links | IAP review screenshot/evidence; listing only after owner approval |
-| `08-adult-eligibility`       | `/adult-eligibility`; unverified account, empty fields                | **Confirm you're 18 or older**, transient-date disclosure, date fields, Privacy Policy, **Confirm age**, account/sign-out controls                                | Review evidence; listing only after owner approval                |
-| `09-settings-controls`       | `/settings`; active full-access account                               | Active Pro state, Restore, Manage, legal/support links, separate-billing deletion warning, **Delete account**                                                     | Review evidence                                                   |
-| `10-sign-up-18plus`          | `/sign-up`; no text entered                                           | **Create your account**, 18+ notice/checkbox, Terms, Privacy, and disabled create action                                                                          | Optional review evidence; never expose an email or code           |
+| Order/slug                   | Built route and prepared state                                        | Required visible evidence                                                                                                                                         | Intended use                                            |
+| ---------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `01-today-next-action`       | `/today`; full-access account, onboarding complete, empty current day | Greeting with display name `Reviewer`, **NEXT**, **Log your morning weigh-in**, weight field, **Settings**                                                        | Listing candidate and review evidence                   |
+| `02-today-weigh-in-complete` | `/today`; current-day synthetic weigh-in saved, no meals              | **Build your first balanced meal**, **Open balanced meals**, and **WEIGH-IN COMPLETE**                                                                            | Optional listing candidate                              |
+| `03-balanced-options`        | `/meal-one`; no pending recovery marker                               | **Build your first balanced meal**, **Balanced options**, and only the actual curated meal cards                                                                  | Optional listing candidate                              |
+| `04-meal-preview`            | `/meal-one`; **Lemon Herb Chicken Grain Bowl** selected               | **YOUR MEAL**, serving control, estimated calories/protein/carbs/fat/fiber, estimate warning, and log button                                                      | Optional listing candidate                              |
+| `05-today-nutrition-logged`  | `/today`; one synthetic meal logged                                   | **NUTRITION LOGGED**, actual estimated totals, meal count/fiber, and **Review logged meals**                                                                      | Optional listing candidate                              |
+| `06-logged-meal-controls`    | `/meal-one`; one meal logged                                          | **Logged today**, actual totals, meal name, serving, **Adjust serving**, and **Delete**                                                                           | Optional listing candidate                              |
+| `07-subscription-offer`      | `/subscription`; eligible unpaid account and StoreKit catalog loaded  | **Make the next choice simple.**, real plan title/localized price/period/intro text, **Continue —**, Restore, Manage, renewal disclosure, and legal/support links | Selected listing and IAP review screenshot              |
+| `08-adult-eligibility`       | `/adult-eligibility`; unverified account, empty fields                | **Confirm you're 18 or older**, transient-date disclosure, date fields, Privacy Policy, **Confirm age**, account/sign-out controls                                | Review evidence; listing only after owner approval      |
+| `09-settings-controls`       | `/settings`; active full-access account                               | Active Pro state, Restore, Manage, legal/support links, separate-billing deletion warning, **Delete account**                                                     | Review evidence                                         |
+| `10-sign-up-18plus`          | `/sign-up`; no text entered                                           | **Create your account**, 18+ notice/checkbox, Terms, Privacy, and disabled create action                                                                          | Optional review evidence; never expose an email or code |
 
 Select the final public screenshot subset only after checking the current App
 Store Connect slot count and owner-approved ordering. Any marketing caption or
 frame added after raw capture must remain truthful to the shown screen and
 must not cover price, legal disclosure, allergy/estimate language, or system
 status. Keep the raw unedited captures in the release record.
+
+For the fastest truthful v1 submission, the manifest selects two public
+screenshots—01 for core use and 07 for the paid offer—and reuses shot 07 as the
+required in-app-purchase review screenshot. Shots 02 through 06 are optional
+marketing candidates; 08 through 10 are optional internal review aids. Their
+absence cannot block submission.
 
 ## App Review notes draft
 
@@ -495,9 +503,9 @@ Submit for Review**.
       SHA; and current-clock validation plus production probes are fresh before
       **Submit for Review**.
 - [ ] RevenueCat's Apple app/bundle, Apple credentials, product mapping,
-      `CUT_OS_PRO`, current offering/package, public iOS key, server v2 key/
-      resource IDs, and Server Notifications v2 endpoints are verified in both
-      sandbox and production.
+      `CUT_OS_PRO`, current offering/package, public iOS key, and server v2 key/
+      resource IDs are verified. Optional App Store Server Notifications are
+      not configured for initial release and are not represented as evidence.
 - [ ] The production API/database/Clerk/RevenueCat combination is deployed,
       migration-current, monitored, and available; no development, test-store,
       or placeholder value is in the release build.

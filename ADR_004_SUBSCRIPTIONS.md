@@ -138,7 +138,8 @@ and actual production SDK configuration remain the final evidence.
 - Active Paid Apps Agreement, tax, and banking.
 - One subscription group and the owner-approved products/prices.
 - RevenueCat iOS app, Apple credentials, `CUT_OS_PRO` entitlement, current
-  offering/packages, and Apple Server Notifications v2.
+  offering/packages. Optional Apple Server Notifications v2 may be configured
+  after launch using RevenueCat's production endpoint.
 - Production EAS public RevenueCat SDK key and server-only RevenueCat v2 key,
   plus project, entitlement, iOS app, and current-offering resource IDs.
 - First subscription submitted together with the app version.

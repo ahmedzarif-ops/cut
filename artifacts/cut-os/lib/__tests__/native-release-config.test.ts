@@ -1,4 +1,7 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { dirname } from "node:path";
 import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -19,6 +22,12 @@ const nodeVersion = readFileSync(
   resolve(process.cwd(), "..", "..", ".node-version"),
   "utf8",
 ).trim();
+const require = createRequire(import.meta.url);
+const expoAutolinkingCli = resolve(
+  dirname(require.resolve("expo/package.json")),
+  "bin",
+  "autolinking",
+);
 
 describe("native release configuration", () => {
   it("locks the App Store identity, device support, and icon", () => {
@@ -56,10 +65,42 @@ describe("native release configuration", () => {
   });
 
   it("applies Clerk's native build requirements without advertising unused Apple sign-in", () => {
+    expect(packageConfig.devDependencies["@clerk/expo"]).toBe("4.2.0");
     expect(appConfig.expo.plugins).toContainEqual([
       "@clerk/expo",
       { appleSignIn: false },
     ]);
+  });
+
+  it("keeps Clerk's optional Google Sign-In SDK out of native autolinking", () => {
+    expect(
+      packageConfig.dependencies?.["@clerk/expo-google-signin"],
+    ).toBeUndefined();
+    expect(
+      packageConfig.devDependencies?.["@clerk/expo-google-signin"],
+    ).toBeUndefined();
+
+    const autolinking = JSON.parse(
+      execFileSync(
+        process.execPath,
+        [expoAutolinkingCli, "resolve", "--platform", "apple", "--json"],
+        {
+          cwd: process.cwd(),
+          encoding: "utf8",
+        },
+      ),
+    ) as {
+      modules: Array<{
+        packageName: string;
+        pods?: Array<{ podName: string }>;
+      }>;
+    };
+    const clerkPods = autolinking.modules
+      .filter(({ packageName }) => packageName === "@clerk/expo")
+      .flatMap(({ pods = [] }) => pods.map(({ podName }) => podName));
+
+    expect(clerkPods).toEqual(["ClerkExpo"]);
+    expect(clerkPods).not.toContain("ClerkGoogleSignIn");
   });
 
   it("uses the dark launch background behind the full-canvas app icon", () => {
@@ -68,6 +109,9 @@ describe("native release configuration", () => {
       resizeMode: "contain",
       backgroundColor: "#07111F",
     });
+    expect(appConfig.expo.ios.infoPlist.UIStatusBarStyle).toBe(
+      "UIStatusBarStyleLightContent",
+    );
   });
 
   it("declares first-party collection as linked and never tracked", () => {

@@ -100,8 +100,9 @@ social features. Those are backlog, not submission truth.
       requires coordinated source, release-record, configuration, and test
       updates before a signed build.
 - [x] Owner approved a free app download and Family Sharing disabled.
-- [ ] Approve the standard-versus-custom EULA, app and subscription tax
-      categories, and DSA position.
+- [ ] Approve the standard-versus-custom EULA, app tax category, and DSA
+      position. The subscription inherits the app category unless an explicit
+      override is later approved.
 - [x] The Subscription Group Reference Name, Subscription Product Reference
       Name, English (U.S.) group/product display names, exact 45-character
       replacement description, and `use_app_name` option are recorded. The
@@ -132,10 +133,11 @@ social features. Those are backlog, not submission truth.
 - [ ] Create the first auto-renewable subscription and group, then attach both
       the product and build to the same first review submission.
 - [ ] Create/verify the RevenueCat iOS app, Apple credentials, product mapping,
-      exact `CUT_OS_PRO` entitlement, current/default offering, and Apple Server
-      Notifications v2 sandbox/production URLs.
-- [ ] Configure and verify App Store Server Notifications in App Store Connect;
-      record the production and sandbox URLs and non-secret evidence reference.
+      exact `CUT_OS_PRO` entitlement, and current/default offering.
+- [x] Record the initial-release omission of optional App Store Server
+      Notifications. If configured later, use RevenueCat's production URL and
+      retain non-secret evidence; Apple permits the sandbox URL to remain empty
+      and route sandbox notifications to the production URL.
 - [x] Link the app config to the existing `@zee-digipit/cut` Expo/EAS project.
 - [ ] Authenticate the local EAS CLI and verify Apple signing credentials.
 - [ ] Deploy the production API/database/Clerk combination and server-only
@@ -172,9 +174,11 @@ social features. Those are backlog, not submission truth.
       RGB icon candidate and use it for the app icon, splash, and favicon.
 - [ ] Verify the icon and splash on the native release build and obtain final
       owner approval.
-- [ ] Capture screenshots from the actual release build: adult gate,
-      subscription screen, Today/next action, weigh-in, meal choices/log, and
-      Settings. Do not mock unbuilt screens.
+- [ ] Capture the two selected launch screenshots from the actual release build:
+      core use (`01`) and the paid subscription offer (`07`), with shot `07`
+      reused for in-app-purchase review. The remaining planned captures are
+      optional marketing or internal review aids, not release blockers. Do not
+      mock unbuilt screens.
 - [ ] Owner/reviewers approve the focused copy in `APP_STORE_METADATA.md`.
 - [ ] Complete the current age-rating questionnaire truthfully, choose Health &
       Fitness if still accurate, do not mark Made for Kids, and apply the
@@ -207,14 +211,11 @@ social features. Those are backlog, not submission truth.
       watch, the security owner is backup, and the maximum response is 15
       minutes. Keep credentials outside the repository and record only aliases,
       UTC, and non-secret evidence.
-- [ ] Complete the iPhone Accessibility Nutrition Label evaluation across the
-      recorded common tasks and all nine Apple feature labels. A supported
-      feature must cover every canonical common task; only Captions and Audio
-      Descriptions may be not applicable because there is no media. Save the
-      verified App Store Connect decision. Record whether verified support or
-      support-not-indicated was actually confirmed in App Store Connect, its
-      UTC save time, controlled evidence reference, and attributable approval.
-      A draft selection does not pass. Do not infer support.
+- [x] Record that voluntary Accessibility Nutrition Labels will not be reported
+      for the initial release. Do not claim support or fabricate App Store
+      Connect evidence. Physical-iPhone accessibility QA remains required. If
+      labels are published later, evaluate every common task and applicable
+      feature on the exact build and retain attributable evidence.
 - [ ] Keep the production backend, Clerk, RevenueCat, and public pages live
       throughout review.
 
@@ -241,9 +242,11 @@ social features. Those are backlog, not submission truth.
       including version, Apple build number, full Git commit, EAS build ID, and
       App Store Connect build ID, plus internal group, feedback email, QA
       references, and approvals. Bind that same identity to App Review,
-      screenshots, subscription, accessibility, and listing exact-build claims
-      review. If external testers are added, complete TestFlight App Review
-      contact, demo access, and notes first.
+      screenshots, subscription, and listing exact-build claims review. Bind
+      accessibility-label evidence only if labels are later published; the
+      initial voluntary omission must retain no such evidence. If external
+      testers are added, complete TestFlight App Review contact, demo access,
+      and notes first.
 - [ ] Final `.xcarchive` privacy report, embedded SDK inventory, `Info.plist`,
       export-compliance answer, and required-reason APIs are reconciled.
 - [ ] Every selected screenshot is an opaque accepted-size PNG whose SHA-256,
@@ -290,7 +293,8 @@ social features. Those are backlog, not submission truth.
    including Guideline 5.1.1(ix), before submission.
 3. Owner completes financial/store decisions and service credentials.
 4. Publish approved legal/support pages and deploy the production backend.
-5. Configure App Store products, RevenueCat, EAS, and Apple notifications.
+5. Configure App Store products, RevenueCat, and EAS. Optional Apple
+   notifications may be added later without blocking the first submission.
 6. Build a native development client; pass Apple Sandbox purchase QA.
 7. Upload internal TestFlight; pass the critical matrix on real devices.
 8. Finish privacy, nutrition, legal, icon, screenshots, metadata, initial

@@ -28,7 +28,12 @@ post-action probe must be `PASS`. Every approval must be `APPROVED`, except
 UTC timestamp, and evidence reference. `eas_upload` may be `NOT_APPLICABLE` only
 for a `staging` target where no upload occurred; every upload-bearing target
 requires `APPROVED`. The deployment EAS and App Store Connect build IDs must
-exactly match the TestFlight evidence record.
+exactly match the TestFlight evidence record. The
+`app_store_server_notifications_decision` and `accessibility_label_decision`
+approvals authorize the matching machine-recorded decision. For the initial
+voluntary omissions, their evidence references point to attributable owner
+authorization for omission; they must not claim a configured notification URL,
+an Accessibility Nutrition Label save, or provider evidence that does not exist.
 
 Use UTC ISO-8601 timestamps with `Z`; whole seconds or fractional seconds are
 accepted. Except for `restoreDrillAtUtc`, every evidence timestamp must be on or
@@ -63,6 +68,15 @@ than 90 days old at finalization.
       "tag": "<latest BUILD_SHA Drizzle migration tag>",
       "createdAt": "<latest BUILD_SHA Drizzle journal epoch milliseconds>",
       "sha256": "<lowercase SHA-256 of the latest BUILD_SHA migration SQL>"
+    },
+    "previousProductionMigration": {
+      "state": "initial_launch",
+      "productionApiRevision": null,
+      "buildGitSha": null,
+      "databaseMigrationRevision": null,
+      "verifiedBy": "<name or approved role alias>",
+      "verifiedAtUtc": "<UTC>",
+      "evidenceReference": "<initial-launch approval evidence>"
     },
     "replitProductionHosting": {
       "provider": "replit",
@@ -288,18 +302,18 @@ than 90 days old at finalization.
       "evidenceReference": "<reference>",
       "notApplicableReason": null
     },
-    "app_store_server_notifications": {
+    "app_store_server_notifications_decision": {
       "decision": "<APPROVED>",
       "approver": "<name/role>",
       "atUtc": "<UTC>",
-      "evidenceReference": "<reference>",
+      "evidenceReference": "<owner authorization for the recorded omission or configured-endpoint decision>",
       "notApplicableReason": null
     },
-    "accessibility_label": {
+    "accessibility_label_decision": {
       "decision": "<APPROVED>",
       "approver": "<name/role>",
       "atUtc": "<UTC>",
-      "evidenceReference": "<reference>",
+      "evidenceReference": "<owner authorization for the recorded voluntary-omission or publication decision>",
       "notApplicableReason": null
     },
     "testflight_scope": {
@@ -318,6 +332,12 @@ than 90 days old at finalization.
     }
   },
   "backupRecovery": {
+    "migrationClassification": {
+      "class": "destructive_incompatible",
+      "classifiedBy": "<name/role>",
+      "atUtc": "<UTC>",
+      "evidenceReference": "<reference>"
+    },
     "migrationRehearsal": {
       "status": "<PASS>",
       "atUtc": "<UTC>",
@@ -328,8 +348,31 @@ than 90 days old at finalization.
       "atUtc": "<UTC>",
       "evidenceReference": "<reference>"
     },
+    "productionMigrationWindow": {
+      "productionApiRevision": "<exact deployments.productionApiRevision>",
+      "buildGitSha": "<exact 40 lowercase hex BUILD_SHA>",
+      "databaseId": "<exact replitProductionHosting.databaseId>",
+      "databaseMigrationRevision": {
+        "tag": "<exact deployments.databaseMigrationRevision.tag>",
+        "createdAt": "<exact deployments.databaseMigrationRevision.createdAt integer>",
+        "sha256": "<exact deployments.databaseMigrationRevision.sha256>"
+      },
+      "startedAtUtc": "<UTC>",
+      "completedAtUtc": "<UTC>",
+      "evidenceReference": "<sanitized production startup-migration evidence>"
+    },
+    "writesQuiesced": {
+      "mode": "initial_launch_no_prior_writes",
+      "atUtc": "<UTC>",
+      "verifiedBy": "<name or approved role alias>",
+      "evidenceReference": "<controlled evidence that production has no prior writes>"
+    },
     "backupCoverageAtUtc": "<UTC>",
     "backupEvidenceReference": "<reference>",
+    "recoveryPoint": {
+      "atUtc": "<UTC>",
+      "evidenceReference": "<reference>"
+    },
     "restoreDrillAtUtc": "<UTC>",
     "restoreDrillEvidenceReference": "<reference>",
     "rpo": "<approved value>",
@@ -341,8 +384,18 @@ than 90 days old at finalization.
       "evidenceReference": "<reference>",
       "notApplicableReason": null
     },
-    "rollForwardProcedureReference": "<reference>",
-    "coordinatedRestoreProcedureReference": "<reference>",
+    "previousApiCompatible": false,
+    "previousApiCompatibilityEvidenceReference": "<reference>",
+    "rollForwardProcedure": {
+      "status": "<PASS>",
+      "atUtc": "<UTC>",
+      "evidenceReference": "<reference>"
+    },
+    "coordinatedRestoreProcedure": {
+      "status": "<PASS>",
+      "atUtc": "<UTC>",
+      "evidenceReference": "<reference>"
+    },
     "recoveryOwner": "<name/role>",
     "noConcurrentMigrationConfirmed": false,
     "schemaRollbackPolicyConfirmed": false
@@ -436,12 +489,34 @@ than 90 days old at finalization.
   "monitoring": {
     "signals": {
       "api_liveness": {
-        "warningThreshold": "<value/window>",
-        "criticalThreshold": "<value/window>",
+        "rules": {
+          "non200_count": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "count",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number greater than warning>",
+              "unit": "count",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          }
+        },
         "destination": "<destination>",
         "primaryOwner": "<owner>",
         "backupOwner": "<owner>",
         "baselineEvidenceReference": "<reference>",
+        "approval": {
+          "decision": "<APPROVED>",
+          "approver": "<name/role>",
+          "atUtc": "<UTC>",
+          "evidenceReference": "<reference>",
+          "notApplicableReason": null
+        },
         "alertTest": {
           "status": "<PASS>",
           "atUtc": "<UTC>",
@@ -449,12 +524,39 @@ than 90 days old at finalization.
         }
       },
       "api_readiness_latency": {
-        "warningThreshold": "<value/window>",
-        "criticalThreshold": "<value/window>",
+        "rules": {
+          "non200_event": {
+            "mode": "any_event",
+            "warning": null,
+            "critical": null
+          },
+          "latency_ms": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "milliseconds",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number greater than warning>",
+              "unit": "milliseconds",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          }
+        },
         "destination": "<destination>",
         "primaryOwner": "<owner>",
         "backupOwner": "<owner>",
         "baselineEvidenceReference": "<reference>",
+        "approval": {
+          "decision": "<APPROVED>",
+          "approver": "<name/role>",
+          "atUtc": "<UTC>",
+          "evidenceReference": "<reference>",
+          "notApplicableReason": null
+        },
         "alertTest": {
           "status": "<PASS>",
           "atUtc": "<UTC>",
@@ -462,12 +564,49 @@ than 90 days old at finalization.
         }
       },
       "api_errors_latency": {
-        "warningThreshold": "<value/window>",
-        "criticalThreshold": "<value/window>",
+        "rules": {
+          "five_xx_rate": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "percent",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<number greater than warning and at most 100>",
+              "unit": "percent",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          },
+          "latency_ms": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "milliseconds",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number greater than warning>",
+              "unit": "milliseconds",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          }
+        },
         "destination": "<destination>",
         "primaryOwner": "<owner>",
         "backupOwner": "<owner>",
         "baselineEvidenceReference": "<reference>",
+        "approval": {
+          "decision": "<APPROVED>",
+          "approver": "<name/role>",
+          "atUtc": "<UTC>",
+          "evidenceReference": "<reference>",
+          "notApplicableReason": null
+        },
         "alertTest": {
           "status": "<PASS>",
           "atUtc": "<UTC>",
@@ -475,12 +614,24 @@ than 90 days old at finalization.
         }
       },
       "startup_migration": {
-        "warningThreshold": "<value/window>",
-        "criticalThreshold": "<value/window>",
+        "rules": {
+          "startup_failure_event": {
+            "mode": "any_event",
+            "warning": null,
+            "critical": null
+          }
+        },
         "destination": "<destination>",
         "primaryOwner": "<owner>",
         "backupOwner": "<owner>",
         "baselineEvidenceReference": "<reference>",
+        "approval": {
+          "decision": "<APPROVED>",
+          "approver": "<name/role>",
+          "atUtc": "<UTC>",
+          "evidenceReference": "<reference>",
+          "notApplicableReason": null
+        },
         "alertTest": {
           "status": "<PASS>",
           "atUtc": "<UTC>",
@@ -488,12 +639,39 @@ than 90 days old at finalization.
         }
       },
       "auth_failures": {
-        "warningThreshold": "<value/window>",
-        "criticalThreshold": "<value/window>",
+        "rules": {
+          "unexpected_error_rate": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "percent",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<number greater than warning and at most 100>",
+              "unit": "percent",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          },
+          "auth_guard_failure_event": {
+            "mode": "any_event",
+            "warning": null,
+            "critical": null
+          }
+        },
         "destination": "<destination>",
         "primaryOwner": "<owner>",
         "backupOwner": "<owner>",
         "baselineEvidenceReference": "<reference>",
+        "approval": {
+          "decision": "<APPROVED>",
+          "approver": "<name/role>",
+          "atUtc": "<UTC>",
+          "evidenceReference": "<reference>",
+          "notApplicableReason": null
+        },
         "alertTest": {
           "status": "<PASS>",
           "atUtc": "<UTC>",
@@ -501,12 +679,44 @@ than 90 days old at finalization.
         }
       },
       "purchase_entitlement": {
-        "warningThreshold": "<value/window>",
-        "criticalThreshold": "<value/window>",
+        "rules": {
+          "provider_error_event": {
+            "mode": "any_event",
+            "warning": null,
+            "critical": null
+          },
+          "entitlement_anomaly_event": {
+            "mode": "any_event",
+            "warning": null,
+            "critical": null
+          },
+          "purchase_restore_failure_rate": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "percent",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<number greater than warning and at most 100>",
+              "unit": "percent",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          }
+        },
         "destination": "<destination>",
         "primaryOwner": "<owner>",
         "backupOwner": "<owner>",
         "baselineEvidenceReference": "<reference>",
+        "approval": {
+          "decision": "<APPROVED>",
+          "approver": "<name/role>",
+          "atUtc": "<UTC>",
+          "evidenceReference": "<reference>",
+          "notApplicableReason": null
+        },
         "alertTest": {
           "status": "<PASS>",
           "atUtc": "<UTC>",
@@ -514,12 +724,69 @@ than 90 days old at finalization.
         }
       },
       "account_deletion": {
-        "warningThreshold": "<value/window>",
-        "criticalThreshold": "<value/window>",
+        "rules": {
+          "worker_failure_event": {
+            "mode": "any_event",
+            "warning": null,
+            "critical": null
+          },
+          "request_failure_rate": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "percent",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<number greater than warning and at most 100>",
+              "unit": "percent",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          },
+          "pending_age_seconds": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "seconds",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number greater than warning>",
+              "unit": "seconds",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          },
+          "retry_count": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "count",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number greater than warning>",
+              "unit": "count",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          }
+        },
         "destination": "<destination>",
         "primaryOwner": "<owner>",
         "backupOwner": "<owner>",
         "baselineEvidenceReference": "<reference>",
+        "approval": {
+          "decision": "<APPROVED>",
+          "approver": "<name/role>",
+          "atUtc": "<UTC>",
+          "evidenceReference": "<reference>",
+          "notApplicableReason": null
+        },
         "alertTest": {
           "status": "<PASS>",
           "atUtc": "<UTC>",
@@ -527,12 +794,84 @@ than 90 days old at finalization.
         }
       },
       "database_backup": {
-        "warningThreshold": "<value/window>",
-        "criticalThreshold": "<value/window>",
+        "rules": {
+          "pool_saturation_ratio": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<number from 0 through 1>",
+              "unit": "ratio",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<number greater than warning and at most 1>",
+              "unit": "ratio",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          },
+          "lock_wait_ms": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "milliseconds",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number greater than warning>",
+              "unit": "milliseconds",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          },
+          "storage_usage_ratio": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<number from 0 through 1>",
+              "unit": "ratio",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<number greater than warning and at most 1>",
+              "unit": "ratio",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          },
+          "replication_lag_seconds": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "seconds",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number greater than warning>",
+              "unit": "seconds",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          },
+          "backup_failure_event": {
+            "mode": "any_event",
+            "warning": null,
+            "critical": null
+          }
+        },
         "destination": "<destination>",
         "primaryOwner": "<owner>",
         "backupOwner": "<owner>",
         "baselineEvidenceReference": "<reference>",
+        "approval": {
+          "decision": "<APPROVED>",
+          "approver": "<name/role>",
+          "atUtc": "<UTC>",
+          "evidenceReference": "<reference>",
+          "notApplicableReason": null
+        },
         "alertTest": {
           "status": "<PASS>",
           "atUtc": "<UTC>",
@@ -540,12 +879,49 @@ than 90 days old at finalization.
         }
       },
       "mobile_crash_hang": {
-        "warningThreshold": "<value/window>",
-        "criticalThreshold": "<value/window>",
+        "rules": {
+          "crash_hang_rate": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "percent",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<number greater than warning and at most 100>",
+              "unit": "percent",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          },
+          "critical_flow_failure_rate": {
+            "mode": "numeric",
+            "warning": {
+              "comparator": "greater_than_or_equal",
+              "value": "<nonnegative number>",
+              "unit": "percent",
+              "windowSeconds": "<positive integer>"
+            },
+            "critical": {
+              "comparator": "greater_than_or_equal",
+              "value": "<number greater than warning and at most 100>",
+              "unit": "percent",
+              "windowSeconds": "<same positive integer as warning>"
+            }
+          }
+        },
         "destination": "<destination>",
         "primaryOwner": "<owner>",
         "backupOwner": "<owner>",
         "baselineEvidenceReference": "<reference>",
+        "approval": {
+          "decision": "<APPROVED>",
+          "approver": "<name/role>",
+          "atUtc": "<UTC>",
+          "evidenceReference": "<reference>",
+          "notApplicableReason": null
+        },
         "alertTest": {
           "status": "<PASS>",
           "atUtc": "<UTC>",
@@ -553,12 +929,24 @@ than 90 days old at finalization.
         }
       },
       "legal_support": {
-        "warningThreshold": "<value/window>",
-        "criticalThreshold": "<value/window>",
+        "rules": {
+          "resource_failure_event": {
+            "mode": "any_event",
+            "warning": null,
+            "critical": null
+          }
+        },
         "destination": "<destination>",
         "primaryOwner": "<owner>",
         "backupOwner": "<owner>",
         "baselineEvidenceReference": "<reference>",
+        "approval": {
+          "decision": "<APPROVED>",
+          "approver": "<name/role>",
+          "atUtc": "<UTC>",
+          "evidenceReference": "<reference>",
+          "notApplicableReason": null
+        },
         "alertTest": {
           "status": "<PASS>",
           "atUtc": "<UTC>",
@@ -566,12 +954,24 @@ than 90 days old at finalization.
         }
       },
       "privacy_security": {
-        "warningThreshold": "<value/window>",
-        "criticalThreshold": "<value/window>",
+        "rules": {
+          "incident_event": {
+            "mode": "any_event",
+            "warning": null,
+            "critical": null
+          }
+        },
         "destination": "<destination>",
         "primaryOwner": "<owner>",
         "backupOwner": "<owner>",
         "baselineEvidenceReference": "<reference>",
+        "approval": {
+          "decision": "<APPROVED>",
+          "approver": "<name/role>",
+          "atUtc": "<UTC>",
+          "evidenceReference": "<reference>",
+          "notApplicableReason": null
+        },
         "alertTest": {
           "status": "<PASS>",
           "atUtc": "<UTC>",
@@ -593,10 +993,10 @@ than 90 days old at finalization.
     "selectedPath": "<NO_ACTION_HEALTHY>",
     "decisionOwner": "<name/role>",
     "decisionAtUtc": "<UTC>",
-    "schemaSafetyEvidenceReference": "<reference>",
+    "schemaSafetyEvidenceReference": "<must equal backupRecovery.previousApiCompatibilityEvidenceReference>",
     "previousApplicationRevision": "<must equal deployments.previousProductionApiRevision>",
     "previousPublicLegalRevision": "<must equal deployments.previousPublicLegalRevision>",
-    "databaseRecoveryPointReference": "<reference>",
+    "databaseRecoveryPointReference": "<must equal backupRecovery.recoveryPoint.evidenceReference>",
     "runbookReference": "<reference>",
     "postActionProbes": {
       "status": "<PASS>",
@@ -614,17 +1014,38 @@ Finalization rules:
 1. Resolve every angle-bracket placeholder in the canonical JSON and the two
    required `BUILD_SHA` acknowledgment lines below. Use
    `N/A — reason — approver` only where the JSON schema permits it.
-   Replace the quoted `databaseMigrationRevision.createdAt` placeholder with
-   the journal's positive integer literal, and replace all three quoted hosting
-   cost placeholders with integer-cent literals; do not leave them as strings.
+   Replace both quoted current-migration `createdAt` placeholders with the same
+   positive Drizzle journal integer, and replace all three quoted hosting cost
+   placeholders with integer-cent literals. Replace every numeric monitoring
+   `value` and `windowSeconds` placeholder with a JSON number; do not leave
+   numeric fields as strings. This v1 manifest accepts only the true
+   `initial_launch` state: leave all three previous-production identity fields
+   as JSON `null`, name the accountable initial-launch verifier, and retain
+   controlled initial-launch evidence. Do not select or type a `deployed`
+   baseline. A later schema must bind that state to an immutable prior finalized
+   public-release record before it can be accepted.
 2. In the one target manifest being finalized, set its human-readable status
    line and canonical JSON `status` to `FINAL`, set `finalizedAtUtc` to the
    actual current UTC time, and change both recovery confirmation booleans to
    `true`. Leave the other App Store target manifest in `DRAFT` until its own
-   phase. Do not future-date finalization.
+   phase. Set `previousApiCompatible` to `true` only when the closed migration
+   class is `none`; every completed migration class requires `false`. Do not
+   future-date finalization.
 3. Keep release-event evidence timestamps between `createdAtUtc` and
-   `finalizedAtUtc`. `restoreDrillAtUtc` may predate creation, but it must be
-   no more than 90 days old at finalization.
+   `finalizedAtUtc`. `restoreDrillAtUtc` may predate creation, but it must be no
+   more than 90 days old at finalization. The attributable
+   `writesQuiesced.atUtc` evidence must precede both the approved recovery point
+   and proven backup coverage. The recovery point must be no later than backup
+   coverage, and backup coverage must strictly precede
+   `productionMigrationWindow.startedAtUtc`. Recovery approval must be recorded
+   strictly after recovery-point selection and no later than migration start.
+   Migration completion must be no earlier than its start and no later than
+   both database-readiness and production API-readiness evidence. Baseline
+   verification, migration classification/rehearsal, restore drill, recovery
+   approval, and both roll-forward and coordinated-restore procedure evidence
+   must all be dated no later than migration start. The migration-window record
+   must repeat the exact production API revision, `BUILD_SHA`, Replit database
+   ID, and current migration tuple from the canonical deployment fields.
 4. Choose and check exactly one target-appropriate upload acknowledgment below,
    then delete the other line.
 5. From the repository root, compute the adjacent checksum using the exact
@@ -710,7 +1131,12 @@ second result table here.
 The canonical `approvals` object is the sole approval record. An upload-bearing
 target requires `approvals.eas_upload.decision` to be `APPROVED`. Submit for
 App Review and manual public release remain separate post-commit owner decisions
-recorded only in the external handoff.
+recorded only in the external handoff. Approval of
+`app_store_server_notifications_decision` or `accessibility_label_decision`
+means the owner approved the exact configured-or-omitted decision in the App
+Store submission record. When that record selects an initial voluntary omission,
+the approval evidence proves authorization of the omission only and is not App
+Store Connect or provider-configuration evidence.
 
 ## Environment identity — non-secret aliases only
 
@@ -753,13 +1179,41 @@ codes, passwords, response bodies, or raw timing samples.
 ## Database migration and recovery
 
 The canonical `deployments.databaseMigrationRevision` tuple binds the latest
-Drizzle journal tag, epoch, and SQL bytes at immutable `BUILD_SHA`. The
-`backupRecovery.databaseReadiness` and production API-readiness smoke evidence
-prove the deployed database matches it; the rest of `backupRecovery` is the
-backup, restore, RPO/RTO, and recovery-approval record.
+Drizzle journal tag, epoch, and SQL bytes at immutable `BUILD_SHA`.
+`deployments.previousProductionMigration` is closed to `initial_launch` in this
+v1 schema. All three identity fields must be JSON `null`, `verifiedBy` must
+identify the approver of the initial-launch evidence, both previous production
+revision fields must use attributable `N/A — reason — approver` values, and the
+class must be `destructive_incompatible`. A caller-selected `deployed` state is
+rejected. Supporting a later release requires a schema that selects and verifies
+an immutable prior finalized public-release record; an opaque reference or a
+self-consistent revision/SHA pair is not machine proof of what Replit served.
+
+The `backupRecovery.databaseReadiness` and production API-readiness smoke
+evidence prove the deployed database matches the current tuple; the rest of
+`backupRecovery` is the backup, restore, RPO/RTO, and recovery-approval record.
+`productionMigrationWindow` binds sanitized production startup evidence to the
+exact production API revision, current `BUILD_SHA`, Replit database ID, and
+current migration tuple. `writesQuiesced` is attributable evidence with the
+closed `initial_launch_no_prior_writes` mode, not a bare timestamp. The verifier
+requires write quiescence before the approved recovery point and proven backup
+coverage, requires coverage strictly before migration start, requires recovery
+approval strictly after recovery-point selection and no later than migration
+start, then requires migration completion before database readiness and the
+production readiness smoke check. A post-migration recovery point is not
+launch-safe evidence for a destructive change. The previous-baseline
+verification, migration classification, rehearsal, restore drill, recovery
+approval, roll-forward procedure, and coordinated restore procedure are
+prerequisites and must each be recorded at or before migration start.
+
+The accepted first production launch always uses
+`destructive_incompatible`, even for an empty database, and records
+`previousApiCompatible: false`. Application-only rollback is forbidden after
+migration completion. Bind the rollback record to the same compatibility
+evidence and approved recovery-point evidence used here.
 
 - [ ] No concurrent manual migration will run during API startup migration.
-- [ ] Previous API rollback is forbidden unless schema compatibility is proven.
+- [ ] Application-only rollback is forbidden after any completed database migration.
 
 ## Deployment identity and provenance
 
@@ -789,14 +1243,21 @@ evidence.
 ## Monitoring and escalation
 
 The canonical `monitoring` object is the sole threshold, ownership, alert-test,
-retention, escalation, and live-coverage record. Do not invent thresholds or add
-a second outcome table here.
+retention, escalation, and live-coverage record. Each signal has an exact closed
+`rules` map; all 24 atomic rules must remain present. Every numeric rule's
+comparator and unit are fixed by its ID, warning and critical use the same
+positive window, and critical must be strictly more severe. Zero-tolerance rules
+use `any_event` with null boundaries. Every signal requires distinct
+primary/backup owners and its own attributable approval covering every rule in
+that signal. Do not invent thresholds or add a second outcome table here.
 
 ## Rollback/roll-forward decision
 
 The canonical `rollback` object is the sole promotion and recovery-path record.
 The immutable passing release uses `NO_ACTION_HEALTHY`; any corrective action
-requires a new candidate and controlled incident record.
+requires a new candidate and controlled incident record. Its `decisionAtUtc` is
+the observed post-migration outcome and cannot predate migration completion; it
+does not replace the pre-migration `recoveryApproval` or procedure evidence.
 
 ## TestFlight and App Review handoff
 

@@ -89,9 +89,11 @@ preview builds skip those approved-publication checks.
    the App Store Connect API key and Apple in-app purchase/subscription key, map
    products to `CUT_OS_PRO`, create the current offering, and
    set **Project settings → General → Restore behavior** to **Transfer to new
-   App User ID** (including the sandbox override if one is enabled), then
-   configure Apple Server Notifications v2 with the full dashboard-issued
-   RevenueCat URL in both the sandbox and production App Store Connect fields.
+   App User ID** (including the sandbox override if one is enabled). App Store
+   Server Notifications are intentionally omitted for the initial release. If
+   configured later, use RevenueCat's full dashboard-issued production URL;
+   Apple's sandbox field may remain empty and route sandbox notifications to
+   the production URL.
 6. Create all eight production EAS variables above and the five server-only
    RevenueCat v2 values (`REVENUECAT_SECRET_API_KEY`,
    `REVENUECAT_PROJECT_ID`, `REVENUECAT_ENTITLEMENT_REST_ID`,
@@ -449,9 +451,11 @@ owner-approved internal TestFlight group. Exercise the exact-build adults-only,
 account-deletion, authentication, poor-network, relaunch, shared-device,
 purchase/restore, and accessibility matrices; capture and PII-review the final
 screenshots; save the subscription review screenshot; and record the App Store
-Connect build ID, saved age questionnaire/18+ override, saved Accessibility
-Nutrition Label decision, pricing, review-account, metadata, and approval
-evidence.
+Connect build ID, saved age questionnaire/18+ override, pricing,
+review-account, metadata, and approval evidence. The initial voluntary
+Accessibility Nutrition Label omission records only the approved omission
+decision and must not claim an App Store Connect save or exact-build label
+evidence. If labels are published later, add that saved exact-build evidence.
 
 For the `app_review` target, apply the owner/security-approved Clerk access
 window only after the exact internal TestFlight build exists: enable production

@@ -99,6 +99,8 @@
     "availability.distributionMethod.decision",
     "availability.appleSiliconMacAvailability.decision",
     "availability.appleVisionProAvailability.decision",
+    "accessibility.status",
+    "accessibility.appStoreConnectDecision.decision",
     "subscription.entitlementId",
     "subscription.subscriptionGroupReferenceName",
     "subscription.productReferenceName",
@@ -176,7 +178,7 @@
     },
     "appStoreServerNotifications": {
       "deliveryArchitecture": "revenuecat_direct",
-      "status": "pending_configuration",
+      "status": "not_configured_optional_for_initial_release",
       "productionUrl": null,
       "sandboxUrl": null,
       "evidenceReference": null
@@ -407,7 +409,7 @@
     }
   },
   "accessibility": {
-    "status": "pending_exact_build_common_task_evaluation",
+    "status": "not_reported_voluntary_for_initial_release",
     "device": "iPhone",
     "source": "https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/",
     "accessibilityUrl": null,
@@ -502,13 +504,13 @@
       }
     },
     "appStoreConnectDecision": {
-      "status": "pending",
-      "decision": null,
+      "status": "not_required_voluntary",
+      "decision": "not_reported_for_initial_release",
       "savedAtUtc": null,
       "evidenceReference": null
     },
     "approval": {
-      "owner": false,
+      "owner": true,
       "accessibilityReviewer": false,
       "exactBuildVerified": false,
       "appStoreConnectConfirmed": false

@@ -9,8 +9,8 @@
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
 - The agent must not self-merge the pull request; the owner merges or explicitly
   overrides that repository rule.
-- The current repository checkpoint passes **1,241 automated tests** (247 release
-  operations, 50 App Store, 33 domain, 4 database, 411 mobile, and 496 API), all
+- The current repository checkpoint passes **1,291 automated tests** (295 release
+  operations, 51 App Store, 33 domain, 4 database, 412 mobile, and 496 API), all
   TypeScript checks, generated-code drift, working App Store validation,
   changed-file formatting, `.replit`/migration parsing and drift checks, Expo
   dependency health, and the clean zero-JavaScript Replit production-build
@@ -25,9 +25,14 @@
   exact-build restore QA remain evidence gates. Database/migration and shutdown
   timeout relationships are cross-tested, and Metro gets only reviewed public
   values with dotenv loading forced off.
-- Target-aware strict validation currently rejects **281** unresolved gates for
-  `app_review` and **280** for `public_release`, covering external, owner, legal,
+- Target-aware strict validation currently rejects **216** unresolved gates for
+  `app_review` and **215** for `public_release`, covering external, owner, legal,
   exact-build, screenshot, and App Store Connect evidence.
+- Release evidence requires structured monitoring approvals and a closed,
+  recovery-bound migration classification; it forbids application-only rollback
+  after any completed migration. Native configuration also keeps the dark
+  launch-screen status bar readable and excludes Clerk's optional Google
+  Sign-In pod.
 - Clean Expo iOS prebuild and CocoaPods installation pass with fail-closed scene-
   lifecycle and iOS 17 pod-target plugins. An unsigned Xcode 27 Release app also
   compiled and remained alive on iOS 27 with an active `UIWindowScene`; this was
@@ -66,13 +71,14 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   verification.
 - The owner reports paying Apple's $99 membership fee. Apple activation and App
   Store Connect access remain pending; do not repeat the purchase.
-- RevenueCat is Test Store only. The proposed real offer is a free download with
+- RevenueCat is Test Store only. The owner-approved real offer is a free download with
   `com.zarifahmed.cut.pro.monthly` at $4.99/month, no trial, Family Sharing off,
-  United States only initially, and manual release. It is not approved yet.
-  Read-only inspection at `2026-08-04T09:06:49Z` showed Project Settings using
-  **Transfer to new App User ID** with no separate sandbox override, but
-  controlled production evidence and exact-build restore-after-deletion QA
-  remain open.
+  United States only initially, and manual release. Read-only inspection at
+  `2026-08-04T09:06:49Z` informally showed Project Settings using **Transfer to
+  new App User ID** with no separate sandbox override. That observation is not
+  the controlled production evidence: the machine record correctly remains
+  pending until attributable production evidence and exact-build
+  restore-after-deletion QA exist.
 
 ## RUNNING QUEUE
 
@@ -83,8 +89,10 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
    start a charge without the owner cost approval.
 3. Continue read-only Apple activation checks. After activation, verify the
    actual team/seller type before creating any App Store record.
-4. Obtain the owner's exact hosting-cap, paid-offer, seller/legal-identity, and
-   public legal contact/domain decisions.
+4. Obtain one unambiguous Replit hosting-cap decision. The offer, individual
+   seller path, `Zarif Ahmed` operator name, public email, U.S.-only/manual
+   release, and iPhone-only compatibility choices are already recorded and must
+   not be requested again. The provider domain follows if hosting is approved.
 5. Create production Clerk, Replit, App Store Connect, and RevenueCat records
    only after their prerequisites and owner-controlled approvals are satisfied.
 6. Build the exact signed TestFlight candidate and complete physical-iPhone
@@ -95,12 +103,12 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
 
 - Audience is adults age 18 and older under `adult-18-v1`.
 - Bundle ID is `com.zarifahmed.cut`.
-- The current proposed v1 subscription identifier is
-  `com.zarifahmed.cut.pro.monthly`; until the owner approves or changes the
-  offer, runtime fails closed and accepts only one `P1M`, no-introductory-offer
-  product mapped to `CUT_OS_PRO`. This is an engineering allowlist, not approval
-  to create the paid product. If the offer changes, update and reverify the
-  source, configuration, and tests before any signed build.
+- The approved v1 subscription identifier is
+  `com.zarifahmed.cut.pro.monthly`; runtime fails closed and accepts only one
+  $4.99 U.S. `P1M`, no-introductory-offer product mapped to `CUT_OS_PRO`.
+  App Store Connect creation remains pending Apple activation. If the offer
+  changes, update and reverify the owner decision, source, configuration, and
+  tests before any signed build.
 - Local StoreKit/RevenueCat state never grants paid access without the
   server-authoritative entitlement.
 - Exactly one always-on API machine is required until rate limiting and deletion
@@ -113,9 +121,10 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
 ## OWNER-CONTROLLED GATES
 
 - Replit approval phrase: **Approve Replit up to $20/month before tax**.
-- Exact first-offer approval or requested changes.
-- Apple seller/team choice after live activation, plus legal entity status.
-- Public legal operator, support/privacy email, domain, and state/country.
+- Activated Apple seller-name verification and Account Holder access.
+- Standard-versus-custom EULA, app tax category, optional subscription tax
+  override, DSA status, copyright holder/year, content-rights declaration, and
+  final product-name clearance.
 - Qualified legal/privacy and nutrition/allergen review.
 - Apple agreements, tax/banking, signing/2FA, App Review submission, and manual
   public release.

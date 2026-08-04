@@ -159,8 +159,8 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 1,241 tests** (release operations 247, App Store
-  artifacts 50, domain 33, database 4, mobile 411, API 496).
+- `pnpm run test`: **PASS — 1,291 tests** (release operations 295, App Store
+  artifacts 51, domain 33, database 4, mobile 412, API 496).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
@@ -174,9 +174,13 @@ native/App Store acceptance.
   provider or database calls. The public-site build remains zero-JavaScript and
   does not generate or require the development-only `static-build` preview.
 - App Store records: **PASS** in working mode; target-aware strict validation
-  intentionally rejects **281** unresolved requirements for `app_review` and
-  **280** for `public_release`, covering owner, provider, legal, screenshot,
+  intentionally rejects **216** unresolved requirements for `app_review` and
+  **215** for `public_release`, covering owner, provider, legal, screenshot,
   exact-build, and App Store Connect evidence.
+- Native release configuration: **PASS** — the generated iOS Info.plist uses a
+  light-content status bar over the dark splash, Clerk Expo is pinned to 4.2.0,
+  and Apple autolinking contains `ClerkExpo` without the optional Google Sign-In
+  pod.
 - Secret boundaries: **PASS** — 10 scanner tests, 731 tracked files with zero
   findings, and 62 production-export files with zero findings.
 - Production release-environment preflight: **PASS** with representative
@@ -243,8 +247,9 @@ more sensitive preference data:
 3. Publish owner/counsel-approved Privacy, Terms, and Support pages and supply
    their final HTTPS destinations to the production EAS environment.
 4. Complete RevenueCat email verification, create a least-privilege server v2
-   key, and configure the Apple public SDK key/notifications without exposing
-   secrets in the repository or binary.
+   key, and configure the Apple public SDK key without exposing secrets in the
+   repository or binary. Optional App Store Server Notifications can follow
+   after first release.
 5. Link the intended Apple and Expo/EAS projects, configure the eight validated
    production values, and create an internal TestFlight build.
 6. Complete native-device acceptance for `adult-18-v1`, including deep links,

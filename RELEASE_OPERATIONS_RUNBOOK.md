@@ -34,8 +34,10 @@ App Review, or release publicly without the recorded approval for that action.
 - Production API startup applies committed Drizzle migrations under an advisory
   lock and then requires the database's exact latest migration before binding.
   Do not run a separate migration command concurrently with an API rollout.
-- A database migration can make the prior API revision unable to become ready.
-  Never assume that rolling back only the application is safe after a migration.
+- Any completed new database migration makes the prior API revision unable to
+  pass its exact-latest readiness gate. Application-only rollback is available
+  only when no migration completed; otherwise roll forward or use the tested
+  coordinated database-and-application restore.
 - Promotion stops on any failed gate. A verbal assurance is not evidence.
 
 ## Required roles and records
@@ -168,10 +170,11 @@ implemented, durable managed scheduler or queue first.
 4. Record the exact environment aliases and provider deployment commands that
    the authorized owner will use. Do not leave a deploy command to improvisation
    during the release window.
-5. Record the previous known-good combined application deployment, the exact
-   BUILD_SHA-derived database-migration tuple, its approved recovery point, and
-   the previous mobile build. If any required identity is unknown, rollback is
-   not ready.
+5. For this first production launch, record the closed `initial_launch`
+   baseline and attributable approval described below. Do not invent a previous
+   deployment. This v1 record rejects a caller-selected `deployed` baseline;
+   future releases need a schema that selects and verifies an immutable prior
+   finalized public-release record.
 
 ## 2. Local and CI preflight
 
@@ -217,38 +220,74 @@ without printing values.
 
 ## 3. Classify the database change and prove recovery
 
-Read every migration introduced since the previous production deployment and
-choose exactly one class in the manifest:
+Set `deployments.previousProductionMigration.state` to `initial_launch`. Keep
+`productionApiRevision`, `buildGitSha`, and `databaseMigrationRevision` as JSON
+`null`; record attributable initial-launch approval and its approver in
+`verifiedBy`; and use attributable `N/A — reason — approver` values for both
+previous production application/legal revisions.
 
-- `none`: no committed migration is new.
-- `additive-compatible`: the old and new API revisions can both operate safely
-  against the migrated schema; compatibility is demonstrated in tests.
-- `state-changing`: a migration updates, backfills, or deletes stored values.
-- `destructive/incompatible`: a migration drops or renames a schema element,
-  irreversibly changes data, or makes the old API fail its exact-schema gate.
+The v1 verifier rejects `deployed` even if a caller supplies a plausible Git
+SHA, migration tuple, Replit revision, or opaque provider evidence reference.
+Repository-only equality cannot prove what Replit actually served. Supporting
+an existing-production baseline requires a later schema to select and verify an
+immutable prior finalized public-release record. Do not describe opaque
+evidence or self-consistent identity fields as cryptographic or provider-signed
+proof.
 
+Read every migration at the candidate `BUILD_SHA`. The accepted v1 first-launch
+record must use `destructive_incompatible`; no other classification is valid.
 The current chain includes state-changing and destructive work, including
 clearing stored email values, dropping `profiles.birth_year`, and neutralizing
 legacy profile values. Treat a first deployment of those migrations as
-`destructive/incompatible`, even if the intended production database is empty.
+`destructive_incompatible`, even if the intended production database is empty.
 
 Before staging, and again before production, the database recovery owner must
 record:
 
 - backup or point-in-time recovery mechanism and non-secret evidence reference;
-- backup/PITR coverage timestamp later than the final pre-deploy write cutoff;
+- structured `writesQuiesced` evidence in the exact
+  `initial_launch_no_prior_writes` mode, with UTC, verifier, and non-secret
+  evidence reference;
+- backup/PITR coverage timestamp later than write quiescence and strictly before
+  migration start;
+- the production startup-migration start and completion UTC timestamps plus one
+  sanitized controlled evidence reference, bound to the exact production API
+  revision, current `BUILD_SHA`, Replit database ID, and current migration
+  tuple; migration completion cannot precede start, and both database-readiness
+  evidence and the production API-readiness smoke must follow completion;
 - a successful restore drill no more than 90 days before manifest finalization,
   with its UTC timestamp and result;
 - owner-approved recovery point and recovery time objectives;
-- whether the previous API is compatible with the new schema;
-- a roll-forward candidate or a coordinated application-and-database restore
-  procedure; and
+- the closed migration class, classifier, UTC, and controlled evidence for the
+  candidate migration SQL;
+- `previousApiCompatible: false` for the first-launch state;
+- distinct passing evidence for a roll-forward procedure and a coordinated
+  application-and-database restore procedure; and
 - the person authorized to start recovery.
+
+The initial-launch baseline verification, migration classification, migration
+rehearsal, restore drill, recovery approval, roll-forward procedure, and
+coordinated restore procedure are recovery prerequisites. Each of their
+recorded UTC timestamps must be at or before
+`backupRecovery.productionMigrationWindow.startedAtUtc`. Do not start the
+migration and backfill these decisions afterward.
+
+Recovery approval is also ordered: it must be recorded strictly after the
+approved recovery point is selected and no later than migration start.
 
 If recovery has not been tested, the database contains unbacked writes, or the
 restore owner is unavailable, stop. Do not use `drizzle-kit push`, hand-edit the
 migration journal, delete migration rows, or apply a down migration during an
 incident.
+
+The enforced production sequence is:
+
+`attributable write quiescence < approved recovery point < recovery approval <= migration start; approved recovery point <= proven backup coverage < migration start <= migration completion <= database readiness and production readiness smoke`
+
+Do not infer migration timing from manifest finalization or deployment creation.
+Use the sanitized startup-migration control evidence. If the only approved
+recovery point or backup coverage was captured after migration started, stop and
+restore launch readiness before routing the candidate.
 
 ## 4. Stage the exact candidate
 
@@ -369,10 +408,14 @@ applicable with a reason:
   protocol for `artifacts/cut-os/AUTH_SECURITY_PRELAUNCH.md`;
 - owner-approved initial territories and every applicable US, EU/EEA, or UK
   regulated-medical-device declaration;
-- a current reconciliation of each selected two-letter repository storefront
-  code to Apple's active three-letter App Store Connect `Territory.id`, recorded
-  in `app-store/app-store-connect-territories.json` without adding or inferring
-  any territory;
+- saved App Store Connect evidence that the exact owner-approved initial
+  territories are selected, without adding or inferring any territory. The
+  repository's full storefront catalog is a translation aid, not a release
+  blocker;
+- attributable approval of the exact App Store Server Notifications and
+  Accessibility Nutrition Label decisions. For an initial voluntary omission,
+  the approval evidence proves the owner authorized omission; it must not claim
+  a provider endpoint or App Store Connect label save that does not exist;
 - prior known-good deployment identifiers; and
 - explicit authorization for any paid build/upload and production deployment.
 
@@ -388,8 +431,10 @@ Use the provider commands recorded and approved in the manifest; the repository
 does not guess a hosting command.
 
 1. Announce the change window to the recorded monitoring/incident owner.
-2. Confirm the recovery evidence is still current and record the final pre-deploy
-   backup/PITR timestamp.
+2. Confirm the recovery evidence is still current. Record attributable
+   `initial_launch_no_prior_writes` quiescence, then select the recovery point,
+   prove backup/PITR coverage, and obtain recovery approval in the enforced
+   order before migration starts.
 3. Deploy the one combined application candidate. Do not deploy a second
    public/legal process or origin. If the provider supports a no-traffic
    revision or canary, verify it before promotion; otherwise record that
@@ -453,22 +498,40 @@ does not guess a hosting command.
 Monitoring configuration and destinations require owner/provider access. They
 must exist before production; documentation alone is not monitoring. Derive
 numeric warning/critical thresholds from staging and capacity baselines, record
-them in the manifest, and name the approver. Until those fields are filled, the
-production gate remains closed.
+them with the exact closed rule ID, comparator, numeric value, unit, and positive
+window, and record a per-signal approval covering every rule in that signal.
+Warning and critical boundaries must use the same comparator/unit/window, with
+critical strictly more severe. Each rule below has one machine-enforced mode,
+comparator, and unit. Zero-tolerance rules use `any_event` rather than invented
+numbers. Until every rule is filled and tested, the production gate remains
+closed.
 
-| Signal              | Alert condition to approve before launch                                                                                                              | Required first action                                                               |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `/api/healthz`      | Non-200 for `[count/window]`                                                                                                                          | Check process/revision; stop promotion                                              |
-| `/api/readyz`       | Non-200 or latency above `[baseline + approved variance]`                                                                                             | Inspect database and migration status; stop traffic increase                        |
-| API 5xx and latency | Above `[approved rate/window]` or `[approved percentile]`                                                                                             | Compare with candidate deployment; apply rollback matrix                            |
-| API startup         | Any `database_unavailable`, `database_not_ready`, `migration_lock_timeout`, `migration_failed`, `migration_lock_release_failed`, or `startup_failed`  | Do not route candidate; determine whether migration ran                             |
-| Authentication      | Unexpected 401/5xx rate or `/api/me` no longer fails closed without auth                                                                              | Stop promotion; contain any access-control exposure                                 |
-| Subscription        | `subscription_status_provider_error`, unexpected entitlement state, purchase/restore failure above approved threshold, or a charged-but-locked report | Hold mobile promotion; preserve provider correlation evidence without customer data |
-| Account deletion    | `account_deletion_worker_failed`, request failures, or pending age/retry count above approved threshold                                               | Stop promotion; protect deletion records; start worker/provider triage              |
-| Database            | Connection/pool saturation, lock pressure, storage, replication, or backup failure beyond provider-approved threshold                                 | Stop writes/promotion as appropriate; engage recovery owner                         |
-| Mobile              | Crash/hang rate or critical flow failure above approved baseline                                                                                      | Stop TestFlight/App Store promotion; prepare corrected build                        |
-| Legal/support       | Public legal or support resource unavailable, redirected, draft, or hash-mismatched                                                                   | Stop submission/promotion; restore an approved compatible application revision      |
-| Privacy/security    | Any cross-user access, credential exposure, or sensitive health/nutrition data in logs/analytics                                                      | Immediate containment and incident escalation; no numeric threshold                 |
+| Canonical signal.rule                                | Enforced threshold contract | Alert condition to approve before launch                                                                                                             | Required first action                                                               |
+| ---------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `api_liveness.non200_count`                          | count `>=`                  | `/api/healthz` non-200 count over the approved window                                                                                                | Check process/revision; stop promotion                                              |
+| `api_readiness_latency.non200_event`                 | `any_event`                 | Any `/api/readyz` non-200                                                                                                                            | Inspect database and migration status; stop traffic increase                        |
+| `api_readiness_latency.latency_ms`                   | milliseconds `>=`           | `/api/readyz` latency above the approved baseline variance                                                                                           | Inspect database and migration status; stop traffic increase                        |
+| `api_errors_latency.five_xx_rate`                    | percent `>=`                | API 5xx rate above the approved rate/window                                                                                                          | Compare with candidate deployment; apply rollback matrix                            |
+| `api_errors_latency.latency_ms`                      | milliseconds `>=`           | API latency above the approved percentile boundary                                                                                                   | Compare with candidate deployment; apply rollback matrix                            |
+| `startup_migration.startup_failure_event`            | `any_event`                 | Any `database_unavailable`, `database_not_ready`, `migration_lock_timeout`, `migration_failed`, `migration_lock_release_failed`, or `startup_failed` | Do not route candidate; determine whether migration ran                             |
+| `auth_failures.unexpected_error_rate`                | percent `>=`                | Unexpected authentication 401/5xx rate                                                                                                               | Stop promotion; contain any access-control exposure                                 |
+| `auth_failures.auth_guard_failure_event`             | `any_event`                 | `/api/me` no longer fails closed without authentication                                                                                              | Stop promotion; contain any access-control exposure                                 |
+| `purchase_entitlement.provider_error_event`          | `any_event`                 | Any `subscription_status_provider_error`                                                                                                             | Hold mobile promotion; preserve provider correlation evidence without customer data |
+| `purchase_entitlement.entitlement_anomaly_event`     | `any_event`                 | Any unexpected entitlement state or charged-but-locked report                                                                                        | Hold mobile promotion; preserve provider correlation evidence without customer data |
+| `purchase_entitlement.purchase_restore_failure_rate` | percent `>=`                | Purchase/restore failure rate above the approved threshold                                                                                           | Hold mobile promotion; preserve provider correlation evidence without customer data |
+| `account_deletion.worker_failure_event`              | `any_event`                 | Any `account_deletion_worker_failed`                                                                                                                 | Stop promotion; protect deletion records; start worker/provider triage              |
+| `account_deletion.request_failure_rate`              | percent `>=`                | Account-deletion request failure rate above the approved threshold                                                                                   | Stop promotion; protect deletion records; start worker/provider triage              |
+| `account_deletion.pending_age_seconds`               | seconds `>=`                | Oldest pending deletion age above the approved threshold                                                                                             | Stop promotion; protect deletion records; start worker/provider triage              |
+| `account_deletion.retry_count`                       | count `>=`                  | Deletion retry count above the approved threshold                                                                                                    | Stop promotion; protect deletion records; start worker/provider triage              |
+| `database_backup.pool_saturation_ratio`              | ratio `>=`                  | Database connection/pool saturation above the provider-approved threshold                                                                            | Stop writes/promotion as appropriate; engage recovery owner                         |
+| `database_backup.lock_wait_ms`                       | milliseconds `>=`           | Database lock wait above the provider-approved threshold                                                                                             | Stop writes/promotion as appropriate; engage recovery owner                         |
+| `database_backup.storage_usage_ratio`                | ratio `>=`                  | Database storage usage above the provider-approved threshold                                                                                         | Stop writes/promotion as appropriate; engage recovery owner                         |
+| `database_backup.replication_lag_seconds`            | seconds `>=`                | Replication lag above the provider-approved threshold                                                                                                | Stop writes/promotion as appropriate; engage recovery owner                         |
+| `database_backup.backup_failure_event`               | `any_event`                 | Any production backup failure                                                                                                                        | Stop writes/promotion as appropriate; engage recovery owner                         |
+| `mobile_crash_hang.crash_hang_rate`                  | percent `>=`                | Crash/hang rate above the approved baseline                                                                                                          | Stop TestFlight/App Store promotion; prepare corrected build                        |
+| `mobile_crash_hang.critical_flow_failure_rate`       | percent `>=`                | Critical-flow failure rate above the approved baseline                                                                                               | Stop TestFlight/App Store promotion; prepare corrected build                        |
+| `legal_support.resource_failure_event`               | `any_event`                 | Public legal or support resource unavailable, redirected, draft, or hash-mismatched                                                                  | Stop submission/promotion; restore an approved compatible application revision      |
+| `privacy_security.incident_event`                    | `any_event`                 | Any cross-user access, credential exposure, or sensitive health/nutrition data in logs/analytics                                                     | Immediate containment and incident escalation                                       |
 
 Alerts must route to a tested destination with a primary and backup owner. Test
 the route without using customer data. Record acknowledgment and escalation
@@ -489,16 +552,22 @@ Decide the path from evidence, not pressure. Stop promotion immediately on:
 - any approved warning/critical monitoring threshold reached during the release
   window.
 
-| Observed state                                                                 | Safe response                                                                                                                                                                                                                |
-| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Candidate has not migrated production                                          | Route no traffic to it; redeploy the previous known-good combined application revision                                                                                                                                       |
-| Migration failed before a committed change                                     | Keep candidate out of service; prove database state and use the previous revision only if exact-schema readiness passes                                                                                                      |
-| Additive migration completed and compatibility with the prior app is proven    | Re-route to the recorded previous application revision, then verify public/legal/health/readiness/auth and data integrity                                                                                                    |
-| State-changing or destructive migration completed, or compatibility is unknown | Do **not** roll back only the application. Stop promotion/traffic or writes as the incident requires, then roll forward with a corrected compatible app or execute the tested coordinated database snapshot plus app restore |
-| Combined application's legal surface failed                                    | Stop promotion; use the application/database compatibility matrix before restoring a previous approved application revision, then rerun live legal/hash verification                                                         |
-| Internal TestFlight build failed                                               | Stop distribution to additional testers, notify the test owner, fix, increment the build number, and upload a new build; an installed build is not remotely replaced                                                         |
-| App Review submission is pending                                               | Owner decides whether to remove/hold the submission in App Store Connect; record the action                                                                                                                                  |
-| Public App Store binary is faulty                                              | Owner stops phased/manual promotion where available and prepares an expedited corrected version; a server rollback must still obey database compatibility                                                                    |
+| Observed state                                           | Safe response                                                                                                                                                                                                                          |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Candidate has not migrated production                    | Route no traffic to it; redeploy the previous known-good combined application revision                                                                                                                                                 |
+| Migration failed before a committed change               | Keep candidate out of service; prove database state and use the previous revision only if exact-schema readiness passes                                                                                                                |
+| Any migration completed, including an additive migration | Do **not** roll back only the application: the prior revision cannot pass exact-latest readiness. Stop promotion/traffic or writes as required, then roll forward or execute the tested coordinated database snapshot plus app restore |
+| Combined application's legal surface failed              | Stop promotion; use the application/database compatibility matrix before restoring a previous approved application revision, then rerun live legal/hash verification                                                                   |
+| Internal TestFlight build failed                         | Stop distribution to additional testers, notify the test owner, fix, increment the build number, and upload a new build; an installed build is not remotely replaced                                                                   |
+| App Review submission is pending                         | Owner decides whether to remove/hold the submission in App Store Connect; record the action                                                                                                                                            |
+| Public App Store binary is faulty                        | Owner stops phased/manual promotion where available and prepares an expedited corrected version; a server rollback must still obey database compatibility                                                                              |
+
+The pre-migration recovery approval and the two tested procedures authorize the
+available response paths before the migration starts. In contrast,
+`rollback.decisionAtUtc` records the observed release outcome and selected path
+after the migration action; it must not predate
+`backupRecovery.productionMigrationWindow.completedAtUtc`. Do not predeclare a
+healthy/no-action outcome to satisfy the release record.
 
 After any rollback or roll-forward:
 
@@ -567,8 +636,11 @@ The owner authorizes all Apple actions. Engineering may prepare the evidence:
    not satisfy this gate.
 10. In App Store Connect, select the exact processed build, choose **Manually
     release this version**, and save every required metadata, privacy, age,
-    accessibility, and App Review field. Record only controlled non-secret
-    confirmations and stop on any build mismatch.
+    and App Review field. Accessibility Nutrition Labels are voluntarily
+    omitted for the initial release; do not fabricate a saved label decision.
+    If labels are published later, save and bind their exact-build evidence.
+    Record only controlled non-secret confirmations and stop on any build
+    mismatch.
 11. With recorded owner authorization, use **Add for Review** on the app version
     to create or select one submission in **Drafts**. On the first subscription,
     choose **Add for Review**, select that existing draft, and add the unapproved
@@ -579,15 +651,18 @@ The owner authorizes all Apple actions. Engineering may prepare the evidence:
     reviewed for personal data, the listing exact-build claims review is bound to
     the same TestFlight identity, and every owner-controlled commercial/legal,
     metadata, privacy, full age-questionnaire, App Review account, subscription,
-    accessibility, and security field is evidenced and approved, remeasure the
-    resolved App Review Notes below 4,000 UTF-8 bytes. Complete the manifest's
+    physical-device accessibility QA, applicable accessibility-label decision,
+    and security field is evidenced and approved, remeasure the resolved App
+    Review Notes below 4,000 UTF-8 bytes. Complete the manifest's
     canonical `CUT_OS_RELEASE_CONTROL_V2` JSON block without changing its keys or
     fixed control IDs. This JSON is the sole editable release record; do not add
     parallel human-readable outcome or approval tables. It must bind the
     TestFlight build identities and contain
     passing automated, safety, recovery, smoke, monitoring/alert-test, and
     post-action evidence plus attributable approvals. Resolve every Markdown
-    placeholder and required checkbox. In
+    placeholder and required checkbox. In the initial voluntary Accessibility
+    Nutrition Label omission path, retain the approved omission decision but do
+    not create exact-build label evidence or claim an App Store Connect save. In
     `appReview.clerkReviewAccess.shutdownControl`, freeze distinct primary and
     backup owners, prove both have production Clerk access, select
     `exact_app_store_connect_submission` as the status source, enable monitoring

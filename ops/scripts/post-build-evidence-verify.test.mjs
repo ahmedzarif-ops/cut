@@ -48,12 +48,28 @@ const exactBuildIdentity = Object.freeze({
   appStoreConnectBuildId: "asc-build-01234567",
 });
 const databaseMigrationSql = "select 1;\n";
+const previousDatabaseMigrationSql = "select 0;\n";
+const previousDatabaseMigrationRevision = Object.freeze({
+  tag: "0009_previous_migration",
+  createdAt: 1785790799000,
+  sha256: createHash("sha256")
+    .update(Buffer.from(previousDatabaseMigrationSql, "utf8"))
+    .digest("hex"),
+});
 const databaseMigrationRevision = Object.freeze({
   tag: "0010_minimize_v1_profile",
   createdAt: 1785790800000,
   sha256: createHash("sha256")
     .update(Buffer.from(databaseMigrationSql, "utf8"))
     .digest("hex"),
+});
+const syntheticPreviousBuildSha = "b".repeat(40);
+const initialLaunchMigrationComparison = Object.freeze({
+  state: "initial_launch",
+  productionApiRevision: null,
+  buildGitSha: null,
+  databaseMigrationRevision: null,
+  hasNewMigrations: true,
 });
 const validationClock = () => new Date("2026-08-04T00:00:00Z");
 const productionPublicOrigin = "https://cut-production-public.com";
@@ -90,8 +106,8 @@ const approvalIds = [
   "authentication_recovery",
   "subscription_product",
   "commercial_config",
-  "app_store_server_notifications",
-  "accessibility_label",
+  "app_store_server_notifications_decision",
+  "accessibility_label_decision",
   "testflight_scope",
   "export_compliance",
 ];
@@ -127,19 +143,55 @@ const productionSmokeIds = [
   "review_account_critical_flow",
 ];
 
-const monitoringSignalIds = [
-  "api_liveness",
-  "api_readiness_latency",
-  "api_errors_latency",
-  "startup_migration",
-  "auth_failures",
-  "purchase_entitlement",
-  "account_deletion",
-  "database_backup",
-  "mobile_crash_hang",
-  "legal_support",
-  "privacy_security",
-];
+const monitoringSignalRuleContracts = {
+  api_liveness: {
+    non200_count: ["numeric", "count"],
+  },
+  api_readiness_latency: {
+    non200_event: ["any_event"],
+    latency_ms: ["numeric", "milliseconds"],
+  },
+  api_errors_latency: {
+    five_xx_rate: ["numeric", "percent"],
+    latency_ms: ["numeric", "milliseconds"],
+  },
+  startup_migration: {
+    startup_failure_event: ["any_event"],
+  },
+  auth_failures: {
+    unexpected_error_rate: ["numeric", "percent"],
+    auth_guard_failure_event: ["any_event"],
+  },
+  purchase_entitlement: {
+    provider_error_event: ["any_event"],
+    entitlement_anomaly_event: ["any_event"],
+    purchase_restore_failure_rate: ["numeric", "percent"],
+  },
+  account_deletion: {
+    worker_failure_event: ["any_event"],
+    request_failure_rate: ["numeric", "percent"],
+    pending_age_seconds: ["numeric", "seconds"],
+    retry_count: ["numeric", "count"],
+  },
+  database_backup: {
+    pool_saturation_ratio: ["numeric", "ratio"],
+    lock_wait_ms: ["numeric", "milliseconds"],
+    storage_usage_ratio: ["numeric", "ratio"],
+    replication_lag_seconds: ["numeric", "seconds"],
+    backup_failure_event: ["any_event"],
+  },
+  mobile_crash_hang: {
+    crash_hang_rate: ["numeric", "percent"],
+    critical_flow_failure_rate: ["numeric", "percent"],
+  },
+  legal_support: {
+    resource_failure_event: ["any_event"],
+  },
+  privacy_security: {
+    incident_event: ["any_event"],
+  },
+};
+const monitoringSignalIds = Object.keys(monitoringSignalRuleContracts);
 
 function passingEvidence(id) {
   return {
@@ -159,7 +211,61 @@ function approved(id) {
   };
 }
 
-function completeReleaseControl(buildSha, target = "app_review") {
+function numericThresholds({
+  comparator = "greater_than_or_equal",
+  warningValue = 2,
+  criticalValue = 5,
+  unit = "count",
+  windowSeconds = 300,
+} = {}) {
+  return {
+    mode: "numeric",
+    warning: {
+      comparator,
+      value: warningValue,
+      unit,
+      windowSeconds,
+    },
+    critical: {
+      comparator,
+      value: criticalValue,
+      unit,
+      windowSeconds,
+    },
+  };
+}
+
+function anyEventThresholds() {
+  return {
+    mode: "any_event",
+    warning: null,
+    critical: null,
+  };
+}
+
+function monitoringRules(signalId) {
+  return Object.fromEntries(
+    Object.entries(monitoringSignalRuleContracts[signalId]).map(
+      ([ruleId, [mode, unit]]) => [
+        ruleId,
+        mode === "any_event"
+          ? anyEventThresholds()
+          : numericThresholds({
+              unit,
+              warningValue: unit === "ratio" ? 0.7 : 2,
+              criticalValue: unit === "ratio" ? 0.9 : 5,
+            }),
+      ],
+    ),
+  );
+}
+
+function completeReleaseControl(
+  buildSha,
+  target = "app_review",
+  _previousBuildSha = syntheticPreviousBuildSha,
+) {
+  const noPreviousRevision = "N/A — initial production launch — release-owner";
   return {
     schemaVersion: 2,
     status: "FINAL",
@@ -177,10 +283,19 @@ function completeReleaseControl(buildSha, target = "app_review") {
     deployments: {
       stagingApiRevision: "staging-api-r17",
       productionApiRevision: "production-service-r17",
-      previousProductionApiRevision: "production-service-r16",
+      previousProductionApiRevision: noPreviousRevision,
       publicLegalRevision: "production-service-r17",
-      previousPublicLegalRevision: "production-service-r16",
+      previousPublicLegalRevision: noPreviousRevision,
       databaseMigrationRevision: { ...databaseMigrationRevision },
+      previousProductionMigration: {
+        state: "initial_launch",
+        productionApiRevision: null,
+        buildGitSha: null,
+        databaseMigrationRevision: null,
+        verifiedBy: "database-recovery-owner",
+        verifiedAtUtc: "2026-08-03T11:40:00Z",
+        evidenceReference: "provider/previous-production-migration",
+      },
       replitProductionHosting: {
         provider: "replit",
         accountAlias: "cut-release-owner",
@@ -217,18 +332,59 @@ function completeReleaseControl(buildSha, target = "app_review") {
     ),
     approvals: Object.fromEntries(approvalIds.map((id) => [id, approved(id)])),
     backupRecovery: {
-      migrationRehearsal: passingEvidence("migration-rehearsal"),
+      migrationClassification: {
+        class: "destructive_incompatible",
+        classifiedBy: "database-recovery-owner",
+        atUtc: "2026-08-03T11:45:00Z",
+        evidenceReference: "database/migration-classification",
+      },
+      migrationRehearsal: {
+        ...passingEvidence("migration-rehearsal"),
+        atUtc: "2026-08-03T11:42:00Z",
+      },
       databaseReadiness: passingEvidence("database-readiness"),
+      productionMigrationWindow: {
+        productionApiRevision: "production-service-r17",
+        buildGitSha: buildSha,
+        databaseId: "cut-production-database",
+        databaseMigrationRevision: { ...databaseMigrationRevision },
+        startedAtUtc: "2026-08-03T12:05:00Z",
+        completedAtUtc: "2026-08-03T12:10:00Z",
+        evidenceReference: "database/production-migration-window",
+      },
+      writesQuiesced: {
+        mode: "initial_launch_no_prior_writes",
+        atUtc: "2026-08-03T11:50:00Z",
+        verifiedBy: "database-recovery-owner",
+        evidenceReference: "database/initial-launch-writes-quiesced",
+      },
       backupCoverageAtUtc: "2026-08-03T12:00:00Z",
       backupEvidenceReference: "provider/backups/coverage-17",
+      recoveryPoint: {
+        atUtc: "2026-08-03T11:55:00Z",
+        evidenceReference: "provider/recovery-points/17",
+      },
       restoreDrillAtUtc: "2026-08-01T15:00:00Z",
       restoreDrillEvidenceReference: "provider/restore-drills/17",
       rpo: "15 minutes",
       rto: "60 minutes",
-      recoveryApproval: approved("database-recovery"),
-      rollForwardProcedureReference: "runbooks/database-roll-forward",
-      coordinatedRestoreProcedureReference:
-        "runbooks/coordinated-database-application-restore",
+      recoveryApproval: {
+        ...approved("database-recovery"),
+        atUtc: "2026-08-03T12:02:00Z",
+      },
+      previousApiCompatible: false,
+      previousApiCompatibilityEvidenceReference:
+        "database/previous-api-compatibility",
+      rollForwardProcedure: {
+        ...passingEvidence("database-roll-forward-procedure"),
+        atUtc: "2026-08-03T11:43:00Z",
+      },
+      coordinatedRestoreProcedure: {
+        ...passingEvidence(
+          "coordinated-database-application-restore-procedure",
+        ),
+        atUtc: "2026-08-03T11:44:00Z",
+      },
       recoveryOwner: "database-recovery-owner",
       noConcurrentMigrationConfirmed: true,
       schemaRollbackPolicyConfirmed: true,
@@ -249,12 +405,12 @@ function completeReleaseControl(buildSha, target = "app_review") {
         monitoringSignalIds.map((id) => [
           id,
           {
-            warningThreshold: `approved warning threshold for ${id}`,
-            criticalThreshold: `approved critical threshold for ${id}`,
+            rules: monitoringRules(id),
             destination: "release-operations-alerts",
             primaryOwner: `${id}-primary-owner`,
             backupOwner: `${id}-backup-owner`,
             baselineEvidenceReference: `monitoring/baselines/${id}`,
+            approval: approved(`monitoring-threshold-${id}`),
             alertTest: passingEvidence(`monitoring-alert-test-${id}`),
           },
         ]),
@@ -273,14 +429,34 @@ function completeReleaseControl(buildSha, target = "app_review") {
       selectedPath: "NO_ACTION_HEALTHY",
       decisionOwner: "release-owner",
       decisionAtUtc: "2026-08-03T12:55:00Z",
-      schemaSafetyEvidenceReference: "rollback/schema-safety",
-      previousApplicationRevision: "production-service-r16",
-      previousPublicLegalRevision: "production-service-r16",
+      schemaSafetyEvidenceReference: "database/previous-api-compatibility",
+      previousApplicationRevision: noPreviousRevision,
+      previousPublicLegalRevision: noPreviousRevision,
       databaseRecoveryPointReference: "provider/recovery-points/17",
       runbookReference: "runbooks/release-rollback",
       postActionProbes: passingEvidence("post-action-probes"),
     },
   };
+}
+
+function selectUnsupportedDeployedBaseline(
+  control,
+  previousBuildSha = syntheticPreviousBuildSha,
+) {
+  control.deployments.previousProductionApiRevision = "production-service-r16";
+  control.deployments.previousPublicLegalRevision = "production-service-r16";
+  control.deployments.previousProductionMigration = {
+    state: "deployed",
+    productionApiRevision: "production-service-r16",
+    buildGitSha: previousBuildSha,
+    databaseMigrationRevision: { ...previousDatabaseMigrationRevision },
+    verifiedBy: "database-recovery-owner",
+    verifiedAtUtc: "2026-08-03T11:40:00Z",
+    evidenceReference: "provider/previous-production-migration",
+  };
+  control.rollback.previousApplicationRevision = "production-service-r16";
+  control.rollback.previousPublicLegalRevision = "production-service-r16";
+  return control;
 }
 
 function completeReleaseManifest(
@@ -338,7 +514,7 @@ Recorded in controlled evidence references.
 ## Database migration and recovery
 
 - [x] No concurrent manual migration will run during API startup migration.
-- [x] Previous API rollback is forbidden unless schema compatibility is proven.
+- [x] Application-only rollback is forbidden after any completed database migration.
 
 ## Deployment identity and provenance
 
@@ -528,6 +704,7 @@ async function createRepository(
     includeMigrationJournal = true,
     migrationJournalContents,
     migrationSqlContents = databaseMigrationSql,
+    candidateAddsMigration = true,
     additionalInitialFiles = [],
   } = {},
 ) {
@@ -544,6 +721,49 @@ async function createRepository(
     submit: pinnedRouting
       ? { production: { ios: { ascAppId: "1234567890" } } }
       : { production: {} },
+  };
+  const previousJournal = {
+    version: "7",
+    dialect: "postgresql",
+    entries: [
+      {
+        idx: 0,
+        version: "7",
+        when: previousDatabaseMigrationRevision.createdAt,
+        tag: previousDatabaseMigrationRevision.tag,
+        breakpoints: true,
+      },
+    ],
+  };
+  await writeRepoFile(
+    repoRoot,
+    "lib/db/migrations/meta/_journal.json",
+    `${JSON.stringify(previousJournal, null, 2)}\n`,
+  );
+  await writeRepoFile(
+    repoRoot,
+    `lib/db/migrations/${previousDatabaseMigrationRevision.tag}.sql`,
+    previousDatabaseMigrationSql,
+  );
+  const previousBuildSha = await commitAll(
+    repoRoot,
+    "previous production build",
+  );
+
+  const candidateJournal = {
+    ...previousJournal,
+    entries: candidateAddsMigration
+      ? [
+          ...previousJournal.entries,
+          {
+            idx: 1,
+            version: "7",
+            when: databaseMigrationRevision.createdAt,
+            tag: databaseMigrationRevision.tag,
+            breakpoints: true,
+          },
+        ]
+      : previousJournal.entries,
   };
   const initialFiles = [
     ["artifacts/cut-os/eas.json", `${JSON.stringify(easConfig, null, 2)}\n`],
@@ -577,30 +797,18 @@ async function createRepository(
           [
             "lib/db/migrations/meta/_journal.json",
             migrationJournalContents ??
-              `${JSON.stringify(
-                {
-                  version: "7",
-                  dialect: "postgresql",
-                  entries: [
-                    {
-                      idx: 0,
-                      version: "7",
-                      when: databaseMigrationRevision.createdAt,
-                      tag: databaseMigrationRevision.tag,
-                      breakpoints: true,
-                    },
-                  ],
-                },
-                null,
-                2,
-              )}\n`,
+              `${JSON.stringify(candidateJournal, null, 2)}\n`,
           ],
         ]
       : []),
-    [
-      `lib/db/migrations/${databaseMigrationRevision.tag}.sql`,
-      migrationSqlContents,
-    ],
+    ...(candidateAddsMigration
+      ? [
+          [
+            `lib/db/migrations/${databaseMigrationRevision.tag}.sql`,
+            migrationSqlContents,
+          ],
+        ]
+      : []),
     ["APP_REVIEW_RUNBOOK.md", "# Review\n"],
     ["PURCHASE_QA_REPORT.md", "# Purchase QA\n"],
     ["QA_REPORT.md", "# QA\n"],
@@ -612,8 +820,11 @@ async function createRepository(
   for (const [relativePath, contents] of initialFiles) {
     await writeRepoFile(repoRoot, relativePath, contents);
   }
+  if (!includeMigrationJournal) {
+    await rm(path.join(repoRoot, "lib/db/migrations/meta/_journal.json"));
+  }
   const buildSha = await commitAll(repoRoot, "build candidate");
-  return { buildSha, repoRoot };
+  return { buildSha, previousBuildSha, repoRoot };
 }
 
 async function writeEvidenceCommit(
@@ -630,6 +841,7 @@ async function writeEvidenceCommit(
   } = {},
 ) {
   const screenshotName = "CUTOS-v1.0.0-b1-en-US-01.png";
+  const previousBuildSha = git(repoRoot, "rev-parse", `${buildSha}^`);
   await writeRepoFile(
     repoRoot,
     "app-store/app-store-submission.json",
@@ -659,7 +871,7 @@ async function writeEvidenceCommit(
     manifestContents ??
       completeReleaseManifest(
         buildSha,
-        completeReleaseControl(buildSha, releaseTarget),
+        completeReleaseControl(buildSha, releaseTarget, previousBuildSha),
       ),
     "utf8",
   );
@@ -689,12 +901,17 @@ async function writePublicReleaseTransition(
     }),
   } = {},
 ) {
+  const previousBuildSha = git(repoRoot, "rev-parse", `${buildSha}^`);
   await writeRepoFile(
     repoRoot,
     "app-store/app-store-submission.json",
     `${JSON.stringify(submission, null, 2)}\n`,
   );
-  const control = completeReleaseControl(buildSha, releaseTarget);
+  const control = completeReleaseControl(
+    buildSha,
+    releaseTarget,
+    previousBuildSha,
+  );
   control.releaseId = releaseId;
   control.finalizedAtUtc = finalizedAtUtc;
   if (typeof mutateControl === "function") mutateControl(control);
@@ -743,7 +960,7 @@ test("rejects the checksum-valid legacy four-line release manifest", async (t) =
   });
   assert.throws(
     () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
-    expectCode("release_manifest_not_final"),
+    expectCode("release_manifest_control_missing"),
   );
 });
 
@@ -758,6 +975,7 @@ test("accepts a complete, identity-bound release manifest", () => {
         gitCommit: buildSha,
       },
       expectedDatabaseMigrationRevision: databaseMigrationRevision,
+      expectedMigrationComparison: initialLaunchMigrationComparison,
       clock: validationClock,
     }),
     { releaseId: "cut-os-1.0.0-1", target: "app_review" },
@@ -804,6 +1022,30 @@ test("the release manifest template carries canonical control JSON", () => {
     "createdAt",
     "sha256",
   ]);
+  assert.deepEqual(
+    Object.keys(control.deployments.previousProductionMigration),
+    [
+      "state",
+      "productionApiRevision",
+      "buildGitSha",
+      "databaseMigrationRevision",
+      "verifiedBy",
+      "verifiedAtUtc",
+      "evidenceReference",
+    ],
+  );
+  assert.equal(
+    control.deployments.previousProductionMigration.productionApiRevision,
+    null,
+  );
+  assert.equal(
+    control.deployments.previousProductionMigration.buildGitSha,
+    null,
+  );
+  assert.equal(
+    control.deployments.previousProductionMigration.databaseMigrationRevision,
+    null,
+  );
   assert.deepEqual(Object.keys(control.deployments.replitProductionHosting), [
     "provider",
     "accountAlias",
@@ -826,6 +1068,93 @@ test("the release manifest template carries canonical control JSON", () => {
     "configurationVerifiedAtUtc",
     "configurationEvidenceReference",
   ]);
+  assert.deepEqual(Object.keys(control.backupRecovery), [
+    "migrationClassification",
+    "migrationRehearsal",
+    "databaseReadiness",
+    "productionMigrationWindow",
+    "writesQuiesced",
+    "backupCoverageAtUtc",
+    "backupEvidenceReference",
+    "recoveryPoint",
+    "restoreDrillAtUtc",
+    "restoreDrillEvidenceReference",
+    "rpo",
+    "rto",
+    "recoveryApproval",
+    "previousApiCompatible",
+    "previousApiCompatibilityEvidenceReference",
+    "rollForwardProcedure",
+    "coordinatedRestoreProcedure",
+    "recoveryOwner",
+    "noConcurrentMigrationConfirmed",
+    "schemaRollbackPolicyConfirmed",
+  ]);
+  assert.deepEqual(
+    Object.keys(control.backupRecovery.migrationClassification),
+    ["class", "classifiedBy", "atUtc", "evidenceReference"],
+  );
+  assert.deepEqual(Object.keys(control.backupRecovery.recoveryPoint), [
+    "atUtc",
+    "evidenceReference",
+  ]);
+  assert.deepEqual(
+    Object.keys(control.backupRecovery.productionMigrationWindow),
+    [
+      "productionApiRevision",
+      "buildGitSha",
+      "databaseId",
+      "databaseMigrationRevision",
+      "startedAtUtc",
+      "completedAtUtc",
+      "evidenceReference",
+    ],
+  );
+  assert.deepEqual(Object.keys(control.backupRecovery.writesQuiesced), [
+    "mode",
+    "atUtc",
+    "verifiedBy",
+    "evidenceReference",
+  ]);
+  assert.deepEqual(Object.keys(control.monitoring.signals.api_liveness), [
+    "rules",
+    "destination",
+    "primaryOwner",
+    "backupOwner",
+    "baselineEvidenceReference",
+    "approval",
+    "alertTest",
+  ]);
+  assert.deepEqual(
+    Object.keys(control.monitoring.signals),
+    monitoringSignalIds,
+  );
+  for (const [signalId, contracts] of Object.entries(
+    monitoringSignalRuleContracts,
+  )) {
+    assert.deepEqual(
+      Object.keys(control.monitoring.signals[signalId].rules),
+      Object.keys(contracts),
+    );
+  }
+  assert.deepEqual(
+    Object.keys(control.monitoring.signals.api_liveness.rules.non200_count),
+    ["mode", "warning", "critical"],
+  );
+  assert.deepEqual(
+    Object.keys(
+      control.monitoring.signals.api_liveness.rules.non200_count.warning,
+    ),
+    ["comparator", "value", "unit", "windowSeconds"],
+  );
+  assert.equal(
+    Object.values(monitoringSignalRuleContracts).reduce(
+      (total, contracts) => total + Object.keys(contracts).length,
+      0,
+    ),
+    24,
+  );
+  assert.deepEqual(Object.keys(control.approvals), approvalIds);
   assert.deepEqual(Object.keys(control.automatedGates), automatedGateIds);
   const navigation = template.slice(
     template.indexOf(endMarker) + endMarker.length,
@@ -892,7 +1221,12 @@ test("release manifest content fails closed on incomplete critical evidence", as
     gitCommit: buildSha,
   };
 
-  function expectInvalid({ control, manifest, code }) {
+  function expectInvalid({
+    control,
+    manifest,
+    code,
+    expectedMigrationComparison = initialLaunchMigrationComparison,
+  }) {
     assert.throws(
       () =>
         validateReleaseManifestContent({
@@ -902,6 +1236,7 @@ test("release manifest content fails closed on incomplete critical evidence", as
           expectedBuildSha: buildSha,
           exactBuildEvidence,
           expectedDatabaseMigrationRevision: databaseMigrationRevision,
+          expectedMigrationComparison,
           clock: validationClock,
         }),
       expectCode(code),
@@ -1018,9 +1353,345 @@ test("release manifest content fails closed on incomplete critical evidence", as
     expectInvalid({ control, code: "release_manifest_approval_invalid" });
   });
 
+  for (const [decisionId, legacyId] of [
+    [
+      "app_store_server_notifications_decision",
+      "app_store_server_notifications",
+    ],
+    ["accessibility_label_decision", "accessibility_label"],
+  ]) {
+    await t.test(`legacy ${legacyId} approval ID is rejected`, () => {
+      const control = completeReleaseControl(buildSha);
+      control.approvals[legacyId] = control.approvals[decisionId];
+      delete control.approvals[decisionId];
+      expectInvalid({ control, code: "release_manifest_approval_invalid" });
+    });
+  }
+
   await t.test("missing backup reference", () => {
     const control = completeReleaseControl(buildSha);
     control.backupRecovery.backupEvidenceReference = "";
+    expectInvalid({
+      control,
+      code: "release_manifest_backup_recovery_invalid",
+    });
+  });
+
+  await t.test("write quiescence is explicit and attributable", () => {
+    const invalidMutators = [
+      (control) => {
+        control.backupRecovery.writesQuiesced.mode = "manual_cutoff";
+      },
+      (control) => {
+        control.backupRecovery.writesQuiesced.atUtc = "not-a-timestamp";
+      },
+      (control) => {
+        control.backupRecovery.writesQuiesced.verifiedBy = "";
+      },
+      (control) => {
+        control.backupRecovery.writesQuiesced.evidenceReference = "";
+      },
+    ];
+    for (const mutate of invalidMutators) {
+      const control = completeReleaseControl(buildSha);
+      mutate(control);
+      expectInvalid({
+        control,
+        code: "release_manifest_backup_recovery_invalid",
+      });
+    }
+  });
+
+  await t.test("production migration window binds all live identities", () => {
+    const mismatchMutators = [
+      (control) => {
+        control.backupRecovery.productionMigrationWindow.productionApiRevision =
+          "other-production-revision";
+      },
+      (control) => {
+        control.backupRecovery.productionMigrationWindow.buildGitSha =
+          "c".repeat(40);
+      },
+      (control) => {
+        control.backupRecovery.productionMigrationWindow.databaseId =
+          "other-production-database";
+      },
+      (control) => {
+        control.backupRecovery.productionMigrationWindow.databaseMigrationRevision.sha256 =
+          "0".repeat(64);
+      },
+    ];
+    for (const mutate of mismatchMutators) {
+      const control = completeReleaseControl(buildSha);
+      mutate(control);
+      expectInvalid({
+        control,
+        code: "release_manifest_production_migration_window_invalid",
+      });
+    }
+  });
+
+  await t.test("unknown migration classification", () => {
+    const control = completeReleaseControl(buildSha);
+    control.backupRecovery.migrationClassification.class = "compatible";
+    expectInvalid({
+      control,
+      code: "release_manifest_backup_recovery_invalid",
+    });
+  });
+
+  await t.test("unexpected migration recovery field", () => {
+    const control = completeReleaseControl(buildSha);
+    control.backupRecovery.unreviewedShortcut = true;
+    expectInvalid({
+      control,
+      code: "release_manifest_backup_recovery_invalid",
+    });
+  });
+
+  await t.test(
+    "completed migration cannot claim previous API compatibility",
+    () => {
+      const control = completeReleaseControl(buildSha);
+      control.backupRecovery.previousApiCompatible = true;
+      expectInvalid({
+        control,
+        code: "release_manifest_backup_recovery_invalid",
+      });
+    },
+  );
+
+  await t.test("new migration cannot be mislabeled none", () => {
+    const control = completeReleaseControl(buildSha);
+    control.backupRecovery.migrationClassification.class = "none";
+    control.backupRecovery.previousApiCompatible = true;
+    expectInvalid({
+      control,
+      code: "release_manifest_migration_classification_mismatch",
+    });
+  });
+
+  await t.test("deployed baseline is unsupported in v1", () => {
+    const control = completeReleaseControl(buildSha);
+    selectUnsupportedDeployedBaseline(control);
+    expectInvalid({
+      control,
+      code: "previous_production_migration_deployed_baseline_unsupported_v1",
+      expectedMigrationComparison: {
+        state: "deployed",
+        productionApiRevision: "production-service-r16",
+        buildGitSha: syntheticPreviousBuildSha,
+        databaseMigrationRevision: previousDatabaseMigrationRevision,
+        hasNewMigrations: true,
+      },
+    });
+  });
+
+  await t.test("previous production migration verifier is attributable", () => {
+    const control = completeReleaseControl(buildSha);
+    control.deployments.previousProductionMigration.verifiedBy = "";
+    expectInvalid({
+      control,
+      code: "release_manifest_previous_production_migration_invalid",
+    });
+  });
+
+  await t.test("initial launch cannot retain a deployed prior revision", () => {
+    const control = completeReleaseControl(buildSha);
+    control.deployments.previousProductionApiRevision =
+      "production-service-r16";
+    control.deployments.previousPublicLegalRevision = "production-service-r16";
+    expectInvalid({
+      control,
+      code: "release_manifest_previous_production_migration_state_mismatch",
+      expectedMigrationComparison: {
+        state: "initial_launch",
+        productionApiRevision: null,
+        buildGitSha: null,
+        databaseMigrationRevision: null,
+        hasNewMigrations: true,
+      },
+    });
+  });
+
+  await t.test("initial launch is forced to destructive", () => {
+    const control = completeReleaseControl(buildSha);
+    control.backupRecovery.migrationClassification.class = "none";
+    control.backupRecovery.previousApiCompatible = true;
+    expectInvalid({
+      control,
+      code: "release_manifest_migration_classification_mismatch",
+      expectedMigrationComparison: {
+        state: "initial_launch",
+        productionApiRevision: null,
+        buildGitSha: null,
+        databaseMigrationRevision: null,
+        hasNewMigrations: true,
+      },
+    });
+  });
+
+  await t.test(
+    "a caller cannot inject an unchanged deployed comparison",
+    () => {
+      const control = completeReleaseControl(buildSha);
+      selectUnsupportedDeployedBaseline(control);
+      expectInvalid({
+        control,
+        code: "previous_production_migration_deployed_baseline_unsupported_v1",
+        expectedMigrationComparison: {
+          state: "deployed",
+          productionApiRevision: "production-service-r16",
+          buildGitSha: syntheticPreviousBuildSha,
+          databaseMigrationRevision,
+          hasNewMigrations: false,
+        },
+      });
+    },
+  );
+
+  await t.test("backup coverage must follow write quiescence", () => {
+    const control = completeReleaseControl(buildSha);
+    control.backupRecovery.backupCoverageAtUtc =
+      control.backupRecovery.writesQuiesced.atUtc;
+    expectInvalid({
+      control,
+      code: "release_manifest_backup_recovery_invalid",
+    });
+  });
+
+  await t.test("recovery point must follow write quiescence", () => {
+    const control = completeReleaseControl(buildSha);
+    control.backupRecovery.recoveryPoint.atUtc =
+      control.backupRecovery.writesQuiesced.atUtc;
+    expectInvalid({
+      control,
+      code: "release_manifest_backup_recovery_invalid",
+    });
+  });
+
+  await t.test("recovery point cannot exceed proven backup coverage", () => {
+    const control = completeReleaseControl(buildSha);
+    control.backupRecovery.recoveryPoint.atUtc = "2026-08-03T12:00:01Z";
+    expectInvalid({
+      control,
+      code: "release_manifest_backup_recovery_invalid",
+    });
+  });
+
+  await t.test("recovery approval must follow recovery-point selection", () => {
+    const control = completeReleaseControl(buildSha);
+    control.backupRecovery.recoveryApproval.atUtc =
+      control.backupRecovery.recoveryPoint.atUtc;
+    expectInvalid({
+      control,
+      code: "release_manifest_backup_recovery_invalid",
+    });
+  });
+
+  await t.test(
+    "recovery point and coverage cannot follow migration start",
+    () => {
+      const control = completeReleaseControl(buildSha);
+      control.backupRecovery.recoveryPoint.atUtc = "2026-08-03T12:05:00Z";
+      control.backupRecovery.backupCoverageAtUtc = "2026-08-03T12:05:00Z";
+      expectInvalid({
+        control,
+        code: "release_manifest_production_migration_window_invalid",
+      });
+    },
+  );
+
+  await t.test("migration completion cannot precede its start", () => {
+    const control = completeReleaseControl(buildSha);
+    control.backupRecovery.productionMigrationWindow.startedAtUtc =
+      "2026-08-03T12:11:00Z";
+    expectInvalid({
+      control,
+      code: "release_manifest_production_migration_window_invalid",
+    });
+  });
+
+  await t.test("database readiness must follow migration completion", () => {
+    const control = completeReleaseControl(buildSha);
+    control.backupRecovery.productionMigrationWindow.completedAtUtc =
+      "2026-08-03T12:31:00Z";
+    expectInvalid({
+      control,
+      code: "release_manifest_production_migration_window_invalid",
+    });
+  });
+
+  await t.test(
+    "production readiness smoke must follow migration completion",
+    () => {
+      const control = completeReleaseControl(buildSha);
+      control.backupRecovery.productionMigrationWindow.completedAtUtc =
+        "2026-08-03T12:31:00Z";
+      control.backupRecovery.databaseReadiness.atUtc = "2026-08-03T12:32:00Z";
+      expectInvalid({
+        control,
+        code: "release_manifest_production_migration_window_invalid",
+      });
+    },
+  );
+
+  await t.test(
+    "every recovery prerequisite must exist before migration starts",
+    () => {
+      const lateTimestamp = "2026-08-03T12:05:01Z";
+      const lateEvidenceMutators = [
+        (control) => {
+          control.deployments.previousProductionMigration.verifiedAtUtc =
+            lateTimestamp;
+        },
+        (control) => {
+          control.backupRecovery.migrationClassification.atUtc = lateTimestamp;
+        },
+        (control) => {
+          control.backupRecovery.migrationRehearsal.atUtc = lateTimestamp;
+        },
+        (control) => {
+          control.backupRecovery.restoreDrillAtUtc = lateTimestamp;
+        },
+        (control) => {
+          control.backupRecovery.recoveryApproval.atUtc = lateTimestamp;
+        },
+        (control) => {
+          control.backupRecovery.rollForwardProcedure.atUtc = lateTimestamp;
+        },
+        (control) => {
+          control.backupRecovery.coordinatedRestoreProcedure.atUtc =
+            lateTimestamp;
+        },
+      ];
+      for (const mutate of lateEvidenceMutators) {
+        const control = completeReleaseControl(buildSha);
+        mutate(control);
+        expectInvalid({
+          control,
+          code: "release_manifest_pre_migration_recovery_evidence_late",
+        });
+      }
+    },
+  );
+
+  await t.test(
+    "healthy rollback outcome cannot be predeclared before migration completes",
+    () => {
+      const control = completeReleaseControl(buildSha);
+      control.rollback.decisionAtUtc = "2026-08-03T12:09:59Z";
+      expectInvalid({
+        control,
+        code: "release_manifest_rollback_invalid",
+      });
+    },
+  );
+
+  await t.test("recovery procedures require distinct passing evidence", () => {
+    const control = completeReleaseControl(buildSha);
+    control.backupRecovery.coordinatedRestoreProcedure.evidenceReference =
+      control.backupRecovery.rollForwardProcedure.evidenceReference;
     expectInvalid({
       control,
       code: "release_manifest_backup_recovery_invalid",
@@ -1063,11 +1734,136 @@ test("release manifest content fails closed on incomplete critical evidence", as
     });
   });
 
+  await t.test("legacy prose monitoring thresholds are rejected", () => {
+    const control = completeReleaseControl(buildSha);
+    const signal = control.monitoring.signals.api_liveness;
+    delete signal.rules;
+    signal.warningThreshold = "approved warning threshold";
+    signal.criticalThreshold = "approved critical threshold";
+    expectInvalid({ control, code: "release_manifest_monitoring_invalid" });
+  });
+
+  await t.test("unexpected monitoring rule is rejected", () => {
+    const control = completeReleaseControl(buildSha);
+    control.monitoring.signals.api_liveness.rules.unreviewedShortcut =
+      numericThresholds();
+    expectInvalid({ control, code: "release_manifest_monitoring_invalid" });
+  });
+
+  await t.test("missing atomic monitoring rule is rejected", () => {
+    const control = completeReleaseControl(buildSha);
+    delete control.monitoring.signals.api_readiness_latency.rules.non200_event;
+    expectInvalid({ control, code: "release_manifest_monitoring_invalid" });
+  });
+
+  await t.test(
+    "numeric monitoring thresholds require critical ordering",
+    () => {
+      const control = completeReleaseControl(buildSha);
+      control.monitoring.signals.api_liveness.rules.non200_count.critical.value = 1;
+      expectInvalid({ control, code: "release_manifest_monitoring_invalid" });
+    },
+  );
+
+  await t.test(
+    "numeric monitoring threshold boundaries must be comparable",
+    () => {
+      const control = completeReleaseControl(buildSha);
+      control.monitoring.signals.api_liveness.rules.non200_count.critical.unit =
+        "percent";
+      expectInvalid({ control, code: "release_manifest_monitoring_invalid" });
+    },
+  );
+
+  await t.test("zero-tolerance monitoring signals require any_event", () => {
+    const control = completeReleaseControl(buildSha);
+    control.monitoring.signals.privacy_security.rules.incident_event =
+      numericThresholds();
+    expectInvalid({ control, code: "release_manifest_monitoring_invalid" });
+  });
+
+  await t.test("any_event monitoring cannot carry numeric boundaries", () => {
+    const control = completeReleaseControl(buildSha);
+    control.monitoring.signals.startup_migration.rules.startup_failure_event.warning =
+      {
+        comparator: "greater_than_or_equal",
+        value: 1,
+        unit: "count",
+        windowSeconds: 60,
+      };
+    expectInvalid({ control, code: "release_manifest_monitoring_invalid" });
+  });
+
+  await t.test("atomic monitoring rules enforce their approved unit", () => {
+    const control = completeReleaseControl(buildSha);
+    const latency =
+      control.monitoring.signals.api_readiness_latency.rules.latency_ms;
+    latency.warning.unit = "percent";
+    latency.critical.unit = "percent";
+    expectInvalid({ control, code: "release_manifest_monitoring_invalid" });
+  });
+
+  await t.test(
+    "atomic monitoring rules enforce their approved comparator",
+    () => {
+      const control = completeReleaseControl(buildSha);
+      const rate =
+        control.monitoring.signals.api_errors_latency.rules.five_xx_rate;
+      rate.warning.comparator = "less_than_or_equal";
+      rate.critical.comparator = "less_than_or_equal";
+      rate.warning.value = 5;
+      rate.critical.value = 2;
+      expectInvalid({ control, code: "release_manifest_monitoring_invalid" });
+    },
+  );
+
+  await t.test("monitoring threshold approval is mandatory", () => {
+    const control = completeReleaseControl(buildSha);
+    delete control.monitoring.signals.api_liveness.approval;
+    expectInvalid({ control, code: "release_manifest_monitoring_invalid" });
+  });
+
+  await t.test("monitoring threshold approval must be approved", () => {
+    const control = completeReleaseControl(buildSha);
+    control.monitoring.signals.api_liveness.approval.decision = "BLOCKED";
+    expectInvalid({
+      control,
+      code: "release_manifest_approval_not_approved",
+    });
+  });
+
+  await t.test("monitoring primary and backup owners must be distinct", () => {
+    const control = completeReleaseControl(buildSha);
+    control.monitoring.signals.api_liveness.backupOwner =
+      control.monitoring.signals.api_liveness.primaryOwner;
+    expectInvalid({ control, code: "release_manifest_monitoring_invalid" });
+  });
+
   await t.test("missing rollback procedure", () => {
     const control = completeReleaseControl(buildSha);
     delete control.rollback.runbookReference;
     expectInvalid({ control, code: "release_manifest_rollback_invalid" });
   });
+
+  await t.test(
+    "rollback must bind the classified schema-safety evidence",
+    () => {
+      const control = completeReleaseControl(buildSha);
+      control.rollback.schemaSafetyEvidenceReference =
+        "rollback/unbound-schema";
+      expectInvalid({ control, code: "release_manifest_rollback_invalid" });
+    },
+  );
+
+  await t.test(
+    "rollback must bind the approved database recovery point",
+    () => {
+      const control = completeReleaseControl(buildSha);
+      control.rollback.databaseRecoveryPointReference =
+        "provider/recovery-points/unbound";
+      expectInvalid({ control, code: "release_manifest_rollback_invalid" });
+    },
+  );
 
   await t.test("BUILD_SHA mismatch", () => {
     const control = completeReleaseControl(buildSha);
@@ -1286,6 +2082,62 @@ test("release manifest content fails closed on incomplete critical evidence", as
   });
 });
 
+test("accepts only the safe closed v1 migration contract", async (t) => {
+  const buildSha = "a".repeat(40);
+  const exactBuildEvidence = {
+    ...exactBuildIdentity,
+    gitCommit: buildSha,
+  };
+
+  function expectValid(
+    control,
+    expectedMigrationComparison = initialLaunchMigrationComparison,
+  ) {
+    assert.doesNotThrow(() =>
+      validateReleaseManifestContent({
+        manifestBytes: Buffer.from(completeReleaseManifest(buildSha, control)),
+        expectedBuildSha: buildSha,
+        exactBuildEvidence,
+        expectedDatabaseMigrationRevision: databaseMigrationRevision,
+        expectedMigrationComparison,
+        clock: validationClock,
+      }),
+    );
+  }
+
+  await t.test("first launch can record destructive migration recovery", () => {
+    const control = completeReleaseControl(buildSha);
+    expectValid(control);
+  });
+
+  await t.test("deployed baseline cannot be caller-selected", () => {
+    const control = completeReleaseControl(buildSha);
+    selectUnsupportedDeployedBaseline(control);
+    assert.throws(
+      () =>
+        validateReleaseManifestContent({
+          manifestBytes: Buffer.from(
+            completeReleaseManifest(buildSha, control),
+          ),
+          expectedBuildSha: buildSha,
+          exactBuildEvidence,
+          expectedDatabaseMigrationRevision: databaseMigrationRevision,
+          expectedMigrationComparison: {
+            state: "deployed",
+            productionApiRevision: "production-service-r16",
+            buildGitSha: syntheticPreviousBuildSha,
+            databaseMigrationRevision: databaseMigrationRevision,
+            hasNewMigrations: false,
+          },
+          clock: validationClock,
+        }),
+      expectCode(
+        "previous_production_migration_deployed_baseline_unsupported_v1",
+      ),
+    );
+  });
+});
+
 test("accepts fractional-second UTC and staging-only no-upload evidence", () => {
   const buildSha = "a".repeat(40);
   const control = completeReleaseControl(buildSha);
@@ -1308,6 +2160,7 @@ test("accepts fractional-second UTC and staging-only no-upload evidence", () => 
         gitCommit: buildSha,
       },
       expectedDatabaseMigrationRevision: databaseMigrationRevision,
+      expectedMigrationComparison: initialLaunchMigrationComparison,
       clock: validationClock,
     }),
     { releaseId: "cut-os-1.0.0-1", target: "staging" },
@@ -1374,8 +2227,12 @@ test("App Review binds the finalized listing URLs to the manifest public origin"
   }
 
   await t.test("manifest origin differs from listing bytes", async (t) => {
-    const { buildSha, repoRoot } = await createRepository(t);
-    const control = completeReleaseControl(buildSha);
+    const { buildSha, previousBuildSha, repoRoot } = await createRepository(t);
+    const control = completeReleaseControl(
+      buildSha,
+      "app_review",
+      previousBuildSha,
+    );
     control.deployments.replitProductionHosting.publicOrigin =
       "https://other-production-host.com";
     await writeEvidenceCommit(repoRoot, buildSha, {
@@ -1421,6 +2278,179 @@ test("release evidence derives the exact database migration from BUILD_SHA", asy
       expectCode("release_manifest_database_migration_identity_mismatch"),
     );
   });
+
+  await t.test(
+    "initial launch migration cannot be mislabeled none",
+    async (t) => {
+      const { buildSha, previousBuildSha, repoRoot } =
+        await createRepository(t);
+      const control = completeReleaseControl(
+        buildSha,
+        "app_review",
+        previousBuildSha,
+      );
+      control.backupRecovery.migrationClassification.class = "none";
+      control.backupRecovery.previousApiCompatible = true;
+      await writeEvidenceCommit(repoRoot, buildSha, {
+        manifestContents: completeReleaseManifest(buildSha, control),
+      });
+      assert.throws(
+        () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+        expectCode("release_manifest_migration_classification_mismatch"),
+      );
+    },
+  );
+
+  await t.test(
+    "initial launch remains destructive when candidate adds no migration",
+    async (t) => {
+      const { buildSha, previousBuildSha, repoRoot } = await createRepository(
+        t,
+        {
+          candidateAddsMigration: false,
+        },
+      );
+      const control = completeReleaseControl(
+        buildSha,
+        "app_review",
+        previousBuildSha,
+      );
+      control.deployments.databaseMigrationRevision = {
+        ...previousDatabaseMigrationRevision,
+      };
+      control.backupRecovery.productionMigrationWindow.databaseMigrationRevision =
+        { ...previousDatabaseMigrationRevision };
+      await writeEvidenceCommit(repoRoot, buildSha, {
+        manifestContents: completeReleaseManifest(buildSha, control),
+      });
+      assert.doesNotThrow(() =>
+        verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      );
+    },
+  );
+
+  await t.test("initial launch remains fail-closed and valid", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const control = completeReleaseControl(buildSha);
+    await writeEvidenceCommit(repoRoot, buildSha, {
+      manifestContents: completeReleaseManifest(buildSha, control),
+    });
+    assert.doesNotThrow(() =>
+      verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+    );
+  });
+
+  await t.test(
+    "deployed baseline is rejected before trusting caller ancestry",
+    async (t) => {
+      const { buildSha, previousBuildSha, repoRoot } =
+        await createRepository(t);
+      git(
+        repoRoot,
+        "checkout",
+        "-q",
+        "-b",
+        "unrelated-baseline",
+        previousBuildSha,
+      );
+      await writeRepoFile(repoRoot, "unrelated.txt", "not deployed\n");
+      const unrelatedBuildSha = await commitAll(repoRoot, "unrelated build");
+      git(repoRoot, "checkout", "-q", buildSha);
+      const control = completeReleaseControl(
+        buildSha,
+        "app_review",
+        unrelatedBuildSha,
+      );
+      selectUnsupportedDeployedBaseline(control, unrelatedBuildSha);
+      await writeEvidenceCommit(repoRoot, buildSha, {
+        manifestContents: completeReleaseManifest(buildSha, control),
+      });
+      assert.throws(
+        () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+        expectCode(
+          "previous_production_migration_deployed_baseline_unsupported_v1",
+        ),
+      );
+    },
+  );
+
+  await t.test(
+    "deployed baseline is rejected before trusting its tuple",
+    async (t) => {
+      const { buildSha, previousBuildSha, repoRoot } =
+        await createRepository(t);
+      const control = completeReleaseControl(
+        buildSha,
+        "app_review",
+        previousBuildSha,
+      );
+      selectUnsupportedDeployedBaseline(control, previousBuildSha);
+      control.deployments.previousProductionMigration.databaseMigrationRevision.sha256 =
+        "0".repeat(64);
+      await writeEvidenceCommit(repoRoot, buildSha, {
+        manifestContents: completeReleaseManifest(buildSha, control),
+      });
+      assert.throws(
+        () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+        expectCode(
+          "previous_production_migration_deployed_baseline_unsupported_v1",
+        ),
+      );
+    },
+  );
+
+  await t.test(
+    "deployed baseline is rejected before trusting its API revision",
+    async (t) => {
+      const { buildSha, previousBuildSha, repoRoot } =
+        await createRepository(t);
+      const control = completeReleaseControl(
+        buildSha,
+        "app_review",
+        previousBuildSha,
+      );
+      selectUnsupportedDeployedBaseline(control, previousBuildSha);
+      control.deployments.previousProductionMigration.productionApiRevision =
+        "undeployed-api-revision";
+      await writeEvidenceCommit(repoRoot, buildSha, {
+        manifestContents: completeReleaseManifest(buildSha, control),
+      });
+      assert.throws(
+        () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+        expectCode(
+          "previous_production_migration_deployed_baseline_unsupported_v1",
+        ),
+      );
+    },
+  );
+
+  await t.test(
+    "deployed baseline is rejected before trusting history",
+    async (t) => {
+      const { buildSha, previousBuildSha, repoRoot } = await createRepository(
+        t,
+        {
+          additionalInitialFiles: [
+            [
+              `lib/db/migrations/${previousDatabaseMigrationRevision.tag}.sql`,
+              "select 'rewritten';\n",
+            ],
+          ],
+        },
+      );
+      const control = completeReleaseControl(buildSha);
+      selectUnsupportedDeployedBaseline(control, previousBuildSha);
+      await writeEvidenceCommit(repoRoot, buildSha, {
+        manifestContents: completeReleaseManifest(buildSha, control),
+      });
+      assert.throws(
+        () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+        expectCode(
+          "previous_production_migration_deployed_baseline_unsupported_v1",
+        ),
+      );
+    },
+  );
 });
 
 test("both release manifests must be declared DRAFT at BUILD_SHA", async (t) => {
@@ -1726,6 +2756,8 @@ test("public-release transition preserves immutable submission and build evidenc
       mutateControl: (control) => {
         control.deployments.productionApiRevision = "production-service-r18";
         control.deployments.publicLegalRevision = "production-service-r18";
+        control.backupRecovery.productionMigrationWindow.productionApiRevision =
+          "production-service-r18";
       },
     });
     assert.throws(

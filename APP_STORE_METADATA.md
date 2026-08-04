@@ -81,39 +81,39 @@ The defaults below are safe working positions for the initial English (U.S.)
 means the field is unresolved or intentionally omitted, never that Codex should
 invent a value.
 
-| App Store Connect field    | Provisional v1 value                         | Release gate                                                                                                                              |
-| -------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| App name                   | CUT OS                                       | Name clearance and owner approval remain open.                                                                                            |
-| Bundle ID                  | `com.zarifahmed.cut`                         | Must match the signed archive and existing App Store Connect record.                                                                      |
-| App version                | `1.0.0`                                      | Must match the submitted build.                                                                                                           |
-| Primary language           | English (U.S.) / `en-US`                     | Confirm in App Store Connect.                                                                                                             |
-| Subtitle                   | Daily weigh-ins & meal logging               | Owner/reviewer approval remains open.                                                                                                     |
-| Description                | Focused v1 listing copy above                | Owner, legal, nutrition, and final-binary review remain open.                                                                             |
-| Keywords                   | Draft above                                  | Recheck byte limit and owner approval before submission.                                                                                  |
-| Primary category           | Health & Fitness                             | Owner must confirm against the final feature set.                                                                                         |
-| Secondary category         | None                                         | Safe v1 omission unless the owner selects a supported second category.                                                                    |
-| Made for Kids              | No                                           | Do not select the Kids category.                                                                                                          |
-| Promotional text           | Focused v1 promotional copy above            | Owner/reviewer approval remains open; keep it aligned with verified shipped behavior.                                                     |
-| Marketing URL              | Omit for initial v1                          | Optional; do not add until a public, accurate marketing page exists.                                                                      |
-| What's New                 | Not applicable to the initial 1.0 submission | Supply truthful release notes for later versions.                                                                                         |
-| Support URL                | Unresolved                                   | Owner must supply and verify a public, functional HTTPS page.                                                                             |
-| Privacy Policy URL         | Unresolved                                   | Owner/counsel must publish and verify the required HTTPS policy.                                                                          |
-| Terms/EULA URL             | Unresolved                                   | Owner/counsel must approve and publish the final 18+ terms position.                                                                      |
-| Age Suitability URL        | Omit unless owner approves one               | Optional; if supplied, it must describe the self-declared 18+ gate accurately.                                                            |
-| Seller/legal operator      | Zarif Ahmed; individual sole proprietor      | Verify Apple's activated personal seller name matches the owner-supplied record and obtain counsel review before submission.              |
-| SKU                        | `cut-ios-v1`                                 | Internal identifier selected under standing launch authority; confirm the exact value before creating Apple's immutable app record.       |
-| Copyright                  | Unresolved                                   | Owner supplies the correct year and rights holder.                                                                                        |
-| Content-rights declaration | Unresolved                                   | Owner/counsel answer from the final catalog, artwork, copy, and licensed content.                                                         |
-| Initial territories        | United States only (`US`)                    | Owner-approved; still reconcile the repository code to Apple's current App Store Connect territory ID and confirm the saved availability. |
-| App distribution method    | Public                                       | Routine launch choice recorded; retain saved App Store Connect UTC evidence before App Review.                                            |
-| Apple silicon Mac          | Do Not Make Available                        | iPhone-only v1 choice recorded; retain saved App Store Connect UTC evidence.                                                              |
-| Apple Vision Pro           | Do Not Make Available                        | iPhone-only v1 choice recorded; retain saved App Store Connect UTC evidence.                                                              |
-| App download price         | Free download                                | Owner-approved; confirm the saved App Store Connect value.                                                                                |
-| License agreement          | Unresolved                                   | Owner/counsel chooses Apple's standard EULA or an approved custom EULA.                                                                   |
-| App tax category           | Unresolved                                   | Owner/counsel/finance confirms the live App Store Connect value; do not copy the subscription tax category by assumption.                 |
-| DSA trader status          | Unresolved                                   | Owner/counsel confirms trader, non-trader, or a documented no-EU-distribution position.                                                   |
-| Server Notifications       | RevenueCat direct; URLs pending              | Use the full dashboard-issued RevenueCat URL in both production and sandbox App Store Connect fields, then retain non-secret evidence.    |
-| Release method             | Manual release                               | Keep manual until the owner explicitly approves both submission and public release in App Store Connect.                                  |
+| App Store Connect field    | Provisional v1 value                         | Release gate                                                                                                                        |
+| -------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| App name                   | CUT OS                                       | Name clearance and owner approval remain open.                                                                                      |
+| Bundle ID                  | `com.zarifahmed.cut`                         | Must match the signed archive and existing App Store Connect record.                                                                |
+| App version                | `1.0.0`                                      | Must match the submitted build.                                                                                                     |
+| Primary language           | English (U.S.) / `en-US`                     | Confirm in App Store Connect.                                                                                                       |
+| Subtitle                   | Daily weigh-ins & meal logging               | Owner/reviewer approval remains open.                                                                                               |
+| Description                | Focused v1 listing copy above                | Owner, legal, nutrition, and final-binary review remain open.                                                                       |
+| Keywords                   | Draft above                                  | Recheck byte limit and owner approval before submission.                                                                            |
+| Primary category           | Health & Fitness                             | Owner must confirm against the final feature set.                                                                                   |
+| Secondary category         | None                                         | Safe v1 omission unless the owner selects a supported second category.                                                              |
+| Made for Kids              | No                                           | Do not select the Kids category.                                                                                                    |
+| Promotional text           | Focused v1 promotional copy above            | Owner/reviewer approval remains open; keep it aligned with verified shipped behavior.                                               |
+| Marketing URL              | Omit for initial v1                          | Optional; do not add until a public, accurate marketing page exists.                                                                |
+| What's New                 | Not applicable to the initial 1.0 submission | Supply truthful release notes for later versions.                                                                                   |
+| Support URL                | Unresolved                                   | Owner must supply and verify a public, functional HTTPS page.                                                                       |
+| Privacy Policy URL         | Unresolved                                   | Owner/counsel must publish and verify the required HTTPS policy.                                                                    |
+| Terms/EULA URL             | Unresolved                                   | Owner/counsel must approve and publish the final 18+ terms position.                                                                |
+| Age Suitability URL        | Omit unless owner approves one               | Optional; if supplied, it must describe the self-declared 18+ gate accurately.                                                      |
+| Seller/legal operator      | Zarif Ahmed; individual sole proprietor      | Verify Apple's activated personal seller name matches the owner-supplied record and obtain counsel review before submission.        |
+| SKU                        | `cut-ios-v1`                                 | Internal identifier selected under standing launch authority; confirm the exact value before creating Apple's immutable app record. |
+| Copyright                  | Unresolved                                   | Owner supplies the correct year and rights holder.                                                                                  |
+| Content-rights declaration | Unresolved                                   | Owner/counsel answer from the final catalog, artwork, copy, and licensed content.                                                   |
+| Initial territories        | United States only (`US`)                    | Owner-approved; select only the U.S. storefront and retain evidence of the saved App Store Connect availability.                    |
+| App distribution method    | Public                                       | Routine launch choice recorded; retain saved App Store Connect UTC evidence before App Review.                                      |
+| Apple silicon Mac          | Do Not Make Available                        | iPhone-only v1 choice recorded; retain saved App Store Connect UTC evidence.                                                        |
+| Apple Vision Pro           | Do Not Make Available                        | iPhone-only v1 choice recorded; retain saved App Store Connect UTC evidence.                                                        |
+| App download price         | Free download                                | Owner-approved; confirm the saved App Store Connect value.                                                                          |
+| License agreement          | Unresolved                                   | Owner/counsel chooses Apple's standard EULA or an approved custom EULA.                                                             |
+| App tax category           | Unresolved                                   | Owner/counsel/finance confirms the value; the subscription inherits it unless an explicit override is approved.                     |
+| DSA trader status          | Unresolved                                   | Owner/counsel confirms trader or non-trader; Apple still requires the declaration when distribution excludes the EU.                |
+| Server Notifications       | Omit for initial v1                          | Optional. If added later, use RevenueCat's full production URL; Apple's sandbox field may be empty and fall back to production.     |
+| Release method             | Manual release                               | Keep manual until the owner explicitly approves both submission and public release in App Store Connect.                            |
 
 These three availability choices are explicit because Apple can otherwise make
 an iPhone/iPad app available through additional distribution or compatibility
@@ -339,7 +339,9 @@ display names, exact 45-character description, and `use_app_name` selection.
 Apple's live reference limits the localizable description to 45 characters; the
 initially approved 54-character sentence must not be entered. The exact
 corrected offer is bound to its recorded decision by working validation. The
-live price schedule/effective-date evidence and tax category remain unresolved.
+live price schedule/effective-date evidence remains unresolved. The subscription
+tax category inherits the required app-level category unless an explicit
+override is approved.
 Release requires App Store Connect confirmation, attachment to version 1.0,
 review notes, an uploaded review screenshot whose SHA-256 equals approved shot
 07, verified RevenueCat mapping, exact-build StoreKit/Purchase QA/TestFlight
@@ -375,20 +377,21 @@ credential-bearing text.
 group configuration, exact version/build/full Git commit/EAS build ID/App Store
 Connect build ID, QA references, and approvals. That five-field identity must
 match listing claims review, App Review, screenshot, subscription, and
-accessibility evidence exactly.
+any later published accessibility-label evidence exactly. The initial voluntary
+label omission deliberately has no exact-build or App Store Connect label
+evidence.
 Internal-only testing is not external TestFlight App Review approval. If the
 owner selects external testing, review contact, demo access, notes, and the
 selected exact build become mandatory.
 
-Apple's Accessibility Nutrition Label is also exact-build evidence. Test the
-recorded common tasks on iPhone and classify all nine Apple features before the
-owner saves either verified support or a no-support-indicated decision. Every
-feature claimed as supported must list all canonical common tasks in order;
-only Captions and Audio Descriptions may use the no-media not-applicable state.
-Never infer support from framework use or automated checks. Release requires a
-structured `confirmed_in_app_store_connect` record for either decision, with
-the saved UTC, controlled evidence reference, and explicit App Store Connect
-approval; a drafted decision alone is not evidence that Apple received it.
+Apple currently makes Accessibility Nutrition Labels voluntary. CUT's initial
+release explicitly leaves them unreported, so the product page may show that
+support has not yet been indicated. Do not fabricate an App Store Connect save
+or infer support from framework use or automated checks. Physical-iPhone
+accessibility QA still applies. If labels are published later, test the recorded
+common tasks on the exact iPhone build; every claimed feature must cover all
+canonical tasks, with only Captions and Audio Descriptions eligible for the
+no-media state, and retain attributable saved evidence.
 
 ## App Review notes checklist
 

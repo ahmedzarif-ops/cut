@@ -43,14 +43,7 @@
     "capturedBy": null,
     "capturedAtUtc": null
   },
-  "listingSelection": [
-    "01-today-next-action",
-    "03-balanced-options",
-    "04-meal-preview",
-    "05-today-nutrition-logged",
-    "06-logged-meal-controls",
-    "07-subscription-offer"
-  ],
+  "listingSelection": ["01-today-next-action", "07-subscription-offer"],
   "reviewEvidenceSelection": [],
   "shots": [
     {
@@ -72,8 +65,8 @@
     {
       "order": 2,
       "id": "02-today-weigh-in-complete",
-      "intendedUse": "listing_candidate",
-      "requiredForReleaseEvidence": true,
+      "intendedUse": "optional_listing_candidate",
+      "requiredForReleaseEvidence": false,
       "file": null,
       "sha256": null,
       "evidenceReference": null,
@@ -88,8 +81,8 @@
     {
       "order": 3,
       "id": "03-balanced-options",
-      "intendedUse": "listing_candidate",
-      "requiredForReleaseEvidence": true,
+      "intendedUse": "optional_listing_candidate",
+      "requiredForReleaseEvidence": false,
       "file": null,
       "sha256": null,
       "evidenceReference": null,
@@ -104,8 +97,8 @@
     {
       "order": 4,
       "id": "04-meal-preview",
-      "intendedUse": "listing_candidate",
-      "requiredForReleaseEvidence": true,
+      "intendedUse": "optional_listing_candidate",
+      "requiredForReleaseEvidence": false,
       "file": null,
       "sha256": null,
       "evidenceReference": null,
@@ -120,8 +113,8 @@
     {
       "order": 5,
       "id": "05-today-nutrition-logged",
-      "intendedUse": "listing_candidate",
-      "requiredForReleaseEvidence": true,
+      "intendedUse": "optional_listing_candidate",
+      "requiredForReleaseEvidence": false,
       "file": null,
       "sha256": null,
       "evidenceReference": null,
@@ -136,8 +129,8 @@
     {
       "order": 6,
       "id": "06-logged-meal-controls",
-      "intendedUse": "optional_listing_candidate_and_review_evidence",
-      "requiredForReleaseEvidence": true,
+      "intendedUse": "optional_listing_candidate",
+      "requiredForReleaseEvidence": false,
       "file": null,
       "sha256": null,
       "evidenceReference": null,
@@ -169,7 +162,7 @@
       "order": 8,
       "id": "08-adult-eligibility",
       "intendedUse": "review_evidence",
-      "requiredForReleaseEvidence": true,
+      "requiredForReleaseEvidence": false,
       "file": null,
       "sha256": null,
       "evidenceReference": null,
@@ -185,7 +178,7 @@
       "order": 9,
       "id": "09-settings-controls",
       "intendedUse": "review_evidence",
-      "requiredForReleaseEvidence": true,
+      "requiredForReleaseEvidence": false,
       "file": null,
       "sha256": null,
       "evidenceReference": null,

@@ -2,17 +2,15 @@
 
 **Status:** Working copy only; owner and exact-build review required.
 
-The first three screenshots should communicate CUT OS's shipped value without
-requiring a user to read the full listing. Use this sequence for the initial
-English (U.S.) product page. The bold phrases are internal story labels for
-capture review, not text overlays:
+The initial English (U.S.) launch selection uses the smallest truthful story:
+one core-use screenshot and one paid-offer screenshot. The bold phrases are
+internal capture-review labels, not text overlays:
 
 1. `01-today-next-action` — **One clear next step each day**
-2. `03-balanced-options` — **Six balanced meal options**
-3. `04-meal-preview` — **See estimated macros before you log**
-4. `05-today-nutrition-logged` — **Review today's nutrition totals**
-5. `06-logged-meal-controls` — **Adjust or delete logged meals**
-6. `07-subscription-offer` — **Paid access uses an auto-renewable Apple subscription**
+2. `07-subscription-offer` — **Paid access uses an auto-renewable Apple subscription**
+
+If exact-build marketing assets are ready without delaying submission, shots
+03 through 06 may be added later in their manifest order. They remain optional.
 
 The subscription-offer screen is part of the public listing selection, not only
 App Review evidence. Its exact-build capture must show an unmistakable paid or

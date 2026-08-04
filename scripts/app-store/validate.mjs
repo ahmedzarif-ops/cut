@@ -56,12 +56,10 @@ export const EXPECTED_SHOT_IDS = Object.freeze([
 
 export const EXPECTED_LISTING_SHOT_IDS = Object.freeze([
   "01-today-next-action",
-  "03-balanced-options",
-  "04-meal-preview",
-  "05-today-nutrition-logged",
-  "06-logged-meal-controls",
   "07-subscription-offer",
 ]);
+
+const EXPECTED_INITIAL_TERRITORIES = Object.freeze(["US"]);
 
 const EXPECTED_LISTING_PAID_DISCLOSURE = Object.freeze({
   shotId: "07-subscription-offer",
@@ -81,14 +79,14 @@ const EXACT_BUILD_IDENTITY_FIELDS = Object.freeze([
 
 const EXPECTED_SHOT_RELEASE_EVIDENCE = Object.freeze({
   "01-today-next-action": true,
-  "02-today-weigh-in-complete": true,
-  "03-balanced-options": true,
-  "04-meal-preview": true,
-  "05-today-nutrition-logged": true,
-  "06-logged-meal-controls": true,
+  "02-today-weigh-in-complete": false,
+  "03-balanced-options": false,
+  "04-meal-preview": false,
+  "05-today-nutrition-logged": false,
+  "06-logged-meal-controls": false,
   "07-subscription-offer": true,
-  "08-adult-eligibility": true,
-  "09-settings-controls": true,
+  "08-adult-eligibility": false,
+  "09-settings-controls": false,
   "10-sign-up-18plus": false,
 });
 
@@ -489,6 +487,10 @@ const EXPECTED_ACCESSIBILITY_EXACT_BUILD_KEYS = Object.freeze([
 ]);
 const ACCESSIBILITY_SOURCE =
   "https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/";
+const ACCESSIBILITY_VOLUNTARY_OMISSION_STATUS =
+  "not_reported_voluntary_for_initial_release";
+const ACCESSIBILITY_VOLUNTARY_ASC_STATUS = "not_required_voluntary";
+const ACCESSIBILITY_VOLUNTARY_DECISION = "not_reported_for_initial_release";
 const EXPECTED_ACCESSIBILITY_TASK_KEYS = Object.freeze([
   "firstLaunchAndSignUp",
   "signIn",
@@ -553,6 +555,8 @@ const EXPECTED_COMMERCIAL_LEGAL_APPROVAL_KEYS = Object.freeze([
   "legal",
   "appStoreConnectConfirmed",
 ]);
+const APP_STORE_SERVER_NOTIFICATIONS_OPTIONAL_STATUS =
+  "not_configured_optional_for_initial_release";
 
 const EXPECTED_TESTFLIGHT_KEYS = Object.freeze([
   "schemaVersion",
@@ -770,10 +774,6 @@ const EU_EEA_TERRITORY_CODES = Object.freeze([
   "ES",
   "SE",
 ]);
-const EU_TERRITORY_CODES = Object.freeze(
-  EU_EEA_TERRITORY_CODES.filter((code) => !["IS", "LI", "NO"].includes(code)),
-);
-
 const REQUIRED_OWNER_FIELDS = Object.freeze([
   "listing.sellerLegalOperator",
   "listing.sku",
@@ -786,6 +786,8 @@ const REQUIRED_OWNER_FIELDS = Object.freeze([
   "availability.distributionMethod.decision",
   "availability.appleSiliconMacAvailability.decision",
   "availability.appleVisionProAvailability.decision",
+  "accessibility.status",
+  "accessibility.appStoreConnectDecision.decision",
   "subscription.entitlementId",
   "subscription.subscriptionGroupReferenceName",
   "subscription.productReferenceName",
@@ -1191,11 +1193,9 @@ function medicalDeviceRegionGroups(territories) {
   return groups;
 }
 
-function validateTerritoryCatalog({ catalog, release, check }) {
+function validateTerritoryCatalog({ catalog, check }) {
   check(isObject(catalog), "territory catalog must be an object");
   if (!isObject(catalog)) return new Set();
-
-  release = release || catalog.status === TERRITORY_CATALOG_RELEASE_STATUS;
 
   check(
     catalog.schemaVersion === 1,
@@ -1255,23 +1255,26 @@ function validateTerritoryCatalog({ catalog, release, check }) {
 
   const review = catalog.review;
   check(isObject(review), "territory catalog review must be an object");
-  if (release) {
+  const claimsCurrentReconciliation =
+    catalog.status === TERRITORY_CATALOG_RELEASE_STATUS ||
+    review?.status === "confirmed_current";
+  if (claimsCurrentReconciliation) {
     check(
       catalog.status === TERRITORY_CATALOG_RELEASE_STATUS,
-      "release mode requires the territory catalog reconciled with the App Store Connect Territories API",
+      "confirmed territory review requires API-confirmed catalog status",
     );
     check(
       review?.status === "confirmed_current",
-      "release mode requires a current territory catalog review",
+      "API-confirmed territory catalog requires a current review",
     );
     check(
       validIsoTimestamp(review?.reconciledAtUtc),
-      "release mode requires a UTC territory-catalog reconciliation timestamp",
+      "confirmed territory catalog requires a UTC reconciliation timestamp",
     );
     for (const field of ["reviewer", "evidenceReference"]) {
       check(
         typeof review?.[field] === "string" && review[field].trim().length > 0,
-        `release mode requires territory catalog review.${field}`,
+        `confirmed territory catalog requires review.${field}`,
       );
     }
   } else if (isObject(review)) {
@@ -1596,10 +1599,8 @@ function validateCommercialAndLegal({ value, release, check }) {
   );
   check(
     value.dsaStatus === null ||
-      ["trader", "non_trader", "not_applicable_no_eu_distribution"].includes(
-        value.dsaStatus,
-      ),
-    "commercialAndLegal.dsaStatus must be null or an approved DSA position",
+      ["trader", "non_trader"].includes(value.dsaStatus),
+    "commercialAndLegal.dsaStatus must be null, trader, or non_trader",
   );
 
   validateAppleCommerceReadiness({
@@ -1625,9 +1626,11 @@ function validateCommercialAndLegal({ value, release, check }) {
     "commercialAndLegal.appStoreServerNotifications.deliveryArchitecture must remain revenuecat_direct for v1",
   );
   check(
-    ["pending_configuration", "confirmed_in_app_store_connect"].includes(
-      notifications?.status,
-    ),
+    [
+      "pending_configuration",
+      APP_STORE_SERVER_NOTIFICATIONS_OPTIONAL_STATUS,
+      "confirmed_in_app_store_connect",
+    ].includes(notifications?.status),
     "commercialAndLegal.appStoreServerNotifications.status is invalid",
   );
   for (const field of ["productionUrl", "sandboxUrl"]) {
@@ -1660,13 +1663,21 @@ function validateCommercialAndLegal({ value, release, check }) {
     nullableNonEmptyString(notifications?.evidenceReference),
     "commercialAndLegal.appStoreServerNotifications.evidenceReference must be null or non-empty",
   );
+  if (
+    notifications?.status === APP_STORE_SERVER_NOTIFICATIONS_OPTIONAL_STATUS
+  ) {
+    check(
+      notifications?.productionUrl === null &&
+        notifications?.sandboxUrl === null &&
+        notifications?.evidenceReference === null,
+      "optional initial-release App Store Server Notifications must not claim URLs or evidence",
+    );
+  }
   if (notifications?.status === "confirmed_in_app_store_connect") {
-    for (const field of ["productionUrl", "sandboxUrl"]) {
-      check(
-        validHttpsUrl(notifications?.[field]),
-        `confirmed App Store Server Notifications requires commercialAndLegal.appStoreServerNotifications.${field}`,
-      );
-    }
+    check(
+      validHttpsUrl(notifications?.productionUrl),
+      "confirmed App Store Server Notifications requires commercialAndLegal.appStoreServerNotifications.productionUrl",
+    );
     check(
       typeof notifications?.evidenceReference === "string" &&
         notifications.evidenceReference.trim().length > 0,
@@ -1702,20 +1713,23 @@ function validateCommercialAndLegal({ value, release, check }) {
     );
   }
   check(
-    notifications?.status === "confirmed_in_app_store_connect",
-    `${prefix} requires App Store Server Notifications confirmation`,
+    [
+      APP_STORE_SERVER_NOTIFICATIONS_OPTIONAL_STATUS,
+      "confirmed_in_app_store_connect",
+    ].includes(notifications?.status),
+    `${prefix} requires an explicit optional-or-configured App Store Server Notifications decision`,
   );
-  for (const field of ["productionUrl", "sandboxUrl"]) {
+  if (notifications?.status === "confirmed_in_app_store_connect") {
     check(
-      validHttpsUrl(notifications?.[field]),
-      `${prefix} requires commercialAndLegal.appStoreServerNotifications.${field}`,
+      validHttpsUrl(notifications?.productionUrl),
+      `${prefix} requires commercialAndLegal.appStoreServerNotifications.productionUrl when notifications are configured`,
+    );
+    check(
+      typeof notifications?.evidenceReference === "string" &&
+        notifications.evidenceReference.trim().length > 0,
+      `${prefix} requires commercialAndLegal.appStoreServerNotifications.evidenceReference when notifications are configured`,
     );
   }
-  check(
-    typeof notifications?.evidenceReference === "string" &&
-      notifications.evidenceReference.trim().length > 0,
-    `${prefix} requires commercialAndLegal.appStoreServerNotifications.evidenceReference`,
-  );
 }
 
 function validateAppReview({
@@ -3068,7 +3082,6 @@ function validateSubscription({ value, listing, release, check }) {
     "availabilityEvidenceReference",
     "introductoryOfferDecision",
     "familySharingDecision",
-    "taxCategory",
   ]) {
     check(
       value[field] !== null && value[field] !== "",
@@ -3176,6 +3189,7 @@ function validateAccessibility({ value, listing, release, check }) {
   check(
     [
       "pending_exact_build_common_task_evaluation",
+      ACCESSIBILITY_VOLUNTARY_OMISSION_STATUS,
       "evaluated_for_release",
     ].includes(value.status),
     "accessibility.status must remain pending or be evaluated_for_release",
@@ -3193,8 +3207,10 @@ function validateAccessibility({ value, listing, release, check }) {
   const appStoreConnectDecision = value.appStoreConnectDecision;
   const appStoreConnectDecisionConfirmed =
     appStoreConnectDecision?.status === "confirmed_in_app_store_connect";
+  const voluntaryOmission =
+    value.status === ACCESSIBILITY_VOLUNTARY_OMISSION_STATUS;
   const approvalRequired =
-    release ||
+    (release && !voluntaryOmission) ||
     value.status === "evaluated_for_release" ||
     appStoreConnectDecisionConfirmed;
   const exactBuild = value.exactBuildEvidence;
@@ -3308,9 +3324,11 @@ function validateAccessibility({ value, listing, release, check }) {
     "accessibility.appStoreConnectDecision must contain exactly the required keys",
   );
   check(
-    ["pending", "confirmed_in_app_store_connect"].includes(
-      appStoreConnectDecision?.status,
-    ),
+    [
+      "pending",
+      ACCESSIBILITY_VOLUNTARY_ASC_STATUS,
+      "confirmed_in_app_store_connect",
+    ].includes(appStoreConnectDecision?.status),
     "accessibility.appStoreConnectDecision.status is invalid",
   );
   check(
@@ -3318,6 +3336,7 @@ function validateAccessibility({ value, listing, release, check }) {
       [
         "drafted_verified_support",
         "support_not_indicated_for_initial_release",
+        ACCESSIBILITY_VOLUNTARY_DECISION,
       ].includes(appStoreConnectDecision?.decision),
     "accessibility.appStoreConnectDecision.decision is invalid",
   );
@@ -3336,6 +3355,58 @@ function validateAccessibility({ value, listing, release, check }) {
         (key) => value.features?.[key]?.status === "verified_supported",
       ),
       "accessibility drafted_verified_support requires at least one verified_supported feature",
+    );
+  }
+  if (voluntaryOmission) {
+    check(
+      appStoreConnectDecision?.status === ACCESSIBILITY_VOLUNTARY_ASC_STATUS &&
+        appStoreConnectDecision?.decision ===
+          ACCESSIBILITY_VOLUNTARY_DECISION &&
+        appStoreConnectDecision?.savedAtUtc === null &&
+        appStoreConnectDecision?.evidenceReference === null,
+      "voluntary initial-release accessibility omission must not claim an App Store Connect save or evidence",
+    );
+    for (const field of EXACT_BUILD_IDENTITY_FIELDS.filter(
+      (field) => field !== "appVersion",
+    )) {
+      check(
+        exactBuild?.[field] === null,
+        `voluntary initial-release accessibility omission requires accessibility.exactBuildEvidence.${field} null`,
+      );
+    }
+    check(
+      exactBuild?.testedAtUtc === null &&
+        exactBuild?.evidenceReference === null,
+      "voluntary initial-release accessibility omission must not claim exact-build evidence",
+    );
+    for (const key of EXPECTED_ACCESSIBILITY_TASK_KEYS) {
+      check(
+        value.commonTasks?.[key]?.status === "pending" &&
+          value.commonTasks?.[key]?.evidenceReference === null,
+        `voluntary initial-release accessibility omission must not claim common-task evidence for ${key}`,
+      );
+    }
+    for (const key of EXPECTED_ACCESSIBILITY_FEATURE_KEYS) {
+      check(
+        value.features?.[key]?.status === "pending" &&
+          Array.isArray(value.features?.[key]?.commonTasksVerified) &&
+          value.features[key].commonTasksVerified.length === 0 &&
+          value.features?.[key]?.evidenceReference === null,
+        `voluntary initial-release accessibility omission must not claim feature evidence for ${key}`,
+      );
+    }
+    check(
+      value.approval?.owner === true &&
+        value.approval?.accessibilityReviewer === false &&
+        value.approval?.exactBuildVerified === false &&
+        value.approval?.appStoreConnectConfirmed === false,
+      "voluntary initial-release accessibility omission requires only the owner decision recorded",
+    );
+  } else {
+    check(
+      appStoreConnectDecision?.status !== ACCESSIBILITY_VOLUNTARY_ASC_STATUS &&
+        appStoreConnectDecision?.decision !== ACCESSIBILITY_VOLUNTARY_DECISION,
+      "voluntary accessibility decision fields require the voluntary omission status",
     );
   }
   validateApprovalRecord({
@@ -3869,8 +3940,7 @@ export function validateMetadata({
   );
   const allowedTerritoryCodes = validateTerritoryCatalog({
     catalog: territoryCatalog,
-    release,
-    check,
+    check: release ? () => {} : check,
   });
 
   const expo = appConfig?.expo;
@@ -4146,6 +4216,10 @@ export function validateMetadata({
   );
   if (Array.isArray(initialTerritories)) {
     check(
+      arraysEqual(initialTerritories, EXPECTED_INITIAL_TERRITORIES),
+      "listing.initialTerritories must remain the owner-approved United States-only selection",
+    );
+    check(
       initialTerritories.every(
         (territory) =>
           typeof territory === "string" && /^[A-Z]{2}$/u.test(territory),
@@ -4157,17 +4231,21 @@ export function validateMetadata({
       "listing.initialTerritories must not contain duplicates",
     );
     check(
-      initialTerritories.every((territory) =>
-        allowedTerritoryCodes.has(territory),
-      ),
+      release ||
+        initialTerritories.every((territory) =>
+          allowedTerritoryCodes.has(territory),
+        ),
       "listing.initialTerritories must use current codes from app-store/app-store-connect-territories.json",
     );
   }
   const validatedInitialTerritories =
     Array.isArray(initialTerritories) &&
     initialTerritories.length > 0 &&
-    initialTerritories.every((territory) =>
-      allowedTerritoryCodes.has(territory),
+    initialTerritories.every(
+      (territory) =>
+        typeof territory === "string" &&
+        /^[A-Z]{2}$/u.test(territory) &&
+        (release || allowedTerritoryCodes.has(territory)),
     )
       ? initialTerritories
       : [];
@@ -4281,17 +4359,6 @@ export function validateMetadata({
     release,
     check,
   });
-  if (
-    submission.commercialAndLegal?.dsaStatus ===
-      "not_applicable_no_eu_distribution" &&
-    validatedInitialTerritories.some((territory) =>
-      EU_TERRITORY_CODES.includes(territory),
-    )
-  ) {
-    errors.push(
-      "commercialAndLegal.dsaStatus cannot claim no EU distribution while an EU territory is selected",
-    );
-  }
   validateAppReview({
     value: submission.appReview,
     listing,
@@ -4944,11 +5011,16 @@ export function validateExactBuildBindings({
       "subscription.exactBuildEvidence",
       submission?.subscription?.exactBuildEvidence,
     ],
-    [
+  ];
+  if (
+    submission?.accessibility?.status !==
+    ACCESSIBILITY_VOLUNTARY_OMISSION_STATUS
+  ) {
+    consumers.push([
       "accessibility.exactBuildEvidence",
       submission?.accessibility?.exactBuildEvidence,
-    ],
-  ];
+    ]);
+  }
 
   for (const [label, consumer] of consumers) {
     for (const field of EXACT_BUILD_IDENTITY_FIELDS) {
@@ -5451,13 +5523,6 @@ export function validateScreenshotManifest({
     check(
       listingSelection.length >= 1 && listingSelection.length <= 10,
       "release mode requires 1 through 10 listing screenshots",
-    );
-    const requiredIds = EXPECTED_SHOT_IDS.filter(
-      (id) => EXPECTED_SHOT_RELEASE_EVIDENCE[id],
-    );
-    check(
-      requiredIds.every((id) => manifest.reviewEvidenceSelection?.includes(id)),
-      "reviewEvidenceSelection must include every required release-evidence shot",
     );
     check(
       manifest.status === "approved_for_submission",

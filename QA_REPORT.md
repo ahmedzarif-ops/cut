@@ -6,8 +6,8 @@
 
 ## Current launch addendum — August 4, 2026
 
-- **1,241/1,241 automated tests pass:** 247 release operations, 50 App Store, 33
-  domain, 4 database, 411 mobile, and 496 API.
+- **1,291/1,291 automated tests pass:** 295 release operations, 51 App Store, 33
+  domain, 4 database, 412 mobile, and 496 API.
 - Root TypeScript, generated-code drift, working App Store validation,
   changed-file formatting, `.replit` parsing, migration drift, Expo dependency
   health, and a non-secret production-profile Expo bundle rehearsal pass. The
@@ -25,10 +25,15 @@
 - Database statements, startup migrations, API/public-server shutdown, and
   readiness recovery now have cross-tested timeout boundaries. Metro receives
   an allowlist with dotenv loading disabled instead of the server environment.
-- Target-aware strict validation intentionally fails with **281** diagnostics
-  for `app_review` and **280** for `public_release` until owner, legal,
+- Target-aware strict validation intentionally fails with **216** diagnostics
+  for `app_review` and **215** for `public_release` until owner, legal,
   production-service, exact-build, screenshot, and App Store Connect evidence
   is complete.
+- Release evidence now rejects prose-only monitoring thresholds and unsafe
+  application-only rollback after any completed migration. It binds a closed
+  migration class, pre-deploy write cutoff, covered recovery point, prior-API
+  compatibility, distinct tested recovery procedures, structured alert
+  thresholds, approvals, and owners.
 - The evidence verifier now accepts only the immutable
   `BUILD_SHA -> APP_REVIEW_EVIDENCE_SHA -> PUBLIC_RELEASE_EVIDENCE_SHA` chain.
   The transition preserves the first manifest, build/deployment identity,
@@ -37,14 +42,18 @@
   shutdown-closure fields.
 - Clean Expo iOS prebuild is idempotent with the CUT scene-lifecycle and pod-
   target plugins. The generated Podfile passes Ruby parsing and CocoaPods 1.16.2;
-  all 256 current pod deployment-target settings resolve to iOS 17.0, a simulated
-  future 19.0 requirement remains 19.0, and unknown expressions fail closed.
+  installation resolves 98 dependencies and 99 total pods, all 222 current pod
+  deployment-target settings resolve to iOS 17.0, a simulated future 19.0
+  requirement remains 19.0, and unknown expressions fail closed.
 - An unsigned Xcode 27 Release simulator compile and iOS 27 scene-launch
   rehearsal pass. A separately produced Hermes release bundle was installed in
   that app; the process remained running with an active `UIWindowScene`, and the
   prior missing-scene launch assertion did not recur. This is not a signed
   archive, EAS build, TestFlight build, physical-iPhone result, or full product
   tap-through.
+- Native configuration now keeps the dark launch screen's status bar readable
+  and uses Clerk Expo 4.2.0 without the optional Google Sign-In package or pod.
+  Expo introspection and native autolinking checks enforce both conditions.
 - App Store password recovery now uses Clerk's prebuilt sign-in-only native
   `AuthView`; public web uses Clerk's prebuilt `SignIn` with sign-up and transfer
   disabled. The development tenant has Strict enumeration protection enabled.

@@ -28,14 +28,12 @@ owner, legal, nutrition, privacy, or native QA review.
   decompression, dimensions, and transparency without relying on a
   platform-specific JPEG decoder.
 
-Before each release, an authorized App Store Connect user must fetch the active
-territories from Apple's read-only `GET /v1/territories?limit=200` endpoint,
-reconcile every selected two-letter storefront code to its current three-letter
-API ID, and update the catalog review fields with a UTC timestamp, reviewer, and
-evidence reference. If Apple changes the active storefront count or membership,
-refresh the sorted snapshot from Apple's live storefront selector first. Never
-infer or add a launch territory during this review. Release validation remains
-blocked while the catalog review is pending.
+The catalog is a translation and input-sanity aid, not a submission gate. Before
+release, an authorized App Store Connect user must confirm that the owner-approved
+selected territories—United States only for v1—were saved, with UTC and
+controlled evidence in the availability record. A full 175-storefront API
+reconciliation may refresh this snapshot later, but it cannot block a release
+that does not select those storefronts. Never infer or add a launch territory.
 
 Run the working-record checks during development:
 
@@ -45,7 +43,9 @@ pnpm run validate:app-store
 
 Run the release check only after the owner-controlled values, approvals,
 production privacy evidence, exact-build TestFlight/App Review/subscription/
-accessibility evidence, and real screenshots are complete:
+listing-claims evidence, and the selected real screenshots are complete.
+Accessibility Nutrition Label exact-build evidence is required only if CUT
+later publishes labels; physical-device accessibility QA remains required:
 
 ```sh
 pnpm run validate:app-store:release
@@ -81,8 +81,10 @@ The exact submitted build is one canonical identity: app version, Apple build
 number, full Git commit, EAS build ID, and App Store Connect build ID. Copy that
 same identity into the TestFlight record, App Review record, screenshot capture
 defaults, listing exact-build claims review, subscription evidence, and
-accessibility evidence. Release validation rejects any missing field or
-mismatch.
+accessibility evidence only when labels are evaluated for publication. The
+initial voluntary omission carries no accessibility-label build identity or
+App Store Connect evidence. Release validation rejects any required missing
+field or mismatch.
 
 Other fail-closed bindings are deliberate:
 
@@ -141,17 +143,21 @@ Other fail-closed bindings are deliberate:
   and the release process never issues a test deletion.
   Dashboard evidence must be paired with purchase, StoreKit-offer, and TestFlight
   QA bound to the exact submitted build; and
-- a supported accessibility feature must list every canonical common task in
-  order on the exact build. Captions and Audio Descriptions are the only
-  features that may be marked not applicable when the app contains no media;
-  either release decision must also be confirmed as saved in App Store Connect
-  with UTC, evidence reference, and approval.
+- Accessibility Nutrition Labels are currently voluntary. The initial release
+  explicitly records that they are not reported and rejects any contradictory
+  feature, exact-build, or App Store Connect evidence. If CUT later publishes a
+  supported feature, it must list every canonical common task in order on the
+  exact build; Captions and Audio Descriptions are the only no-media exceptions.
+- App Store Server Notifications are optional and do not block initial release.
+  If configured, the production URL must be the full RevenueCat URL with saved
+  evidence; the sandbox URL may be omitted so Apple routes sandbox notifications
+  to production, or it must exactly match the production URL.
 
 The release check is expected to fail today. It rejects unresolved fields,
 unconfirmed listing review or Apple commerce readiness, commercial/legal, App
-Review, subscription, TestFlight, accessibility, age, or privacy state; missing
+Review, subscription, TestFlight, required accessibility QA, age, or privacy state; missing
 or hash-mismatched screenshots; unapproved personal-data reviews; non-PNG files;
-unsupported dimensions; PNG alpha; an unreconciled territory catalog; pending
+unsupported dimensions; PNG alpha; pending
 authentication recovery or production-tenant evidence; stale app-config
 mappings; or App Review Notes over 4,000 UTF-8 bytes. Never weaken it just to
 make a submission pass.

@@ -125,6 +125,8 @@ test("committed working App Store records preserve approved and pending scopes",
     "availability.distributionMethod.decision",
     "availability.appleSiliconMacAvailability.decision",
     "availability.appleVisionProAvailability.decision",
+    "accessibility.status",
+    "accessibility.appStoreConnectDecision.decision",
   ]) {
     assert.ok(submission.ownerControlledFields.includes(field));
   }
@@ -165,6 +167,26 @@ test("committed working App Store records preserve approved and pending scopes",
     "use_app_name",
   );
   assert.equal(submission.subscription.approval.owner, true);
+  assert.equal(
+    submission.commercialAndLegal.appStoreServerNotifications.status,
+    "not_configured_optional_for_initial_release",
+  );
+  assert.equal(
+    submission.accessibility.status,
+    "not_reported_voluntary_for_initial_release",
+  );
+  assert.deepEqual(submission.accessibility.appStoreConnectDecision, {
+    status: "not_required_voluntary",
+    decision: "not_reported_for_initial_release",
+    savedAtUtc: null,
+    evidenceReference: null,
+  });
+  assert.deepEqual(submission.accessibility.approval, {
+    owner: true,
+    accessibilityReviewer: false,
+    exactBuildVerified: false,
+    appStoreConnectConfirmed: false,
+  });
   assert.equal(
     submission.subscription.ownerDecision.revision,
     "owner-offer-2026-08-04-v2",
@@ -365,6 +387,22 @@ test("the initial listing screenshot story includes a clear paid subscription of
       .intendedUse,
     "listing_candidate_and_in_app_purchase_review_evidence",
   );
+  for (const optionalEvidenceId of [
+    "02-today-weigh-in-complete",
+    "03-balanced-options",
+    "04-meal-preview",
+    "05-today-nutrition-logged",
+    "06-logged-meal-controls",
+    "08-adult-eligibility",
+    "09-settings-controls",
+    "10-sign-up-18plus",
+  ]) {
+    assert.equal(
+      manifest.shots.find((shot) => shot.id === optionalEvidenceId)
+        .requiredForReleaseEvidence,
+      false,
+    );
+  }
   assert.match(
     captionPlan,
     /`07-subscription-offer` — \*\*Paid access uses an auto-renewable Apple subscription\*\*/u,
@@ -418,10 +456,10 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
       "release mode requires initial territories confirmed in App Store Connect",
     ),
   );
-  assert.ok(
-    errors.includes(
-      "release mode requires the territory catalog reconciled with the App Store Connect Territories API",
-    ),
+  assert.equal(
+    errors.some((error) => error.includes("territory catalog")),
+    false,
+    "the full storefront catalog is a translation aid, not an Apple submission gate",
   );
   assert.ok(
     errors.includes(
@@ -481,10 +519,10 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
       "release mode requires verified restore-after-account-deletion native QA with UTC evidence",
     ),
   );
-  assert.ok(
-    errors.includes(
-      "release mode requires accessibility.status evaluated_for_release",
-    ),
+  assert.equal(
+    errors.some((error) => error.includes("accessibility")),
+    false,
+    "voluntarily unreported accessibility labels must not block release",
   );
   assert.ok(
     errors.includes(
@@ -1227,8 +1265,26 @@ test("RevenueCat restore after account deletion requires transfer behavior and n
   );
 });
 
-test("v1 server notifications are bound directly to one RevenueCat URL", () => {
+test("optional notifications and configured RevenueCat notification URLs fail closed", () => {
   const inputs = validationInputs();
+
+  assert.equal(
+    validateMetadata({
+      ...inputs,
+      submission: inputs.submission,
+      release: true,
+    }).some((error) => error.includes("App Store Server Notifications")),
+    false,
+  );
+
+  const contradictoryOmission = clone(inputs.submission);
+  contradictoryOmission.commercialAndLegal.appStoreServerNotifications.productionUrl =
+    "https://api.revenuecat.com/v1/incoming-webhooks/apple-server-notifications/appProduction1234";
+  assert.ok(
+    validateMetadata({ ...inputs, submission: contradictoryOmission }).includes(
+      "optional initial-release App Store Server Notifications must not claim URLs or evidence",
+    ),
+  );
 
   const unsupported = clone(inputs.submission);
   unsupported.commercialAndLegal.appStoreServerNotifications.deliveryArchitecture =
@@ -1277,15 +1333,28 @@ test("v1 server notifications are bound directly to one RevenueCat URL", () => {
   const matching = clone(inputs.submission);
   const revenueCatUrl =
     "https://api.revenuecat.com/v1/incoming-webhooks/apple-server-notifications/appProduction1234";
+  matching.commercialAndLegal.appStoreServerNotifications.status =
+    "confirmed_in_app_store_connect";
   matching.commercialAndLegal.appStoreServerNotifications.productionUrl =
     revenueCatUrl;
   matching.commercialAndLegal.appStoreServerNotifications.sandboxUrl =
     revenueCatUrl;
+  matching.commercialAndLegal.appStoreServerNotifications.evidenceReference =
+    "evidence/app-store-server-notifications";
   assert.equal(
     validateMetadata({ ...inputs, submission: matching }).some((error) =>
       error.includes("notification URL"),
     ),
     false,
+  );
+
+  matching.commercialAndLegal.appStoreServerNotifications.sandboxUrl = null;
+  assert.equal(
+    validateMetadata({ ...inputs, submission: matching }).some((error) =>
+      error.includes("App Store Server Notifications"),
+    ),
+    false,
+    "Apple allows sandbox notifications to fall back to the production URL",
   );
 });
 
@@ -1394,22 +1463,23 @@ test("initial territories must be explicit, valid, unique, and approved", () => 
     );
   }
 
-  const validGbSubmission = clone(inputs.submission);
-  validGbSubmission.listing.initialTerritories = ["GB"];
-  assert.equal(
-    validateMetadata({ ...inputs, submission: validGbSubmission }).some(
-      (error) => error.includes("listing.initialTerritories"),
+  const unauthorizedTerritoryDrift = clone(inputs.submission);
+  unauthorizedTerritoryDrift.listing.initialTerritories = ["GB"];
+  assert.ok(
+    validateMetadata({
+      ...inputs,
+      submission: unauthorizedTerritoryDrift,
+    }).includes(
+      "listing.initialTerritories must remain the owner-approved United States-only selection",
     ),
-    false,
   );
 
   const contradictoryDsa = clone(inputs.submission);
-  contradictoryDsa.listing.initialTerritories = ["DE"];
   contradictoryDsa.commercialAndLegal.dsaStatus =
     "not_applicable_no_eu_distribution";
   assert.ok(
     validateMetadata({ ...inputs, submission: contradictoryDsa }).includes(
-      "commercialAndLegal.dsaStatus cannot claim no EU distribution while an EU territory is selected",
+      "commercialAndLegal.dsaStatus must be null, trader, or non_trader",
     ),
   );
 
@@ -1573,7 +1643,7 @@ test("availability schema accepts only App Store distribution and platform choic
   assert.deepEqual(confirmedErrors, []);
 });
 
-test("territory catalog drift remains visible and release-blocking", () => {
+test("territory catalog drift remains visible without inventing a release gate", () => {
   const inputs = validationInputs();
   assert.equal(inputs.territoryCatalog.storefrontCodes.length, 175);
   assert.ok(inputs.territoryCatalog.storefrontCodes.includes("GB"));
@@ -1590,6 +1660,25 @@ test("territory catalog drift remains visible and release-blocking", () => {
     }).includes(
       "territory catalog must retain the reviewed 175-storefront snapshot",
     ),
+  );
+
+  assert.equal(
+    validateMetadata({
+      ...inputs,
+      submission: inputs.submission,
+      territoryCatalog: shortenedCatalog,
+      release: true,
+    }).some((error) => error.includes("territory catalog")),
+    false,
+  );
+
+  const falseConfirmation = clone(inputs.territoryCatalog);
+  falseConfirmation.status = "confirmed_current_from_app_store_connect_api";
+  assert.ok(
+    validateMetadata({
+      ...inputs,
+      territoryCatalog: falseConfirmation,
+    }).includes("API-confirmed territory catalog requires a current review"),
   );
 });
 
@@ -1899,6 +1988,36 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
   );
   assert.deepEqual(gateErrors, []);
 
+  subscription.taxCategory = null;
+  assert.equal(
+    validateMetadata({
+      ...inputs,
+      submission,
+      release: true,
+      releaseTarget: "app_review",
+    }).some((error) => error.includes("subscription.taxCategory")),
+    false,
+    "a null subscription tax category inherits the required app-level category",
+  );
+
+  commercial.appStoreServerNotifications = {
+    deliveryArchitecture: "revenuecat_direct",
+    status: "not_configured_optional_for_initial_release",
+    productionUrl: null,
+    sandboxUrl: null,
+    evidenceReference: null,
+  };
+  assert.equal(
+    validateMetadata({
+      ...inputs,
+      submission,
+      release: true,
+      releaseTarget: "app_review",
+    }).some((error) => error.includes("App Store Server Notifications")),
+    false,
+    "Apple's optional notification URL must not block an otherwise complete release record",
+  );
+
   subscription.revenueCat.customerReadWritePermissionStatus = "pending";
   assert.ok(
     validateMetadata({ ...inputs, submission, release: true }).includes(
@@ -1934,10 +2053,6 @@ test("every exact-build surface is cross-bound to canonical TestFlight identity"
       "subscription.exactBuildEvidence",
       (submission) => submission.subscription.exactBuildEvidence,
     ],
-    [
-      "accessibility.exactBuildEvidence",
-      (submission) => submission.accessibility.exactBuildEvidence,
-    ],
   ];
   for (const [label, select] of cases) {
     const submission = clone(baseSubmission);
@@ -1953,6 +2068,20 @@ test("every exact-build surface is cross-bound to canonical TestFlight identity"
       ),
     );
   }
+
+  const evaluatedAccessibility = clone(baseSubmission);
+  evaluatedAccessibility.accessibility.status = "evaluated_for_release";
+  evaluatedAccessibility.accessibility.exactBuildEvidence.easBuildId =
+    "different-eas-build";
+  assert.ok(
+    validateExactBuildBindings({
+      submission: evaluatedAccessibility,
+      testFlightSubmission: baseTestFlight,
+      screenshotManifest: baseScreenshots,
+    }).includes(
+      "accessibility.exactBuildEvidence.easBuildId must exactly match TestFlight exactBuildEvidence.easBuildId",
+    ),
+  );
 
   const missingIdentity = clone(baseSubmission);
   delete missingIdentity.appReview.exactBuild.gitCommit;
@@ -2694,6 +2823,8 @@ test("accessibility support claims cover every common task and media N/A is narr
   const inputs = validationInputs();
   const submission = clone(inputs.submission);
   const accessibility = submission.accessibility;
+  accessibility.status = "pending_exact_build_common_task_evaluation";
+  accessibility.appStoreConnectDecision.status = "pending";
   accessibility.appStoreConnectDecision.decision = "drafted_verified_support";
   assert.ok(
     validateMetadata({ ...inputs, submission }).includes(
@@ -2725,6 +2856,41 @@ test("accessibility support claims cover every common task and media N/A is narr
   assert.ok(
     validateMetadata({ ...inputs, submission }).includes(
       "accessibility.features.voiceControl may use not_applicable_no_media only for Captions or Audio Descriptions",
+    ),
+  );
+});
+
+test("voluntary accessibility omission is explicit and cannot carry false evidence", () => {
+  const inputs = validationInputs();
+  const releaseErrors = validateMetadata({
+    ...inputs,
+    submission: inputs.submission,
+    release: true,
+  });
+  assert.deepEqual(
+    releaseErrors.filter((error) => error.includes("accessibility")),
+    [],
+  );
+
+  const contradictoryFeature = clone(inputs.submission);
+  contradictoryFeature.accessibility.features.voiceOver.status =
+    "verified_supported";
+  contradictoryFeature.accessibility.features.voiceOver.commonTasksVerified =
+    Object.keys(contradictoryFeature.accessibility.commonTasks);
+  contradictoryFeature.accessibility.features.voiceOver.evidenceReference =
+    "evidence/voiceover";
+  assert.ok(
+    validateMetadata({ ...inputs, submission: contradictoryFeature }).includes(
+      "voluntary initial-release accessibility omission must not claim feature evidence for voiceOver",
+    ),
+  );
+
+  const falseSave = clone(inputs.submission);
+  falseSave.accessibility.appStoreConnectDecision.savedAtUtc =
+    "2026-08-04T00:00:00Z";
+  assert.ok(
+    validateMetadata({ ...inputs, submission: falseSave }).includes(
+      "voluntary initial-release accessibility omission must not claim an App Store Connect save or evidence",
     ),
   );
 });
@@ -3264,4 +3430,14 @@ test("release screenshot plan cannot remove required evidence or reuse one file"
     realpathFile: (candidate) => candidate,
   });
   assert.ok(errors.includes("captured screenshot filenames must be unique"));
+
+  const optionalShot = readJson("app-store/screenshots/manifest.json");
+  optionalShot.shots.find(
+    (shot) => shot.id === "08-adult-eligibility",
+  ).requiredForReleaseEvidence = true;
+  assert.ok(
+    validateScreenshotManifest({ manifest: optionalShot }).includes(
+      "08-adult-eligibility requiredForReleaseEvidence must match the approved plan",
+    ),
+  );
 });

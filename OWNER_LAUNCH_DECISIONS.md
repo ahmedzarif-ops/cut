@@ -184,40 +184,51 @@ decisions.
 
 **Status:** Owner approved the free-download, United States-only, manual-release
 commercial shape; EULA, tax, DSA, counsel, and App Store Connect confirmation
-remain pending.
+remain pending. Optional App Store Server Notifications are explicitly omitted
+from the initial release rather than treated as a submission gate.
 
 The owner must explicitly choose and record:
 
 - Apple's standard EULA or a counsel-approved custom EULA;
-- the app tax category and the auto-renewable subscription tax category;
-- the Digital Services Act trader/non-trader position, or a documented
-  not-applicable position if EU distribution is excluded;
-- the full dashboard-issued RevenueCat Apple Server Notification URL after the
-  live iOS app is configured, saved identically in Apple's production and
-  sandbox fields; and
+- the app tax category; the auto-renewable subscription inherits it unless an
+  owner/finance reviewer deliberately configures an override;
+- the Digital Services Act trader/non-trader declaration. Apple requires a
+  declaration even without EU distribution and states that an app distributed
+  only outside the EU is not acting as a trader on the App Store; owner/counsel
+  must still confirm the submitted answer;
 - evidence that each choice was saved in App Store Connect.
 
 The working records contain the approved free-download, United States-only,
 manual-release choices while keeping the unresolved EULA, tax, DSA, counsel,
-notification, and App Store Connect evidence fields `null` or pending.
+and App Store Connect evidence fields `null` or pending. The notifications
+record explicitly states `not_configured_optional_for_initial_release` with no
+URL or fabricated evidence.
 Engineering has fixed the v1 delivery architecture to RevenueCat direct because
 the API does not implement an Apple notification receiver; the exact dashboard
-URL and saved App Store Connect evidence remain pending. Do not infer the EULA,
-tax category, DSA status, or live notification endpoint from source code or the
-approved monthly subscription.
+URL may be configured after the RevenueCat iOS app exists, but it is not an
+initial-submission prerequisite. If configured later, use the dashboard-issued
+production URL; Apple's documentation permits omitting a separate sandbox URL,
+in which case sandbox notifications go to the production URL. Do not infer the
+EULA, app tax category, DSA status, or live notification endpoint from source code
+or the approved monthly subscription.
 
 **Working recommendation for the fastest narrow U.S. launch, pending owner,
-counsel, and tax review:** free app download; Apple's standard EULA; app tax
-category `App Store software`; subscription tax category `Match to parent app`;
-United States distribution only; no EU distribution and the corresponding
-documented DSA not-applicable position; and manual release after approval.
-Use RevenueCat's full Apple Server Notification URL identically for production
-and sandbox rather than inventing API endpoints that CUT does not serve.
+counsel, and tax review:** free app download; Apple's standard EULA; an accurate
+app tax category with the subscription left to inherit it; United States
+distribution only; the required DSA declaration; and manual release after
+approval.
+Do not invent an Apple notification endpoint that CUT does not serve.
 
 **Recorded owner decision:** The app itself is a free download, initial
-availability is United States only, and release remains manual. The EULA, both
-tax-category selections, and documented no-EU DSA position are still separate
-legal/tax decisions and are not inferred from the territory choice.
+availability is United States only, and release remains manual. The EULA, app
+tax category, and DSA position are still separate legal/tax decisions and are
+not inferred from the territory choice.
+
+**Routine launch choice recorded August 4, 2026:** Under the owner's standing
+instruction to minimize avoidable launch delay, the initial release omits the
+optional App Store Server Notifications URL. This does not weaken CUT's
+server-authoritative entitlement checks or native purchase/restore QA. The URL
+can be configured after launch without changing the app binary.
 
 The internal App Store SKU `cut-ios-v1` is selected under the owner's standing
 delegated launch instruction. It is not customer-facing, but Apple makes it
@@ -227,8 +238,9 @@ continue to agree before that record is created.
 ## Decision 6 — subscription display and accessibility disclosure
 
 **Status:** No trial, Family Sharing off, the corrected 45-character description,
-and `use_app_name` are recorded; accessibility labels and exact-build review
-remain pending.
+and `use_app_name` are recorded. Voluntary Accessibility Nutrition Labels are
+explicitly not reported for the initial release; accessibility product QA still
+remains required.
 
 The English (U.S.) App Name Display Option is `use_app_name`; no custom app name
 is authorized. Family Sharing is disabled and the introductory-offer decision
@@ -238,11 +250,16 @@ Keep TestFlight internal-only
 until purchase, restoration, deletion, privacy, and accessibility QA pass.
 Family Sharing cannot be turned off after it is enabled for a subscription.
 
-Apple's Accessibility Nutrition Labels are based on common tasks in the exact
-shipping build. A qualified reviewer must test the recorded iPhone tasks and
-all nine Apple feature labels, then the owner must decide whether to publish
-verified support or indicate no supported feature for the initial release. Do
-not claim support from automated tests or development builds alone.
+Apple currently states that providing Accessibility Nutrition Labels is
+voluntary and that an unreported device will show that support has not yet been
+indicated. Under the owner's standing instruction to minimize avoidable launch
+delay, CUT will not publish label claims for the initial release. The machine
+record binds that choice while prohibiting any feature, exact-build, or App
+Store Connect evidence claim. This does not waive VoiceOver, Larger Text,
+contrast, focus, or critical-flow physical-iPhone QA. If labels are published
+later, a qualified reviewer must evaluate every recorded iPhone common task and
+all applicable Apple feature labels on the exact build; never infer support
+from automated tests or framework use.
 
 For TestFlight, the owner must approve the feedback email and distribution
 scope. Internal-only testing does not require external TestFlight App Review;
@@ -362,9 +379,11 @@ These are intentionally deferred until the prerequisites are ready:
 - Any Clerk trial, billing method, or paid-plan upgrade if production cannot use
   the existing no-cost plan.
 - Apple agreements, tax, and banking.
-- EULA, tax categories, DSA status, and App Store Server Notifications. The
-  free-download and subscription App Name Display choices are recorded.
-- Accessibility Nutrition Label decision and any external TestFlight review.
+- EULA, app tax category, optional subscription tax override, and DSA status.
+  The free-download, optional-notification omission, and subscription App Name
+  Display choices are recorded.
+- Any future Accessibility Nutrition Label publication and any external
+  TestFlight review.
 - Final `CUT OS` name-clearance decision or owner-approved replacement name.
 - Final App Privacy and age-rating answers.
 - Submit for Review.
