@@ -37,12 +37,13 @@ describe("native password recovery boundary", () => {
     expect(nativeRecoverySource).not.toMatch(/mode="signUp"/);
   });
 
-  it("keeps public web recovery in Clerk's non-transferable prebuilt sign-in", () => {
+  it("keeps public web recovery behind CUT's guarded sign-up route", () => {
     expect(webRecoverySource).toContain(
       'import { SignIn } from "@clerk/expo/web";',
     );
     expect(webRecoverySource).toContain("transferable={false}");
     expect(webRecoverySource).toContain("withSignUp={false}");
+    expect(webRecoverySource).toContain('signUpUrl="/sign-up"');
     expect(webRecoverySource).not.toMatch(/useSignIn/);
     expect(webRecoverySource).not.toMatch(/resetPasswordEmailCode/);
     expect(webRecoverySource).not.toMatch(/console\./);

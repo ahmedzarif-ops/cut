@@ -40,10 +40,13 @@ Official provider references:
 - https://clerk.com/docs/reference/expo/native-components/auth-view
 - https://clerk.com/docs/guides/secure/user-enumeration-protection
 
-The public Expo web route uses Clerk's prebuilt web `<SignIn />` with both
-`withSignUp={false}` and `transferable={false}`. Clerk documents these controls
-as disabling sign-in-or-up and opaque sign-up transfer, so web recovery also
-cannot bypass CUT's adult/terms sign-up route. The universal
+The public Expo web route uses Clerk's prebuilt web `<SignIn />`, sets
+`transferable={false}`, and explicitly pins `signUpUrl="/sign-up"`. Live testing
+of CUT's locked Clerk SDK showed that `withSignUp={false}` alone does not remove
+the component's footer sign-up link. The explicit URL keeps that link on CUT's
+separately tested adult-confirmation and Terms-assent route instead of Clerk's
+hosted sign-up page. Release QA must verify this destination in the exact web
+build; do not infer it from `withSignUp` or `transferable`. The universal
 `forgot-password.tsx` custom flow is now only a non-launch fallback for other
 platform resolution; it must not be published or used as enumeration evidence.
 

@@ -5,8 +5,9 @@ import { useColors } from "@/hooks/useColors";
 
 /**
  * The public web surface also stays inside Clerk's prebuilt sign-in flow.
- * Disabling sign-up and transfer is deliberate: recovery must never bypass
- * CUT's separate adult-confirmation and Terms assent route.
+ * Disabling transfer and pinning Clerk's sign-up navigation to CUT's guarded
+ * route are deliberate: recovery must never bypass adult confirmation or
+ * Terms assent.
  */
 export default function WebForgotPasswordScreen() {
   const c = useColors();
@@ -20,7 +21,12 @@ export default function WebForgotPasswordScreen() {
       <Text style={s.subtitle}>
         Choose Forgot password in Clerk&apos;s secure sign-in window.
       </Text>
-      <SignIn routing="hash" transferable={false} withSignUp={false} />
+      <SignIn
+        routing="hash"
+        signUpUrl="/sign-up"
+        transferable={false}
+        withSignUp={false}
+      />
     </View>
   );
 }

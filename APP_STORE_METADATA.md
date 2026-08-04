@@ -203,7 +203,8 @@ Clerk's documented prebuilt native `AuthView` in sign-in-only mode. CUT's
 browser/development fallback still uses one generic message, but it is not the
 release architecture and a client-side delay is not an enumeration defense.
 The Expo web recovery route also uses Clerk's prebuilt non-transferable sign-in
-component. CUT's remaining custom reset screen is a non-launch fallback.
+component and explicitly routes any sign-up link to CUT's guarded `/sign-up`
+screen. CUT's remaining custom reset screen is a non-launch fallback.
 
 `app-store/app-store-submission.json` records
 `clerk_hosted_or_prebuilt_recovery` with official Clerk documentation and exact
