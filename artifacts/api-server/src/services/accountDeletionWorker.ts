@@ -1,4 +1,8 @@
 import { logger as defaultLogger } from "../lib/logger";
+import {
+  DEFAULT_ACCOUNT_DELETION_RETRY_INTERVAL_MS,
+  isValidAccountDeletionRetryInterval,
+} from "../lib/accountDeletionRetryInterval";
 import { retryPendingAccountDeletions } from "./accountDeletionService";
 
 export interface AccountDeletionWorker {
@@ -23,19 +27,28 @@ export interface AccountDeletionWorkerOptions {
 export function startAccountDeletionWorker(
   options: AccountDeletionWorkerOptions = {},
 ): AccountDeletionWorker {
-  const intervalMs = Math.max(1_000, options.intervalMs ?? 60_000);
+  const intervalMs =
+    options.intervalMs ?? DEFAULT_ACCOUNT_DELETION_RETRY_INTERVAL_MS;
+  if (!isValidAccountDeletionRetryInterval(intervalMs)) {
+    throw new RangeError("Invalid account deletion retry interval.");
+  }
   const limit = options.limit ?? 10;
   const logger = options.logger ?? defaultLogger;
   let activeRun: Promise<void> | null = null;
   let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
 
-  const runNow = (): Promise<void> => {
+  const runNow = (logIdle = false): Promise<void> => {
     if (stopped) return Promise.resolve();
     if (!activeRun) {
       activeRun = (async () => {
         try {
           const result = await retryPendingAccountDeletions(limit);
-          if (result.processed > 0) {
+          if (
+            logIdle ||
+            result.processed > 0 ||
+            result.pendingBacklogCount > 0
+          ) {
             logger.info(result, "Account deletion retries processed");
           }
         } catch {
@@ -53,14 +66,28 @@ export function startAccountDeletionWorker(
     return activeRun;
   };
 
-  const timer = setInterval(() => void runNow(), intervalMs);
-  (timer as { unref?: () => void }).unref?.();
+  const scheduleNext = (): void => {
+    if (stopped) return;
+    timer = setTimeout(() => {
+      timer = null;
+      void runNow().finally(scheduleNext);
+    }, intervalMs);
+    (timer as { unref?: () => void }).unref?.();
+  };
+
+  // Observe and process durable backlog immediately. The next timeout is only
+  // scheduled after this run settles, so slow vendor/database calls cannot
+  // create overlapping retries or hide the startup backlog for one interval.
+  void runNow(true).finally(scheduleNext);
 
   return {
     runNow,
     async stop() {
       stopped = true;
-      clearInterval(timer);
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
       if (activeRun) {
         await activeRun;
       }

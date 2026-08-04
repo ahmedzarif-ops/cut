@@ -11,12 +11,16 @@ const REVIEW_SCHEMA = /"@type"\s*:\s*"(Review|Rating|AggregateRating)"/i;
 
 export const DEFAULT_TIMEOUT_MS = 10_000;
 export const DEFAULT_MAX_RESPONSE_BYTES = 1_000_000;
+export const CLERK_PROXY_HEALTH_MAX_RESPONSE_BYTES = 16_384;
 
 const MAX_TIMEOUT_MS = 60_000;
 const MAX_RESPONSE_BYTES = 5_000_000;
 const MAX_CLI_ARGUMENTS = 256;
 const MAX_ANCHORS = 100;
 const MAX_IMAGES = 20;
+const CLERK_PROXY_PATH = "/api/__clerk";
+const CLERK_PROXY_HEALTH_PATH = "/v1/proxy-health";
+const CLERK_DOMAIN_ID = /^[A-Za-z0-9_-]{1,128}$/u;
 const SURFACE_TYPES = new Set([
   "public-indexed",
   "internal",
@@ -25,6 +29,7 @@ const SURFACE_TYPES = new Set([
   "json-health",
   "json-readiness",
   "auth-guard",
+  "clerk-proxy-health",
 ]);
 
 export class DeployVerificationError extends Error {
@@ -64,7 +69,10 @@ export function redactUrlForOutput(value, base) {
     }
     return sanitizeText(parsed.href);
   } catch {
-    return sanitizeText(String(value ?? "").split(/[?#]/u, 1)[0]);
+    // A malformed absolute or redirect URL can still contain credentials or
+    // secret-looking path material that string splitting cannot identify
+    // safely. Never echo unparseable input into release logs.
+    return "[invalid-url]";
   }
 }
 
@@ -321,6 +329,23 @@ function hasOkJsonBody(body) {
   }
 }
 
+function hasHealthyClerkProxyBody(body) {
+  try {
+    const parsed = JSON.parse(body);
+    return {
+      healthy:
+        parsed && typeof parsed === "object" && parsed.status === "healthy",
+      forwardedClientIpAcknowledged:
+        parsed &&
+        typeof parsed === "object" &&
+        typeof parsed.x_forwarded_for === "string" &&
+        parsed.x_forwarded_for.trim().length > 0,
+    };
+  } catch {
+    return { healthy: false, forwardedClientIpAcknowledged: false };
+  }
+}
+
 function resolvedUrl(value, base) {
   try {
     return new URL(value, base).href;
@@ -351,6 +376,30 @@ function validateSurfaceExpectation(surfaceType, expect) {
       throw new DeployVerificationError("invalid_redirect_expectation");
     }
   }
+  if (
+    surfaceType === "clerk-proxy-health" &&
+    (typeof expect.clerkDomainId !== "string" ||
+      !CLERK_DOMAIN_ID.test(expect.clerkDomainId))
+  ) {
+    throw new DeployVerificationError("invalid_clerk_domain_id");
+  }
+}
+
+/** Build the bounded public probe URL without accepting arbitrary query data. */
+export function clerkProxyHealthUrl(proxyUrl, clerkDomainId, options = {}) {
+  const target = parseHttpUrl(proxyUrl, options);
+  if (
+    target.pathname !== CLERK_PROXY_PATH ||
+    target.search ||
+    target.hash ||
+    !CLERK_DOMAIN_ID.test(clerkDomainId || "")
+  ) {
+    throw new DeployVerificationError("invalid_clerk_proxy_health_target");
+  }
+
+  target.pathname = `${CLERK_PROXY_PATH}${CLERK_PROXY_HEALTH_PATH}`;
+  target.searchParams.set("domain_id", clerkDomainId);
+  return target;
 }
 
 export function evaluateSurface(input) {
@@ -427,6 +476,17 @@ export function evaluateSurface(input) {
       add("HTTP 401", status === 401, `status=${status}`);
       add("JSON content type", hasJsonContentType(headers));
       break;
+    case "clerk-proxy-health": {
+      const proxyHealth = hasHealthyClerkProxyBody(body);
+      add("HTTP 200", status === 200, `status=${status}`);
+      add("JSON content type", hasJsonContentType(headers));
+      add("Clerk proxy status is healthy", proxyHealth.healthy);
+      add(
+        "forwarded client IP acknowledged",
+        proxyHealth.forwardedClientIpAcknowledged,
+      );
+      break;
+    }
     default:
       throw new DeployVerificationError("unknown_surface_type");
   }
@@ -439,8 +499,23 @@ export async function verifyUrl(url, surfaceType, expect = {}, options = {}) {
     throw new DeployVerificationError("unknown_surface_type");
   }
   validateSurfaceExpectation(surfaceType, expect);
-  const target = parseHttpUrl(url, options);
-  const { status, headers, body } = await fetchManual(target, options);
+  if (surfaceType === "clerk-proxy-health") networkLimits(options);
+  const proxyBaseTarget = parseHttpUrl(url, options);
+  const target =
+    surfaceType === "clerk-proxy-health"
+      ? clerkProxyHealthUrl(proxyBaseTarget, expect.clerkDomainId, options)
+      : proxyBaseTarget;
+  const requestOptions =
+    surfaceType === "clerk-proxy-health"
+      ? {
+          ...options,
+          maxResponseBytes: Math.min(
+            options.maxResponseBytes ?? CLERK_PROXY_HEALTH_MAX_RESPONSE_BYTES,
+            CLERK_PROXY_HEALTH_MAX_RESPONSE_BYTES,
+          ),
+        }
+      : options;
+  const { status, headers, body } = await fetchManual(target, requestOptions);
   let robotsTxt = "";
   let sitemapXml = "";
 
@@ -532,6 +607,9 @@ function parseArgv(argv) {
     } else if (rest[index] === "--robots-prefix") {
       expect.robotsPrefix = optionValue(rest, index);
       index += 1;
+    } else if (rest[index] === "--clerk-domain-id") {
+      expect.clerkDomainId = optionValue(rest, index);
+      index += 1;
     } else if (rest[index] === "--timeout-ms") {
       options.timeoutMs = parsePositiveInteger(
         optionValue(rest, index),
@@ -557,8 +635,8 @@ function parseArgv(argv) {
 function usage() {
   return [
     "usage: node deploy-verify.mjs <url> <surfaceType> [options]",
-    "surfaceType: public-indexed | internal | go | redirect | json-health | json-readiness | auth-guard",
-    "options: --anchor id --image path --redirect-to path --redirect-status N --robots-prefix path --timeout-ms N --max-response-bytes N --allow-local-http",
+    "surfaceType: public-indexed | internal | go | redirect | json-health | json-readiness | auth-guard | clerk-proxy-health",
+    "options: --anchor id --image path --redirect-to path --redirect-status N --robots-prefix path --clerk-domain-id id --timeout-ms N --max-response-bytes N --allow-local-http",
     "--allow-local-http permits HTTP only for localhost/loopback development tests; staging and production remain HTTPS-only",
   ].join("\n");
 }

@@ -64,8 +64,10 @@ social features. Those are backlog, not submission truth.
       graph has no known high/critical advisories, and CI enforces that gate.
       The clean-commit gate is completed by the release checkpoint commit.
 - [x] Machine-readable App Store records, screenshot manifest, release-evidence
-      template, deployment verifier, and fail-closed submission validator are
-      wired into CI and the release runbooks.
+      template, TestFlight record, full age-questionnaire inventory,
+      required-reason API binding, App Review/subscription/accessibility/
+      commercial gates, and fail-closed submission validator are wired into CI
+      and the release runbooks.
 
 ## Submission blockers
 
@@ -82,6 +84,10 @@ social features. Those are backlog, not submission truth.
       sensitive financial actions and remain owner-only.
 - [ ] Approve the first product's immutable Product ID, duration, price, and
       trial decision. Source code does not assume any of them.
+- [ ] Approve the app download price, standard-versus-custom EULA, app and
+      subscription tax categories, DSA trader position, Family Sharing, and
+      subscription App Name Display Option. All remain machine-recorded as
+      pending.
 - [ ] Separately approve the Subscription Group Reference Name, Subscription
       Product Reference Name, and each localized group display name,
       subscription display name, and description. No-trial is the shortest
@@ -102,6 +108,8 @@ social features. Those are backlog, not submission truth.
 - [ ] Create/verify the RevenueCat iOS app, Apple credentials, product mapping,
       exact `CUT_OS_PRO` entitlement, current/default offering, and Apple Server
       Notifications v2 sandbox/production URLs.
+- [ ] Configure and verify App Store Server Notifications in App Store Connect;
+      record the production and sandbox URLs and non-secret evidence reference.
 - [x] Link the app config to the existing `@zee-digipit/cut` Expo/EAS project.
 - [ ] Authenticate the local EAS CLI and verify Apple signing credentials.
 - [ ] Deploy the production API/database/Clerk combination and server-only
@@ -144,6 +152,11 @@ social features. Those are backlog, not submission truth.
 - [ ] Complete the current age-rating questionnaire truthfully, choose Health &
       Fitness if still accurate, do not mark Made for Kids, and apply the
       owner/legal-approved 18+ override when required.
+- [ ] Save evidence of the complete current age questionnaire, its version or
+      revision, current-system calculated rating, effective post-override 18+
+      rating, UTC confirmation time, and App Store Connect state. `Unrated`
+      cannot release. The repository's 24 provisional descriptors are not
+      approval.
 - [ ] Confirm the current App Store Connect regulated-medical-device declaration
       for every selected US, EU/EEA, or UK territory. The working position is
       general wellness/not a regulated medical device, but owner, qualified
@@ -151,6 +164,19 @@ social features. Those are backlog, not submission truth.
       still required.
 - [ ] Provide an eligible adult review account, exact full-access/purchase
       navigation, and a controlled restricted-path test with no real minor data.
+- [ ] Fresh-test the full-access, purchase, adult-gate, restricted, and deletion
+      review accounts on the exact submitted build within 24 hours of
+      submission; attest that each remains non-expiring for the review window
+      and has no MFA or out-of-band trap. Keep credentials outside the
+      repository and record only aliases, UTC, and non-secret evidence.
+- [ ] Complete the iPhone Accessibility Nutrition Label evaluation across the
+      recorded common tasks and all nine Apple feature labels. A supported
+      feature must cover every canonical common task; only Captions and Audio
+      Descriptions may be not applicable because there is no media. Save the
+      verified App Store Connect decision. Record whether verified support or
+      support-not-indicated was actually confirmed in App Store Connect, its
+      UTC save time, controlled evidence reference, and attributable approval.
+      A draft selection does not pass. Do not infer support.
 - [ ] Keep the production backend, Clerk, RevenueCat, and public pages live
       throughout review.
 
@@ -173,8 +199,24 @@ social features. Those are backlog, not submission truth.
       separate, offers Manage Subscription, and still permits immediate delete.
 - [ ] TestFlight repeats the critical purchase, restore, account-switch,
       deletion, poor-network, VoiceOver, and large-text paths.
+- [ ] Complete `app-store/testflight-submission.json` with the exact build,
+      including version, Apple build number, full Git commit, EAS build ID, and
+      App Store Connect build ID, plus internal group, feedback email, QA
+      references, and approvals. Bind that same identity to App Review,
+      screenshots, subscription, and accessibility. If external testers are
+      added, complete TestFlight App Review contact, demo access, and notes
+      first.
 - [ ] Final `.xcarchive` privacy report, embedded SDK inventory, `Info.plist`,
       export-compliance answer, and required-reason APIs are reconciled.
+- [ ] Every selected screenshot is an opaque accepted-size PNG whose SHA-256,
+      exact-build identity, PII-reviewed SHA-256, and evidence reference match
+      the bytes submitted to App Store Connect. The uploaded subscription
+      review screenshot SHA-256 must equal approved shot 07.
+- [ ] Final App Review Notes are remeasured after replacing placeholders and
+      remain within 4,000 UTF-8 bytes. Record the credential-free template hash,
+      final byte count, zero placeholders, measurement time, save state, and a
+      controlled evidence reference; do not hash or store the resolved
+      credential-bearing notes.
 - [ ] No P0/P1 issue remains; build and first subscription are submitted
       together; release stays manual until final owner approval.
 
@@ -229,6 +271,8 @@ social features. Those are backlog, not submission truth.
 - [Declare regulated medical device status](https://developer.apple.com/help/app-store-connect/manage-app-information/declare-regulated-medical-device-status)
 - [Offer auto-renewable subscriptions](https://developer.apple.com/help/app-store-connect/manage-subscriptions/offer-auto-renewable-subscriptions/)
 - [Auto-renewable subscription information fields](https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/auto-renewable-subscription-information)
+- [Accessibility Nutrition Labels](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/)
+- [TestFlight overview](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/)
 - [Submit an in-app purchase](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/)
 - [Offering account deletion](https://developer.apple.com/support/offering-account-deletion-in-your-app/)
 - [RevenueCat Expo installation](https://www.revenuecat.com/docs/getting-started/installation/expo)

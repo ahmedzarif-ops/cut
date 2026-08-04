@@ -13,11 +13,13 @@ App Review, or release publicly without the recorded approval for that action.
 
 ## Release invariants
 
-- Release only from a clean, immutable Git commit that passed the required CI
-  gates.
+- Build and upload only from a clean, immutable `BUILD_SHA` that pins routing
+  and passed the required CI gates. A later `POST_BUILD_EVIDENCE_SHA` may add
+  only machine-allowlisted non-runtime evidence before App Review submission.
 - Start a new copy of `RELEASE_EVIDENCE_MANIFEST_TEMPLATE.md` before touching a
-  shared environment. One manifest represents one candidate Git commit, API
-  deployment, database revision, EAS build, and Apple build number.
+  shared environment. One manifest represents one `BUILD_SHA`, its evidence-only
+  descendant, API deployment, database revision, EAS build, and Apple build
+  number.
 - Record only non-secret service aliases and evidence links. Never record a DSN,
   token, private key, session cookie, tester password, device identifier, health
   data, or response body.
@@ -49,20 +51,31 @@ connection values. If any identity is ambiguous, stop.
 
 ## Environment contract
 
-| Property            | Staging                                              | Production                                           |
-| ------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
-| Purpose             | Production-like rehearsal with test data             | App Review and customers                             |
-| Database            | Isolated, disposable test data; same migration chain | Approved production database with verified recovery  |
-| Clerk               | Development/test instance                            | Exact owner-approved production instance             |
-| RevenueCat/StoreKit | Test/Sandbox configuration                           | Exact approved project and App Store products        |
-| API and legal hosts | Stable HTTPS staging hosts                           | Stable owner-approved HTTPS hosts                    |
-| Mobile distribution | Internal development/preview build only              | Production EAS build, then internal TestFlight first |
-| Monitoring          | Same signal names and probes as production           | Approved alert destinations and escalation owner     |
+| Property             | Staging                                              | Production                                            |
+| -------------------- | ---------------------------------------------------- | ----------------------------------------------------- |
+| Purpose              | Production-like rehearsal with test data             | App Review and customers                              |
+| Database             | Isolated, disposable test data; same migration chain | Approved production database with verified recovery   |
+| Clerk                | Development/test instance; no FAPI proxy             | Exact production instance and enabled canonical proxy |
+| RevenueCat/StoreKit  | Test/Sandbox configuration                           | Exact approved project and App Store products         |
+| API and legal hosts  | Stable HTTPS staging hosts                           | Stable owner-approved HTTPS hosts                     |
+| Public app origin    | Explicit canonical `PUBLIC_APP_ORIGIN`               | Owner-approved canonical `PUBLIC_APP_ORIGIN`          |
+| API limiter topology | Recorded actual provider maximum                     | Provider maximum one; `API_MAX_INSTANCES=1`           |
+| Mobile distribution  | Internal development/preview build only              | Production EAS build, then internal TestFlight first  |
+| Monitoring           | Same signal names and probes as production           | Approved alert destinations and escalation owner      |
 
 Do not call an environment production-like until its service map, migration
 revision, health probes, auth guard, legal resources, and monitoring signals are
 recorded. Environment creation, credentials, paid services, and alert routing
 remain owner-controlled actions.
+
+The current API limiter uses process-local memory and is not globally enforced
+across replicas or restarts. Production startup rejects a missing or invalid
+`API_MAX_INSTANCES`, and rejects values above one as
+`SHARED_RATE_LIMIT_STORE`. This launch-only control is valid only when the
+release record proves the provider maximum is actually one and records the
+edge/abuse controls that cover a restart reset. Do not set the variable to `1`
+while leaving the provider able to scale higher. Multi-replica release requires
+an implemented, tested shared limiter store; no placeholder backend name counts.
 
 ## 1. Open the release record
 
@@ -186,12 +199,21 @@ pnpm --filter @workspace/cut-os run validate:legal-site:live
    native QA, poor-network, adult-eligibility, deletion, purchase, restore,
    relaunch, shared-device, and accessibility scripts in `QA_REPORT.md` and
    `PURCHASE_QA_REPORT.md`.
-8. Observe staging for the predeclared window and compare error rate, latency,
+8. Record provider-console evidence that staging and production are each capped
+   at one API machine. On staging, use two genuinely distinct external client
+   connections; do not spoof `X-Forwarded-For`. Prove client A receives `429`
+   at the configured threshold while client B retains its own allowance. Then
+   perform one authorized API restart, record that the process-local counter
+   resets as expected, and prove the limiter re-engages at the threshold after
+   restart. Record the provider edge/abuse control that covers this reset gap.
+   A missing provider cap, shared client bucket, non-reengaging limiter, or
+   absent edge control blocks release.
+9. Observe staging for the predeclared window and compare error rate, latency,
    readiness, database pool behavior, provider failures, and worker health with
    the approved staging baseline. Fill the actual baseline and acceptable
    variance in the manifest; this repository intentionally invents neither.
-9. Record results and sanitized evidence. Any failed check returns the candidate
-   to engineering; do not waive it during production deployment.
+10. Record results and sanitized evidence. Any failed check returns the candidate
+    to engineering; do not waive it during production deployment.
 
 The verifier has a default 10-second request limit and 1,000,000-byte response
 limit. It never prints response bodies or URL credentials/query/fragment. A
@@ -209,9 +231,18 @@ applicable with a reason:
 - owner/counsel/privacy/health-nutrition/security gates applicable to the scope;
 - public legal/support identity and exact approved publication hashes;
 - production API, database, Clerk, RevenueCat, EAS, and Apple service aliases;
+- the Clerk production instance/domain aliases, non-secret domain ID, exact
+  canonical proxy URL, candidate API deployment/Git SHA, audited edge trust
+  topology, provider proof that no direct or shorter origin path bypasses the
+  edge, exact XFF/XFH overwrite-or-rightmost-append semantics, adversarial
+  spoof/missing-XFF regression results, and the planned proxy-activation
+  verifier command from `EAS_RELEASE_RUNBOOK.md`;
 - database recovery evidence and rollback matrix;
 - monitoring owners, destinations, baselines, thresholds, and observation
   window;
+- provider-console proof of a one-machine API maximum, the exact
+  `API_MAX_INSTANCES=1` startup setting, staging restart behavior, two-distinct-
+  client isolation, and an approved edge control for the restart reset gap;
 - current review account and App Review instructions;
 - one selected Clerk-supported password-recovery architecture, provider-support
   evidence, implementation evidence, and an approved production-tenant test
@@ -238,25 +269,42 @@ does not guess a hosting command.
 3. Deploy the API candidate. If the provider supports a no-traffic revision or
    canary, verify it before promotion; otherwise record that capability as
    unavailable rather than pretending a canary occurred.
-4. Watch startup logs for the sanitized migration failure codes listed below.
+4. Reconfirm from the provider control plane that the API maximum is still one
+   and that the running revision has `API_MAX_INSTANCES=1`; a value in the
+   process environment is not evidence of the provider setting.
+5. Watch startup logs for the sanitized migration failure codes listed below.
    Confirm `/api/readyz` succeeds before routing normal traffic.
-5. Run the same API liveness, readiness, and auth-guard commands used in staging,
+6. Run the same API liveness, readiness, and auth-guard commands used in staging,
    substituting the production origin.
-6. Publish the exact counsel-approved legal/static candidate only after the
+7. Complete the fail-closed Clerk production proxy activation gate in
+   `EAS_RELEASE_RUNBOOK.md`: enable only the exact deployed canonical URL in the
+   production Clerk domain, run the bounded `clerk-proxy-health` check, and
+   record the non-secret fields and sanitized pass/fail evidence. The gate must
+   also prove there is no direct or shorter origin path around the edge, both
+   forwarded headers have the documented edge-owned rightmost semantics,
+   spoofed leftmost values cannot win, and missing XFF is omitted so proxy
+   health fails closed. Stop on any dashboard mismatch, redirect,
+   unhealthy/incomplete body, timeout, ingress bypass, topology mismatch, or
+   missing evidence. This provider configuration is production-only and is not
+   a staging check.
+8. From two approved, genuinely distinct external client connections, perform
+   the bounded live limiter isolation check recorded in the manifest. Never use
+   a client-supplied forwarding header as evidence of a distinct client.
+9. Publish the exact counsel-approved legal/static candidate only after the
    publication approval is recorded. Run the live legal verifier and the public
    `/status` readiness check.
-7. Exercise one authorized production review account without recording its
-   credentials or health/nutrition response data.
-8. Execute the approved password-recovery enumeration battery against the exact
-   production Clerk tenant. Record only the non-secret tenant alias and sanitized
-   evidence references for generic response parity, response-envelope parity,
-   timing parity, rate-limit behavior, provider failures, and safe abuse logging.
-   Never record tested email identifiers, reset codes, passwords, response
-   bodies, or identifier-linked raw timings.
-9. Observe every agreed signal for the predeclared production window. Record the
-   actual readings or linked dashboards, not screenshots containing personal
-   data.
-10. Only after the observation gate passes may the owner authorize the production
+10. Exercise one authorized production review account without recording its
+    credentials or health/nutrition response data.
+11. Execute the approved password-recovery enumeration battery against the exact
+    production Clerk tenant. Record only the non-secret tenant alias and sanitized
+    evidence references for generic response parity, response-envelope parity,
+    timing parity, rate-limit behavior, provider failures, and safe abuse logging.
+    Never record tested email identifiers, reset codes, passwords, response
+    bodies, or identifier-linked raw timings.
+12. Observe every agreed signal for the predeclared production window. Record the
+    actual readings or linked dashboards, not screenshots containing personal
+    data.
+13. Only after the observation gate passes may the owner authorize the production
     EAS build and internal TestFlight upload described in
     `EAS_RELEASE_RUNBOOK.md`.
 
@@ -326,40 +374,90 @@ After any rollback or roll-forward:
 
 The owner authorizes all Apple actions. Engineering may prepare the evidence:
 
-1. Build from the exact manifest commit with the production profile only after
-   the production environment preflight succeeds.
-2. Record EAS build ID/URL, app version, Apple build number, Xcode image, archive
-   checksum, privacy report reference, export-compliance evidence, and backend
-   deployment/migration identifiers.
-3. Upload to internal TestFlight first. Record the authorized upload command or
-   App Store Connect action and its result; do not store Apple credentials.
-4. Assign only the owner-approved internal group and tester owner.
-5. Complete `PURCHASE_QA_REPORT.md`, `QA_REPORT.md`, and
+1. Confirm the App Store Connect app exists, pin its numeric Apple ID at
+   `submit.production.ios.ascAppId`, and run
+   `node ops/scripts/eas-submit-config-verify.mjs`. Review and commit that exact
+   routing change before any signed production build. Require a clean work
+   tree, cross-check the numeric ID to bundle ID `com.zarifahmed.cut`, and
+   record the full Git SHA as `BUILD_SHA`. A placeholder, guessed value, or
+   interactive routing choice is prohibited.
+2. Run the production environment and release preflights from that clean exact
+   commit. Build it with the production profile only after every preflight
+   succeeds. No tracked-file change is allowed before the EAS upload.
+3. Record the exact Git SHA, EAS build ID/URL, app version, Apple build number,
+   Xcode image, archive checksum, privacy report reference, export-compliance
+   evidence, and backend deployment/migration identifiers. The Git SHA in the
+   build record must equal the routing-lock SHA.
+4. Before upload, check out the same clean `BUILD_SHA`, rerun
+   `node ops/scripts/eas-submit-config-verify.mjs`, and stop if `HEAD`, the
+   recorded build SHA, or the routing-lock SHA differs. After the owner
+   authorizes the exact EAS build ID and upload, run only the
+   deterministic command from `EAS_RELEASE_RUNBOOK.md`: production profile,
+   explicit `--id`, `--non-interactive`, and `--wait`. Do not use `--latest`,
+   `--auto-submit`, a bare submit command, or prompts. Record the command,
+   authorization, `BUILD_SHA`, numeric App Store app ID cross-check, and result
+   without Apple credentials. This EAS action only uploads the binary to App
+   Store Connect; it does not submit it for App Review or release it publicly.
+5. Upload to internal TestFlight first, then assign only the owner-approved
+   internal group and tester owner. Complete
+   `app-store/testflight-submission.json` with the exact build, feedback email,
+   group, QA references, and approvals. Internal-only testing is not external
+   TestFlight App Review approval; if external testers are selected, finish its
+   review contact, demo access, and notes fields before submitting that build.
+6. On the internal TestFlight build, confirm production sign-in, session refresh,
+   sign-out, and recovery traverse the enabled proxy on a physical device. Record
+   only pass/fail, build/device/OS class, UTC, and sanitized evidence; never the
+   echoed IP, account identifier, cookie, code, response body, or raw log.
+7. Execute the fixed matrices in `PURCHASE_QA_REPORT.md`, `QA_REPORT.md`, and
    `APP_REVIEW_RUNBOOK.md` on the exact build. Record device model/OS, result,
-   timestamp, and tester name or approved alias without device IDs.
-6. Confirm `authenticationSecurity` in
+   timestamp, and tester name or approved alias without device IDs in the
+   per-release manifest or controlled references; do not edit these shared
+   procedures after `BUILD_SHA`.
+8. Confirm `authenticationSecurity` in
    `app-store/app-store-submission.json` names the selected Clerk-supported
    recovery architecture, links every required production-tenant evidence item,
    and has all four attributable approvals. A generic client message alone does
    not satisfy this gate.
-7. After the exact-build screenshots are captured, selected, reviewed for
-   personal data, and every owner-controlled metadata/privacy/age/security field
-   is confirmed, run this from the repository root:
+9. After the exact-build screenshots are captured, selected, SHA-256 bound,
+   reviewed for personal data, and every owner-controlled commercial/legal,
+   metadata, privacy, full age-questionnaire, App Review account, subscription,
+   accessibility, and security field is evidenced and approved, remeasure the
+   resolved App Review Notes below 4,000 UTF-8 bytes. Finalize the one existing
+   per-release manifest and generate its adjacent checksum, then commit those
+   with only the existing App Store evidence JSON updates and newly added,
+   manifest-referenced `100644` PNGs. This single direct child of `BUILD_SHA` is
+   `POST_BUILD_EVIDENCE_SHA`; captured files must never be symlinks. From its
+   clean checkout run:
 
    ```sh
    pnpm run validate:app-store:release
    ```
 
-   Record the result in the evidence manifest. This post-capture gate must pass
-   before submission. It intentionally does not run in EAS pre-install because
-   release screenshots and their exact build identity do not exist until after
-   the build.
+   The gate derives `BUILD_SHA` from the committed TestFlight record and accepts
+   no command-line Git ref. Record `POST_BUILD_EVIDENCE_SHA` and the result
+   outside the finalized manifest. The integrated boundary proves
+   the exact direct-parent relationship, a clean tree, operation/mode-constrained
+   evidence files, manifest-bound regular PNGs, the release-manifest checksum,
+   byte-identical `eas.json`, `cli.requireCommit: true`, TestFlight `BUILD_SHA`,
+   and pinned `ascAppId`. Any runtime, config, dependency, lockfile, migration,
+   workflow, script, or shared-procedure change requires a new `BUILD_SHA`,
+   repeated preflights, signed build, and upload.
 
-8. Re-run production probes immediately before handoff to App Review.
-9. Owner signs the manifest's submission decision. Submission and manual public
-   release are separate approvals.
-10. Finalize and checksum the evidence manifest using its instructions. Any later
-    correction creates a superseding manifest.
+   CI validates a pull request's exact head in the dedicated **Release evidence
+   boundary** job because GitHub's synthetic pull-request merge commit is not
+   the evidence commit. Rebase onto the intended `main` tip before establishing
+   `BUILD_SHA`. After signing, preserve the exact `BUILD_SHA` direct-parent
+   `POST_BUILD_EVIDENCE_SHA` pair: no squash, merge commit, rebase merge, amend,
+   or other history rewrite is permitted. Integrate it into `main` by
+   fast-forward only and require the push-to-`main` evidence job to pass.
+
+10. Re-run production probes, including `clerk-proxy-health`, immediately before
+    handoff to App Review.
+11. Owner records the Submit for App Review decision in the external handoff.
+    Submission and manual public release are separate approvals.
+12. Never amend the finalized evidence manifest or its checksum. Any correction
+    creates a new build candidate; the strict boundary does not permit a second
+    post-build evidence commit.
 
 ## Sanitized evidence rules
 

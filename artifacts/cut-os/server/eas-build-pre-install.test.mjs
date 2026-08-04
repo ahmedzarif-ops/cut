@@ -6,7 +6,7 @@ import {
 } from "../scripts/eas-build-pre-install.mjs";
 
 describe("EAS pre-install release gate", () => {
-  it.each(["development", "preview"])(
+  it.each(["development", "preview", "ios-simulator"])(
     "runs only release configuration for %s",
     (profile) => {
       const { steps } = getEasBuildPreInstallSteps({
@@ -16,7 +16,7 @@ describe("EAS pre-install release gate", () => {
     },
   );
 
-  it.each(["production", undefined])(
+  it.each(["production", "unrecognized-profile", undefined])(
     "adds local and live legal verification for %s",
     (profile) => {
       const { steps } = getEasBuildPreInstallSteps({

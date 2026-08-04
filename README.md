@@ -54,7 +54,10 @@ real App Store purchases.
 | `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | cut-os EAS release            | Public Privacy Policy opened from sign-up and Settings         |
 | `EXPO_PUBLIC_TERMS_URL`              | cut-os EAS release            | Public Terms of Use opened from sign-up and Settings           |
 | `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Public support page opened from Settings                       |
+| `PUBLIC_APP_ORIGIN`                  | cut-os public server          | Canonical public HTTPS origin used for Expo preview deep links |
 | `PORT`                               | api-server                    | Listen port (Replit-provided)                                  |
+| `API_MAX_INSTANCES`                  | api-server production         | Actual platform max; only `1` is supported until shared limits |
+| `ACCOUNT_DELETION_RETRY_INTERVAL_MS` | api-server production         | Optional integer `1000`-`300000`; defaults to `60000`          |
 | `REVENUECAT_SECRET_API_KEY`          | api-server                    | Server-only RevenueCat REST API v2 secret                      |
 | `REVENUECAT_PROJECT_ID`              | api-server                    | RevenueCat REST API v2 project resource ID (`proj...`)         |
 | `REVENUECAT_ENTITLEMENT_REST_ID`     | api-server                    | RevenueCat v2 entitlement resource ID (`entl...`)              |
@@ -65,6 +68,16 @@ configuration, never secret storage. The three RevenueCat server values belong
 only in the API deployment. The development script derives the API and Clerk
 values automatically, but an EAS build does not inherit that shell mapping.
 See `EAS_RELEASE_RUNBOOK.md`.
+
+`PUBLIC_APP_ORIGIN` is required by the production public server and is never
+derived from request headers. API production startup also fails closed unless
+`API_MAX_INSTANCES` is explicitly `1`. This is a launch-only single-instance
+control: the release record must prove the provider maximum is one, and a
+multi-replica deployment requires a real shared rate-limit store first.
+The account-deletion worker runs once immediately at startup, then waits for
+each non-overlapping run to settle before scheduling the next bounded retry.
+Production rejects retry intervals outside 1 second through 5 minutes rather
+than passing unsafe values to the Node timer.
 
 ## Tests & checks
 

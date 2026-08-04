@@ -51,6 +51,12 @@ parsed by Apple:
 - User Defaults: `CA92.1`.
 - System Boot Time: `35F9.1`.
 
+`app-store/app-store-submission.json` repeats these four rows in
+`privacy.requiredReasonApis`. The working validator binds their exact ordered
+types and reason arrays to `artifacts/cut-os/app.json`; a missing, added,
+reordered, or changed reason fails validation. That drift check does not replace
+the final archive/embedded-SDK review.
+
 This is an engineering baseline, not final App Store disclosure evidence. The
 generated `.xcarchive` privacy report, final dependency graph, production vendor
 behavior, public Privacy Policy, and App Store Connect answers must still be

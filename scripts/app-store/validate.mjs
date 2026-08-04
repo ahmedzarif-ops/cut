@@ -1,8 +1,18 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { inflateSync } from "node:zlib";
+
+import {
+  EasSubmitConfigurationError,
+  validateEasSubmitConfig,
+} from "../../ops/scripts/eas-submit-config-verify.mjs";
+import {
+  PostBuildEvidenceError,
+  verifyPostBuildEvidenceBoundary,
+} from "../../ops/scripts/post-build-evidence-verify.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
@@ -26,6 +36,15 @@ export const EXPECTED_SHOT_IDS = Object.freeze([
   "10-sign-up-18plus",
 ]);
 
+export const MAX_REVIEW_ACCOUNT_EVIDENCE_AGE_MS = 24 * 60 * 60 * 1000;
+const EXACT_BUILD_IDENTITY_FIELDS = Object.freeze([
+  "appVersion",
+  "buildNumber",
+  "gitCommit",
+  "easBuildId",
+  "appStoreConnectBuildId",
+]);
+
 const EXPECTED_SHOT_RELEASE_EVIDENCE = Object.freeze({
   "01-today-next-action": true,
   "02-today-weigh-in-complete": true,
@@ -40,15 +59,331 @@ const EXPECTED_SHOT_RELEASE_EVIDENCE = Object.freeze({
 });
 
 const EXPECTED_AGE_ANSWERS = Object.freeze({
-  health_or_wellness_topics: "yes",
-  medical_or_treatment_information: "none",
+  parental_controls: "no",
   age_assurance: "yes",
-  social_media: "no",
+  unrestricted_web_access: "no",
   user_generated_content: "no",
+  social_media: "no",
+  social_media_disabled_for_users_under_13: "not_applicable",
   messaging_or_chat: "no",
   advertising: "no",
-  unrestricted_web_access: "no",
+  profanity_or_crude_humor: "none",
+  horror_or_fear_themes: "none",
+  alcohol_tobacco_or_drug_use_or_references: "none",
+  medical_or_treatment_information: "none",
+  health_or_wellness_topics: "yes",
+  mature_or_suggestive_themes: "none",
+  sexual_content_or_nudity: "none",
+  graphic_sexual_content_and_nudity: "none",
+  cartoon_or_fantasy_violence: "none",
+  realistic_violence: "none",
+  prolonged_graphic_or_sadistic_realistic_violence: "none",
+  guns_or_other_weapons: "none",
+  gambling: "none",
+  simulated_gambling: "none",
+  contests: "none",
+  loot_boxes: "none",
 });
+const EXPECTED_SUBMISSION_KEYS = Object.freeze([
+  "schemaVersion",
+  "status",
+  "updated",
+  "references",
+  "listing",
+  "ownerControlledFields",
+  "availability",
+  "commercialAndLegal",
+  "appReview",
+  "subscription",
+  "accessibility",
+  "authenticationSecurity",
+  "regulatedMedicalDevice",
+  "ageRating",
+  "privacy",
+]);
+const EXPECTED_SUBMISSION_REFERENCE_KEYS = Object.freeze([
+  "humanRecord",
+  "appConfig",
+  "privacyDataMap",
+  "reviewRunbook",
+  "testFlightRecord",
+  "screenshotManifest",
+]);
+const EXPECTED_AGE_RATING_KEYS = Object.freeze([
+  "targetAudience",
+  "questionnaireCheckedAt",
+  "questionnaireSource",
+  "savedQuestionnaireEvidence",
+  "workingAnswers",
+  "higherAgeOverride",
+  "approval",
+]);
+const EXPECTED_AGE_ANSWER_KEYS = Object.freeze([
+  "id",
+  "answer",
+  "status",
+  "basis",
+  "evidence",
+  "confirmationGates",
+]);
+const EXPECTED_PRIVACY_KEYS = Object.freeze([
+  "status",
+  "manifestPath",
+  "tracking",
+  "trackingDomains",
+  "requiredReasonApis",
+  "dataTypes",
+  "externalVerificationGates",
+  "approval",
+]);
+
+const AGE_QUESTIONNAIRE_SOURCE =
+  "https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/";
+const CURRENT_APPLE_AGE_RATING_VALUES = Object.freeze([
+  "4+",
+  "9+",
+  "13+",
+  "16+",
+  "18+",
+  "Unrated",
+]);
+
+const EXPECTED_APP_REVIEW_KEYS = Object.freeze([
+  "status",
+  "signInRequired",
+  "credentialPolicy",
+  "configuration",
+  "finalResolvedNotesEvidence",
+  "accountStates",
+  "exactBuild",
+  "approval",
+]);
+const EXPECTED_FINAL_REVIEW_NOTES_EVIDENCE_KEYS = Object.freeze([
+  "templateSha256",
+  "resolvedUtf8ByteCount",
+  "placeholdersRemaining",
+  "measuredAtUtc",
+  "savedInAppStoreConnect",
+  "evidenceReference",
+]);
+const EXPECTED_APP_REVIEW_EXACT_BUILD_KEYS = Object.freeze([
+  ...EXACT_BUILD_IDENTITY_FIELDS,
+  "verifiedAtUtc",
+  "navigationEvidenceReference",
+]);
+const EXPECTED_APP_REVIEW_CONFIGURATION_KEYS = Object.freeze([
+  "contactConfigured",
+  "notesConfigured",
+  "primaryDemoAccountConfigured",
+  "additionalSyntheticAccountsConfiguredInNotes",
+]);
+const EXPECTED_REVIEW_ACCOUNT_KEYS = Object.freeze([
+  "fullAccess",
+  "purchase",
+  "adultGate",
+  "restricted",
+  "deletion",
+]);
+const EXPECTED_APP_REVIEW_APPROVAL_KEYS = Object.freeze([
+  "owner",
+  "reviewQa",
+  "appStoreConnectConfirmed",
+]);
+
+const EXPECTED_SUBSCRIPTION_KEYS = Object.freeze([
+  "status",
+  "entitlementId",
+  "subscriptionGroupReferenceName",
+  "productReferenceName",
+  "productId",
+  "duration",
+  "priceScheduleEvidenceReference",
+  "usPricing",
+  "availabilityEvidenceReference",
+  "introductoryOfferDecision",
+  "introductoryOfferTerms",
+  "familySharingDecision",
+  "taxCategory",
+  "localizations",
+  "appStoreConnect",
+  "revenueCat",
+  "exactBuildEvidence",
+  "approval",
+]);
+const EXPECTED_US_PRICING_KEYS = Object.freeze([
+  "storefront",
+  "currency",
+  "amount",
+  "effectiveStatus",
+  "effectiveAtUtc",
+  "evidenceReference",
+  "ownerDecisionRevision",
+  "ownerDecisionEvidenceReference",
+]);
+const EXPECTED_INTRODUCTORY_OFFER_TERMS_KEYS = Object.freeze([
+  "duration",
+  "numberOfPeriods",
+  "priceAmount",
+  "eligibility",
+  "evidenceReference",
+]);
+const EXPECTED_REVIEW_SCREENSHOT_UPLOAD_KEYS = Object.freeze([
+  "status",
+  "shotId",
+  "sha256",
+  "uploadedAtUtc",
+  "evidenceReference",
+]);
+const EXPECTED_SUBSCRIPTION_APPROVAL_KEYS = Object.freeze([
+  "owner",
+  "appStoreConnectConfirmed",
+  "revenueCatVerified",
+  "nativeQaVerified",
+]);
+const EXPECTED_SUBSCRIPTION_EXACT_BUILD_KEYS = Object.freeze([
+  ...EXACT_BUILD_IDENTITY_FIELDS,
+  "storeKitOfferStatus",
+  "purchaseQaStatus",
+  "testFlightStatus",
+  "testedAtUtc",
+  "evidenceReference",
+]);
+const SUPPORTED_SUBSCRIPTION_DURATIONS = Object.freeze([
+  "1_week",
+  "1_month",
+  "2_months",
+  "3_months",
+  "6_months",
+  "1_year",
+]);
+
+const EXPECTED_ACCESSIBILITY_KEYS = Object.freeze([
+  "status",
+  "device",
+  "source",
+  "accessibilityUrl",
+  "exactBuildEvidence",
+  "commonTasks",
+  "features",
+  "appStoreConnectDecision",
+  "approval",
+]);
+const EXPECTED_ACCESSIBILITY_EXACT_BUILD_KEYS = Object.freeze([
+  ...EXACT_BUILD_IDENTITY_FIELDS,
+  "testedAtUtc",
+  "evidenceReference",
+]);
+const ACCESSIBILITY_SOURCE =
+  "https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/";
+const EXPECTED_ACCESSIBILITY_TASK_KEYS = Object.freeze([
+  "firstLaunchAndSignUp",
+  "signIn",
+  "adultEligibility",
+  "purchaseAndRestore",
+  "onboarding",
+  "todayAndWeighIn",
+  "balancedMealLogging",
+  "settingsAndDeletion",
+]);
+const EXPECTED_ACCESSIBILITY_FEATURE_KEYS = Object.freeze([
+  "voiceOver",
+  "voiceControl",
+  "largerText",
+  "darkInterface",
+  "differentiateWithoutColorAlone",
+  "sufficientContrast",
+  "reducedMotion",
+  "captions",
+  "audioDescriptions",
+]);
+const EXPECTED_ACCESSIBILITY_APPROVAL_KEYS = Object.freeze([
+  "owner",
+  "accessibilityReviewer",
+  "exactBuildVerified",
+  "appStoreConnectConfirmed",
+]);
+const EXPECTED_ACCESSIBILITY_ASC_DECISION_KEYS = Object.freeze([
+  "status",
+  "decision",
+  "savedAtUtc",
+  "evidenceReference",
+]);
+
+const EXPECTED_COMMERCIAL_LEGAL_KEYS = Object.freeze([
+  "status",
+  "appDownloadPrice",
+  "licenseAgreement",
+  "appTaxCategory",
+  "dsaStatus",
+  "appStoreServerNotifications",
+  "approval",
+]);
+const EXPECTED_COMMERCIAL_LEGAL_APPROVAL_KEYS = Object.freeze([
+  "owner",
+  "legal",
+  "appStoreConnectConfirmed",
+]);
+
+const EXPECTED_TESTFLIGHT_KEYS = Object.freeze([
+  "schemaVersion",
+  "status",
+  "updated",
+  "distributionScope",
+  "betaAppDescription",
+  "whatToTest",
+  "feedbackEmailConfiguredInAppStoreConnect",
+  "externalBetaReview",
+  "exactBuildEvidence",
+  "approval",
+]);
+const EXPECTED_TESTFLIGHT_APPROVAL_KEYS = Object.freeze([
+  "owner",
+  "mobileQa",
+  "appStoreConnectConfirmed",
+]);
+const EXPECTED_EXTERNAL_BETA_REVIEW_KEYS = Object.freeze([
+  "required",
+  "contactConfigured",
+  "primaryDemoAccountConfigured",
+  "notesConfigured",
+]);
+const EXPECTED_TESTFLIGHT_BUILD_EVIDENCE_KEYS = Object.freeze([
+  ...EXACT_BUILD_IDENTITY_FIELDS,
+  "internalGroupConfigured",
+  "testedAtUtc",
+  "qaReportReference",
+  "purchaseQaReportReference",
+  "appReviewRunbookReference",
+]);
+
+const EXPECTED_SCREENSHOT_SHOT_KEYS = Object.freeze([
+  "order",
+  "id",
+  "intendedUse",
+  "requiredForReleaseEvidence",
+  "file",
+  "sha256",
+  "evidenceReference",
+  "piiReview",
+]);
+const EXPECTED_SCREENSHOT_CAPTURE_DEFAULT_KEYS = Object.freeze([
+  ...EXACT_BUILD_IDENTITY_FIELDS,
+  "easBuildReference",
+  "appStoreConnectDeviceSlot",
+  "captureDevice",
+  "iosVersion",
+  "locale",
+  "appearance",
+  "capturedBy",
+  "capturedAtUtc",
+]);
+const EXPECTED_SCREENSHOT_PII_REVIEW_KEYS = Object.freeze([
+  "status",
+  "reviewedSha256",
+  "reviewer",
+  "reviewedAtUtc",
+  "notes",
+]);
 
 const EXPECTED_EXTERNAL_PRIVACY_GATES = Object.freeze([
   "production_archive_and_embedded_sdks",
@@ -182,6 +517,9 @@ const EU_EEA_TERRITORY_CODES = Object.freeze([
   "ES",
   "SE",
 ]);
+const EU_TERRITORY_CODES = Object.freeze(
+  EU_EEA_TERRITORY_CODES.filter((code) => !["IS", "LI", "NO"].includes(code)),
+);
 
 const REQUIRED_OWNER_FIELDS = Object.freeze([
   "listing.sellerLegalOperator",
@@ -249,6 +587,119 @@ function validateApprovalRecord({
   }
 }
 
+function nullableNonEmptyString(value) {
+  return (
+    value === null || (typeof value === "string" && value.trim().length > 0)
+  );
+}
+
+function fullLowercaseGitSha(value) {
+  return typeof value === "string" && /^[0-9a-f]{40}$/u.test(value);
+}
+
+function literalProviderId(value) {
+  return (
+    typeof value === "string" &&
+    value === value.trim() &&
+    value.length > 0 &&
+    value.length <= 160 &&
+    /^[A-Za-z0-9._:-]+$/u.test(value) &&
+    !/(?:placeholder|pending|unknown|tbd|todo)/iu.test(value)
+  );
+}
+
+function fixedTwoDecimalAmount(value) {
+  return (
+    typeof value === "string" && /^(?:0|[1-9][0-9]*)\.[0-9]{2}$/u.test(value)
+  );
+}
+
+function validateExactBuildIdentity({
+  value,
+  label,
+  expectedAppVersion,
+  required,
+  check,
+}) {
+  check(
+    value?.appVersion === expectedAppVersion,
+    `${label}.appVersion must match listing.appVersion`,
+  );
+  check(
+    value?.buildNumber === null ||
+      (typeof value?.buildNumber === "string" &&
+        value.buildNumber.trim().length > 0),
+    `${label}.buildNumber must be null or non-empty`,
+  );
+  check(
+    value?.gitCommit === null || fullLowercaseGitSha(value?.gitCommit),
+    `${label}.gitCommit must be null or a full lowercase Git SHA`,
+  );
+  for (const field of ["easBuildId", "appStoreConnectBuildId"]) {
+    check(
+      value?.[field] === null || literalProviderId(value?.[field]),
+      `${label}.${field} must be null or a literal non-placeholder provider ID`,
+    );
+  }
+  if (required) {
+    check(
+      typeof value?.buildNumber === "string" &&
+        value.buildNumber.trim().length > 0,
+      `${label}.buildNumber is required`,
+    );
+    check(
+      fullLowercaseGitSha(value?.gitCommit),
+      `${label}.gitCommit full lowercase Git SHA is required`,
+    );
+    for (const field of ["easBuildId", "appStoreConnectBuildId"]) {
+      check(literalProviderId(value?.[field]), `${label}.${field} is required`);
+    }
+  }
+}
+
+function currentTimeMilliseconds(clock) {
+  try {
+    const value = typeof clock === "function" ? clock() : clock;
+    const milliseconds =
+      value instanceof Date ? value.getTime() : Date.parse(value);
+    return Number.isFinite(milliseconds) ? milliseconds : Number.NaN;
+  } catch {
+    return Number.NaN;
+  }
+}
+
+function validatePendingEvidenceRecord({
+  value,
+  label,
+  release,
+  allowedCompletedStatuses = ["verified"],
+  check,
+}) {
+  check(
+    hasExactKeys(value, ["status", "evidenceReference"]),
+    `${label} must contain exactly status and evidenceReference`,
+  );
+  check(
+    ["pending", ...allowedCompletedStatuses].includes(value?.status),
+    `${label}.status is invalid`,
+  );
+  check(
+    nullableNonEmptyString(value?.evidenceReference),
+    `${label}.evidenceReference must be null or non-empty`,
+  );
+  if (release || allowedCompletedStatuses.includes(value?.status)) {
+    check(
+      allowedCompletedStatuses.includes(value?.status),
+      `release mode requires ${label} completed evidence status`,
+    );
+    check(
+      typeof value?.evidenceReference === "string" &&
+        value.evidenceReference.trim().length > 0,
+      `release mode requires ${label}.evidenceReference`,
+    );
+  }
+}
+
 function medicalDeviceRegionGroups(territories) {
   const codes = new Set(Array.isArray(territories) ? territories : []);
   const groups = [];
@@ -263,6 +714,8 @@ function medicalDeviceRegionGroups(territories) {
 function validateTerritoryCatalog({ catalog, release, check }) {
   check(isObject(catalog), "territory catalog must be an object");
   if (!isObject(catalog)) return new Set();
+
+  release = release || catalog.status === TERRITORY_CATALOG_RELEASE_STATUS;
 
   check(
     catalog.schemaVersion === 1,
@@ -497,6 +950,1090 @@ function validateAuthenticationSecurity({ value, release, check }) {
   }
 }
 
+function validateCommercialAndLegal({ value, release, check }) {
+  check(isObject(value), "submission.commercialAndLegal must be an object");
+  if (!isObject(value)) return;
+
+  check(
+    hasExactKeys(value, EXPECTED_COMMERCIAL_LEGAL_KEYS),
+    "commercialAndLegal must contain exactly the required keys",
+  );
+  check(
+    [
+      "pending_owner_legal_and_app_store_connect",
+      "confirmed_in_app_store_connect",
+    ].includes(value.status),
+    "commercialAndLegal.status must remain pending or be confirmed in App Store Connect",
+  );
+  check(
+    value.appDownloadPrice === null ||
+      ["free_download", "paid_download"].includes(value.appDownloadPrice),
+    "commercialAndLegal.appDownloadPrice must be null, free_download, or paid_download",
+  );
+  check(
+    value.licenseAgreement === null ||
+      ["standard_apple_eula", "custom_eula"].includes(value.licenseAgreement),
+    "commercialAndLegal.licenseAgreement must be null or an approved EULA option",
+  );
+  check(
+    nullableNonEmptyString(value.appTaxCategory),
+    "commercialAndLegal.appTaxCategory must be null or a non-empty owner-supplied value",
+  );
+  check(
+    value.dsaStatus === null ||
+      ["trader", "non_trader", "not_applicable_no_eu_distribution"].includes(
+        value.dsaStatus,
+      ),
+    "commercialAndLegal.dsaStatus must be null or an approved DSA position",
+  );
+
+  const notifications = value.appStoreServerNotifications;
+  check(
+    hasExactKeys(notifications, [
+      "status",
+      "productionUrl",
+      "sandboxUrl",
+      "evidenceReference",
+    ]),
+    "commercialAndLegal.appStoreServerNotifications must contain exactly the required keys",
+  );
+  check(
+    ["pending_configuration", "confirmed_in_app_store_connect"].includes(
+      notifications?.status,
+    ),
+    "commercialAndLegal.appStoreServerNotifications.status is invalid",
+  );
+  for (const field of ["productionUrl", "sandboxUrl"]) {
+    check(
+      notifications?.[field] === null || validHttpsUrl(notifications[field]),
+      `commercialAndLegal.appStoreServerNotifications.${field} must be null or HTTPS`,
+    );
+  }
+  check(
+    nullableNonEmptyString(notifications?.evidenceReference),
+    "commercialAndLegal.appStoreServerNotifications.evidenceReference must be null or non-empty",
+  );
+  if (notifications?.status === "confirmed_in_app_store_connect") {
+    for (const field of ["productionUrl", "sandboxUrl"]) {
+      check(
+        validHttpsUrl(notifications?.[field]),
+        `confirmed App Store Server Notifications requires commercialAndLegal.appStoreServerNotifications.${field}`,
+      );
+    }
+    check(
+      typeof notifications?.evidenceReference === "string" &&
+        notifications.evidenceReference.trim().length > 0,
+      "confirmed App Store Server Notifications requires an evidence reference",
+    );
+  }
+
+  const approvalRequired =
+    release || value.status === "confirmed_in_app_store_connect";
+  validateApprovalRecord({
+    approval: value.approval,
+    expectedKeys: EXPECTED_COMMERCIAL_LEGAL_APPROVAL_KEYS,
+    label: "commercialAndLegal.approval",
+    release: approvalRequired,
+    check,
+  });
+  if (!approvalRequired) return;
+
+  const prefix = release ? "release mode" : "confirmed commercialAndLegal";
+  check(
+    value.status === "confirmed_in_app_store_connect",
+    `${prefix} requires commercialAndLegal.status confirmed_in_app_store_connect`,
+  );
+  for (const field of [
+    "appDownloadPrice",
+    "licenseAgreement",
+    "appTaxCategory",
+    "dsaStatus",
+  ]) {
+    check(
+      value[field] !== null && value[field] !== "",
+      `${prefix} requires commercialAndLegal.${field}`,
+    );
+  }
+  check(
+    notifications?.status === "confirmed_in_app_store_connect",
+    `${prefix} requires App Store Server Notifications confirmation`,
+  );
+  for (const field of ["productionUrl", "sandboxUrl"]) {
+    check(
+      validHttpsUrl(notifications?.[field]),
+      `${prefix} requires commercialAndLegal.appStoreServerNotifications.${field}`,
+    );
+  }
+  check(
+    typeof notifications?.evidenceReference === "string" &&
+      notifications.evidenceReference.trim().length > 0,
+    `${prefix} requires commercialAndLegal.appStoreServerNotifications.evidenceReference`,
+  );
+}
+
+function validateAppReview({
+  value,
+  listing,
+  release,
+  nowMs,
+  notesTemplateSha256,
+  check,
+}) {
+  check(isObject(value), "submission.appReview must be an object");
+  if (!isObject(value)) return;
+
+  check(
+    hasExactKeys(value, EXPECTED_APP_REVIEW_KEYS),
+    "appReview must contain exactly the required keys",
+  );
+  check(
+    [
+      "pending_app_store_connect_and_exact_build_verification",
+      "ready_for_review",
+    ].includes(value.status),
+    "appReview.status must remain pending or be ready_for_review",
+  );
+  check(value.signInRequired === true, "appReview.signInRequired must be true");
+  check(
+    value.credentialPolicy ===
+      "credentials_only_in_app_store_connect_or_approved_secret_manager",
+    "appReview must retain the credential-storage policy",
+  );
+
+  check(
+    hasExactKeys(value.configuration, EXPECTED_APP_REVIEW_CONFIGURATION_KEYS),
+    "appReview.configuration must contain exactly the required keys",
+  );
+  for (const key of EXPECTED_APP_REVIEW_CONFIGURATION_KEYS) {
+    check(
+      typeof value.configuration?.[key] === "boolean",
+      `appReview.configuration.${key} must be a boolean`,
+    );
+  }
+
+  const finalNotes = value.finalResolvedNotesEvidence;
+  check(
+    hasExactKeys(finalNotes, EXPECTED_FINAL_REVIEW_NOTES_EVIDENCE_KEYS),
+    "appReview.finalResolvedNotesEvidence must contain exactly the required non-secret attestation keys",
+  );
+  check(
+    finalNotes?.templateSha256 === null ||
+      /^[0-9a-f]{64}$/u.test(finalNotes?.templateSha256 ?? ""),
+    "appReview.finalResolvedNotesEvidence.templateSha256 must be null or a lowercase SHA-256",
+  );
+  if (finalNotes?.templateSha256 !== null) {
+    check(
+      typeof notesTemplateSha256 === "string" &&
+        finalNotes.templateSha256 === notesTemplateSha256,
+      "appReview final resolved notes templateSha256 must match the credential-free repository draft",
+    );
+  }
+  check(
+    finalNotes?.resolvedUtf8ByteCount === null ||
+      (Number.isInteger(finalNotes?.resolvedUtf8ByteCount) &&
+        finalNotes.resolvedUtf8ByteCount >= 0 &&
+        finalNotes.resolvedUtf8ByteCount <= 4000),
+    "appReview.finalResolvedNotesEvidence.resolvedUtf8ByteCount must be null or an integer from 0 through 4000",
+  );
+  check(
+    finalNotes?.placeholdersRemaining === null ||
+      (Number.isInteger(finalNotes?.placeholdersRemaining) &&
+        finalNotes.placeholdersRemaining >= 0),
+    "appReview.finalResolvedNotesEvidence.placeholdersRemaining must be null or a non-negative integer",
+  );
+  check(
+    finalNotes?.measuredAtUtc === null ||
+      validIsoTimestamp(finalNotes?.measuredAtUtc),
+    "appReview.finalResolvedNotesEvidence.measuredAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    typeof finalNotes?.savedInAppStoreConnect === "boolean",
+    "appReview.finalResolvedNotesEvidence.savedInAppStoreConnect must be a boolean",
+  );
+  check(
+    nullableNonEmptyString(finalNotes?.evidenceReference),
+    "appReview.finalResolvedNotesEvidence.evidenceReference must be null or non-empty",
+  );
+  if (finalNotes?.savedInAppStoreConnect === false) {
+    for (const field of [
+      "templateSha256",
+      "resolvedUtf8ByteCount",
+      "placeholdersRemaining",
+      "measuredAtUtc",
+      "evidenceReference",
+    ]) {
+      check(
+        finalNotes?.[field] === null,
+        `unsaved App Review Notes must keep appReview.finalResolvedNotesEvidence.${field} null`,
+      );
+    }
+  }
+  if (finalNotes?.savedInAppStoreConnect === true) {
+    check(
+      typeof notesTemplateSha256 === "string" &&
+        finalNotes?.templateSha256 === notesTemplateSha256,
+      "saved App Review Notes require the exact credential-free template SHA-256",
+    );
+    check(
+      Number.isInteger(finalNotes?.resolvedUtf8ByteCount) &&
+        finalNotes.resolvedUtf8ByteCount >= 0 &&
+        finalNotes.resolvedUtf8ByteCount <= 4000,
+      "saved App Review Notes require a resolved UTF-8 byte count no greater than 4000",
+    );
+    check(
+      finalNotes?.placeholdersRemaining === 0,
+      "saved App Review Notes require zero placeholders remaining",
+    );
+    check(
+      validIsoTimestamp(finalNotes?.measuredAtUtc),
+      "saved App Review Notes require a UTC measurement timestamp",
+    );
+    check(
+      typeof finalNotes?.evidenceReference === "string" &&
+        finalNotes.evidenceReference.trim().length > 0,
+      "saved App Review Notes require a non-secret evidence reference",
+    );
+  }
+
+  check(
+    hasExactKeys(value.accountStates, EXPECTED_REVIEW_ACCOUNT_KEYS),
+    "appReview.accountStates must contain exactly the required review accounts",
+  );
+  for (const key of EXPECTED_REVIEW_ACCOUNT_KEYS) {
+    const record = value.accountStates?.[key];
+    const label = `appReview.accountStates.${key}`;
+    check(
+      hasExactKeys(record, [
+        "status",
+        "nonExpiring",
+        "noMfaOrOutOfBandTrap",
+        "testedAtUtc",
+        "evidenceReference",
+      ]),
+      `${label} must contain exactly the required review-account evidence keys`,
+    );
+    check(
+      ["pending", "verified_fresh"].includes(record?.status),
+      `${label}.status must be pending or verified_fresh`,
+    );
+    check(
+      record?.testedAtUtc === null || validIsoTimestamp(record.testedAtUtc),
+      `${label}.testedAtUtc must be null or a UTC ISO timestamp`,
+    );
+    check(
+      nullableNonEmptyString(record?.evidenceReference),
+      `${label}.evidenceReference must be null or non-empty`,
+    );
+    for (const field of ["nonExpiring", "noMfaOrOutOfBandTrap"]) {
+      check(
+        typeof record?.[field] === "boolean",
+        `${label}.${field} must be a boolean`,
+      );
+    }
+    if (record?.status === "verified_fresh") {
+      check(
+        validIsoTimestamp(record.testedAtUtc) &&
+          typeof record.evidenceReference === "string" &&
+          record.evidenceReference.trim().length > 0,
+        `${label} cannot be verified without UTC and evidence`,
+      );
+      check(
+        record.nonExpiring === true,
+        `${label} verified_fresh evidence requires a non-expiring review account`,
+      );
+      check(
+        record.noMfaOrOutOfBandTrap === true,
+        `${label} verified_fresh evidence requires no MFA or out-of-band access trap`,
+      );
+      if (validIsoTimestamp(record.testedAtUtc) && Number.isFinite(nowMs)) {
+        const testedAtMs = Date.parse(record.testedAtUtc);
+        if (testedAtMs > nowMs) {
+          check(false, `${label}.testedAtUtc cannot be in the future`);
+        } else {
+          check(
+            nowMs - testedAtMs <= MAX_REVIEW_ACCOUNT_EVIDENCE_AGE_MS,
+            `${label} verified_fresh evidence must be no more than 24 hours old`,
+          );
+        }
+      }
+    }
+  }
+
+  const exactBuild = value.exactBuild;
+  check(
+    hasExactKeys(exactBuild, EXPECTED_APP_REVIEW_EXACT_BUILD_KEYS),
+    "appReview.exactBuild must contain exactly the required keys",
+  );
+  const approvalRequired = release || value.status === "ready_for_review";
+  validateExactBuildIdentity({
+    value: exactBuild,
+    label: "appReview.exactBuild",
+    expectedAppVersion: listing?.appVersion,
+    required: approvalRequired,
+    check,
+  });
+  check(
+    exactBuild?.verifiedAtUtc === null ||
+      validIsoTimestamp(exactBuild.verifiedAtUtc),
+    "appReview.exactBuild.verifiedAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    nullableNonEmptyString(exactBuild?.navigationEvidenceReference),
+    "appReview.exactBuild.navigationEvidenceReference must be null or non-empty",
+  );
+
+  validateApprovalRecord({
+    approval: value.approval,
+    expectedKeys: EXPECTED_APP_REVIEW_APPROVAL_KEYS,
+    label: "appReview.approval",
+    release: approvalRequired,
+    check,
+  });
+  if (!approvalRequired) return;
+
+  const prefix = release ? "release mode" : "ready appReview";
+  check(
+    value.status === "ready_for_review",
+    `${prefix} requires appReview.status ready_for_review`,
+  );
+  for (const key of EXPECTED_APP_REVIEW_CONFIGURATION_KEYS) {
+    check(
+      value.configuration?.[key] === true,
+      `${prefix} requires appReview.configuration.${key}`,
+    );
+  }
+  for (const key of EXPECTED_REVIEW_ACCOUNT_KEYS) {
+    const record = value.accountStates?.[key];
+    check(
+      record?.status === "verified_fresh" &&
+        validIsoTimestamp(record?.testedAtUtc) &&
+        typeof record?.evidenceReference === "string" &&
+        record.evidenceReference.trim().length > 0,
+      `${prefix} requires fresh evidence for appReview.accountStates.${key}`,
+    );
+  }
+  check(
+    finalNotes?.savedInAppStoreConnect === true &&
+      finalNotes?.templateSha256 === notesTemplateSha256 &&
+      Number.isInteger(finalNotes?.resolvedUtf8ByteCount) &&
+      finalNotes.resolvedUtf8ByteCount <= 4000 &&
+      finalNotes?.placeholdersRemaining === 0 &&
+      validIsoTimestamp(finalNotes?.measuredAtUtc) &&
+      typeof finalNotes?.evidenceReference === "string" &&
+      finalNotes.evidenceReference.trim().length > 0,
+    `${prefix} requires appReview.finalResolvedNotesEvidence saved attestation`,
+  );
+  check(
+    typeof exactBuild?.buildNumber === "string" &&
+      exactBuild.buildNumber.trim().length > 0,
+    `${prefix} requires appReview.exactBuild.buildNumber`,
+  );
+  check(
+    validIsoTimestamp(exactBuild?.verifiedAtUtc),
+    `${prefix} requires appReview.exactBuild.verifiedAtUtc`,
+  );
+  check(
+    typeof exactBuild?.navigationEvidenceReference === "string" &&
+      exactBuild.navigationEvidenceReference.trim().length > 0,
+    `${prefix} requires appReview.exactBuild.navigationEvidenceReference`,
+  );
+}
+
+function validateSubscription({ value, listing, release, check }) {
+  check(isObject(value), "submission.subscription must be an object");
+  if (!isObject(value)) return;
+
+  check(
+    hasExactKeys(value, EXPECTED_SUBSCRIPTION_KEYS),
+    "subscription must contain exactly the required keys",
+  );
+  check(
+    [
+      "pending_owner_app_store_connect_and_exact_build_evidence",
+      "ready_for_submission",
+    ].includes(value.status),
+    "subscription.status must remain pending or be ready_for_submission",
+  );
+  check(
+    value.entitlementId === "CUT_OS_PRO",
+    "subscription.entitlementId must remain CUT_OS_PRO",
+  );
+  for (const field of [
+    "subscriptionGroupReferenceName",
+    "productReferenceName",
+    "productId",
+    "priceScheduleEvidenceReference",
+    "availabilityEvidenceReference",
+    "taxCategory",
+  ]) {
+    check(
+      nullableNonEmptyString(value[field]),
+      `subscription.${field} must be null or non-empty`,
+    );
+  }
+  check(
+    value.productId === null || /^[A-Za-z0-9._-]+$/u.test(value.productId),
+    "subscription.productId must contain only App Store-safe identifier characters",
+  );
+  check(
+    value.duration === null ||
+      SUPPORTED_SUBSCRIPTION_DURATIONS.includes(value.duration),
+    "subscription.duration must be null or an Apple-supported duration",
+  );
+  check(
+    value.introductoryOfferDecision === null ||
+      ["none", "free_trial", "pay_as_you_go", "pay_up_front"].includes(
+        value.introductoryOfferDecision,
+      ),
+    "subscription.introductoryOfferDecision is invalid",
+  );
+  check(
+    value.familySharingDecision === null ||
+      ["enabled", "disabled"].includes(value.familySharingDecision),
+    "subscription.familySharingDecision must be null, enabled, or disabled",
+  );
+
+  const usPricing = value.usPricing;
+  check(
+    hasExactKeys(usPricing, EXPECTED_US_PRICING_KEYS),
+    "subscription.usPricing must contain exactly the required structured US pricing keys",
+  );
+  check(
+    usPricing?.storefront === "US",
+    "subscription.usPricing.storefront must remain US",
+  );
+  check(
+    usPricing?.currency === "USD",
+    "subscription.usPricing.currency must remain USD",
+  );
+  check(
+    usPricing?.amount === null || fixedTwoDecimalAmount(usPricing?.amount),
+    "subscription.usPricing.amount must be null or a two-decimal USD amount string",
+  );
+  check(
+    ["pending", "scheduled", "effective"].includes(usPricing?.effectiveStatus),
+    "subscription.usPricing.effectiveStatus must be pending, scheduled, or effective",
+  );
+  check(
+    usPricing?.effectiveAtUtc === null ||
+      validIsoTimestamp(usPricing?.effectiveAtUtc),
+    "subscription.usPricing.effectiveAtUtc must be null or a UTC ISO timestamp",
+  );
+  for (const field of [
+    "evidenceReference",
+    "ownerDecisionRevision",
+    "ownerDecisionEvidenceReference",
+  ]) {
+    check(
+      nullableNonEmptyString(usPricing?.[field]),
+      `subscription.usPricing.${field} must be null or non-empty`,
+    );
+  }
+  if (usPricing?.effectiveStatus !== "pending") {
+    check(
+      fixedTwoDecimalAmount(usPricing?.amount) &&
+        Number.parseFloat(usPricing.amount) > 0,
+      "scheduled or effective US pricing requires a positive two-decimal amount",
+    );
+    check(
+      validIsoTimestamp(usPricing?.effectiveAtUtc),
+      "scheduled or effective US pricing requires effectiveAtUtc",
+    );
+    for (const field of [
+      "evidenceReference",
+      "ownerDecisionRevision",
+      "ownerDecisionEvidenceReference",
+    ]) {
+      check(
+        typeof usPricing?.[field] === "string" &&
+          usPricing[field].trim().length > 0,
+        `scheduled or effective US pricing requires subscription.usPricing.${field}`,
+      );
+    }
+  }
+
+  const introductoryTerms = value.introductoryOfferTerms;
+  check(
+    hasExactKeys(introductoryTerms, EXPECTED_INTRODUCTORY_OFFER_TERMS_KEYS),
+    "subscription.introductoryOfferTerms must contain exactly the required keys",
+  );
+  check(
+    introductoryTerms?.duration === null ||
+      SUPPORTED_SUBSCRIPTION_DURATIONS.includes(introductoryTerms?.duration),
+    "subscription.introductoryOfferTerms.duration must be null or an Apple-supported duration",
+  );
+  check(
+    introductoryTerms?.numberOfPeriods === null ||
+      (Number.isInteger(introductoryTerms?.numberOfPeriods) &&
+        introductoryTerms.numberOfPeriods > 0),
+    "subscription.introductoryOfferTerms.numberOfPeriods must be null or a positive integer",
+  );
+  check(
+    introductoryTerms?.priceAmount === null ||
+      fixedTwoDecimalAmount(introductoryTerms?.priceAmount),
+    "subscription.introductoryOfferTerms.priceAmount must be null or a two-decimal amount string",
+  );
+  for (const field of ["eligibility", "evidenceReference"]) {
+    check(
+      nullableNonEmptyString(introductoryTerms?.[field]),
+      `subscription.introductoryOfferTerms.${field} must be null or non-empty`,
+    );
+  }
+  if (value.introductoryOfferDecision === "none") {
+    for (const field of EXPECTED_INTRODUCTORY_OFFER_TERMS_KEYS) {
+      check(
+        introductoryTerms?.[field] === null,
+        `subscription introductoryOfferDecision none requires introductoryOfferTerms.${field} null`,
+      );
+    }
+  } else if (
+    ["free_trial", "pay_as_you_go", "pay_up_front"].includes(
+      value.introductoryOfferDecision,
+    )
+  ) {
+    check(
+      SUPPORTED_SUBSCRIPTION_DURATIONS.includes(introductoryTerms?.duration),
+      "configured introductory offer requires a supported duration",
+    );
+    check(
+      Number.isInteger(introductoryTerms?.numberOfPeriods) &&
+        introductoryTerms.numberOfPeriods > 0,
+      "configured introductory offer requires numberOfPeriods",
+    );
+    check(
+      fixedTwoDecimalAmount(introductoryTerms?.priceAmount),
+      "configured introductory offer requires priceAmount",
+    );
+    if (value.introductoryOfferDecision === "free_trial") {
+      check(
+        introductoryTerms?.priceAmount === "0.00",
+        "free_trial introductory offer requires priceAmount 0.00",
+      );
+    } else {
+      check(
+        Number.parseFloat(introductoryTerms?.priceAmount) > 0,
+        "paid introductory offer requires a positive priceAmount",
+      );
+    }
+    for (const field of ["eligibility", "evidenceReference"]) {
+      check(
+        typeof introductoryTerms?.[field] === "string" &&
+          introductoryTerms[field].trim().length > 0,
+        `configured introductory offer requires introductoryOfferTerms.${field}`,
+      );
+    }
+  }
+
+  check(
+    hasExactKeys(value.localizations, ["en-US"]),
+    "subscription.localizations must contain exactly en-US for initial release",
+  );
+  const localization = value.localizations?.["en-US"];
+  check(
+    hasExactKeys(localization, [
+      "groupDisplayName",
+      "productDisplayName",
+      "description",
+      "appNameDisplayOption",
+      "customAppName",
+    ]),
+    "subscription en-US localization must contain exactly the required fields",
+  );
+  for (const field of [
+    "groupDisplayName",
+    "productDisplayName",
+    "description",
+    "customAppName",
+  ]) {
+    check(
+      nullableNonEmptyString(localization?.[field]),
+      `subscription.localizations.en-US.${field} must be null or non-empty`,
+    );
+  }
+  check(
+    localization?.appNameDisplayOption === null ||
+      ["use_app_name", "custom_name"].includes(
+        localization?.appNameDisplayOption,
+      ),
+    "subscription.localizations.en-US.appNameDisplayOption is invalid",
+  );
+  if (localization?.appNameDisplayOption === "custom_name") {
+    check(
+      typeof localization.customAppName === "string" &&
+        localization.customAppName.trim().length > 0,
+      "subscription custom app-name display option requires customAppName",
+    );
+  }
+  if (localization?.appNameDisplayOption === "use_app_name") {
+    check(
+      localization.customAppName === null,
+      "subscription use_app_name display option requires customAppName null",
+    );
+  }
+
+  const appStoreConnect = value.appStoreConnect;
+  check(
+    hasExactKeys(appStoreConnect, [
+      "groupStatus",
+      "productStatus",
+      "firstSubmission",
+      "attachedToVersion",
+      "reviewNotesConfigured",
+      "reviewScreenshotShotId",
+      "reviewScreenshotUpload",
+    ]),
+    "subscription.appStoreConnect must contain exactly the required keys",
+  );
+  for (const field of ["groupStatus", "productStatus"]) {
+    check(
+      ["pending", "confirmed_in_app_store_connect"].includes(
+        appStoreConnect?.[field],
+      ),
+      `subscription.appStoreConnect.${field} is invalid`,
+    );
+  }
+  for (const field of [
+    "firstSubmission",
+    "attachedToVersion",
+    "reviewNotesConfigured",
+  ]) {
+    check(
+      typeof appStoreConnect?.[field] === "boolean",
+      `subscription.appStoreConnect.${field} must be a boolean`,
+    );
+  }
+  check(
+    appStoreConnect?.firstSubmission === true,
+    "subscription.appStoreConnect.firstSubmission must remain true for v1",
+  );
+  check(
+    appStoreConnect?.reviewScreenshotShotId === "07-subscription-offer",
+    "subscription review screenshot must remain shot 07-subscription-offer",
+  );
+  const screenshotUpload = appStoreConnect?.reviewScreenshotUpload;
+  check(
+    hasExactKeys(screenshotUpload, EXPECTED_REVIEW_SCREENSHOT_UPLOAD_KEYS),
+    "subscription.appStoreConnect.reviewScreenshotUpload must contain exactly the required keys",
+  );
+  check(
+    ["pending", "uploaded_in_app_store_connect"].includes(
+      screenshotUpload?.status,
+    ),
+    "subscription review screenshot upload status is invalid",
+  );
+  check(
+    screenshotUpload?.shotId === "07-subscription-offer",
+    "subscription review screenshot upload must bind shot 07-subscription-offer",
+  );
+  check(
+    screenshotUpload?.sha256 === null ||
+      /^[0-9a-f]{64}$/u.test(screenshotUpload?.sha256 ?? ""),
+    "subscription review screenshot upload sha256 must be null or lowercase SHA-256",
+  );
+  check(
+    screenshotUpload?.uploadedAtUtc === null ||
+      validIsoTimestamp(screenshotUpload?.uploadedAtUtc),
+    "subscription review screenshot upload uploadedAtUtc must be null or UTC",
+  );
+  check(
+    nullableNonEmptyString(screenshotUpload?.evidenceReference),
+    "subscription review screenshot upload evidenceReference must be null or non-empty",
+  );
+  if (screenshotUpload?.status === "pending") {
+    for (const field of ["sha256", "uploadedAtUtc", "evidenceReference"]) {
+      check(
+        screenshotUpload?.[field] === null,
+        `pending subscription review screenshot upload requires ${field} null`,
+      );
+    }
+  } else if (screenshotUpload?.status === "uploaded_in_app_store_connect") {
+    check(
+      /^[0-9a-f]{64}$/u.test(screenshotUpload?.sha256 ?? "") &&
+        validIsoTimestamp(screenshotUpload?.uploadedAtUtc) &&
+        typeof screenshotUpload?.evidenceReference === "string" &&
+        screenshotUpload.evidenceReference.trim().length > 0,
+      "uploaded subscription review screenshot requires SHA-256, UTC, and evidence",
+    );
+  }
+
+  check(
+    hasExactKeys(value.revenueCat, [
+      "productionMappingStatus",
+      "evidenceReference",
+    ]),
+    "subscription.revenueCat must contain exactly the required keys",
+  );
+  check(
+    ["pending", "verified"].includes(value.revenueCat?.productionMappingStatus),
+    "subscription.revenueCat.productionMappingStatus must be pending or verified",
+  );
+  check(
+    nullableNonEmptyString(value.revenueCat?.evidenceReference),
+    "subscription.revenueCat.evidenceReference must be null or non-empty",
+  );
+  if (value.revenueCat?.productionMappingStatus === "verified") {
+    check(
+      typeof value.revenueCat?.evidenceReference === "string" &&
+        value.revenueCat.evidenceReference.trim().length > 0,
+      "verified subscription RevenueCat mapping requires evidence",
+    );
+  }
+
+  const exactBuild = value.exactBuildEvidence;
+  check(
+    hasExactKeys(exactBuild, EXPECTED_SUBSCRIPTION_EXACT_BUILD_KEYS),
+    "subscription.exactBuildEvidence must contain exactly the required keys",
+  );
+  const approvalRequired = release || value.status === "ready_for_submission";
+  validateExactBuildIdentity({
+    value: exactBuild,
+    label: "subscription.exactBuildEvidence",
+    expectedAppVersion: listing?.appVersion,
+    required: approvalRequired,
+    check,
+  });
+  for (const field of [
+    "storeKitOfferStatus",
+    "purchaseQaStatus",
+    "testFlightStatus",
+  ]) {
+    check(
+      ["pending", "verified"].includes(exactBuild?.[field]),
+      `subscription.exactBuildEvidence.${field} must be pending or verified`,
+    );
+  }
+  check(
+    exactBuild?.testedAtUtc === null ||
+      validIsoTimestamp(exactBuild.testedAtUtc),
+    "subscription.exactBuildEvidence.testedAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    nullableNonEmptyString(exactBuild?.evidenceReference),
+    "subscription.exactBuildEvidence.evidenceReference must be null or non-empty",
+  );
+  if (
+    ["storeKitOfferStatus", "purchaseQaStatus", "testFlightStatus"].some(
+      (field) => exactBuild?.[field] === "verified",
+    )
+  ) {
+    check(
+      validIsoTimestamp(exactBuild?.testedAtUtc) &&
+        typeof exactBuild?.evidenceReference === "string" &&
+        exactBuild.evidenceReference.trim().length > 0,
+      "verified subscription exact-build status requires UTC evidence",
+    );
+  }
+
+  validateApprovalRecord({
+    approval: value.approval,
+    expectedKeys: EXPECTED_SUBSCRIPTION_APPROVAL_KEYS,
+    label: "subscription.approval",
+    release: approvalRequired,
+    check,
+  });
+  if (!approvalRequired) return;
+
+  const prefix = release ? "release mode" : "ready subscription";
+  check(
+    value.status === "ready_for_submission",
+    `${prefix} requires subscription.status ready_for_submission`,
+  );
+  for (const field of [
+    "subscriptionGroupReferenceName",
+    "productReferenceName",
+    "productId",
+    "duration",
+    "priceScheduleEvidenceReference",
+    "availabilityEvidenceReference",
+    "introductoryOfferDecision",
+    "familySharingDecision",
+    "taxCategory",
+  ]) {
+    check(
+      value[field] !== null && value[field] !== "",
+      `${prefix} requires subscription.${field}`,
+    );
+  }
+  check(
+    ["scheduled", "effective"].includes(usPricing?.effectiveStatus) &&
+      fixedTwoDecimalAmount(usPricing?.amount) &&
+      Number.parseFloat(usPricing.amount) > 0 &&
+      validIsoTimestamp(usPricing?.effectiveAtUtc),
+    `${prefix} requires scheduled or effective structured US pricing`,
+  );
+  for (const field of [
+    "evidenceReference",
+    "ownerDecisionRevision",
+    "ownerDecisionEvidenceReference",
+  ]) {
+    check(
+      typeof usPricing?.[field] === "string" &&
+        usPricing[field].trim().length > 0,
+      `${prefix} requires subscription.usPricing.${field}`,
+    );
+  }
+  for (const field of [
+    "groupDisplayName",
+    "productDisplayName",
+    "description",
+    "appNameDisplayOption",
+  ]) {
+    check(
+      localization?.[field] !== null && localization?.[field] !== "",
+      `${prefix} requires subscription.localizations.en-US.${field}`,
+    );
+  }
+  for (const field of ["groupStatus", "productStatus"]) {
+    check(
+      appStoreConnect?.[field] === "confirmed_in_app_store_connect",
+      `${prefix} requires subscription.appStoreConnect.${field} confirmation`,
+    );
+  }
+  for (const field of ["attachedToVersion", "reviewNotesConfigured"]) {
+    check(
+      appStoreConnect?.[field] === true,
+      `${prefix} requires subscription.appStoreConnect.${field}`,
+    );
+  }
+  check(
+    screenshotUpload?.status === "uploaded_in_app_store_connect",
+    `${prefix} requires subscription review screenshot uploaded in App Store Connect`,
+  );
+  check(
+    value.revenueCat?.productionMappingStatus === "verified" &&
+      typeof value.revenueCat?.evidenceReference === "string" &&
+      value.revenueCat.evidenceReference.trim().length > 0,
+    `${prefix} requires verified RevenueCat production mapping evidence`,
+  );
+  for (const field of [
+    "storeKitOfferStatus",
+    "purchaseQaStatus",
+    "testFlightStatus",
+  ]) {
+    check(
+      exactBuild?.[field] === "verified",
+      `${prefix} requires subscription.exactBuildEvidence.${field} verified`,
+    );
+  }
+  check(
+    validIsoTimestamp(exactBuild?.testedAtUtc) &&
+      typeof exactBuild?.evidenceReference === "string" &&
+      exactBuild.evidenceReference.trim().length > 0,
+    `${prefix} requires subscription exact-build UTC evidence`,
+  );
+}
+
+function validateAccessibility({ value, listing, release, check }) {
+  check(isObject(value), "submission.accessibility must be an object");
+  if (!isObject(value)) return;
+
+  check(
+    hasExactKeys(value, EXPECTED_ACCESSIBILITY_KEYS),
+    "accessibility must contain exactly the required keys",
+  );
+  check(
+    [
+      "pending_exact_build_common_task_evaluation",
+      "evaluated_for_release",
+    ].includes(value.status),
+    "accessibility.status must remain pending or be evaluated_for_release",
+  );
+  check(value.device === "iPhone", "accessibility.device must remain iPhone");
+  check(
+    value.source === ACCESSIBILITY_SOURCE,
+    "accessibility must retain Apple's Accessibility Nutrition Label source",
+  );
+  check(
+    value.accessibilityUrl === null || validHttpsUrl(value.accessibilityUrl),
+    "accessibility.accessibilityUrl must be null or HTTPS",
+  );
+  const appStoreConnectDecision = value.appStoreConnectDecision;
+  const appStoreConnectDecisionConfirmed =
+    appStoreConnectDecision?.status === "confirmed_in_app_store_connect";
+  const approvalRequired =
+    release ||
+    value.status === "evaluated_for_release" ||
+    appStoreConnectDecisionConfirmed;
+  const exactBuild = value.exactBuildEvidence;
+  check(
+    hasExactKeys(exactBuild, EXPECTED_ACCESSIBILITY_EXACT_BUILD_KEYS),
+    "accessibility.exactBuildEvidence must contain exactly the required keys",
+  );
+  validateExactBuildIdentity({
+    value: exactBuild,
+    label: "accessibility.exactBuildEvidence",
+    expectedAppVersion: listing?.appVersion,
+    required: approvalRequired,
+    check,
+  });
+  check(
+    exactBuild?.testedAtUtc === null ||
+      validIsoTimestamp(exactBuild?.testedAtUtc),
+    "accessibility.exactBuildEvidence.testedAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    nullableNonEmptyString(exactBuild?.evidenceReference),
+    "accessibility.exactBuildEvidence.evidenceReference must be null or non-empty",
+  );
+  check(
+    hasExactKeys(value.commonTasks, EXPECTED_ACCESSIBILITY_TASK_KEYS),
+    "accessibility.commonTasks must contain exactly the required common tasks",
+  );
+  for (const key of EXPECTED_ACCESSIBILITY_TASK_KEYS) {
+    validatePendingEvidenceRecord({
+      value: value.commonTasks?.[key],
+      label: `accessibility.commonTasks.${key}`,
+      release: approvalRequired,
+      check,
+    });
+  }
+  check(
+    hasExactKeys(value.features, EXPECTED_ACCESSIBILITY_FEATURE_KEYS),
+    "accessibility.features must contain exactly Apple's nine feature labels",
+  );
+  for (const key of EXPECTED_ACCESSIBILITY_FEATURE_KEYS) {
+    const feature = value.features?.[key];
+    const label = `accessibility.features.${key}`;
+    check(
+      hasExactKeys(feature, [
+        "status",
+        "commonTasksVerified",
+        "evidenceReference",
+      ]),
+      `${label} must contain exactly status, commonTasksVerified, and evidenceReference`,
+    );
+    const completedStatuses = [
+      "verified_supported",
+      "verified_not_supported",
+      "not_applicable_no_media",
+    ];
+    check(
+      ["pending", ...completedStatuses].includes(feature?.status),
+      `${label}.status is invalid`,
+    );
+    check(
+      Array.isArray(feature?.commonTasksVerified) &&
+        feature.commonTasksVerified.every((task) =>
+          EXPECTED_ACCESSIBILITY_TASK_KEYS.includes(task),
+        ) &&
+        new Set(feature.commonTasksVerified).size ===
+          feature.commonTasksVerified.length,
+      `${label}.commonTasksVerified must contain unique known common-task IDs`,
+    );
+    check(
+      nullableNonEmptyString(feature?.evidenceReference),
+      `${label}.evidenceReference must be null or non-empty`,
+    );
+    if (feature?.status === "verified_supported") {
+      check(
+        arraysEqual(
+          feature?.commonTasksVerified,
+          EXPECTED_ACCESSIBILITY_TASK_KEYS,
+        ),
+        `${label} verified_supported must cover every expected common task in canonical order`,
+      );
+    } else {
+      check(
+        Array.isArray(feature?.commonTasksVerified) &&
+          feature.commonTasksVerified.length === 0,
+        `${label} may list common tasks only when status is verified_supported`,
+      );
+    }
+    if (feature?.status === "not_applicable_no_media") {
+      check(
+        ["captions", "audioDescriptions"].includes(key),
+        `${label} may use not_applicable_no_media only for Captions or Audio Descriptions`,
+      );
+    }
+    if (approvalRequired || completedStatuses.includes(feature?.status)) {
+      check(
+        completedStatuses.includes(feature?.status),
+        `release mode requires ${label} completed evidence status`,
+      );
+      check(
+        typeof feature?.evidenceReference === "string" &&
+          feature.evidenceReference.trim().length > 0,
+        `release mode requires ${label}.evidenceReference`,
+      );
+    }
+  }
+  check(
+    hasExactKeys(
+      appStoreConnectDecision,
+      EXPECTED_ACCESSIBILITY_ASC_DECISION_KEYS,
+    ),
+    "accessibility.appStoreConnectDecision must contain exactly the required keys",
+  );
+  check(
+    ["pending", "confirmed_in_app_store_connect"].includes(
+      appStoreConnectDecision?.status,
+    ),
+    "accessibility.appStoreConnectDecision.status is invalid",
+  );
+  check(
+    appStoreConnectDecision?.decision === null ||
+      [
+        "drafted_verified_support",
+        "support_not_indicated_for_initial_release",
+      ].includes(appStoreConnectDecision?.decision),
+    "accessibility.appStoreConnectDecision.decision is invalid",
+  );
+  check(
+    appStoreConnectDecision?.savedAtUtc === null ||
+      validIsoTimestamp(appStoreConnectDecision?.savedAtUtc),
+    "accessibility.appStoreConnectDecision.savedAtUtc must be null or a UTC ISO timestamp",
+  );
+  check(
+    nullableNonEmptyString(appStoreConnectDecision?.evidenceReference),
+    "accessibility.appStoreConnectDecision.evidenceReference must be null or non-empty",
+  );
+  if (appStoreConnectDecision?.decision === "drafted_verified_support") {
+    check(
+      EXPECTED_ACCESSIBILITY_FEATURE_KEYS.some(
+        (key) => value.features?.[key]?.status === "verified_supported",
+      ),
+      "accessibility drafted_verified_support requires at least one verified_supported feature",
+    );
+  }
+  validateApprovalRecord({
+    approval: value.approval,
+    expectedKeys: EXPECTED_ACCESSIBILITY_APPROVAL_KEYS,
+    label: "accessibility.approval",
+    release: approvalRequired,
+    check,
+  });
+  if (!approvalRequired) return;
+
+  const prefix = release ? "release mode" : "evaluated accessibility";
+  check(
+    value.status === "evaluated_for_release",
+    `${prefix} requires accessibility.status evaluated_for_release`,
+  );
+  check(
+    appStoreConnectDecision?.status === "confirmed_in_app_store_connect",
+    `${prefix} requires accessibility decision saved in App Store Connect`,
+  );
+  check(
+    [
+      "drafted_verified_support",
+      "support_not_indicated_for_initial_release",
+    ].includes(appStoreConnectDecision?.decision),
+    `${prefix} requires an accessibility App Store Connect decision`,
+  );
+  check(
+    validIsoTimestamp(appStoreConnectDecision?.savedAtUtc) &&
+      typeof appStoreConnectDecision?.evidenceReference === "string" &&
+      appStoreConnectDecision.evidenceReference.trim().length > 0,
+    `${prefix} requires accessibility App Store Connect saved UTC evidence`,
+  );
+  check(
+    validIsoTimestamp(exactBuild?.testedAtUtc) &&
+      typeof exactBuild?.evidenceReference === "string" &&
+      exactBuild.evidenceReference.trim().length > 0,
+    `${prefix} requires accessibility exact-build UTC evidence`,
+  );
+}
+
 function getPath(object, dottedPath) {
   return dottedPath
     .split(".")
@@ -544,6 +2081,16 @@ function listingFromMarkdown(markdown) {
 
 function manifestDataTypes(appConfig) {
   return appConfig?.expo?.ios?.privacyManifests?.NSPrivacyCollectedDataTypes;
+}
+
+function manifestRequiredReasonApis(appConfig) {
+  const entries =
+    appConfig?.expo?.ios?.privacyManifests?.NSPrivacyAccessedAPITypes;
+  if (!Array.isArray(entries)) return entries;
+  return entries.map((entry) => ({
+    type: entry?.NSPrivacyAccessedAPIType,
+    reasons: entry?.NSPrivacyAccessedAPITypeReasons,
+  }));
 }
 
 function crc32(buffer) {
@@ -683,19 +2230,56 @@ export function validateMetadata({
   appConfig,
   metadataMarkdown,
   territoryCatalog,
+  notesTemplateSha256 = null,
+  clock = () => new Date(),
   release = false,
 }) {
   const errors = [];
   const check = (condition, message) => {
     if (!condition) errors.push(message);
   };
+  const nowMs = currentTimeMilliseconds(clock);
+  check(
+    Number.isFinite(nowMs),
+    "App Store validation clock must return a valid time",
+  );
 
+  check(isObject(submission), "submission must be an object");
+  if (!isObject(submission)) return errors;
+  check(
+    hasExactKeys(submission, EXPECTED_SUBMISSION_KEYS),
+    "submission must contain exactly the required top-level keys",
+  );
   check(submission?.schemaVersion === 1, "submission.schemaVersion must be 1");
   check(
     submission?.status === "working_not_approved" ||
       submission?.status === "approved_for_submission",
     "submission.status is invalid",
   );
+  release = release || submission.status === "approved_for_submission";
+  check(
+    /^\d{4}-\d{2}-\d{2}$/u.test(submission.updated ?? "") &&
+      !Number.isNaN(Date.parse(`${submission.updated}T00:00:00Z`)),
+    "submission.updated must be an ISO calendar date",
+  );
+  check(
+    hasExactKeys(submission.references, EXPECTED_SUBMISSION_REFERENCE_KEYS),
+    "submission.references must contain exactly the required keys",
+  );
+  const expectedReferences = {
+    humanRecord: "APP_STORE_METADATA.md",
+    appConfig: "artifacts/cut-os/app.json",
+    privacyDataMap: "PRIVACY_DATA_MAP.md",
+    reviewRunbook: "APP_REVIEW_RUNBOOK.md",
+    testFlightRecord: "app-store/testflight-submission.json",
+    screenshotManifest: "app-store/screenshots/manifest.json",
+  };
+  for (const [key, expected] of Object.entries(expectedReferences)) {
+    check(
+      submission.references?.[key] === expected,
+      `submission.references.${key} must remain ${expected}`,
+    );
+  }
   const listing = submission?.listing;
   check(isObject(listing), "submission.listing must be an object");
   if (!isObject(listing)) return errors;
@@ -902,6 +2486,10 @@ export function validateMetadata({
   check(isObject(availability), "submission.availability must be an object");
   if (isObject(availability)) {
     check(
+      hasExactKeys(availability, ["status", "approval"]),
+      "availability must contain exactly status and approval",
+    );
+    check(
       [
         "pending_owner_and_app_store_connect",
         "confirmed_in_app_store_connect",
@@ -912,9 +2500,16 @@ export function validateMetadata({
       approval: availability.approval,
       expectedKeys: EXPECTED_AVAILABILITY_APPROVAL_KEYS,
       label: "availability.approval",
-      release,
+      release:
+        release || availability.status === "confirmed_in_app_store_connect",
       check,
     });
+    if (availability.status === "confirmed_in_app_store_connect") {
+      check(
+        validatedInitialTerritories.length > 0,
+        "confirmed availability requires at least one valid initial territory",
+      );
+    }
   }
   if (release) {
     check(
@@ -948,6 +2543,43 @@ export function validateMetadata({
       "release mode requires initial territories confirmed in App Store Connect",
     );
   }
+
+  validateCommercialAndLegal({
+    value: submission.commercialAndLegal,
+    release,
+    check,
+  });
+  if (
+    submission.commercialAndLegal?.dsaStatus ===
+      "not_applicable_no_eu_distribution" &&
+    validatedInitialTerritories.some((territory) =>
+      EU_TERRITORY_CODES.includes(territory),
+    )
+  ) {
+    errors.push(
+      "commercialAndLegal.dsaStatus cannot claim no EU distribution while an EU territory is selected",
+    );
+  }
+  validateAppReview({
+    value: submission.appReview,
+    listing,
+    release,
+    nowMs,
+    notesTemplateSha256,
+    check,
+  });
+  validateSubscription({
+    value: submission.subscription,
+    listing,
+    release,
+    check,
+  });
+  validateAccessibility({
+    value: submission.accessibility,
+    listing,
+    release,
+    check,
+  });
 
   validateAuthenticationSecurity({
     value: submission.authenticationSecurity,
@@ -1037,9 +2669,93 @@ export function validateMetadata({
   check(isObject(ageRating), "submission.ageRating must be an object");
   if (isObject(ageRating)) {
     check(
+      hasExactKeys(ageRating, EXPECTED_AGE_RATING_KEYS),
+      "ageRating must contain exactly the required keys",
+    );
+    check(
       ageRating.targetAudience === "18_plus",
       "target audience must be 18_plus",
     );
+    check(
+      ageRating.questionnaireSource === AGE_QUESTIONNAIRE_SOURCE,
+      "ageRating must retain Apple's current questionnaire source",
+    );
+    const savedQuestionnaireEvidence = ageRating.savedQuestionnaireEvidence;
+    check(
+      hasExactKeys(savedQuestionnaireEvidence, [
+        "status",
+        "questionnaireVersionOrRevision",
+        "calculatedRating",
+        "effectiveRatingAfterOverride",
+        "confirmedAtUtc",
+        "evidenceReference",
+      ]),
+      "ageRating.savedQuestionnaireEvidence must contain exactly the required keys",
+    );
+    check(
+      ["pending_app_store_connect", "confirmed_in_app_store_connect"].includes(
+        savedQuestionnaireEvidence?.status,
+      ),
+      "ageRating.savedQuestionnaireEvidence.status must remain pending or be confirmed in App Store Connect",
+    );
+    for (const field of [
+      "questionnaireVersionOrRevision",
+      "calculatedRating",
+      "effectiveRatingAfterOverride",
+      "evidenceReference",
+    ]) {
+      check(
+        nullableNonEmptyString(savedQuestionnaireEvidence?.[field]),
+        `ageRating.savedQuestionnaireEvidence.${field} must be null or non-empty`,
+      );
+    }
+    for (const field of ["calculatedRating", "effectiveRatingAfterOverride"]) {
+      check(
+        savedQuestionnaireEvidence?.[field] === null ||
+          CURRENT_APPLE_AGE_RATING_VALUES.includes(
+            savedQuestionnaireEvidence?.[field],
+          ),
+        `ageRating.savedQuestionnaireEvidence.${field} must be null or a current Apple age-rating value`,
+      );
+    }
+    check(
+      savedQuestionnaireEvidence?.confirmedAtUtc === null ||
+        validIsoTimestamp(savedQuestionnaireEvidence?.confirmedAtUtc),
+      "ageRating.savedQuestionnaireEvidence.confirmedAtUtc must be null or a UTC ISO timestamp",
+    );
+    const questionnaireEvidenceRequired =
+      release ||
+      savedQuestionnaireEvidence?.status === "confirmed_in_app_store_connect";
+    if (questionnaireEvidenceRequired) {
+      check(
+        savedQuestionnaireEvidence?.status === "confirmed_in_app_store_connect",
+        "release mode requires saved App Store Connect age-questionnaire evidence",
+      );
+      for (const field of [
+        "questionnaireVersionOrRevision",
+        "calculatedRating",
+        "effectiveRatingAfterOverride",
+        "evidenceReference",
+      ]) {
+        check(
+          typeof savedQuestionnaireEvidence?.[field] === "string" &&
+            savedQuestionnaireEvidence[field].trim().length > 0,
+          `release mode requires ageRating.savedQuestionnaireEvidence.${field}`,
+        );
+      }
+      check(
+        validIsoTimestamp(savedQuestionnaireEvidence?.confirmedAtUtc),
+        "release mode requires ageRating.savedQuestionnaireEvidence.confirmedAtUtc",
+      );
+      check(
+        savedQuestionnaireEvidence?.calculatedRating !== "Unrated",
+        "App Store release cannot use an Unrated calculated age rating",
+      );
+      check(
+        savedQuestionnaireEvidence?.effectiveRatingAfterOverride === "18+",
+        "App Store release requires effective post-override age rating 18+",
+      );
+    }
     const answers = Array.isArray(ageRating.workingAnswers)
       ? ageRating.workingAnswers
       : [];
@@ -1047,10 +2763,21 @@ export function validateMetadata({
       answers.length === Object.keys(EXPECTED_AGE_ANSWERS).length,
       "ageRating.workingAnswers must contain the complete v1 answer set",
     );
+    check(
+      arraysEqual(
+        answers.map((answer) => answer?.id),
+        Object.keys(EXPECTED_AGE_ANSWERS),
+      ),
+      "ageRating.workingAnswers must preserve the canonical questionnaire order",
+    );
     for (const [id, expectedAnswer] of Object.entries(EXPECTED_AGE_ANSWERS)) {
       const entry = answers.find((answer) => answer?.id === id);
       check(Boolean(entry), `missing provisional age answer ${id}`);
       if (!entry) continue;
+      check(
+        hasExactKeys(entry, EXPECTED_AGE_ANSWER_KEYS),
+        `${id} must contain exactly the required age-answer keys`,
+      );
       check(
         entry.answer === expectedAnswer,
         `${id} must match the evidence-backed working answer ${expectedAnswer}`,
@@ -1083,6 +2810,10 @@ export function validateMetadata({
         );
       }
     }
+    check(
+      hasExactKeys(ageRating.higherAgeOverride, ["target", "status", "basis"]),
+      "ageRating.higherAgeOverride must contain exactly the required keys",
+    );
     check(
       ageRating.higherAgeOverride?.target === "18_plus",
       "higher-age override target must be 18_plus",
@@ -1125,6 +2856,21 @@ export function validateMetadata({
   check(isObject(appManifest), "app.json must contain an iOS privacy manifest");
   if (isObject(privacy) && isObject(appManifest)) {
     check(
+      hasExactKeys(privacy, EXPECTED_PRIVACY_KEYS),
+      "privacy must contain exactly the required keys",
+    );
+    check(
+      [
+        "provisional_pending_production_reconciliation",
+        "confirmed_for_submission",
+      ].includes(privacy.status),
+      "privacy.status must remain provisional or be confirmed_for_submission",
+    );
+    check(
+      privacy.manifestPath === "artifacts/cut-os/app.json",
+      "privacy.manifestPath must remain artifacts/cut-os/app.json",
+    );
+    check(
       privacy.tracking === appManifest.NSPrivacyTracking,
       "privacy.tracking must match app.json",
     );
@@ -1135,6 +2881,33 @@ export function validateMetadata({
       ),
       "privacy.trackingDomains must match app.json",
     );
+
+    const actualRequiredReasonApis = manifestRequiredReasonApis(appConfig);
+    const workingRequiredReasonApis = Array.isArray(privacy.requiredReasonApis)
+      ? privacy.requiredReasonApis
+      : [];
+    check(
+      Array.isArray(actualRequiredReasonApis) &&
+        workingRequiredReasonApis.length === actualRequiredReasonApis.length,
+      "privacy.requiredReasonApis must contain exactly the app-manifest required-reason API entries",
+    );
+    if (Array.isArray(actualRequiredReasonApis)) {
+      actualRequiredReasonApis.forEach((manifestEntry, index) => {
+        const workingEntry = workingRequiredReasonApis[index];
+        check(
+          hasExactKeys(workingEntry, ["type", "reasons"]),
+          `privacy.requiredReasonApis[${index}] must contain exactly type and reasons`,
+        );
+        check(
+          workingEntry?.type === manifestEntry.type,
+          `privacy.requiredReasonApis[${index}] type must match app.json`,
+        );
+        check(
+          arraysEqual(workingEntry?.reasons, manifestEntry.reasons),
+          `privacy.requiredReasonApis[${index}] reasons must match app.json`,
+        );
+      });
+    }
 
     const actualDataTypes = manifestDataTypes(appConfig);
     const workingDataTypes = Array.isArray(privacy.dataTypes)
@@ -1208,6 +2981,17 @@ export function validateMetadata({
       ),
       "privacy external verification gates are incomplete or reordered",
     );
+    for (const gate of externalGates) {
+      check(
+        hasExactKeys(gate, ["id", "status", "requiredEvidence"]),
+        `privacy gate ${gate?.id} must contain exactly the required keys`,
+      );
+      check(
+        typeof gate?.requiredEvidence === "string" &&
+          gate.requiredEvidence.trim().length > 20,
+        `privacy gate ${gate?.id} must describe its required evidence`,
+      );
+    }
     check(
       hasExactKeys(privacy.approval, EXPECTED_PRIVACY_APPROVAL_KEYS),
       "privacy.approval must contain exactly the required approval keys",
@@ -1218,7 +3002,13 @@ export function validateMetadata({
         `privacy.approval.${approval} must be a boolean`,
       );
     }
-    if (release) {
+    const privacyApprovalRequired =
+      release || privacy.status === "confirmed_for_submission";
+    if (privacyApprovalRequired) {
+      check(
+        privacy.status === "confirmed_for_submission",
+        "release mode requires privacy.status confirmed_for_submission",
+      );
       for (const gate of externalGates) {
         check(
           gate?.status === "verified",
@@ -1244,6 +3034,264 @@ export function validateMetadata({
   return errors;
 }
 
+export function validateTestFlightSubmission({
+  record,
+  expectedAppVersion,
+  release = false,
+}) {
+  const errors = [];
+  const check = (condition, message) => {
+    if (!condition) errors.push(message);
+  };
+
+  check(isObject(record), "TestFlight submission must be an object");
+  if (!isObject(record)) return errors;
+  check(
+    hasExactKeys(record, EXPECTED_TESTFLIGHT_KEYS),
+    "TestFlight submission must contain exactly the required keys",
+  );
+  check(record.schemaVersion === 1, "TestFlight schemaVersion must be 1");
+  check(
+    ["working_not_approved", "ready_for_app_review"].includes(record.status),
+    "TestFlight status must be working_not_approved or ready_for_app_review",
+  );
+  check(
+    /^\d{4}-\d{2}-\d{2}$/u.test(record.updated ?? "") &&
+      !Number.isNaN(Date.parse(`${record.updated}T00:00:00Z`)),
+    "TestFlight updated must be an ISO calendar date",
+  );
+  check(
+    ["internal_only", "external_testing"].includes(record.distributionScope),
+    "TestFlight distributionScope must be internal_only or external_testing",
+  );
+  for (const field of ["betaAppDescription", "whatToTest"]) {
+    check(
+      typeof record[field] === "string" && record[field].trim().length > 0,
+      `TestFlight ${field} must be non-empty`,
+    );
+    check(
+      typeof record[field] === "string" &&
+        Buffer.byteLength(record[field], "utf8") <= 4000,
+      `TestFlight ${field} must be 4,000 UTF-8 bytes or fewer`,
+    );
+  }
+  check(
+    typeof record.feedbackEmailConfiguredInAppStoreConnect === "boolean",
+    "TestFlight feedbackEmailConfiguredInAppStoreConnect must be a boolean",
+  );
+
+  const externalBetaReview = record.externalBetaReview;
+  check(
+    hasExactKeys(externalBetaReview, EXPECTED_EXTERNAL_BETA_REVIEW_KEYS),
+    "TestFlight externalBetaReview must contain exactly the required keys",
+  );
+  for (const key of EXPECTED_EXTERNAL_BETA_REVIEW_KEYS) {
+    check(
+      typeof externalBetaReview?.[key] === "boolean",
+      `TestFlight externalBetaReview.${key} must be a boolean`,
+    );
+  }
+  const externalTesting = record.distributionScope === "external_testing";
+  check(
+    externalBetaReview?.required === externalTesting,
+    "TestFlight externalBetaReview.required must match distributionScope",
+  );
+
+  const exactBuild = record.exactBuildEvidence;
+  check(
+    hasExactKeys(exactBuild, EXPECTED_TESTFLIGHT_BUILD_EVIDENCE_KEYS),
+    "TestFlight exactBuildEvidence must contain exactly the required keys",
+  );
+  const ready = release || record.status === "ready_for_app_review";
+  validateExactBuildIdentity({
+    value: exactBuild,
+    label: "TestFlight exactBuildEvidence",
+    expectedAppVersion,
+    required: ready,
+    check,
+  });
+  for (const field of [
+    "qaReportReference",
+    "purchaseQaReportReference",
+    "appReviewRunbookReference",
+  ]) {
+    check(
+      nullableNonEmptyString(exactBuild?.[field]),
+      `TestFlight exactBuildEvidence.${field} must be null or non-empty`,
+    );
+  }
+  check(
+    typeof exactBuild?.internalGroupConfigured === "boolean",
+    "TestFlight exactBuildEvidence.internalGroupConfigured must be a boolean",
+  );
+  check(
+    exactBuild?.testedAtUtc === null ||
+      validIsoTimestamp(exactBuild?.testedAtUtc),
+    "TestFlight exactBuildEvidence.testedAtUtc must be null or a UTC ISO timestamp",
+  );
+
+  validateApprovalRecord({
+    approval: record.approval,
+    expectedKeys: EXPECTED_TESTFLIGHT_APPROVAL_KEYS,
+    label: "TestFlight approval",
+    release: ready,
+    check,
+  });
+
+  const externalReviewConfigured =
+    externalBetaReview?.contactConfigured === true &&
+    externalBetaReview?.primaryDemoAccountConfigured === true &&
+    externalBetaReview?.notesConfigured === true;
+  if (
+    externalTesting &&
+    (release || record.status === "ready_for_app_review")
+  ) {
+    check(
+      externalReviewConfigured,
+      "external TestFlight testing requires complete TestFlight App Review configuration",
+    );
+  }
+
+  if (ready) {
+    const prefix = release ? "release mode" : "ready TestFlight submission";
+    check(
+      record.status === "ready_for_app_review",
+      `${prefix} requires TestFlight status ready_for_app_review`,
+    );
+    check(
+      record.feedbackEmailConfiguredInAppStoreConnect === true,
+      `${prefix} requires the TestFlight feedback email configured in App Store Connect`,
+    );
+    check(
+      typeof exactBuild?.buildNumber === "string" &&
+        exactBuild.buildNumber.trim().length > 0,
+      `${prefix} requires TestFlight exactBuildEvidence.buildNumber`,
+    );
+    check(
+      /^[0-9a-f]{40}$/u.test(exactBuild?.gitCommit ?? ""),
+      `${prefix} requires a full lowercase Git SHA in TestFlight exactBuildEvidence.gitCommit`,
+    );
+    check(
+      exactBuild?.internalGroupConfigured === true,
+      `${prefix} requires a configured internal TestFlight group`,
+    );
+    check(
+      validIsoTimestamp(exactBuild?.testedAtUtc),
+      `${prefix} requires TestFlight exactBuildEvidence.testedAtUtc`,
+    );
+    for (const field of [
+      "qaReportReference",
+      "purchaseQaReportReference",
+      "appReviewRunbookReference",
+    ]) {
+      check(
+        typeof exactBuild?.[field] === "string" &&
+          exactBuild[field].trim().length > 0,
+        `${prefix} requires TestFlight exactBuildEvidence.${field}`,
+      );
+    }
+  }
+
+  return errors;
+}
+
+export function validateExactBuildBindings({
+  submission,
+  testFlightSubmission,
+  screenshotManifest,
+}) {
+  const errors = [];
+  const canonical = testFlightSubmission?.exactBuildEvidence;
+  const consumers = [
+    ["appReview.exactBuild", submission?.appReview?.exactBuild],
+    ["screenshots.captureDefaults", screenshotManifest?.captureDefaults],
+    [
+      "subscription.exactBuildEvidence",
+      submission?.subscription?.exactBuildEvidence,
+    ],
+    [
+      "accessibility.exactBuildEvidence",
+      submission?.accessibility?.exactBuildEvidence,
+    ],
+  ];
+
+  for (const [label, consumer] of consumers) {
+    for (const field of EXACT_BUILD_IDENTITY_FIELDS) {
+      if (consumer?.[field] !== canonical?.[field]) {
+        errors.push(
+          `${label}.${field} must exactly match TestFlight exactBuildEvidence.${field}`,
+        );
+      }
+    }
+  }
+
+  const shot07 = screenshotManifest?.shots?.find(
+    (shot) => shot?.id === "07-subscription-offer",
+  );
+  const upload =
+    submission?.subscription?.appStoreConnect?.reviewScreenshotUpload;
+  if (
+    upload?.status === "uploaded_in_app_store_connect" ||
+    upload?.sha256 !== null
+  ) {
+    if (
+      typeof shot07?.sha256 !== "string" ||
+      upload?.sha256 !== shot07.sha256
+    ) {
+      errors.push(
+        "subscription review screenshot upload sha256 must exactly match captured shot 07-subscription-offer",
+      );
+    }
+  }
+
+  return errors;
+}
+
+function appReviewNotesDraftBlock(markdown) {
+  const errors = [];
+  const headingMatch = /^## App Review notes draft\s*$/mu.exec(markdown ?? "");
+  if (!headingMatch) {
+    return {
+      block: null,
+      errors: ["APP_REVIEW_RUNBOOK.md must contain an App Review notes draft"],
+    };
+  }
+  const afterHeading = (markdown ?? "").slice(
+    headingMatch.index + headingMatch[0].length,
+  );
+  const nextHeadingIndex = afterHeading.search(/^##\s+/mu);
+  const section =
+    nextHeadingIndex === -1
+      ? afterHeading
+      : afterHeading.slice(0, nextHeadingIndex);
+  const block = /```text\s*\r?\n([\s\S]*?)\r?\n```/u.exec(section)?.[1];
+  if (typeof block !== "string") {
+    errors.push(
+      "APP_REVIEW_RUNBOOK.md App Review notes draft must contain a text fence",
+    );
+    return { block: null, errors };
+  }
+  return { block, errors };
+}
+
+export function appReviewNotesTemplateSha256({ markdown }) {
+  const { block, errors } = appReviewNotesDraftBlock(markdown);
+  if (errors.length > 0 || typeof block !== "string") return null;
+  return createHash("sha256").update(block, "utf8").digest("hex");
+}
+
+export function validateAppReviewNotesDraft({ markdown }) {
+  const { block, errors } = appReviewNotesDraftBlock(markdown);
+  if (errors.length > 0 || typeof block !== "string") return errors;
+  const bytes = Buffer.byteLength(block, "utf8");
+  if (bytes > 4000) {
+    errors.push(
+      `App Review notes draft must be 4,000 UTF-8 bytes or fewer (found ${bytes})`,
+    );
+  }
+  return errors;
+}
+
 function imagePathForShot(repoRoot, manifest, shot) {
   if (typeof shot.file !== "string" || shot.file.length === 0) return null;
   if (path.isAbsolute(shot.file) || shot.file !== path.basename(shot.file)) {
@@ -1255,17 +3303,57 @@ function imagePathForShot(repoRoot, manifest, shot) {
   return candidate;
 }
 
+function isRegularScreenshotFile({
+  repoRoot,
+  assetDirectory,
+  imagePath,
+  lstatFile,
+  realpathFile,
+}) {
+  try {
+    const assetStat = lstatFile(assetDirectory);
+    const imageStat = lstatFile(imagePath);
+    if (
+      !assetStat.isDirectory() ||
+      assetStat.isSymbolicLink() ||
+      !imageStat.isFile() ||
+      imageStat.isSymbolicLink()
+    ) {
+      return false;
+    }
+
+    const realRepoRoot = realpathFile(path.resolve(repoRoot));
+    const expectedRealAssetDirectory = path.join(
+      realRepoRoot,
+      "app-store/screenshots/files",
+    );
+    const realAssetDirectory = realpathFile(assetDirectory);
+    const realImagePath = realpathFile(imagePath);
+    return (
+      realAssetDirectory === expectedRealAssetDirectory &&
+      realImagePath.startsWith(`${realAssetDirectory}${path.sep}`) &&
+      path.dirname(realImagePath) === realAssetDirectory
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function validateScreenshotManifest({
   manifest,
   repoRoot = DEFAULT_REPO_ROOT,
   release = false,
   readFile = fs.readFileSync,
   fileExists = fs.existsSync,
+  lstatFile = fs.lstatSync,
+  realpathFile = fs.realpathSync,
 }) {
   const errors = [];
   const check = (condition, message) => {
     if (!condition) errors.push(message);
   };
+
+  release = release || manifest?.status === "approved_for_submission";
 
   check(manifest?.schemaVersion === 1, "screenshots.schemaVersion must be 1");
   check(
@@ -1316,6 +3404,10 @@ export function validateScreenshotManifest({
   check(isObject(defaults), "screenshots.captureDefaults must be an object");
   if (isObject(defaults)) {
     check(
+      hasExactKeys(defaults, EXPECTED_SCREENSHOT_CAPTURE_DEFAULT_KEYS),
+      "screenshots.captureDefaults must contain exactly the required keys",
+    );
+    check(
       defaults.locale === "en-US",
       "initial screenshot locale must be en-US",
     );
@@ -1323,11 +3415,20 @@ export function validateScreenshotManifest({
       defaults.appStoreConnectDeviceSlot === "iPhone 6.9-inch portrait",
       "capture device slot must match the technical requirement",
     );
+    validateExactBuildIdentity({
+      value: defaults,
+      label: "screenshots.captureDefaults",
+      expectedAppVersion: defaults.appVersion,
+      required: release,
+      check,
+    });
     if (release) {
       for (const field of [
         "appVersion",
         "buildNumber",
         "gitCommit",
+        "easBuildId",
+        "appStoreConnectBuildId",
         "easBuildReference",
         "captureDevice",
         "iosVersion",
@@ -1344,10 +3445,6 @@ export function validateScreenshotManifest({
       check(
         validIsoTimestamp(defaults.capturedAtUtc),
         "captureDefaults.capturedAtUtc must be a UTC ISO timestamp",
-      );
-      check(
-        /^[0-9a-f]{40}$/i.test(defaults.gitCommit ?? ""),
-        "captureDefaults.gitCommit must be a full 40-character Git SHA",
       );
     }
   }
@@ -1369,6 +3466,10 @@ export function validateScreenshotManifest({
   const capturedFiles = new Set();
   shots.forEach((shot, index) => {
     const label = shot?.id ?? `shot[${index}]`;
+    check(
+      hasExactKeys(shot, EXPECTED_SCREENSHOT_SHOT_KEYS),
+      `${label} must contain exactly the required screenshot keys`,
+    );
     check(shot?.order === index + 1, `${label} has an invalid order`);
     check(
       typeof shot?.intendedUse === "string" && shot.intendedUse.length > 0,
@@ -1387,8 +3488,46 @@ export function validateScreenshotManifest({
       isObject(shot?.piiReview),
       `${label} must include a PII review record`,
     );
+    check(
+      hasExactKeys(shot?.piiReview, EXPECTED_SCREENSHOT_PII_REVIEW_KEYS),
+      `${label} PII review must contain exactly the required keys`,
+    );
+    check(
+      ["pending", "approved_no_personal_data"].includes(
+        shot?.piiReview?.status,
+      ),
+      `${label} PII review status must be pending or approved_no_personal_data`,
+    );
+    check(
+      shot?.piiReview?.reviewedSha256 === null ||
+        /^[0-9a-f]{64}$/u.test(shot?.piiReview?.reviewedSha256 ?? ""),
+      `${label} PII reviewedSha256 must be null or lowercase SHA-256`,
+    );
+    check(
+      nullableNonEmptyString(shot?.piiReview?.reviewer),
+      `${label} PII reviewer must be null or non-empty`,
+    );
+    check(
+      shot?.piiReview?.reviewedAtUtc === null ||
+        validIsoTimestamp(shot?.piiReview?.reviewedAtUtc),
+      `${label} PII reviewedAtUtc must be null or UTC`,
+    );
+    check(
+      nullableNonEmptyString(shot?.piiReview?.notes),
+      `${label} PII notes must be null or non-empty`,
+    );
+    if (shot?.piiReview?.status === "pending") {
+      check(
+        shot?.piiReview?.reviewedSha256 === null,
+        `${label} pending PII review must keep reviewedSha256 null`,
+      );
+    }
 
     if (shot?.file === null) {
+      check(
+        shot?.sha256 === null,
+        `${label} cannot have SHA-256 without a file`,
+      );
       check(
         shot?.evidenceReference === null,
         `${label} cannot have evidence without an image file`,
@@ -1396,6 +3535,10 @@ export function validateScreenshotManifest({
       check(
         shot?.piiReview?.status === "pending",
         `${label} without a file must keep PII review pending`,
+      );
+      check(
+        shot?.piiReview?.reviewedSha256 === null,
+        `${label} without a file must keep PII reviewedSha256 null`,
       );
       if (release && EXPECTED_SHOT_RELEASE_EVIDENCE[label] === true) {
         errors.push(`release mode requires image file for ${label}`);
@@ -1419,6 +3562,42 @@ export function validateScreenshotManifest({
       `${label} image file does not exist: ${shot.file}`,
     );
     if (!fileExists(imagePath)) return;
+    const assetDirectory = path.resolve(
+      repoRoot,
+      manifest.assetDirectory ?? "",
+    );
+    const regularContainedFile = isRegularScreenshotFile({
+      repoRoot,
+      assetDirectory,
+      imagePath,
+      lstatFile,
+      realpathFile,
+    });
+    check(
+      regularContainedFile,
+      `${label} image must be a regular non-symlink file inside the exact asset directory`,
+    );
+    if (!regularContainedFile) return;
+    check(
+      shot.sha256 === null || /^[0-9a-f]{64}$/u.test(shot.sha256),
+      `${label} sha256 must be null or 64 lowercase hexadecimal characters`,
+    );
+    if (shot?.piiReview?.status === "approved_no_personal_data") {
+      check(
+        typeof shot.sha256 === "string" &&
+          shot.piiReview.reviewedSha256 === shot.sha256,
+        `${label} PII approval reviewedSha256 must equal the captured image sha256`,
+      );
+      check(
+        typeof shot.piiReview.reviewer === "string" &&
+          shot.piiReview.reviewer.trim().length > 0,
+        `${label} approved PII review requires a reviewer`,
+      );
+      check(
+        validIsoTimestamp(shot.piiReview.reviewedAtUtc),
+        `${label} approved PII review requires a UTC timestamp`,
+      );
+    }
 
     check(
       !capturedFiles.has(shot.file),
@@ -1427,7 +3606,17 @@ export function validateScreenshotManifest({
     capturedFiles.add(shot.file);
 
     try {
-      const inspection = inspectImage(readFile(imagePath), extension);
+      const imageBuffer = readFile(imagePath);
+      const actualSha256 = createHash("sha256")
+        .update(imageBuffer)
+        .digest("hex");
+      if (shot.sha256 !== null && /^[0-9a-f]{64}$/u.test(shot.sha256)) {
+        check(
+          shot.sha256 === actualSha256,
+          `${label} sha256 does not match the captured image bytes`,
+        );
+      }
+      const inspection = inspectImage(imageBuffer, extension);
       check(
         inspection.format === "png",
         `${label} extension does not match its image signature`,
@@ -1449,6 +3638,10 @@ export function validateScreenshotManifest({
 
     capturedIds.add(label);
     if (release) {
+      check(
+        typeof shot.sha256 === "string" && /^[0-9a-f]{64}$/u.test(shot.sha256),
+        `release mode requires a SHA-256 digest for ${label}`,
+      );
       check(
         typeof shot.evidenceReference === "string" &&
           shot.evidenceReference.length > 0,
@@ -1522,6 +3715,7 @@ export function validateScreenshotManifest({
 export function validateBundle({
   repoRoot = DEFAULT_REPO_ROOT,
   release = false,
+  clock = () => new Date(),
 } = {}) {
   const submission = readJson(
     path.join(repoRoot, "app-store/app-store-submission.json"),
@@ -1529,7 +3723,13 @@ export function validateBundle({
   const screenshotManifest = readJson(
     path.join(repoRoot, "app-store/screenshots/manifest.json"),
   );
+  const testFlightSubmission = readJson(
+    path.join(repoRoot, "app-store/testflight-submission.json"),
+  );
+  const releaseRequired =
+    release || submission?.status === "approved_for_submission";
   const appConfig = readJson(path.join(repoRoot, "artifacts/cut-os/app.json"));
+  const easConfig = readJson(path.join(repoRoot, "artifacts/cut-os/eas.json"));
   const territoryCatalog = readJson(
     path.join(repoRoot, "app-store/app-store-connect-territories.json"),
   );
@@ -1537,26 +3737,51 @@ export function validateBundle({
     path.join(repoRoot, "APP_STORE_METADATA.md"),
     "utf8",
   );
+  const appReviewRunbook = fs.readFileSync(
+    path.join(repoRoot, "APP_REVIEW_RUNBOOK.md"),
+    "utf8",
+  );
+  const notesTemplateSha256 = appReviewNotesTemplateSha256({
+    markdown: appReviewRunbook,
+  });
   const errors = [
     ...validateMetadata({
       submission,
       appConfig,
       metadataMarkdown,
       territoryCatalog,
-      release,
+      notesTemplateSha256,
+      clock,
+      release: releaseRequired,
     }),
     ...validateScreenshotManifest({
       manifest: screenshotManifest,
       repoRoot,
-      release,
+      release: releaseRequired,
     }),
+    ...validateTestFlightSubmission({
+      record: testFlightSubmission,
+      expectedAppVersion: submission?.listing?.appVersion,
+      release: releaseRequired,
+    }),
+    ...validateExactBuildBindings({
+      submission,
+      testFlightSubmission,
+      screenshotManifest,
+    }),
+    ...validateAppReviewNotesDraft({ markdown: appReviewRunbook }),
   ];
 
-  if (release) {
-    const screenshotVersion = screenshotManifest?.captureDefaults?.appVersion;
-    if (screenshotVersion !== submission?.listing?.appVersion) {
+  if (releaseRequired) {
+    try {
+      validateEasSubmitConfig(easConfig);
+    } catch (error) {
+      const code =
+        error instanceof EasSubmitConfigurationError
+          ? error.code
+          : "verification_failed";
       errors.push(
-        "screenshot appVersion must match the submitted listing version",
+        `release mode requires deterministic EAS submit routing (${code})`,
       );
     }
   }
@@ -1568,7 +3793,7 @@ function main() {
     .slice(2)
     .filter((argument) => argument !== "--release");
   if (unknownArguments.length > 0) {
-    console.error(`Unknown argument(s): ${unknownArguments.join(", ")}`);
+    console.error("Unknown App Store validation argument");
     process.exitCode = 2;
     return;
   }
@@ -1581,6 +3806,20 @@ function main() {
     console.error(`App Store validation could not run: ${error.message}`);
     process.exitCode = 1;
     return;
+  }
+
+  if (errors.length === 0 && release) {
+    try {
+      verifyPostBuildEvidenceBoundary({ repoRoot: DEFAULT_REPO_ROOT });
+    } catch (error) {
+      const code =
+        error instanceof PostBuildEvidenceError
+          ? error.code
+          : "verification_failed";
+      errors.push(
+        `release mode requires a valid post-build evidence boundary (${code})`,
+      );
+    }
   }
 
   if (errors.length > 0) {

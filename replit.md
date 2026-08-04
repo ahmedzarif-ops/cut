@@ -19,7 +19,9 @@ PostgreSQL as the source of truth.
   `CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` — Clerk auth;
   `REVENUECAT_SECRET_API_KEY`, `REVENUECAT_PROJECT_ID`, and
   `REVENUECAT_ENTITLEMENT_REST_ID` — server-only RevenueCat REST API v2
-  authorization/configuration
+  authorization/configuration; `PUBLIC_APP_ORIGIN` — owner-approved canonical
+  HTTPS origin for the production public server; `API_MAX_INSTANCES` — actual
+  API platform maximum (currently must be `1` until shared rate limiting exists)
 
 ## Stack
 

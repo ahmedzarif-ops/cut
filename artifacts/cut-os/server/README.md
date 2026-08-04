@@ -7,6 +7,16 @@ manifests, and static build. It also owns three zero-JavaScript routes:
 - `/terms`
 - `/support`
 
+The landing page requires an owner-configured `PUBLIC_APP_ORIGIN`, for example
+`https://preview.cutos.app`. It must be an HTTPS origin on a public DNS name
+with no path, port, credentials, query, or fragment. The server never builds
+the Expo deep link from `Host`, `X-Forwarded-Host`, or
+`X-Forwarded-Proto`; missing or invalid configuration fails startup. Landing
+HTML uses separate HTML-attribute and inline-JSON rendering, and its inline
+style and scripts are authorized by a per-response CSP nonce.
+The exact versioned QR dependency is additionally pinned with SHA-384
+subresource integrity and anonymous CORS, so a changed CDN payload will not run.
+
 The longer review packet in the repository's `legal-site/` folder is a working
 source for owner and counsel review. The templates here are the deployable
 surface. Counsel approval must cover the **exact rendered contents of these

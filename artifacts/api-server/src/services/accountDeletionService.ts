@@ -26,6 +26,10 @@ export interface AccountDeletionRetrySummary {
   processed: number;
   completed: number;
   pending: number;
+  /** Aggregate-only backlog signals; never include identities or error details. */
+  pendingBacklogCount: number;
+  oldestPendingAgeSeconds: number | null;
+  maxPendingAttemptCount: number;
 }
 
 export type IdentityDeleter = (clerkUserId: string) => Promise<void>;
@@ -733,9 +737,40 @@ export async function retryPendingAccountDeletions(
     if (result.status === "completed") completed += 1;
   }
 
+  // Measure the complete durable backlog after this batch, including work leased
+  // by another replica. These aggregate-only values are safe to send to logs and
+  // let provider-neutral alerts detect old or repeatedly failing deletions.
+  const [backlog] = await db
+    .select({
+      pendingBacklogCount: sql<number>`COUNT(*)::integer`,
+      oldestPendingAgeSeconds: sql<number | null>`
+        CASE
+          WHEN COUNT(*) = 0 THEN NULL
+          ELSE GREATEST(
+            0,
+            FLOOR(
+              EXTRACT(
+                EPOCH FROM (
+                  CURRENT_TIMESTAMP - MIN(${accountDeletionRequestsTable.requestedAt})
+                )
+              )
+            )
+          )::integer
+        END
+      `,
+      maxPendingAttemptCount: sql<number>`
+        COALESCE(MAX(${accountDeletionRequestsTable.attemptCount}), 0)::integer
+      `,
+    })
+    .from(accountDeletionRequestsTable)
+    .where(eq(accountDeletionRequestsTable.status, "pending"));
+
   return {
     processed: pending.length,
     completed,
     pending: pending.length - completed,
+    pendingBacklogCount: backlog?.pendingBacklogCount ?? 0,
+    oldestPendingAgeSeconds: backlog?.oldestPendingAgeSeconds ?? null,
+    maxPendingAttemptCount: backlog?.maxPendingAttemptCount ?? 0,
   };
 }

@@ -80,6 +80,11 @@ approved test process so the primary script starts at “Log your morning
 weigh-in.” Never reset production data with an undocumented manual database
 edit.
 
+Record each successful production sign-in no more than 24 hours before
+submission and attest that the account is non-expiring for the review window
+with no MFA or out-of-band challenge. A stale timestamp or either missing
+attestation blocks release.
+
 ## Exact reviewer navigation scripts
 
 These labels match the current source. Re-run every script on the submitted
@@ -214,6 +219,14 @@ public legal URLs. Do not use Expo Go, the web mockup, a reconstructed mock,
 placeholder prices, a debug overlay, personal data, or a screen from another
 build.
 
+Use one canonical build identity everywhere: app version, Apple build number,
+full Git commit, EAS build ID, and App Store Connect build ID. The TestFlight,
+App Review, screenshot, subscription, and accessibility records must match all
+five fields. For every screenshot PII approval, record the reviewed file's
+SHA-256; changing the bytes invalidates the approval. The App Store Connect IAP
+review upload must use the approved bytes for shot `07-subscription-offer` and
+record that same hash.
+
 ### Naming and evidence placeholders
 
 Use this exact filename pattern for every raw capture:
@@ -274,9 +287,8 @@ submission.
 
 ```text
 CUT OS is an adults-only daily cut check-in for people who lift. It provides
-general fitness and nutrition information, not medical advice. Nutrition values
-are estimates, and ingredient/common-allergen information is not an
-allergen-safety guarantee.
+general fitness and nutrition information, not medical advice. Nutrition and
+allergen information is estimated, not an allergen-safety guarantee.
 
 Build under review: version [APP_VERSION], build [BUILD_NUMBER]
 Bundle ID: com.zarifahmed.cut
@@ -284,81 +296,56 @@ Primary category: [OWNER_APPROVED_CATEGORY]
 Review contact: [REVIEW_CONTACT_NAME], [REVIEW_CONTACT_PHONE],
 [REVIEW_CONTACT_EMAIL]
 
-SIGN IN AND FULL ACCESS
-Working credentials are supplied in App Store Connect's Sign-in Information
-fields. The primary review account is already email verified, eligible under
-the current adult-only policy, onboarded, and has current CUT OS Pro access
-through [VERIFIED_ENTITLEMENT_PROVISIONING_METHOD]. It has no current-day
-weigh-in or meal at submission time.
+ACCESS
+Primary credentials are in App Store Connect's Sign-in Information. That
+account is email verified, has no MFA, is adult eligible and onboarded, has
+CUT_OS_PRO through [VERIFIED_ENTITLEMENT_PROVISIONING_METHOD], and starts with
+no current-day weigh-in or meal.
 
-ADDITIONAL PURPOSE-BUILT REVIEW ACCOUNTS
+Additional purpose-built review accounts:
 Purchase: username [PURCHASE_REVIEW_USERNAME], password [PURCHASE_REVIEW_PASSWORD]
 Adult gate: username [ADULT_GATE_REVIEW_USERNAME], password [ADULT_GATE_REVIEW_PASSWORD]
 Restricted: username [RESTRICTED_REVIEW_USERNAME], password [RESTRICTED_REVIEW_PASSWORD]
 Deletion: username [DELETION_REVIEW_USERNAME], password [DELETION_REVIEW_PASSWORD]
 
-These synthetic credentials exist only for App Review and are supplied here
-because App Store Connect's Sign-in Information accepts only one
-username/password pair.
-
-1. Launch the app and tap Sign in.
-2. After sign-in, Today opens at Log your morning weigh-in.
-3. Enter [REVIEW_WEIGHT_AND_UNIT] and tap Log weigh-in.
-4. Tap Open balanced meals, select Lemon Herb Chicken Grain Bowl, and tap Log
-   Lemon Herb Chicken Grain Bowl.
-5. Today then shows the logged nutrition totals. Review logged meals exposes
-   serving adjustment and deletion. Settings exposes restore/manage, legal and
-   support links, and account deletion.
+PRIMARY PATH
+1. Sign in; Today opens at Log your morning weigh-in.
+2. Enter [REVIEW_WEIGHT_AND_UNIT] and tap Log weigh-in.
+3. Open balanced meals, select Lemon Herb Chicken Grain Bowl, and log it.
+4. Today shows estimated nutrition totals. Review logged meals allows serving
+   adjustment and deletion. Settings provides Restore purchases, Manage App
+   Store subscription, legal/support links, and Delete account.
 
 SUBSCRIPTION
-Subscription Group Reference Name: [SUBSCRIPTION_GROUP_REFERENCE_NAME]
-Subscription Product Reference Name: [SUBSCRIPTION_PRODUCT_REFERENCE_NAME]
-US English Subscription Group Display Name: [SUBSCRIPTION_GROUP_DISPLAY_NAME_EN_US]
-US English Auto-Renewable Subscription Display Name: [SUBSCRIPTION_DISPLAY_NAME_EN_US]
-US English description: [SUBSCRIPTION_DESCRIPTION_EN_US]
-Submitted product ID: [PRODUCT_ID]
-Duration: [DURATION]
-Introductory offer: [INTRODUCTORY_OFFER_OR_NONE]
+Product ID: [PRODUCT_ID]; duration: [DURATION]; introductory offer:
+[INTRODUCTORY_OFFER_OR_NONE]. StoreKit supplies the localized price, period,
+and eligible offer through RevenueCat; none is hardcoded. Use the Purchase
+account, select the plan on CUT OS PRO, and tap Continue —
+[VERIFIED_LOCALIZED_PRICE_AND_PERIOD]. Paid screens open only after server
+verification of CUT_OS_PRO. Restore is on the offer and Settings; Manage App
+Store subscription opens Apple's management page.
 
-The app obtains the displayed localized price, billing period, and any eligible
-introductory offer from StoreKit through RevenueCat. It does not hardcode a
-price or trial. For a new purchase, sign in with the separate Purchase review
-account supplied above in App Review Notes. The CUT OS PRO screen appears;
-select the plan and tap Continue — [VERIFIED_LOCALIZED_PRICE_AND_PERIOD]. After
-Apple confirms, the server must verify entitlement CUT_OS_PRO before paid
-screens open. Restore purchases is on both the subscription screen and
-Settings. Manage App Store subscription opens Apple's management page.
-
-ADULT-ONLY FLOW
-CUT OS is intended only for people age 18 and older. The in-app gate is a
-self-declaration, not identity or document verification. A full DOB is sent to
-the server only to make the UTC adult-18-v1 decision and is discarded; only the
-status, policy version, and decision time are retained.
-
-To inspect the first-decision path, use the separate Adult-gate review account
-supplied above and enter [APPROVED_SYNTHETIC_ADULT_DOB]. To
-inspect the locked path, use the Restricted review account. It opens CUT OS is
-for adults with only account management/deletion and sign-out; it does not show
-private guidance or purchase options.
+ADULT 18+
+The gate is a self-declaration, not identity verification. The server uses the
+DOB only for its UTC adult-18-v1 decision, then discards it and retains status,
+policy version, and decision time. Use the Adult-gate account with
+[APPROVED_SYNTHETIC_ADULT_DOB]. The Restricted account opens CUT OS is for
+adults with only account management/deletion and sign-out; it exposes no
+private guidance or purchase option.
 
 ACCOUNT DELETION
-After terminal completion, Settings > Delete account deletes the Clerk login,
-local CUT OS profile/weight/meal rows, and the CUT-linked RevenueCat customer.
-A minimal deletion-coordination record may remain for the approved retention
-period, and Apple keeps its own billing and purchase records. Deleting the CUT
-OS account does not cancel Apple billing, so the screen separately provides
-Manage App Store subscription. Use only the dedicated Deletion review account
-listed above for destructive testing.
+Use only the Deletion account. Settings > Delete account deletes the Clerk
+login, CUT OS profile/weight/meal rows, and linked RevenueCat customer after
+terminal completion. A minimal coordination record may remain for the approved
+retention period. Account deletion does not cancel Apple billing; Manage App
+Store subscription is provided separately.
 
-SERVICES AND POLICIES
 Production API: [PRODUCTION_API_HOST]
-Privacy Policy: [PUBLIC_PRIVACY_URL]
-Terms of Use/EULA: [PUBLIC_TERMS_URL]
+Privacy: [PUBLIC_PRIVACY_URL]
+Terms/EULA: [PUBLIC_TERMS_URL]
 Support: [PUBLIC_SUPPORT_URL]
-
-The production backend, authentication, entitlement service, and public pages
-will remain available throughout review. Special network/VPN setup:
-[NONE_OR_EXACT_VERIFIED_REQUIREMENT].
+Backend, authentication, entitlement service, and public pages remain available
+during review. Network/VPN setup: [NONE_OR_EXACT_VERIFIED_REQUIREMENT].
 ```
 
 ## Age, privacy, and category checks
@@ -465,6 +452,11 @@ Submit for Review**.
       cancellation, interruption, restore active/none, renewal, cancellation,
       expiration, refund, billing retry/grace, reinstall, second device,
       account switch, offline, VoiceOver, large text, and deletion.
+- [ ] On the exact submitted version/build, a supported physical iPhone passed
+      the common tasks with VoiceOver, large text, sufficient contrast, clear
+      focus order, and usable controls: sign-in, adult gate, purchase/restore,
+      weigh-in, meal log/edit/delete, Settings/legal links, and account
+      deletion. The evidence records build, device/iOS, tester, date, and result.
 - [ ] The exact release build passed the non-UTC first-sync, unpaid-account,
       relaunch, foreground/one-minute travel detection, two-device different-
       zone behavior, stale weigh-in retry, slow-request/account-switch, and
@@ -490,10 +482,22 @@ Submit for Review**.
       remain available for the full review window, and are documented only in
       secret storage and Apple's designated Sign-in Information/App Review
       Notes fields.
+- [ ] Every review account was freshly tested on the exact submitted
+      version/build within 24 hours of submission; the private evidence records
+      account alias, required state, build, tester, UTC time, and result without
+      recording a username, password, code, or other credential in the
+      repository.
 - [ ] The final App Review Notes contain no bracketed placeholder, personal or
       production/reused credential, unsupported claim, stale navigation label,
       or unverified external-state assertion. Additional credentials are
       purpose-built synthetic review accounts only.
+- [ ] The final App Review Notes remain below App Store Connect's 4,000-byte
+      UTF-8 limit after the synthetic credentials and verified facts are added;
+      measure the final pasted text, not this template.
+- [ ] The machine record contains the credential-free template SHA-256, final
+      byte count, zero-placeholder result, measurement UTC, saved-in-App-Store-
+      Connect flag, and controlled evidence reference. Do not store or hash the
+      resolved credential-bearing notes.
 - [ ] Owner approves the metadata, privacy answers, age rating/override,
       subscription, build, App Review submission, and manual public release.
 - [ ] Release remains manual, and post-launch monitoring/support coverage is

@@ -8,6 +8,10 @@ import {
   prepareProductionDatabase,
   StartupMigrationError,
 } from "./lib/startupMigrations";
+import {
+  DEFAULT_ACCOUNT_DELETION_RETRY_INTERVAL_MS,
+  parseAccountDeletionRetryInterval,
+} from "./lib/accountDeletionRetryInterval";
 
 // Development and test remain easy to run, but a production process must not
 // bind a port with placeholder credentials, an insecure database transport,
@@ -37,15 +41,14 @@ async function start(): Promise<void> {
     logger.info({ port }, "Server listening");
   });
 
-  const configuredDeletionInterval = Number(
-    process.env["ACCOUNT_DELETION_RETRY_INTERVAL_MS"] ?? 60_000,
+  const configuredDeletionInterval = parseAccountDeletionRetryInterval(
+    process.env["ACCOUNT_DELETION_RETRY_INTERVAL_MS"],
   );
   const accountDeletionWorker = startAccountDeletionWorker({
+    // Production preflight rejects an invalid override before this point.
+    // Development remains recoverable by using the bounded default.
     intervalMs:
-      Number.isFinite(configuredDeletionInterval) &&
-      configuredDeletionInterval > 0
-        ? configuredDeletionInterval
-        : 60_000,
+      configuredDeletionInterval ?? DEFAULT_ACCOUNT_DELETION_RETRY_INTERVAL_MS,
   });
 
   const shutdown = createShutdownHandler({

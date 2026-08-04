@@ -20,23 +20,31 @@ Finalization rules:
 
 1. Resolve every angle-bracket placeholder. Use `N/A — <reason> — <approver>`
    only when the item genuinely does not apply.
-2. Set status to `FINAL`, set the UTC finalization time, and commit this manifest
-   with the release evidence.
-3. Compute a detached checksum without modifying the finalized file:
+2. Set status to `FINAL` and set the UTC finalization time.
+3. From the repository root, compute the adjacent checksum using the exact
+   repository-relative manifest path, without modifying the finalized file:
 
    ```sh
    shasum -a 256 <manifest-path> > <manifest-path>.sha256
    ```
 
-4. Commit the `.sha256` file. Record that commit outside this file in the release
-   handoff or ticket, because adding it here would invalidate the manifest hash.
-5. Never amend a finalized manifest. A correction is a new manifest with a new
-   release ID that names and checksums the superseded record.
+4. Stage the finalized manifest, its `.sha256`, the allowlisted App Store JSON
+   evidence, and manifest-referenced PNG captures together. Commit them once as
+   the direct child of `BUILD_SHA`; this is `POST_BUILD_EVIDENCE_SHA`.
+5. Run the integrated post-build/release validator from that clean commit and
+   record `POST_BUILD_EVIDENCE_SHA`, the result, time, and owner decision outside
+   this file. A commit cannot contain its own SHA, and modifying this file after
+   checksumming would invalidate the checksum.
+6. Never amend a finalized manifest. A correction requires a new build candidate
+   and a new manifest that names and checksums the superseded record.
 
 ## Candidate identity
 
 - [ ] Git worktree was clean before build.
-- Git commit SHA: `<40-character SHA>`
+- BUILD_SHA — source/routing/build/upload commit: `<40 lowercase hex SHA>`
+- [ ] EAS upload ran from clean `BUILD_SHA` before post-build evidence changes.
+- Expected evidence boundary: one direct child of `BUILD_SHA`; record its SHA
+  and validator result in the external handoff after this manifest is committed.
 - Git branch/tag: `<reference>`
 - Previous known-good Git SHA: `<SHA>`
 - App marketing version: `<version>`
@@ -73,6 +81,7 @@ Approval means an explicit, attributable decision. It does not mean “informed.
 | Gate                                | Decision                 | Approver                      | UTC timestamp | Evidence reference |
 | ----------------------------------- | ------------------------ | ----------------------------- | ------------- | ------------------ |
 | Paid deployment/build authorization | `<APPROVED/BLOCKED/N/A>` | `<owner>`                     | `<UTC>`       | `<reference>`      |
+| EAS upload to App Store Connect     | `<APPROVED/BLOCKED/N/A>` | `<owner>`                     | `<UTC>`       | `<reference>`      |
 | Apple seller/legal operator         | `<APPROVED/BLOCKED>`     | `<owner + counsel>`           | `<UTC>`       | `<reference>`      |
 | Public legal/support publication    | `<APPROVED/BLOCKED>`     | `<owner + counsel>`           | `<UTC>`       | `<reference>`      |
 | Privacy/data map/App Privacy        | `<APPROVED/BLOCKED>`     | `<privacy reviewer + owner>`  | `<UTC>`       | `<reference>`      |
@@ -82,9 +91,15 @@ Approval means an explicit, attributable decision. It does not mean “informed.
 | Regional medical-device declaration | `<APPROVED/BLOCKED/N/A>` | `<owner + qualified review>`  | `<UTC>`       | `<reference>`      |
 | Authentication recovery security    | `<APPROVED/BLOCKED>`     | `<security reviewer + owner>` | `<UTC>`       | `<reference>`      |
 | Subscription product/price/trial    | `<APPROVED/BLOCKED>`     | `<owner>`                     | `<UTC>`       | `<reference>`      |
+| Commercial/EULA/tax/DSA config      | `<APPROVED/BLOCKED>`     | `<owner + counsel>`           | `<UTC>`       | `<reference>`      |
+| App Store Server Notifications      | `<APPROVED/BLOCKED>`     | `<owner + engineering>`       | `<UTC>`       | `<reference>`      |
+| Accessibility label decision        | `<APPROVED/BLOCKED>`     | `<owner + accessibility QA>`  | `<UTC>`       | `<reference>`      |
+| TestFlight scope/review config      | `<APPROVED/BLOCKED>`     | `<owner + mobile QA>`         | `<UTC>`       | `<reference>`      |
 | Export compliance                   | `<APPROVED/BLOCKED>`     | `<owner/reviewer>`            | `<UTC>`       | `<reference>`      |
-| Submit for App Review               | `<APPROVED/BLOCKED/N/A>` | `<owner>`                     | `<UTC>`       | `<reference>`      |
-| Manual public release               | `<APPROVED/BLOCKED/N/A>` | `<owner>`                     | `<UTC>`       | `<reference>`      |
+
+Submit for App Review and manual public release are post-commit owner decisions.
+Record them in the external handoff only after the integrated release validator
+passes; never pre-record them here or amend this finalized manifest later.
 
 ## Environment identity — non-secret aliases only
 
@@ -93,6 +108,8 @@ Approval means an explicit, attributable decision. It does not mean “informed.
 | API public origin            | `<HTTPS origin>`     | `<HTTPS origin>`                  | `<name, UTC>`  |
 | API provider project/service | `<alias>`            | `<alias>`                         | `<name, UTC>`  |
 | Public/legal origin          | `<HTTPS origin>`     | `<HTTPS origin>`                  | `<name, UTC>`  |
+| Public app origin            | `<HTTPS origin>`     | `<HTTPS origin>`                  | `<name, UTC>`  |
+| API provider max machines    | `<integer + ref>`    | `<must be 1 + ref>`               | `<name, UTC>`  |
 | Database provider/project    | `<alias, never DSN>` | `<alias, never DSN>`              | `<name, UTC>`  |
 | Clerk instance               | `<test alias>`       | `<production alias>`              | `<name, UTC>`  |
 | RevenueCat project           | `<test alias>`       | `<production alias>`              | `<name, UTC>`  |
@@ -102,6 +119,58 @@ Approval means an explicit, attributable decision. It does not mean “informed.
 - Authorized staging deploy command/reference: `<command or controlled runbook link>`
 - Authorized production deploy command/reference: `<command or controlled runbook link>`
 - Production service-set cross-check result: `<PASS/FAIL>`
+
+## API limiter topology and live abuse gate
+
+The current limiter is process-local. Never describe these results as global or
+multi-replica enforcement. Do not record client IP addresses, forwarding-header
+values, raw provider logs, or response bodies.
+
+- Candidate `API_MAX_INSTANCES` value: `<must be 1>`
+- Provider maximum-machine setting: `<must be 1>`
+- Provider control-plane evidence reference: `<non-secret reference>`
+- Security owner-approved edge/abuse control covering restart resets:
+  `<control + reference>`
+- Staging authorized restart time (UTC): `<UTC>`
+
+| Required evidence                                     | Result        | Sanitized reference |
+| ----------------------------------------------------- | ------------- | ------------------- |
+| Provider maximum is one, independent of process env   | `<PASS/FAIL>` | `<reference>`       |
+| Client A reaches configured `429` threshold           | `<PASS/FAIL>` | `<aggregate>`       |
+| Distinct external client B retains separate allowance | `<PASS/FAIL>` | `<aggregate>`       |
+| Restart reset is observed and explicitly acknowledged | `<PASS/FAIL>` | `<reference>`       |
+| Limiter re-engages at the threshold after restart     | `<PASS/FAIL>` | `<aggregate>`       |
+| Edge/abuse control covers the in-memory restart gap   | `<PASS/FAIL>` | `<reference>`       |
+| Production two-distinct-client isolation check passes | `<PASS/FAIL>` | `<aggregate>`       |
+
+- Multi-replica release status: `<BLOCKED until shared store / N/A only with reason and approver>`
+- Security reviewer approval: `<APPROVED/BLOCKED, name, UTC, reference>`
+
+## Clerk production proxy activation
+
+Record non-secret identifiers and sanitized pass/fail evidence only. Never put
+Clerk keys, session tokens, cookies, user identifiers, or response bodies here.
+
+- Production Clerk instance alias: `<non-secret alias>`
+- Production Clerk domain alias: `<non-secret alias>`
+- Clerk domain ID: `<non-secret domain ID>`
+- Exact canonical proxy URL: `<https://host/api/__clerk>`
+- Candidate API deployment alias: `<non-secret deployment/revision>`
+- Candidate API Git SHA: `<40-character SHA>`
+- Audited edge trust-topology proof: `<reference>`
+- Unique public ingress proof; direct/shorter origin paths blocked: `<PASS/FAIL, reference>`
+- Deployed Express trust-proxy value: `<must be exactly 1, reference>`
+- Edge XFF handling: `<overwrite / append one edge-owned rightmost value, reference>`
+- Edge XFH handling: `<overwrite / append one edge-owned rightmost value, reference>`
+- Spoofed-leftmost valid IP cannot win: `<PASS/FAIL, sanitized reference>`
+- Spoofed-leftmost allowlisted host cannot win: `<PASS/FAIL, sanitized reference>`
+- Missing/empty XFF omitted upstream: `<PASS/FAIL, sanitized reference>`
+- Missing-XFF proxy-health fails closed: `<PASS/FAIL, sanitized reference>`
+- Clerk dashboard proxy enabled: `<PASS/FAIL, UTC, reference>`
+- Bounded proxy-health verifier:
+  `<PASS/FAIL, UTC, sanitized reference, verifier SHA-256>`
+- Internal TestFlight physical-device authentication:
+  `<PASS/FAIL, UTC, app version/build, sanitized reference>`
 
 ## Authentication recovery security
 
@@ -274,32 +343,44 @@ baseline/provider capacity and the person who approved them.
 
 ## TestFlight and App Review handoff
 
+- BUILD_SHA: `<40 lowercase hex SHA>`
+- POST_BUILD_EVIDENCE_SHA and integrated validator result: `record externally after this finalized manifest and checksum are committed`
 - EAS build ID/URL: `<ID/link>`
+- Deterministic EAS upload authorization/result/time: `<owner decision, result, UTC, reference>`
+- Numeric App Store app ID/bundle-ID cross-check: `<PASS/FAIL + reference>`
+- `eas.json` byte identity and pinned-routing result: `<PASS/FAIL + reference>`
 - App version/build: `<version/build>`
 - Internal TestFlight upload result/time: `<result, UTC>`
 - Authorized internal TestFlight group: `<group name>`
+- TestFlight distribution scope: `<internal_only/external_testing>`
+- `app-store/testflight-submission.json` status/reference: `<status + SHA-256>`
+- Feedback email configured: `<PASS/FAIL; never record credentials>`
+- External TestFlight App Review config: `<PASS/FAIL/N/A + reference>`
 - TestFlight QA owner: `<name/role>`
 - Tested device model(s)/iOS version(s): `<non-identifying list>`
 - `QA_REPORT.md` result/reference: `<PASS/FAIL + reference>`
 - `PURCHASE_QA_REPORT.md` result/reference: `<PASS/FAIL + reference>`
 - `APP_REVIEW_RUNBOOK.md` review-account/script readiness: `<PASS/FAIL>`
+- Final App Review Notes UTF-8 byte count: `<count; must be <= 4000>`
 - Review account freshness verified at (UTC): `<UTC; never include credentials>`
+- Five review account states exact-build evidence: `<PASS/FAIL + reference>`
 - App Privacy/screenshots/metadata exact-build reconciliation: `<PASS/FAIL + reference>`
+- Screenshot files/manifest SHA-256 reconciliation: `<PASS/FAIL + reference>`
+- Saved full age-questionnaire version/rating/override evidence: `<PASS/FAIL + reference>`
+- Subscription/App Store Connect/RevenueCat exact-build evidence: `<PASS/FAIL + reference>`
+- Accessibility common-task and nine-feature evaluation: `<PASS/FAIL + reference>`
+- Accessibility decision saved in App Store Connect: `<decision, PASS/FAIL, UTC, reference>`
+- Commercial/EULA/tax/DSA/server-notification confirmation: `<PASS/FAIL + reference>`
 - Authentication-security artifact/evidence reconciliation: `<PASS/FAIL + reference>`
-- Post-capture App Store release validator: `<PASS/FAIL, UTC + reference>`
 - Subscription attached to first submission: `<PASS/FAIL/N/A + reference>`
-- Production probes immediately before submission: `<PASS/FAIL, UTC>`
-- Owner Submit for Review decision: `<APPROVED/BLOCKED, name, UTC, reference>`
-- Owner public-release decision: `<APPROVED/BLOCKED/NOT YET REQUESTED, name, UTC, reference>`
 
-## Final release decision
+## Post-commit decisions
 
-- Final outcome: `PROMOTE` / `HOLD` / `ROLL BACK` / `ROLL FORWARD`
-- Decision at (UTC): `<UTC>`
-- Decision owner: `<name>`
-- Open blockers: `<none or references>`
-- Support/incident owner on duty: `<name/role>`
-- Next scheduled verification: `<UTC/event>`
-- Final non-secret notes: `<summary>`
+The immutable repository manifest ends when its checksum and the allowlisted
+evidence are committed as `POST_BUILD_EVIDENCE_SHA`. Record the integrated
+release-validator result, that SHA, final probes, Submit for App Review decision,
+App Review outcome, manual public-release decision, and any later incident in the
+controlled external handoff. Do not amend this file or add another post-build
+evidence commit.
 
 Detached manifest checksum: `<stored in adjacent .sha256 file after FINAL>`

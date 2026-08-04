@@ -976,7 +976,14 @@ describe("durable account deletion", () => {
 
     const summary = await retryPendingAccountDeletions(1);
 
-    expect(summary).toEqual({ processed: 1, completed: 1, pending: 0 });
+    expect(summary).toMatchObject({
+      processed: 1,
+      completed: 1,
+      pending: 0,
+      pendingBacklogCount: 2,
+      maxPendingAttemptCount: 1,
+    });
+    expect(summary.oldestPendingAgeSeconds).toBeGreaterThan(0);
     expect(deleteIdentity).toHaveBeenCalledOnce();
     expect(deleteIdentity).toHaveBeenCalledWith(neverAttempted);
     expect(await deletionRequest(neverAttempted)).toMatchObject({
@@ -996,6 +1003,48 @@ describe("durable account deletion", () => {
     });
   });
 
+  it("reports privacy-safe aggregate metrics for the complete pending backlog", async () => {
+    const now = Date.now();
+    const oldestPendingIdentity = "worker_oldest_leased";
+    const mostRetriedIdentity = "worker_most_retried_leased";
+    await ctx.db.insert(accountDeletionRequestsTable).values([
+      {
+        identityHash: hashClerkIdentity(oldestPendingIdentity),
+        clerkUserId: oldestPendingIdentity,
+        status: "pending",
+        requestedAt: new Date(now - 2 * 60 * 60 * 1_000),
+        updatedAt: new Date(now - 2 * 60 * 60 * 1_000),
+        attemptCount: 3,
+        leaseToken: "0f5a59c4-a43f-4f06-b536-df449b024a37",
+        leaseExpiresAt: new Date(now + 5 * 60 * 1_000),
+      },
+      {
+        identityHash: hashClerkIdentity(mostRetriedIdentity),
+        clerkUserId: mostRetriedIdentity,
+        status: "pending",
+        requestedAt: new Date(now - 5 * 60 * 1_000),
+        updatedAt: new Date(now - 5 * 60 * 1_000),
+        attemptCount: 7,
+        leaseToken: "aa7ff34b-c685-47fd-874d-85d0e3e4f066",
+        leaseExpiresAt: new Date(now + 5 * 60 * 1_000),
+      },
+    ]);
+
+    const summary = await retryPendingAccountDeletions(1);
+
+    expect(summary).toMatchObject({
+      processed: 0,
+      completed: 0,
+      pending: 0,
+      pendingBacklogCount: 2,
+      maxPendingAttemptCount: 7,
+    });
+    expect(summary.oldestPendingAgeSeconds).toBeGreaterThanOrEqual(7_100);
+    expect(summary.oldestPendingAgeSeconds).toBeLessThan(7_500);
+    expect(JSON.stringify(summary)).not.toContain(oldestPendingIdentity);
+    expect(JSON.stringify(summary)).not.toContain(mostRetriedIdentity);
+  });
+
   it("refuses a retry row whose raw identity does not match its tombstone hash", async () => {
     const hashOwner = "worker_hash_owner";
     const mismatchedIdentity = "worker_wrong_identity";
@@ -1010,7 +1059,14 @@ describe("durable account deletion", () => {
 
     const summary = await retryPendingAccountDeletions(1);
 
-    expect(summary).toEqual({ processed: 1, completed: 0, pending: 1 });
+    expect(summary).toMatchObject({
+      processed: 1,
+      completed: 0,
+      pending: 1,
+      pendingBacklogCount: 1,
+      maxPendingAttemptCount: 1,
+    });
+    expect(summary.oldestPendingAgeSeconds).toBeGreaterThanOrEqual(0);
     expect(deleteIdentity).not.toHaveBeenCalled();
     const [requestRow] = await ctx.db
       .select()
@@ -1022,6 +1078,52 @@ describe("durable account deletion", () => {
       attemptCount: 1,
       lastErrorCode: "identity_binding_invalid",
     });
+  });
+
+  it("worker logs aggregate monitoring when pending work is leased elsewhere", async () => {
+    const now = Date.now();
+    const leasedIdentity = "worker_leased_private_identity";
+    await ctx.db.insert(accountDeletionRequestsTable).values({
+      identityHash: hashClerkIdentity(leasedIdentity),
+      clerkUserId: leasedIdentity,
+      status: "pending",
+      requestedAt: new Date(now - 60 * 60 * 1_000),
+      updatedAt: new Date(now - 60 * 60 * 1_000),
+      attemptCount: 4,
+      leaseToken: "64dcfd49-21ad-4af7-8f7b-4b5889a1ab50",
+      leaseExpiresAt: new Date(now + 5 * 60 * 1_000),
+    });
+    const workerLogger = { info: vi.fn(), error: vi.fn() };
+    const worker = startAccountDeletionWorker({
+      intervalMs: 60_000,
+      limit: 5,
+      logger: workerLogger,
+    });
+
+    try {
+      await worker.runNow();
+    } finally {
+      await worker.stop();
+    }
+
+    expect(workerLogger.info).toHaveBeenCalledOnce();
+    const [monitoring, message] = workerLogger.info.mock.calls[0] ?? [];
+    expect(monitoring).toMatchObject({
+      processed: 0,
+      completed: 0,
+      pending: 0,
+      pendingBacklogCount: 1,
+      maxPendingAttemptCount: 4,
+    });
+    expect(message).toBe("Account deletion retries processed");
+    expect(
+      (monitoring as { oldestPendingAgeSeconds: number })
+        .oldestPendingAgeSeconds,
+    ).toBeGreaterThanOrEqual(3_500);
+    expect(JSON.stringify(workerLogger.info.mock.calls)).not.toContain(
+      leasedIdentity,
+    );
+    expect(workerLogger.error).not.toHaveBeenCalled();
   });
 
   it("worker completes pending deletions without logging raw identity or vendor errors", async () => {
@@ -1053,6 +1155,17 @@ describe("durable account deletion", () => {
     expect(deleteIdentity).toHaveBeenCalledWith(clerkUserId);
     expect((await deletionRequest(clerkUserId))?.status).toBe("completed");
     expect(await usersForIdentity(clerkUserId)).toEqual([]);
+    expect(workerLogger.info).toHaveBeenCalledWith(
+      {
+        processed: 1,
+        completed: 1,
+        pending: 0,
+        pendingBacklogCount: 0,
+        oldestPendingAgeSeconds: null,
+        maxPendingAttemptCount: 0,
+      },
+      "Account deletion retries processed",
+    );
     const serializedLogs = JSON.stringify({
       info: workerLogger.info.mock.calls,
       error: workerLogger.error.mock.calls,

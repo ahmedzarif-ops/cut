@@ -21,6 +21,13 @@
       "distribution": "internal",
       "environment": "preview"
     },
+    "ios-simulator": {
+      "extends": "preview",
+      "ios": {
+        "simulator": true,
+        "image": "macos-sequoia-15.6-xcode-26.0"
+      }
+    },
     "production": {
       "extends": "base",
       "autoIncrement": true,

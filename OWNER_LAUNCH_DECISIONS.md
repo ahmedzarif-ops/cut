@@ -16,6 +16,11 @@ that engineering must not make for the owner.
 
 **Status:** Awaiting owner and qualified counsel.
 
+**Verified August 3, 2026:** The Apple Account currently open on this Mac is
+not enrolled in the Apple Developer Program. Apple's current enrollment price
+is **$99 USD per membership year**. No enrollment, payment, or agreement has
+been started.
+
 Apple App Review Guideline 5.1.1(ix) says apps requiring sensitive user
 information should be submitted by a legal entity rather than an individual
 developer. CUT OS requires linked weight, body, fitness, and nutrition
@@ -29,8 +34,12 @@ Owner must confirm:
 - whether a suitable legal entity already exists;
 - whether qualified counsel approves the organization path or a documented
   alternative;
-- whether Apple Developer Program membership already exists; and
 - who has Account Holder authority.
+
+If the owner chooses an individual membership for speed, Apple will display the
+owner's personal legal name as the seller. The organization path instead needs
+a legal entity, D-U-N-S Number, organization-domain email and website, and a
+person with authority to bind the organization.
 
 Do not form an entity, enroll, pay Apple, or accept agreements automatically.
 
@@ -67,16 +76,19 @@ name and description are reviewed.
 
 ## Decision 3 — RevenueCat production authorization
 
-**Status:** Awaiting email confirmation and owner approval.
+**Status:** Awaiting production App Store configuration and owner approval.
 
-The RevenueCat account email is not yet confirmed. The owner must use the
-original confirmation email or resolve the account directly. After that, the
-owner may approve creation of a least-privilege RevenueCat REST v2 server key
+**Verified August 3, 2026:** The CUT RevenueCat project is accessible, but it is
+still configured only with RevenueCat's Test Store. It has no real App Store
+product mapping and cannot collect live subscription revenue yet. After the
+Apple app and subscription exist, the owner may approve the real iOS app
+connection and creation of a least-privilege RevenueCat REST v2 server key
 limited to the customer access required by CUT OS.
 
 Exact approval phrase:
 
-> RevenueCat email confirmed. Approve the least-privilege server key.
+> Approve the CUT App Store connection and least-privilege RevenueCat server
+> key after the exact Apple app and subscription identifiers are verified.
 
 Never paste a secret key into source code, the mobile app, screenshots, support
 messages, or this decision record.
@@ -101,12 +113,66 @@ provides and authorizes:
 The personal Gmail address currently recorded in `company.yml` is not treated
 as permission to publish it.
 
+## Decision 5 — App Store commercial and legal configuration
+
+**Status:** Awaiting owner, counsel, and App Store Connect confirmation.
+
+The owner must explicitly choose and record:
+
+- whether the app itself is a free download or paid download;
+- Apple's standard EULA or a counsel-approved custom EULA;
+- the app tax category and the auto-renewable subscription tax category;
+- the Digital Services Act trader/non-trader position, or a documented
+  not-applicable position if EU distribution is excluded;
+- production and sandbox App Store Server Notifications URLs, after the live
+  endpoints are deployed and verified; and
+- evidence that each choice was saved in App Store Connect.
+
+The working records keep every item `null` or pending. Do not infer a free app,
+EULA, tax category, DSA status, or notification endpoint from the source code
+or the proposed monthly subscription.
+
+**Working recommendation for the fastest narrow U.S. launch, pending owner,
+counsel, and tax review:** free app download; Apple's standard EULA; app tax
+category `App Store software`; subscription tax category `Match to parent app`;
+United States distribution only; no EU distribution and the corresponding
+documented DSA not-applicable position; and manual release after approval.
+
+## Decision 6 — subscription display and accessibility disclosure
+
+**Status:** Awaiting owner and exact-build review.
+
+Before creating the subscription, the owner must also select the App Name
+Display Option for the English (U.S.) localization: use the existing app name,
+or approve an exact custom name. Family Sharing and introductory-offer choices
+must be explicit even when the selected value is disabled or none.
+
+**Working recommendation:** use the existing app name, disable Family Sharing
+for v1, use no introductory offer or trial, and keep TestFlight internal-only
+until purchase, restoration, deletion, privacy, and accessibility QA pass.
+Family Sharing cannot be turned off after it is enabled for a subscription.
+
+Apple's Accessibility Nutrition Labels are based on common tasks in the exact
+shipping build. A qualified reviewer must test the recorded iPhone tasks and
+all nine Apple feature labels, then the owner must decide whether to publish
+verified support or indicate no supported feature for the initial release. Do
+not claim support from automated tests or development builds alone.
+
+For TestFlight, the owner must approve the feedback email and distribution
+scope. Internal-only testing does not require external TestFlight App Review;
+adding external testers does, including review contact, demo access, notes, and
+review of the selected build. Credentials remain only in App Store Connect or
+approved secret storage.
+
 ## Later explicit approvals
 
 These are intentionally deferred until the prerequisites are ready:
 
 - EAS cloud build if it can consume paid quota or incur cost.
 - Apple agreements, tax, and banking.
+- App download price, EULA, tax categories, DSA status, App Store Server
+  Notifications, and subscription App Name Display Option.
+- Accessibility Nutrition Label decision and any external TestFlight review.
 - Final App Privacy and age-rating answers.
 - Submit for Review.
 - Manual public release.

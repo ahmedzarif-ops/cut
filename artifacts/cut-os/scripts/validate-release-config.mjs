@@ -21,6 +21,16 @@ const NON_PUBLIC_DNS_SUFFIXES = [
   ".test",
 ];
 
+const NON_PRODUCTION_BUILD_PROFILES = new Set([
+  "development",
+  "preview",
+  "ios-simulator",
+]);
+
+export function isProductionBuildProfile(profile) {
+  return !NON_PRODUCTION_BUILD_PROFILES.has(profile);
+}
+
 function isValidDnsHostname(hostname) {
   if (!hostname || hostname.length > 253 || hostname.includes(":")) {
     return false;
@@ -182,7 +192,7 @@ function isSafeHttpsUrl(value, { allowQueryAndFragment }) {
 
 export function validateReleaseEnvironment(environment) {
   const profile = environment.EAS_BUILD_PROFILE?.trim() || "production";
-  const production = profile !== "development" && profile !== "preview";
+  const production = isProductionBuildProfile(profile);
   const errors = [];
   let apiHostname = null;
 

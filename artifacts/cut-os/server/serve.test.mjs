@@ -7,7 +7,7 @@ import { createRequire } from "node:module";
 import { afterEach, describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
-const { createAppServer } = require("./serve.js");
+const { createAppServer, parsePublicAppOrigin } = require("./serve.js");
 const {
   APPROVAL_SCOPE,
   buildResourceHashes,
@@ -95,7 +95,10 @@ async function createApprovedTemplateRoot(options = {}) {
 }
 
 async function listen(options = {}) {
-  const server = createAppServer(options);
+  const server = createAppServer({
+    publicAppOrigin: "https://preview.cutos.app",
+    ...options,
+  });
   servers.push(server);
   await new Promise((resolve, reject) => {
     server.once("error", reject);
@@ -156,6 +159,10 @@ describe("CUT OS public server", () => {
     const landing = await request(port, "/");
     expect(landing.status).toBe(200);
     expect(landing.body).toContain("CUT OS");
+    expect(landing.body).toContain('href="exps://preview.cutos.app"');
+    expect(landing.body).toContain(
+      'const deepLink = "exps://preview.cutos.app";',
+    );
 
     const manifest = await request(port, "/manifest", {
       headers: { "expo-platform": "ios" },
@@ -173,6 +180,98 @@ describe("CUT OS public server", () => {
     const asset = await request(port, "/asset.txt");
     expect(asset.status).toBe(200);
     expect(asset.body).toBe("static asset");
+  });
+
+  it("uses only the configured public origin when Host headers are appended or spoofed", async () => {
+    const staticRoot = await createStaticRoot();
+    const { port } = await listen({ staticRoot, appName: "CUT OS" });
+
+    const response = await request(port, "/", {
+      headers: {
+        host: "attacker.invalid",
+        "x-forwarded-host": "attacker.invalid, preview.cutos.app",
+        "x-forwarded-proto": "javascript",
+      },
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toContain('href="exps://preview.cutos.app"');
+    expect(response.body).not.toContain("attacker.invalid");
+    expect(response.body).not.toContain("javascript:");
+  });
+
+  it("does not reflect script-shaped Host input and context-escapes the app name", async () => {
+    const staticRoot = await createStaticRoot();
+    const { port } = await listen({
+      staticRoot,
+      appName: '$&<img src=x onerror="alert(1)">',
+    });
+
+    const response = await request(port, "/", {
+      headers: {
+        host: "attacker.invalid",
+        "x-forwarded-host": "</script><script>alert(1)</script>",
+      },
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).not.toContain("</script><script>alert(1)</script>");
+    expect(response.body).not.toContain('<img src=x onerror="alert(1)">');
+    expect(response.body).toContain(
+      "$&amp;&lt;img src=x onerror=&quot;alert(1)&quot;&gt;",
+    );
+  });
+
+  it("adds a nonce-based landing-page CSP without allowing arbitrary inline script", async () => {
+    const staticRoot = await createStaticRoot();
+    const { port } = await listen({ staticRoot });
+    const response = await request(port, "/");
+
+    const nonce = response.body.match(/<style nonce="([^"]+)"/u)?.[1];
+    expect(nonce).toBeTruthy();
+    expect(response.body).toContain(`<script nonce="${nonce}"`);
+    expect(response.body).toContain(
+      'integrity="sha384-K7D1ZVqZVEPBKpQrjKR0/pDcFaWHQPzUBKNY5k8RRX5aGtd4WGHXEnO0qso4YowQ"',
+    );
+    expect(response.body).toContain('crossorigin="anonymous"');
+    expect(response.headers["content-security-policy"]).toContain(
+      `script-src 'nonce-${nonce}'`,
+    );
+    expect(response.headers["content-security-policy"]).not.toContain(
+      "https://unpkg.com",
+    );
+    expect(response.headers["content-security-policy"]).toContain(
+      `style-src 'nonce-${nonce}'`,
+    );
+    expect(response.headers["content-security-policy"]).not.toContain(
+      "'unsafe-inline'",
+    );
+    expect(response.headers["x-content-type-options"]).toBe("nosniff");
+  });
+
+  it.each([
+    "",
+    "http://preview.cutos.app",
+    "https://localhost",
+    "https://127.0.0.1",
+    "https://preview.example",
+    "https://preview.cutos.app/path",
+    "https://user@preview.cutos.app",
+    "https://preview.cutos.app:8443",
+    "https://preview.cutos.app?next=evil",
+  ])("rejects an unsafe configured public origin: %s", async (origin) => {
+    const staticRoot = await createStaticRoot();
+    expect(() =>
+      createAppServer({ staticRoot, publicAppOrigin: origin }),
+    ).toThrow(/PUBLIC_APP_ORIGIN/u);
+  });
+
+  it("rejects a missing public origin instead of deriving one from the request", async () => {
+    const staticRoot = await createStaticRoot();
+    expect(() => parsePublicAppOrigin(undefined)).toThrow(/PUBLIC_APP_ORIGIN/u);
+    expect(() => createAppServer({ staticRoot, publicAppOrigin: "" })).toThrow(
+      /PUBLIC_APP_ORIGIN/u,
+    );
   });
 
   it("reports ready only after the static build and templates initialize", async () => {

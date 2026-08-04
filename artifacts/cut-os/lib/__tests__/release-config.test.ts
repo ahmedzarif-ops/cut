@@ -89,6 +89,33 @@ describe("release configuration validator", () => {
     expect(result.stdout).toContain("valid for the preview build profile");
   });
 
+  it("allows the no-signing simulator profile to use preview resources", () => {
+    const result = runValidator({
+      EAS_BUILD_PROFILE: "ios-simulator",
+      EXPO_PUBLIC_DOMAIN: "preview.example.com",
+      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey("test"),
+      EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: "test_PublicTestKey1234",
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain(
+      "valid for the ios-simulator build profile",
+    );
+  });
+
+  it("fails closed for an unrecognized build profile", () => {
+    const result = runValidator({
+      EAS_BUILD_PROFILE: "unrecognized-profile",
+      EXPO_PUBLIC_DOMAIN: "preview.example.com",
+      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey("test"),
+      EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: "test_PublicTestKey1234",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("live key for production");
+    expect(result.stderr).toContain("EXPO_PUBLIC_PRIVACY_POLICY_URL");
+  });
+
   it("rejects a RevenueCat Test Store key in production", () => {
     const result = runValidator({
       ...productionEnvironment,

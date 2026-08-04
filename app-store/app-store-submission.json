@@ -7,6 +7,7 @@
     "appConfig": "artifacts/cut-os/app.json",
     "privacyDataMap": "PRIVACY_DATA_MAP.md",
     "reviewRunbook": "APP_REVIEW_RUNBOOK.md",
+    "testFlightRecord": "app-store/testflight-submission.json",
     "screenshotManifest": "app-store/screenshots/manifest.json"
   },
   "listing": {
@@ -50,6 +51,278 @@
     "status": "pending_owner_and_app_store_connect",
     "approval": {
       "owner": false,
+      "appStoreConnectConfirmed": false
+    }
+  },
+  "commercialAndLegal": {
+    "status": "pending_owner_legal_and_app_store_connect",
+    "appDownloadPrice": null,
+    "licenseAgreement": null,
+    "appTaxCategory": null,
+    "dsaStatus": null,
+    "appStoreServerNotifications": {
+      "status": "pending_configuration",
+      "productionUrl": null,
+      "sandboxUrl": null,
+      "evidenceReference": null
+    },
+    "approval": {
+      "owner": false,
+      "legal": false,
+      "appStoreConnectConfirmed": false
+    }
+  },
+  "appReview": {
+    "status": "pending_app_store_connect_and_exact_build_verification",
+    "signInRequired": true,
+    "credentialPolicy": "credentials_only_in_app_store_connect_or_approved_secret_manager",
+    "configuration": {
+      "contactConfigured": false,
+      "notesConfigured": false,
+      "primaryDemoAccountConfigured": false,
+      "additionalSyntheticAccountsConfiguredInNotes": false
+    },
+    "finalResolvedNotesEvidence": {
+      "templateSha256": null,
+      "resolvedUtf8ByteCount": null,
+      "placeholdersRemaining": null,
+      "measuredAtUtc": null,
+      "savedInAppStoreConnect": false,
+      "evidenceReference": null
+    },
+    "accountStates": {
+      "fullAccess": {
+        "status": "pending",
+        "nonExpiring": false,
+        "noMfaOrOutOfBandTrap": false,
+        "testedAtUtc": null,
+        "evidenceReference": null
+      },
+      "purchase": {
+        "status": "pending",
+        "nonExpiring": false,
+        "noMfaOrOutOfBandTrap": false,
+        "testedAtUtc": null,
+        "evidenceReference": null
+      },
+      "adultGate": {
+        "status": "pending",
+        "nonExpiring": false,
+        "noMfaOrOutOfBandTrap": false,
+        "testedAtUtc": null,
+        "evidenceReference": null
+      },
+      "restricted": {
+        "status": "pending",
+        "nonExpiring": false,
+        "noMfaOrOutOfBandTrap": false,
+        "testedAtUtc": null,
+        "evidenceReference": null
+      },
+      "deletion": {
+        "status": "pending",
+        "nonExpiring": false,
+        "noMfaOrOutOfBandTrap": false,
+        "testedAtUtc": null,
+        "evidenceReference": null
+      }
+    },
+    "exactBuild": {
+      "appVersion": "1.0.0",
+      "buildNumber": null,
+      "gitCommit": null,
+      "easBuildId": null,
+      "appStoreConnectBuildId": null,
+      "verifiedAtUtc": null,
+      "navigationEvidenceReference": null
+    },
+    "approval": {
+      "owner": false,
+      "reviewQa": false,
+      "appStoreConnectConfirmed": false
+    }
+  },
+  "subscription": {
+    "status": "pending_owner_app_store_connect_and_exact_build_evidence",
+    "entitlementId": "CUT_OS_PRO",
+    "subscriptionGroupReferenceName": null,
+    "productReferenceName": null,
+    "productId": null,
+    "duration": null,
+    "priceScheduleEvidenceReference": null,
+    "usPricing": {
+      "storefront": "US",
+      "currency": "USD",
+      "amount": null,
+      "effectiveStatus": "pending",
+      "effectiveAtUtc": null,
+      "evidenceReference": null,
+      "ownerDecisionRevision": null,
+      "ownerDecisionEvidenceReference": null
+    },
+    "availabilityEvidenceReference": null,
+    "introductoryOfferDecision": null,
+    "introductoryOfferTerms": {
+      "duration": null,
+      "numberOfPeriods": null,
+      "priceAmount": null,
+      "eligibility": null,
+      "evidenceReference": null
+    },
+    "familySharingDecision": null,
+    "taxCategory": null,
+    "localizations": {
+      "en-US": {
+        "groupDisplayName": null,
+        "productDisplayName": null,
+        "description": null,
+        "appNameDisplayOption": null,
+        "customAppName": null
+      }
+    },
+    "appStoreConnect": {
+      "groupStatus": "pending",
+      "productStatus": "pending",
+      "firstSubmission": true,
+      "attachedToVersion": false,
+      "reviewNotesConfigured": false,
+      "reviewScreenshotShotId": "07-subscription-offer",
+      "reviewScreenshotUpload": {
+        "status": "pending",
+        "shotId": "07-subscription-offer",
+        "sha256": null,
+        "uploadedAtUtc": null,
+        "evidenceReference": null
+      }
+    },
+    "revenueCat": {
+      "productionMappingStatus": "pending",
+      "evidenceReference": null
+    },
+    "exactBuildEvidence": {
+      "appVersion": "1.0.0",
+      "buildNumber": null,
+      "gitCommit": null,
+      "easBuildId": null,
+      "appStoreConnectBuildId": null,
+      "storeKitOfferStatus": "pending",
+      "purchaseQaStatus": "pending",
+      "testFlightStatus": "pending",
+      "testedAtUtc": null,
+      "evidenceReference": null
+    },
+    "approval": {
+      "owner": false,
+      "appStoreConnectConfirmed": false,
+      "revenueCatVerified": false,
+      "nativeQaVerified": false
+    }
+  },
+  "accessibility": {
+    "status": "pending_exact_build_common_task_evaluation",
+    "device": "iPhone",
+    "source": "https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/",
+    "accessibilityUrl": null,
+    "exactBuildEvidence": {
+      "appVersion": "1.0.0",
+      "buildNumber": null,
+      "gitCommit": null,
+      "easBuildId": null,
+      "appStoreConnectBuildId": null,
+      "testedAtUtc": null,
+      "evidenceReference": null
+    },
+    "commonTasks": {
+      "firstLaunchAndSignUp": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "signIn": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "adultEligibility": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "purchaseAndRestore": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "onboarding": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "todayAndWeighIn": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "balancedMealLogging": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "settingsAndDeletion": {
+        "status": "pending",
+        "evidenceReference": null
+      }
+    },
+    "features": {
+      "voiceOver": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "voiceControl": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "largerText": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "darkInterface": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "differentiateWithoutColorAlone": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "sufficientContrast": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "reducedMotion": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "captions": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "audioDescriptions": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      }
+    },
+    "appStoreConnectDecision": {
+      "status": "pending",
+      "decision": null,
+      "savedAtUtc": null,
+      "evidenceReference": null
+    },
+    "approval": {
+      "owner": false,
+      "accessibilityReviewer": false,
+      "exactBuildVerified": false,
       "appStoreConnectConfirmed": false
     }
   },
@@ -126,45 +399,29 @@
   "ageRating": {
     "targetAudience": "18_plus",
     "questionnaireCheckedAt": "2026-08-03",
+    "questionnaireSource": "https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/",
+    "savedQuestionnaireEvidence": {
+      "status": "pending_app_store_connect",
+      "questionnaireVersionOrRevision": null,
+      "calculatedRating": null,
+      "effectiveRatingAfterOverride": null,
+      "confirmedAtUtc": null,
+      "evidenceReference": null
+    },
     "workingAnswers": [
       {
-        "id": "health_or_wellness_topics",
-        "answer": "yes",
+        "id": "parental_controls",
+        "answer": "no",
         "status": "provisional_pending_confirmation",
-        "basis": "The current app provides calorie, dieting, fitness, and exercise-related general wellness guidance.",
-        "evidence": [
-          "APP_STORE_METADATA.md#age-rating-and-questionnaire",
-          "artifacts/cut-os/app/(app)/meal-one.tsx"
-        ],
-        "confirmationGates": [
-          "owner",
-          "qualified_health_nutrition_review",
-          "final_binary",
-          "app_store_connect"
-        ]
-      },
-      {
-        "id": "medical_or_treatment_information",
-        "answer": "none",
-        "status": "provisional_pending_confirmation",
-        "basis": "The v1 scope and listing expressly provide general wellness information, not diagnosis, treatment, clinical guidance, or personalized medical advice.",
-        "evidence": [
-          "APP_STORE_METADATA.md#focused-v1-listing-copy",
-          "artifacts/cut-os/app/(app)/meal-one.tsx"
-        ],
-        "confirmationGates": [
-          "owner",
-          "legal",
-          "qualified_health_nutrition_review",
-          "final_binary",
-          "app_store_connect"
-        ]
+        "basis": "The current v1 scope has no parent or guardian controls because the product is restricted to adults.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
       },
       {
         "id": "age_assurance",
         "answer": "yes",
         "status": "provisional_pending_confirmation",
-        "basis": "Inference from Apple's current definition: CUT OS asks for self-declared full DOB solely to confirm that the user meets its 18+ requirement. This is not identity verification or verified age.",
+        "basis": "CUT OS asks for a self-declared full DOB solely to decide whether the user meets its 18+ requirement; it is not identity verification.",
         "evidence": [
           "ADR_003_ADULT_ELIGIBILITY.md",
           "artifacts/cut-os/app/(app)/adult-eligibility.tsx"
@@ -177,6 +434,22 @@
         ]
       },
       {
+        "id": "unrestricted_web_access",
+        "answer": "no",
+        "status": "provisional_pending_confirmation",
+        "basis": "The app exposes controlled legal, support, and Apple subscription-management links rather than unrestricted browsing.",
+        "evidence": ["artifacts/cut-os/components/LegalSupportLinks.tsx"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "user_generated_content",
+        "answer": "no",
+        "status": "provisional_pending_confirmation",
+        "basis": "No public or broadly distributed user-generated content feature ships in paid v1.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
         "id": "social_media",
         "answer": "no",
         "status": "provisional_pending_confirmation",
@@ -185,10 +458,10 @@
         "confirmationGates": ["owner", "final_binary", "app_store_connect"]
       },
       {
-        "id": "user_generated_content",
-        "answer": "no",
+        "id": "social_media_disabled_for_users_under_13",
+        "answer": "not_applicable",
         "status": "provisional_pending_confirmation",
-        "basis": "No public or shared user-generated content ships in paid v1.",
+        "basis": "No social-media capability ships, so an under-13 social-media mode does not apply to this adults-only v1.",
         "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
         "confirmationGates": ["owner", "final_binary", "app_store_connect"]
       },
@@ -209,11 +482,148 @@
         "confirmationGates": ["owner", "final_archive", "app_store_connect"]
       },
       {
-        "id": "unrestricted_web_access",
-        "answer": "no",
+        "id": "profanity_or_crude_humor",
+        "answer": "none",
         "status": "provisional_pending_confirmation",
-        "basis": "The app exposes only controlled legal and support links, not unrestricted browsing.",
-        "evidence": ["artifacts/cut-os/components/LegalSupportLinks.tsx"],
+        "basis": "The focused v1 product and curated catalog contain no profanity or crude-humor content.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "horror_or_fear_themes",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product and curated catalog contain no horror or fear themes.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "alcohol_tobacco_or_drug_use_or_references",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product and curated meal catalog contain no alcohol, tobacco, or drug references.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "medical_or_treatment_information",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The v1 scope and listing provide general wellness information, not diagnosis, treatment, clinical guidance, or personalized medical advice.",
+        "evidence": [
+          "APP_STORE_METADATA.md#focused-v1-listing-copy",
+          "artifacts/cut-os/app/(app)/meal-one.tsx"
+        ],
+        "confirmationGates": [
+          "owner",
+          "legal",
+          "qualified_health_nutrition_review",
+          "final_binary",
+          "app_store_connect"
+        ]
+      },
+      {
+        "id": "health_or_wellness_topics",
+        "answer": "yes",
+        "status": "provisional_pending_confirmation",
+        "basis": "The current app provides calorie, dieting, fitness, and exercise-related general wellness guidance.",
+        "evidence": [
+          "APP_STORE_METADATA.md#age-rating-and-questionnaire",
+          "artifacts/cut-os/app/(app)/meal-one.tsx"
+        ],
+        "confirmationGates": [
+          "owner",
+          "qualified_health_nutrition_review",
+          "final_binary",
+          "app_store_connect"
+        ]
+      },
+      {
+        "id": "mature_or_suggestive_themes",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product and curated catalog contain no mature or suggestive themes.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "sexual_content_or_nudity",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product and curated catalog contain no sexual content or nudity.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "graphic_sexual_content_and_nudity",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product and curated catalog contain no graphic sexual content or nudity.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "cartoon_or_fantasy_violence",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product and curated catalog contain no cartoon or fantasy violence.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "realistic_violence",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product and curated catalog contain no realistic violence.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "prolonged_graphic_or_sadistic_realistic_violence",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product and curated catalog contain no prolonged graphic or sadistic realistic violence.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "guns_or_other_weapons",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product and curated catalog contain no guns or other weapons.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "gambling",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product contains no real-money or exchangeable-currency gambling.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "simulated_gambling",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product contains no simulated betting, wagering, casino, or lottery feature.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "contests",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product contains no competitive ranking, reward, or contest feature.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "loot_boxes",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The focused v1 product contains no randomized virtual-item purchase or loot-box feature.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
         "confirmationGates": ["owner", "final_binary", "app_store_connect"]
       }
     ],
@@ -235,6 +645,24 @@
     "manifestPath": "artifacts/cut-os/app.json",
     "tracking": false,
     "trackingDomains": [],
+    "requiredReasonApis": [
+      {
+        "type": "NSPrivacyAccessedAPICategoryFileTimestamp",
+        "reasons": ["0A2A.1", "3B52.1", "C617.1"]
+      },
+      {
+        "type": "NSPrivacyAccessedAPICategoryDiskSpace",
+        "reasons": ["85F4.1", "E174.1"]
+      },
+      {
+        "type": "NSPrivacyAccessedAPICategoryUserDefaults",
+        "reasons": ["CA92.1"]
+      },
+      {
+        "type": "NSPrivacyAccessedAPICategorySystemBootTime",
+        "reasons": ["35F9.1"]
+      }
+    ],
     "dataTypes": [
       {
         "ascDataType": "Contact Info - Name",

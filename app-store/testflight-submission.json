@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "status": "working_not_approved",
+  "updated": "2026-08-03",
+  "distributionScope": "internal_only",
+  "betaAppDescription": "CUT OS is an adults-only daily cut check-in for people who lift. Test the 18+ eligibility gate, Apple subscription purchase and restore, onboarding, daily weigh-in, six curated balanced-meal options, meal logging, Settings, and account deletion. CUT OS provides general fitness and nutrition information, not medical advice.",
+  "whatToTest": "Use only the purpose-built synthetic accounts configured for this build. Verify sign-in, the 18+ gate, purchase and restore, StoreKit-localized offer details, onboarding, Today, weigh-in, balanced-meal logging, Settings, subscription management, and deletion. Repeat critical paths with VoiceOver, larger text, poor connectivity, relaunch, and account switching. Report any charge-without-access, cross-account state, age-gate bypass, private-data exposure, stale daily state, or inaccessible critical control immediately.",
+  "feedbackEmailConfiguredInAppStoreConnect": false,
+  "externalBetaReview": {
+    "required": false,
+    "contactConfigured": false,
+    "primaryDemoAccountConfigured": false,
+    "notesConfigured": false
+  },
+  "exactBuildEvidence": {
+    "appVersion": "1.0.0",
+    "buildNumber": null,
+    "gitCommit": null,
+    "easBuildId": null,
+    "appStoreConnectBuildId": null,
+    "internalGroupConfigured": false,
+    "testedAtUtc": null,
+    "qaReportReference": null,
+    "purchaseQaReportReference": null,
+    "appReviewRunbookReference": null
+  },
+  "approval": {
+    "owner": false,
+    "mobileQa": false,
+    "appStoreConnectConfirmed": false
+  }
+}

@@ -194,10 +194,17 @@ while touching auth, `db`, or the Express app.
   30/min) guards the unauthenticated Clerk FAPI proxy specifically.
   `app.set("trust proxy", 1)` is required for both — it's what makes `req.ip`
   the real client IP behind the single edge proxy hop, not the proxy's own
-  address. The rate-limit store is in-memory and **per-instance — a
-  stopgap**: correct under one autoscale instance, but limits reset per
-  instance and aren't shared, so a shared (Redis) store is required before
-  this is correct across multiple instances.
+  address. The Clerk proxy strips incoming `Forwarded`, `X-Real-IP`, and
+  `X-Forwarded-For` claims, then forwards only that single Express-derived IP
+  when the runtime trust-proxy setting is exactly the audited one-hop value.
+  The rate-limit store is in-memory and **per-instance**: limits reset per
+  process and are not globally enforced. Production startup requires the
+  operator to set `API_MAX_INSTANCES` to the platform's real maximum and only
+  accepts `1`; a missing/invalid value fails as `API_MAX_INSTANCES`, while any
+  larger topology fails as `SHARED_RATE_LIMIT_STORE`. This is a launch-only
+  single-instance control. Increasing the platform maximum requires a real
+  shared-store integration and tests first; naming a store in an environment
+  variable does not bypass this gate.
 - **`helmet` is mounted on `/api` with CSP disabled** — this is a JSON API,
   not an HTML surface, so a content-security-policy is meaningless; helmet's
   other defaults (`nosniff`, HSTS, `X-Frame-Options`, no-referrer) still
@@ -222,8 +229,8 @@ while touching auth, `db`, or the Express app.
   successful eligible decision may restore/update it from the Clerk session
   claim; unverified/ineligible rows retain null, and ordinary later logins do
   not refresh it.
-- A shared (Redis) rate-limit store, to make `API_RATE_LIMIT`/
-  `CLERK_RATE_LIMIT` correct across more than one autoscale instance.
+- A shared rate-limit store, to make `API_RATE_LIMIT`/`CLERK_RATE_LIMIT`
+  correct before increasing `API_MAX_INSTANCES` above one.
 - An approved retention/cleanup policy for completed identity tombstones and
   database backups, plus a documented deletion-completion expectation.
 - Production monitoring and alerts for pending deletion age, retry counts, and

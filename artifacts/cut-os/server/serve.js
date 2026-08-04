@@ -10,6 +10,7 @@
  */
 
 const http = require("http");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const {
@@ -46,6 +47,102 @@ const LEGAL_ROUTES = {
   "/terms": "terms.html",
   "/support": "support.html",
 };
+
+const NON_PUBLIC_DNS_SUFFIXES = [
+  ".example",
+  ".home",
+  ".home.arpa",
+  ".internal",
+  ".invalid",
+  ".lan",
+  ".local",
+  ".localhost",
+  ".onion",
+  ".test",
+];
+
+function isValidPublicHostname(hostname) {
+  const normalized = hostname.toLowerCase();
+  const labels = normalized.split(".");
+  return Boolean(
+    normalized.length <= 253 &&
+    labels.length >= 2 &&
+    labels.every(
+      (label) =>
+        label.length > 0 &&
+        label.length <= 63 &&
+        /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/u.test(label),
+    ) &&
+    !/^\d{1,3}(?:\.\d{1,3}){3}$/u.test(normalized) &&
+    !NON_PUBLIC_DNS_SUFFIXES.some((suffix) => normalized.endsWith(suffix)),
+  );
+}
+
+function parsePublicAppOrigin(value) {
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value.length > 2048 ||
+    value.trim() !== value ||
+    /[\u0000-\u001f\u007f]/u.test(value)
+  ) {
+    throw new Error(
+      "PUBLIC_APP_ORIGIN must be an HTTPS origin on a public DNS hostname.",
+    );
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(
+      "PUBLIC_APP_ORIGIN must be an HTTPS origin on a public DNS hostname.",
+    );
+  }
+
+  if (
+    parsed.protocol !== "https:" ||
+    parsed.username ||
+    parsed.password ||
+    parsed.port ||
+    parsed.pathname !== "/" ||
+    parsed.search ||
+    parsed.hash ||
+    !isValidPublicHostname(parsed.hostname)
+  ) {
+    throw new Error(
+      "PUBLIC_APP_ORIGIN must be an HTTPS origin on a public DNS hostname.",
+    );
+  }
+
+  return Object.freeze({
+    origin: parsed.origin,
+    hostname: parsed.hostname.toLowerCase(),
+    deepLink: `exps://${parsed.hostname.toLowerCase()}`,
+  });
+}
+
+function escapeHtml(value) {
+  return String(value).replace(
+    /[&<>"']/gu,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[character],
+  );
+}
+
+function serializeInlineJson(value) {
+  return JSON.stringify(value).replace(
+    /[<>&\u2028\u2029]/gu,
+    (character) =>
+      `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+}
 
 function getAppName() {
   try {
@@ -185,19 +282,31 @@ function serveManifest(platform, res, staticRoot, requestMethod) {
   res.end(requestMethod === "HEAD" ? undefined : manifest);
 }
 
-function serveLandingPage(req, res, landingPageTemplate, appName) {
-  const forwardedProto = req.headers["x-forwarded-proto"];
-  const protocol = forwardedProto || "https";
-  const host = req.headers["x-forwarded-host"] || req.headers.host;
-  const baseUrl = `${protocol}://${host}`;
-  const expsUrl = `${host}`;
-
+function serveLandingPage(req, res, landingPageTemplate, appName, publicApp) {
+  const nonce = crypto.randomBytes(18).toString("base64");
   const html = landingPageTemplate
-    .replace(/BASE_URL_PLACEHOLDER/g, baseUrl)
-    .replace(/EXPS_URL_PLACEHOLDER/g, expsUrl)
-    .replace(/APP_NAME_PLACEHOLDER/g, appName);
+    .replace(/BASE_URL_PLACEHOLDER/gu, () => escapeHtml(publicApp.origin))
+    .replace(/DEEP_LINK_ATTRIBUTE_PLACEHOLDER/gu, () =>
+      escapeHtml(publicApp.deepLink),
+    )
+    .replace(/DEEP_LINK_JSON_PLACEHOLDER/gu, () =>
+      serializeInlineJson(publicApp.deepLink),
+    )
+    .replace(/APP_NAME_PLACEHOLDER/gu, () => escapeHtml(appName))
+    .replace(/CSP_NONCE_PLACEHOLDER/gu, () => escapeHtml(nonce));
 
-  res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+  res.writeHead(200, {
+    "cache-control": "no-store",
+    "content-security-policy":
+      `default-src 'none'; script-src 'nonce-${nonce}'; ` +
+      `style-src 'nonce-${nonce}'; img-src data:; base-uri 'none'; ` +
+      "frame-ancestors 'none'; form-action 'none'; object-src 'none'",
+    "content-type": "text/html; charset=utf-8",
+    "permissions-policy":
+      "accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), usb=(), xr-spatial-tracking=()",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff",
+  });
   res.end(req.method === "HEAD" ? undefined : html);
 }
 
@@ -286,6 +395,9 @@ function createRequestHandler(options = {}) {
     appName,
     basePath,
   );
+  const publicApp = parsePublicAppOrigin(
+    options.publicAppOrigin ?? process.env.PUBLIC_APP_ORIGIN,
+  );
 
   return (req, res) => {
     if (req.method !== "GET" && req.method !== "HEAD") {
@@ -296,10 +408,9 @@ function createRequestHandler(options = {}) {
 
     let url;
     try {
-      url = new URL(
-        req.url || "/",
-        `http://${req.headers.host || "localhost"}`,
-      );
+      // Only the path is relevant to routing. Never use Host or forwarding
+      // headers as a URL base; they are client-controlled at this boundary.
+      url = new URL(req.url || "/", "http://localhost");
     } catch {
       res.writeHead(400);
       res.end("Bad Request");
@@ -327,7 +438,13 @@ function createRequestHandler(options = {}) {
       }
 
       if (routePath === "/") {
-        return serveLandingPage(req, res, templates.landing, appName);
+        return serveLandingPage(
+          req,
+          res,
+          templates.landing,
+          appName,
+          publicApp,
+        );
       }
     }
 
@@ -366,4 +483,5 @@ module.exports = {
   createAppServer,
   createRequestHandler,
   normalizeBasePath,
+  parsePublicAppOrigin,
 };

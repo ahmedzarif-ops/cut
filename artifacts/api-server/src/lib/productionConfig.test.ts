@@ -22,6 +22,8 @@ const validProductionEnvironment: NodeJS.ProcessEnv = {
   REVENUECAT_PROJECT_ID: "projProduction1234",
   REVENUECAT_ENTITLEMENT_REST_ID: "entlProduction1234",
   CORS_ALLOWED_ORIGINS: "https://api.cut.example.com",
+  API_MAX_INSTANCES: "1",
+  ACCOUNT_DELETION_RETRY_INTERVAL_MS: "60000",
 };
 
 describe("production configuration", () => {
@@ -44,6 +46,7 @@ describe("production configuration", () => {
         "REVENUECAT_PROJECT_ID",
         "REVENUECAT_ENTITLEMENT_REST_ID",
         "HTTPS_ALLOWED_ORIGIN",
+        "API_MAX_INSTANCES",
       ],
     );
   });
@@ -137,12 +140,61 @@ describe("production configuration", () => {
     expect(validateProductionConfiguration(environment)).toEqual([]);
   });
 
+  it.each([undefined, "", "0", "01", "1.5", "two", " 1", "1 "])(
+    "requires an explicit positive-integer API_MAX_INSTANCES topology: %s",
+    (value) => {
+      expect(
+        validateProductionConfiguration({
+          ...validProductionEnvironment,
+          API_MAX_INSTANCES: value,
+        }),
+      ).toContain("API_MAX_INSTANCES");
+    },
+  );
+
+  it("fails closed for multiple replicas until a real shared limiter store is integrated", () => {
+    expect(
+      validateProductionConfiguration({
+        ...validProductionEnvironment,
+        API_MAX_INSTANCES: "2",
+        // An invented setting cannot claim an implementation that is absent.
+        RATE_LIMIT_STORE: "redis",
+      }),
+    ).toContain("SHARED_RATE_LIMIT_STORE");
+  });
+
+  it.each(["1000.5", "999", "300001", "2147483648", " 60000", "60000 "])(
+    "rejects an unsafe account-deletion retry interval: %s",
+    (value) => {
+      expect(
+        validateProductionConfiguration({
+          ...validProductionEnvironment,
+          ACCOUNT_DELETION_RETRY_INTERVAL_MS: value,
+        }),
+      ).toContain("ACCOUNT_DELETION_RETRY_INTERVAL_MS");
+    },
+  );
+
+  it.each([undefined, "1000", "60000", "300000"])(
+    "accepts the default or a bounded account-deletion retry interval: %s",
+    (value) => {
+      const environment = { ...validProductionEnvironment };
+      if (value === undefined) {
+        delete environment.ACCOUNT_DELETION_RETRY_INTERVAL_MS;
+      } else {
+        environment.ACCOUNT_DELETION_RETRY_INTERVAL_MS = value;
+      }
+      expect(validateProductionConfiguration(environment)).toEqual([]);
+    },
+  );
+
   it("never includes a DSN or secret value in a production startup error", () => {
     const environment = {
       ...validProductionEnvironment,
       DATABASE_URL:
         "postgresql://private-user:do-not-print@db.example.com/cut?sslmode=require",
       CLERK_SECRET_KEY: "sk_test_do-not-print-this-secret",
+      ACCOUNT_DELETION_RETRY_INTERVAL_MS: "2147483648",
     };
 
     let thrown: unknown;
@@ -156,9 +208,11 @@ describe("production configuration", () => {
     const message = (thrown as Error).message;
     expect(message).toContain("DATABASE_URL");
     expect(message).toContain("CLERK_SECRET_KEY");
+    expect(message).toContain("ACCOUNT_DELETION_RETRY_INTERVAL_MS");
     expect(message).not.toContain("private-user");
     expect(message).not.toContain("do-not-print");
     expect(message).not.toContain("db.example.com");
+    expect(message).not.toContain("2147483648");
   });
 
   it("does not enforce production-only configuration in development or test", () => {

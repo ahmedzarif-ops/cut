@@ -4,6 +4,8 @@ import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { isProductionBuildProfile } from "./validate-release-config.mjs";
+
 const directory = dirname(fileURLToPath(import.meta.url));
 
 const RELEASE_CONFIGURATION_STEP = {
@@ -27,7 +29,7 @@ const PRODUCTION_ONLY_STEPS = [
 
 export function getEasBuildPreInstallSteps(environment = process.env) {
   const profile = environment.EAS_BUILD_PROFILE?.trim() || "production";
-  const production = profile !== "development" && profile !== "preview";
+  const production = isProductionBuildProfile(profile);
 
   return {
     profile,

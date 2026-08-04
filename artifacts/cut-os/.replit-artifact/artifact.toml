@@ -19,6 +19,8 @@ localPort = 22203
 run = "pnpm --filter @workspace/cut-os run dev"
 
 [services.production]
+# Required deployment input: PUBLIC_APP_ORIGIN. It is intentionally not
+# defaulted because the owner must choose the canonical public HTTPS host.
 build = [ "pnpm", "--filter", "@workspace/cut-os", "run", "build" ]
 run = [ "pnpm", "--filter", "@workspace/cut-os", "run", "serve" ]
 

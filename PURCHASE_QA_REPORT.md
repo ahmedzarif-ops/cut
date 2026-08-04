@@ -13,8 +13,14 @@ any Apple Sandbox or TestFlight item.
 
 - [x] App configuration and automated native introspection use bundle ID
       `com.zarifahmed.cut`.
-- [ ] Subscription group, product IDs, durations, localizations, price, and
-      review screenshot are recorded.
+- [ ] Subscription group, product IDs, durations, localizations, and structured
+      U.S. USD price/effective date are recorded with the owner decision
+      revision and evidence reference.
+- [ ] The introductory-offer decision and, when enabled, exact duration,
+      periods, price, eligibility, and evidence are recorded.
+- [ ] The App Store Connect review screenshot upload records shot
+      `07-subscription-offer`, its approved SHA-256, upload UTC, and evidence
+      reference; the hash matches the actual approved PNG.
 - [ ] RevenueCat Apple app uses the same bundle ID.
 - [ ] Products map to exact entitlement `CUT_OS_PRO` and the current offering.
 - [ ] Production build contains only the Apple public SDK key; no RevenueCat
@@ -68,6 +74,9 @@ ___, date ___
 
 Record: TestFlight build ___, commit ___, device/iOS ___, tester ___, date ___
 
+Exact-build evidence: App Store Connect build ID ___, app version/build ___,
+EAS build ID ___, full Git commit ___, installed-build verification ___
+
 - [ ] Fresh purchase through TestFlight sandbox.
 - [ ] Restore after reinstall and on second device.
 - [ ] Renewal, cancellation, expiration, billing retry/grace, and refund.
@@ -75,7 +84,67 @@ Record: TestFlight build ___, commit ___, device/iOS ___, tester ___, date ___
 - [ ] Charged-but-locked recovery through Restore + server refresh.
 - [ ] Delete account before purchase, with active subscription, and after
       cancellation. Every path explains that Apple billing is separate.
-- [ ] App Review demo account and exact navigation steps reproduce full access.
+- [ ] The full-access review account was freshly tested on this exact build
+      within 24 hours of external submission; private evidence records its
+      alias, required state, tester, UTC time, and result.
+- [ ] VoiceOver and large text complete the common tasks on this exact build:
+      sign-in, adult gate, purchase/restore, weigh-in, meal log/edit/delete,
+      Settings/legal links, and account deletion. Record focus order, labels,
+      contrast, control usability, device/iOS, tester, date, and result.
+- [ ] App Review demo access and the exact navigation steps reproduce full
+      access on this exact build.
+- [ ] No username, password, verification code, receipt, secret, or other
+      credential is stored in this repository or evidence attachments; use the
+      approved secret manager and App Store Connect fields.
+
+### TestFlight Test Information draft
+
+Internal-only TestFlight testing does not require TestFlight App Review. Before
+inviting external testers, complete the external Test Information in App Store
+Connect, verify it against the exact selected build, and submit that build for
+TestFlight App Review. Do not treat internal-test acceptance as external-review
+approval.
+
+Copy the following two fields into App Store Connect after confirming they still
+match the selected build:
+
+```text
+Beta App Description
+
+CUT OS is an adults-only daily cut check-in for people who lift. Testers can
+record a daily weigh-in, choose and log one of six curated balanced meals, view
+estimated nutrition totals, and manage their account and CUT OS Pro
+subscription. It provides general fitness and nutrition information, not
+medical advice. Nutrition and common-allergen information is estimated.
+
+What to Test
+
+Use the purpose-built beta account supplied through the approved tester channel.
+Please test sign-in and the 18+ gate; purchase, cancellation, restore, and
+subscription management; daily weigh-in; balanced-meal selection and logging;
+serving adjustment and meal deletion; relaunch and account switching; legal and
+support links; and in-app account deletion. Verify that paid screens open only
+after server-confirmed access, prices and periods match Apple's purchase sheet,
+and deleting the CUT OS account does not claim to cancel Apple billing. Also
+complete these common tasks with VoiceOver and large text and report any unclear
+label, focus-order issue, clipped text, low contrast, or unusable control.
+
+When reporting an issue, include the selected TestFlight version/build,
+device/iOS, account-state alias, steps, expected result, and observed result.
+Do not include passwords, verification codes, receipts, personal data, or
+secrets.
+```
+
+The following external App Store Connect configuration remains **pending** and
+must not be filled with guessed values or committed credentials:
+
+- Feedback email.
+- TestFlight review contact name, phone, and email.
+- Sign-in-required selection and purpose-built demo-account information for
+  external TestFlight App Review. Store credentials only in App Store Connect
+  and the approved secret manager.
+- Final confirmation that the copy above and review navigation match the exact
+  build selected for external testing.
 
 ## Stop-the-line defects
 

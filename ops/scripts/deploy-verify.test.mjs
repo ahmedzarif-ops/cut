@@ -5,6 +5,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  clerkProxyHealthUrl,
   DeployVerificationError,
   evaluateSurface,
   hasAnchor,
@@ -15,6 +16,10 @@ import {
   selfCanonical,
   verifyUrl,
 } from "./deploy-verify.mjs";
+import {
+  EasSubmitConfigurationError,
+  validateEasSubmitConfig,
+} from "./eas-submit-config-verify.mjs";
 
 async function withServer(handler, callback) {
   const server = http.createServer(handler);
@@ -42,6 +47,11 @@ test("redacts sensitive URL components and control characters from output", () =
     redactUrlForOutput("https://example.com/safe\nforged?token=secret"),
     "https://example.com/safeforged",
   );
+  const malformed =
+    "https://operator:password@[]/private?token=secret#fragment";
+  const malformedLabel = redactUrlForOutput(malformed);
+  assert.equal(malformedLabel, "[invalid-url]");
+  assert.doesNotMatch(malformedLabel, /operator|password|token|secret/u);
   assert.equal(
     hasAnchor('<div id="literal[anchor"></div>', "literal[anchor"),
     true,
@@ -182,6 +192,130 @@ test("verifies a live JSON readiness endpoint", async () => {
       );
       assert.equal(result.allPass, true);
     },
+  );
+});
+
+test("builds only the canonical CUT Clerk proxy-health target", () => {
+  assert.equal(
+    clerkProxyHealthUrl("https://api.example.com/api/__clerk", "dmn_live_123")
+      .href,
+    "https://api.example.com/api/__clerk/v1/proxy-health?domain_id=dmn_live_123",
+  );
+
+  for (const invalidTarget of [
+    "https://api.example.com/not-clerk",
+    "https://api.example.com/api/__clerk/",
+    "https://api.example.com/api/__clerk?token=do-not-send",
+    "https://api.example.com/api/__clerk#fragment",
+  ]) {
+    assert.throws(
+      () => clerkProxyHealthUrl(invalidTarget, "dmn_live_123"),
+      (error) => {
+        assert.ok(error instanceof DeployVerificationError);
+        assert.equal(error.code, "invalid_clerk_proxy_health_target");
+        assert.doesNotMatch(error.message, /do-not-send|token=/u);
+        return true;
+      },
+    );
+  }
+});
+
+test("verifies Clerk proxy health without returning the echoed client IP", async () => {
+  await withServer(
+    (request, response) => {
+      assert.equal(
+        request.url,
+        "/api/__clerk/v1/proxy-health?domain_id=dmn_live_123",
+      );
+      response.writeHead(200, {
+        "content-type": "application/json; charset=utf-8",
+      });
+      response.end(
+        JSON.stringify({
+          status: "healthy",
+          x_forwarded_for: "198.51.100.24",
+        }),
+      );
+    },
+    async (origin) => {
+      const result = await verifyUrl(
+        `${origin}/api/__clerk`,
+        "clerk-proxy-health",
+        { clerkDomainId: "dmn_live_123" },
+        { allowLocalHttp: true },
+      );
+      assert.equal(result.allPass, true);
+      assert.doesNotMatch(JSON.stringify(result), /198\.51\.100\.24/u);
+    },
+  );
+});
+
+test("Clerk proxy health fails closed on unhealthy or incomplete bodies", () => {
+  for (const body of [
+    JSON.stringify({ status: "unhealthy", x_forwarded_for: "198.51.100.24" }),
+    JSON.stringify({ status: "healthy" }),
+    "not-json",
+  ]) {
+    const result = evaluateSurface({
+      surfaceType: "clerk-proxy-health",
+      status: 200,
+      headers: new Headers({ "content-type": "application/json" }),
+      body,
+      expect: { clerkDomainId: "dmn_live_123" },
+    });
+    assert.equal(result.allPass, false);
+    assert.doesNotMatch(JSON.stringify(result), /198\.51\.100\.24/u);
+  }
+});
+
+test("Clerk proxy health keeps its response below the fixed safety ceiling", async () => {
+  await withServer(
+    (_request, response) => {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end("x".repeat(20_000));
+    },
+    async (origin) => {
+      await assert.rejects(
+        verifyUrl(
+          `${origin}/api/__clerk`,
+          "clerk-proxy-health",
+          { clerkDomainId: "dmn_live_123" },
+          { allowLocalHttp: true, maxResponseBytes: 1_000_000 },
+        ),
+        (error) => {
+          assert.ok(error instanceof DeployVerificationError);
+          assert.equal(error.code, "response_too_large");
+          return true;
+        },
+      );
+    },
+  );
+});
+
+test("EAS submit routing requires a pinned numeric App Store Connect app ID", () => {
+  for (const config of [
+    {},
+    { submit: { production: {} } },
+    { submit: { production: { ios: {} } } },
+    { submit: { production: { ios: { ascAppId: 1234567890 } } } },
+    { submit: { production: { ios: { ascAppId: "placeholder" } } } },
+    { submit: { production: { ios: { ascAppId: "0123456789" } } } },
+  ]) {
+    assert.throws(
+      () => validateEasSubmitConfig(config),
+      (error) => {
+        assert.ok(error instanceof EasSubmitConfigurationError);
+        assert.equal(error.code, "production_ios_asc_app_id_not_pinned");
+        return true;
+      },
+    );
+  }
+
+  assert.equal(
+    validateEasSubmitConfig({
+      submit: { production: { ios: { ascAppId: "1234567890" } } },
+    }),
+    true,
   );
 });
 
@@ -361,6 +495,26 @@ test("requires an exact resolved redirect and redacts query details", () => {
     },
   });
   assert.equal(substringOnly.allPass, false);
+
+  const malformedLocation = evaluateSurface({
+    surfaceType: "redirect",
+    status: 302,
+    headers: new Headers({
+      location:
+        "https://redirect-user:redirect-password@[]/private?token=redirect-secret",
+    }),
+    expect: {
+      url: "https://example.com/source",
+      redirectStatus: 302,
+      redirectTo: "/target",
+    },
+  });
+  assert.equal(malformedLocation.allPass, false);
+  assert.equal(malformedLocation.checks[1].detail, "[invalid-url]");
+  assert.doesNotMatch(
+    JSON.stringify(malformedLocation),
+    /redirect-user|redirect-password|token=|redirect-secret/u,
+  );
 
   assert.throws(
     () =>

@@ -5,8 +5,9 @@ const MINUTE_MS = 60_000;
 
 // express-rate-limit's default keyGenerator keys by req.ip (IPv6-subnet aware),
 // which is the real client IP once `app.set("trust proxy", 1)` is configured.
-// The in-memory store is per-instance — an acknowledged stopgap on autoscale
-// (a shared Redis store is a later item).
+// The default MemoryStore is deliberately still per-process. Production
+// startup therefore requires API_MAX_INSTANCES=1 and rejects any larger
+// topology until a real shared store is integrated and this gate is revised.
 
 /**
  * General throttle for /api, keyed by client IP. Mounted BEFORE requireAuth so

@@ -1,5 +1,6 @@
 import { isPublishableKey, parsePublishableKey } from "@clerk/shared/keys";
 import { buildAllowedOrigins } from "./allowedHosts";
+import { parseAccountDeletionRetryInterval } from "./accountDeletionRetryInterval";
 
 export type ProductionConfigurationIssue =
   | "DATABASE_URL"
@@ -8,7 +9,10 @@ export type ProductionConfigurationIssue =
   | "REVENUECAT_SECRET_API_KEY"
   | "REVENUECAT_PROJECT_ID"
   | "REVENUECAT_ENTITLEMENT_REST_ID"
-  | "HTTPS_ALLOWED_ORIGIN";
+  | "HTTPS_ALLOWED_ORIGIN"
+  | "API_MAX_INSTANCES"
+  | "SHARED_RATE_LIMIT_STORE"
+  | "ACCOUNT_DELETION_RETRY_INTERVAL_MS";
 
 const NON_PUBLIC_DNS_SUFFIXES = [
   ".example",
@@ -132,6 +136,12 @@ function hasUsableHttpsAllowedOrigin(env: NodeJS.ProcessEnv): boolean {
   });
 }
 
+function parseMaximumInstanceCount(value: string | undefined): number | null {
+  if (!value || !/^[1-9]\d*$/u.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
 /**
  * Pure production preflight. Issue identifiers name configuration fields only;
  * configuration values are deliberately never copied into the result.
@@ -161,6 +171,22 @@ export function validateProductionConfiguration(
   }
   if (!hasUsableHttpsAllowedOrigin(env)) {
     issues.push("HTTPS_ALLOWED_ORIGIN");
+  }
+  if (
+    parseAccountDeletionRetryInterval(
+      env.ACCOUNT_DELETION_RETRY_INTERVAL_MS,
+    ) === null
+  ) {
+    issues.push("ACCOUNT_DELETION_RETRY_INTERVAL_MS");
+  }
+
+  const maximumInstances = parseMaximumInstanceCount(env.API_MAX_INSTANCES);
+  if (maximumInstances === null) {
+    issues.push("API_MAX_INSTANCES");
+  } else if (maximumInstances > 1) {
+    // Both current express-rate-limit instances use process-local MemoryStore.
+    // No shared backend is integrated, so no env name can truthfully opt in.
+    issues.push("SHARED_RATE_LIMIT_STORE");
   }
 
   return issues;

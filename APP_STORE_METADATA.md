@@ -97,6 +97,11 @@ invent a value.
 | Copyright                  | Unresolved                                   | Owner supplies the correct year and rights holder.                                                                                                                                                                                                                                                       |
 | Content-rights declaration | Unresolved                                   | Owner/counsel answer from the final catalog, artwork, copy, and licensed content.                                                                                                                                                                                                                        |
 | Initial territories        | Unresolved                                   | Owner selects the first storefronts; never infer worldwide availability or regulatory answers. Validate the repository's two-letter storefront codes against `app-store/app-store-connect-territories.json` and reconcile them to Apple's current three-letter App Store Connect API IDs before release. |
+| App download price         | Unresolved                                   | Owner chooses free versus paid download; the subscription proposal does not decide this.                                                                                                                                                                                                                 |
+| License agreement          | Unresolved                                   | Owner/counsel chooses Apple's standard EULA or an approved custom EULA.                                                                                                                                                                                                                                  |
+| App tax category           | Unresolved                                   | Owner/counsel/finance confirms the live App Store Connect value; do not copy the subscription tax category by assumption.                                                                                                                                                                                |
+| DSA trader status          | Unresolved                                   | Owner/counsel confirms trader, non-trader, or a documented no-EU-distribution position.                                                                                                                                                                                                                  |
+| Server Notifications       | Pending                                      | Verify production and sandbox HTTPS endpoints in App Store Connect and retain non-secret evidence.                                                                                                                                                                                                       |
 | Release method             | Manual release                               | Keep manual until the owner explicitly approves both submission and public release in App Store Connect.                                                                                                                                                                                                 |
 
 ## Age rating and questionnaire
@@ -111,6 +116,16 @@ Working answers/evidence for the final questionnaire:
 
 - Complete every content descriptor from the final binary and listing; do not
   choose answers merely to obtain a preferred rating.
+- The machine record includes all 24 current working descriptors: Parental
+  Controls, Age Assurance, Unrestricted Web Access, User-Generated Content,
+  Social Media, Social Media Disabled for Users Under 13, Messaging/Chat,
+  Advertising, Profanity/Crude Humor, Horror/Fear, Alcohol/Tobacco/Drug
+  References, Medical/Treatment Information, Health/Wellness Topics,
+  Mature/Suggestive Themes, Sexual Content/Nudity, Graphic Sexual Content and
+  Nudity, Cartoon/Fantasy Violence, Realistic Violence, Prolonged Graphic or
+  Sadistic Realistic Violence, Guns/Weapons, Gambling, Simulated Gambling,
+  Contests, and Loot Boxes. Missing, duplicate, reordered, or unconfirmed
+  entries block release.
 - **Health or Wellness Topics:** Yes. Current CUT OS behavior includes calorie,
   dieting, fitness, and exercise guidance.
 - **Medical or Treatment Information:** Provisional working answer **None**.
@@ -136,8 +151,15 @@ Working answers/evidence for the final questionnaire:
   adheres to the EULA. Verify region- and OS-specific display values before
   submission.
 - Record screenshots/PDF evidence of the saved questionnaire, calculated
-  rating, override, date, reviewer, and questionnaire version in the release
-  record.
+  rating, override, UTC date, reviewer, and questionnaire version/revision in
+  `ageRating.savedQuestionnaireEvidence` and the release record.
+
+The machine record stores the current App Store/iOS 26-and-later global values
+(`4+`, `9+`, `13+`, `16+`, `18+`, or `Unrated`), not the legacy value an older
+OS may display. Release rejects `Unrated` and requires the saved effective
+post-override value to be `18+`; retain any region- or older-OS display mapping
+in the controlled evidence reference rather than substituting it into these
+fields.
 
 The current questionnaire includes social-media capability questions. Apple
 announced that responses are required for new apps and updates beginning in
@@ -236,6 +258,54 @@ the App Store owner must confirm the live questionnaire treatment. No CUT OS
 health, nutrition, weight, workout, or eligibility data is used for tracking or
 advertising audiences.
 
+The four required-reason API rows in `privacy.requiredReasonApis` are an exact,
+ordered copy of the current `app.json` privacy manifest. Working validation
+fails on any type, reason, order, or key drift. Release still requires the final
+archive and embedded SDK privacy report because the source manifest alone does
+not prove the submitted archive.
+
+## Structured subscription, review, TestFlight, and accessibility gates
+
+The machine record leaves the subscription group/product reference names,
+immutable product ID, duration, structured U.S. USD price and effective-date
+evidence, introductory-offer decision and exact terms, Family Sharing, tax
+category, English (U.S.) display copy, and App Name Display Option unresolved.
+Release requires App Store Connect confirmation, attachment to version 1.0,
+review notes, an uploaded review screenshot whose SHA-256 equals approved shot
+07, verified RevenueCat mapping, exact-build StoreKit/Purchase QA/TestFlight
+evidence, and attributable owner/App Store Connect/RevenueCat/native-QA
+approvals. The U.S. price record also binds the owner decision revision and its
+controlled evidence reference.
+
+App Review requires five purpose-built synthetic account states: full access,
+purchase, first adult-gate decision, restricted, and deletion. Each account
+must pass a production sign-in within 24 hours of submission and be attested as
+non-expiring for the review window with no MFA or out-of-band trap. Fresh
+exact-build evidence records only account aliases, result, UTC, and evidence
+reference; credentials must remain in App Store Connect or approved secret
+storage. The final text copied from `APP_REVIEW_RUNBOOK.md` must remain within
+4,000 UTF-8 bytes after every placeholder is resolved. Save only the
+credential-free template SHA-256 and final measurement/save attestation—never a
+hash or copy of the resolved credential-bearing text.
+
+`app-store/testflight-submission.json` separately records beta copy, internal
+group configuration, exact version/build/full Git commit/EAS build ID/App Store
+Connect build ID, QA references, and approvals. That five-field identity must
+match App Review, screenshot, subscription, and accessibility evidence exactly.
+Internal-only testing is not external TestFlight App Review approval. If the
+owner selects external testing, review contact, demo access, notes, and the
+selected exact build become mandatory.
+
+Apple's Accessibility Nutrition Label is also exact-build evidence. Test the
+recorded common tasks on iPhone and classify all nine Apple features before the
+owner saves either verified support or a no-support-indicated decision. Every
+feature claimed as supported must list all canonical common tasks in order;
+only Captions and Audio Descriptions may use the no-media not-applicable state.
+Never infer support from framework use or automated checks. Release requires a
+structured `confirmed_in_app_store_connect` record for either decision, with
+the saved UTC, controlled evidence reference, and explicit App Store Connect
+approval; a drafted decision alone is not evidence that Apple received it.
+
 ## App Review notes checklist
 
 - State clearly: “CUT OS is for adults age 18 and older.”
@@ -298,3 +368,5 @@ advertising audiences.
 - [July 2026 social-media questionnaire update](https://developer.apple.com/news/?id=tlur8uvi)
 - [Platform-version information and App Review fields](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information)
 - [Auto-renewable subscription information fields](https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/auto-renewable-subscription-information)
+- [Accessibility Nutrition Labels](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/)
+- [TestFlight overview](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/)

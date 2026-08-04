@@ -39,6 +39,18 @@ describe("createApiLimiter", () => {
     // A different client IP still has its own allowance.
     expect((await request(app).get("/ping").set(ip2)).status).toBe(200);
   });
+
+  it("does not pretend the MemoryStore allowance is shared across instances", async () => {
+    const firstReplica = appWithLimit(1);
+    const secondReplica = appWithLimit(1);
+    const ip = { "x-forwarded-for": "1.1.1.10" };
+
+    expect((await request(firstReplica).get("/ping").set(ip)).status).toBe(200);
+    expect((await request(firstReplica).get("/ping").set(ip)).status).toBe(429);
+    expect((await request(secondReplica).get("/ping").set(ip)).status).toBe(
+      200,
+    );
+  });
 });
 
 function clerkProxyApp(limit?: number): Express {

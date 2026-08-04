@@ -25,9 +25,11 @@
     "maximumListingScreenshots": 10
   },
   "captureDefaults": {
-    "appVersion": null,
+    "appVersion": "1.0.0",
     "buildNumber": null,
     "gitCommit": null,
+    "easBuildId": null,
+    "appStoreConnectBuildId": null,
     "easBuildReference": null,
     "appStoreConnectDeviceSlot": "iPhone 6.9-inch portrait",
     "captureDevice": null,
@@ -46,9 +48,11 @@
       "intendedUse": "listing_candidate_and_review_evidence",
       "requiredForReleaseEvidence": true,
       "file": null,
+      "sha256": null,
       "evidenceReference": null,
       "piiReview": {
         "status": "pending",
+        "reviewedSha256": null,
         "reviewer": null,
         "reviewedAtUtc": null,
         "notes": null
@@ -60,9 +64,11 @@
       "intendedUse": "listing_candidate",
       "requiredForReleaseEvidence": true,
       "file": null,
+      "sha256": null,
       "evidenceReference": null,
       "piiReview": {
         "status": "pending",
+        "reviewedSha256": null,
         "reviewer": null,
         "reviewedAtUtc": null,
         "notes": null
@@ -74,9 +80,11 @@
       "intendedUse": "listing_candidate",
       "requiredForReleaseEvidence": true,
       "file": null,
+      "sha256": null,
       "evidenceReference": null,
       "piiReview": {
         "status": "pending",
+        "reviewedSha256": null,
         "reviewer": null,
         "reviewedAtUtc": null,
         "notes": null
@@ -88,9 +96,11 @@
       "intendedUse": "listing_candidate",
       "requiredForReleaseEvidence": true,
       "file": null,
+      "sha256": null,
       "evidenceReference": null,
       "piiReview": {
         "status": "pending",
+        "reviewedSha256": null,
         "reviewer": null,
         "reviewedAtUtc": null,
         "notes": null
@@ -102,9 +112,11 @@
       "intendedUse": "listing_candidate",
       "requiredForReleaseEvidence": true,
       "file": null,
+      "sha256": null,
       "evidenceReference": null,
       "piiReview": {
         "status": "pending",
+        "reviewedSha256": null,
         "reviewer": null,
         "reviewedAtUtc": null,
         "notes": null
@@ -116,9 +128,11 @@
       "intendedUse": "optional_listing_candidate_and_review_evidence",
       "requiredForReleaseEvidence": true,
       "file": null,
+      "sha256": null,
       "evidenceReference": null,
       "piiReview": {
         "status": "pending",
+        "reviewedSha256": null,
         "reviewer": null,
         "reviewedAtUtc": null,
         "notes": null
@@ -130,9 +144,11 @@
       "intendedUse": "in_app_purchase_review_evidence",
       "requiredForReleaseEvidence": true,
       "file": null,
+      "sha256": null,
       "evidenceReference": null,
       "piiReview": {
         "status": "pending",
+        "reviewedSha256": null,
         "reviewer": null,
         "reviewedAtUtc": null,
         "notes": null
@@ -144,9 +160,11 @@
       "intendedUse": "review_evidence",
       "requiredForReleaseEvidence": true,
       "file": null,
+      "sha256": null,
       "evidenceReference": null,
       "piiReview": {
         "status": "pending",
+        "reviewedSha256": null,
         "reviewer": null,
         "reviewedAtUtc": null,
         "notes": null
@@ -158,9 +176,11 @@
       "intendedUse": "review_evidence",
       "requiredForReleaseEvidence": true,
       "file": null,
+      "sha256": null,
       "evidenceReference": null,
       "piiReview": {
         "status": "pending",
+        "reviewedSha256": null,
         "reviewer": null,
         "reviewedAtUtc": null,
         "notes": null
@@ -172,9 +192,11 @@
       "intendedUse": "optional_review_evidence",
       "requiredForReleaseEvidence": false,
       "file": null,
+      "sha256": null,
       "evidenceReference": null,
       "piiReview": {
         "status": "pending",
+        "reviewedSha256": null,
         "reviewer": null,
         "reviewedAtUtc": null,
         "notes": null
