@@ -5,6 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const pinnedPnpmCommand = "corepack pnpm@10.34.5";
 
 function readRepoFile(path) {
   return readFileSync(resolve(repoRoot, path), "utf8");
@@ -52,9 +53,37 @@ test("the Replit post-merge hook is dependency-install-only", () => {
     .filter((line) => line.length > 0 && !line.startsWith("#"));
   assert.deepEqual(
     executableLines,
-    ["set -eu", "pnpm install --frozen-lockfile"],
+    ["set -eu", `${pinnedPnpmCommand} install --frozen-lockfile`],
     "postMerge may synchronize locked dependencies but may not delegate to or run database commands",
   );
+});
+
+test("Replit runtime commands use the repository-pinned pnpm version", () => {
+  const replitConfiguration = readRepoFile(".replit");
+  assert.match(
+    replitConfiguration,
+    /args\s*=\s*\["corepack",\s*"pnpm@10\.34\.5",\s*"store",\s*"prune"\]/u,
+    "deployment post-build cleanup must use the pinned package manager",
+  );
+
+  const artifactConfigurations = [
+    "artifacts/api-server/.replit-artifact/artifact.toml",
+    "artifacts/cut-os/.replit-artifact/artifact.toml",
+    "artifacts/mockup-sandbox/.replit-artifact/artifact.toml",
+  ];
+  for (const path of artifactConfigurations) {
+    const source = readRepoFile(path);
+    assert.match(
+      source,
+      /corepack(?:",\s*")? pnpm@10\.34\.5|corepack",\s*"pnpm@10\.34\.5/u,
+      `${path} must invoke the pinned package manager through Corepack`,
+    );
+    assert.doesNotMatch(
+      source,
+      /(?:run|build|args)\s*=\s*(?:"pnpm\b|\[\s*"pnpm")/u,
+      `${path} must not delegate Replit startup to its ambient pnpm binary`,
+    );
+  }
 });
 
 test("the API startup gate remains the only production migration implementation", () => {

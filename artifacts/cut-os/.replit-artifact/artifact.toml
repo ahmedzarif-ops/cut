@@ -16,13 +16,13 @@ paths = [ "/" ]
 localPort = 22203
 
 [services.development]
-run = "pnpm --filter @workspace/cut-os run dev"
+run = "corepack pnpm@10.34.5 --filter @workspace/cut-os run dev"
 
 [services.production]
 # Required deployment input: PUBLIC_APP_ORIGIN. It is intentionally not
 # defaulted because the owner must choose the canonical public HTTPS host.
-build = [ "pnpm", "--filter", "@workspace/cut-os", "run", "build" ]
-run = [ "pnpm", "--filter", "@workspace/cut-os", "run", "serve" ]
+build = [ "corepack", "pnpm@10.34.5", "--filter", "@workspace/cut-os", "run", "build" ]
+run = [ "corepack", "pnpm@10.34.5", "--filter", "@workspace/cut-os", "run", "serve" ]
 
 [services.env]
 PORT = "22203"

@@ -6,6 +6,9 @@ PostgreSQL as the source of truth.
 
 ## Run & Operate
 
+- Replit service, deployment, and post-merge commands invoke
+  `corepack pnpm@10.34.5` so the runtime uses the exact version pinned by the
+  repository instead of Replit's ambient package-manager binary.
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm --filter @workspace/cut-os run dev` — run the Expo dev server (Replit iOS simulator / Expo Go)
 - `pnpm run typecheck` — full typecheck across all packages
