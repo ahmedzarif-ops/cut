@@ -65,6 +65,21 @@ test("Replit runtime commands use the repository-pinned pnpm version", () => {
     /args\s*=\s*\["corepack",\s*"pnpm@10\.34\.5",\s*"store",\s*"prune"\]/u,
     "deployment post-build cleanup must use the pinned package manager",
   );
+  assert.match(
+    replitConfiguration,
+    /runButton\s*=\s*"CUT Development"/u,
+    "the Replit Run button must select the audited development workflow",
+  );
+  assert.match(
+    replitConfiguration,
+    /args\s*=\s*"PORT=8080 corepack pnpm@10\.34\.5 --filter @workspace\/api-server run dev"/u,
+    "the development workflow must start the API on its routed port",
+  );
+  assert.match(
+    replitConfiguration,
+    /args\s*=\s*"PORT=22203 corepack pnpm@10\.34\.5 --filter @workspace\/cut-os run dev"/u,
+    "the development workflow must start Expo on its preview port",
+  );
 
   const artifactConfigurations = [
     "artifacts/api-server/.replit-artifact/artifact.toml",
