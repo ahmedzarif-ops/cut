@@ -48,6 +48,7 @@ jobs:
         run: pnpm run dry-run:production
       - name: Verify the Replit production public-site build contract
         env:
+          BUILD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           LEGAL_SITE_PUBLICATION_STATUS: draft
           NODE_ENV: production
           PUBLIC_APP_ORIGIN: https://ci.cutos.app

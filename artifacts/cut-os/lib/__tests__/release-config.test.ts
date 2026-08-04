@@ -140,6 +140,20 @@ function runValidator(
 }
 
 describe("release configuration validator", () => {
+  it("binds the CI production site build to the checked-out revision", () => {
+    const workflow = readFileSync(
+      resolve(process.cwd(), "../../.github/workflows/ci.yml"),
+      "utf8",
+    );
+    const productionSiteStep = workflow.match(
+      /- name: Verify the Replit production public-site build contract\n(?<body>[\s\S]*?)(?=\n      - name:)/u,
+    )?.groups?.body;
+
+    expect(productionSiteStep).toContain(
+      "BUILD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}",
+    );
+  });
+
   it("keeps the CI production fixture bound to the compiled listing URLs", () => {
     const workflow = readFileSync(
       resolve(process.cwd(), "../../.github/workflows/ci.yml"),
