@@ -12,6 +12,7 @@ const USER_A = "d9428888-122b-4a5f-a4e8-0a0f874235a8";
 const USER_B = "7d444840-9dc0-11d1-b245-5ffdce74fad2";
 const PUBLIC_KEY = "appl_PublicIosKey1234";
 const PRODUCT_ID = "com.zarifahmed.cut.pro.monthly";
+const OFFERING_ID = "default";
 
 function customer(
   entitled = false,
@@ -148,6 +149,7 @@ describe("RevenueCat subscription adapter", () => {
   it("configures with only the internal UUID and exposes the bound production product", async () => {
     const bridge = new FakeBridge();
     bridge.offering = {
+      identifier: OFFERING_ID,
       availablePackages: [
         packageItem({
           packageIdentifier: "monthly",
@@ -180,9 +182,55 @@ describe("RevenueCat subscription adapter", () => {
     expect(bridge.calls.some((call) => call.name === "checkIntro")).toBe(false);
   });
 
+  it("fails closed when RevenueCat returns a different current offering", async () => {
+    const bridge = new FakeBridge();
+    bridge.offering = {
+      identifier: "other",
+      availablePackages: [
+        packageItem({
+          packageIdentifier: "monthly",
+          productIdentifier: PRODUCT_ID,
+          title: "CUT OS Pro Monthly",
+          priceString: "$4.99",
+          period: "P1M",
+        }),
+      ],
+    };
+    const adapter = adapterFor(bridge);
+    await adapter.connect(PUBLIC_KEY, USER_A, () => {});
+
+    await expect(adapter.loadPlans(USER_A)).rejects.toEqual(
+      new SubscriptionAdapterError("unavailable"),
+    );
+  });
+
+  it("fails closed when the compiled product differs from the canonical contract", async () => {
+    const differentProduct = "com.zarifahmed.cut.pro.other";
+    const bridge = new FakeBridge();
+    bridge.offering = {
+      identifier: OFFERING_ID,
+      availablePackages: [
+        packageItem({
+          packageIdentifier: "monthly",
+          productIdentifier: differentProduct,
+          title: "CUT OS Pro Other",
+          priceString: "$4.99",
+          period: "P1M",
+        }),
+      ],
+    };
+    const adapter = createSubscriptionAdapter(bridge, differentProduct);
+    await adapter.connect(PUBLIC_KEY, USER_A, () => {});
+
+    await expect(adapter.loadPlans(USER_A)).rejects.toEqual(
+      new SubscriptionAdapterError("unavailable"),
+    );
+  });
+
   it("fails closed when the offering contains a rogue product", async () => {
     const bridge = new FakeBridge();
     bridge.offering = {
+      identifier: OFFERING_ID,
       availablePackages: [
         packageItem({
           packageIdentifier: "monthly",
@@ -215,6 +263,7 @@ describe("RevenueCat subscription adapter", () => {
   it("fails closed when the production product appears in duplicate packages", async () => {
     const bridge = new FakeBridge();
     bridge.offering = {
+      identifier: OFFERING_ID,
       availablePackages: [
         packageItem({
           packageIdentifier: "monthly",
@@ -243,6 +292,7 @@ describe("RevenueCat subscription adapter", () => {
   it("fails closed when the production product has an introductory offer", async () => {
     const bridge = new FakeBridge();
     bridge.offering = {
+      identifier: OFFERING_ID,
       availablePackages: [
         packageItem({
           packageIdentifier: "monthly",
@@ -272,6 +322,7 @@ describe("RevenueCat subscription adapter", () => {
   it("fails closed when the bound monthly product has another duration", async () => {
     const bridge = new FakeBridge();
     bridge.offering = {
+      identifier: OFFERING_ID,
       availablePackages: [
         packageItem({
           packageIdentifier: "monthly",
@@ -297,6 +348,7 @@ describe("RevenueCat subscription adapter", () => {
   it("fails closed when no production product is compiled into the app", async () => {
     const bridge = new FakeBridge();
     bridge.offering = {
+      identifier: OFFERING_ID,
       availablePackages: [
         packageItem({
           packageIdentifier: "monthly",
@@ -335,6 +387,7 @@ describe("RevenueCat subscription adapter", () => {
   it("ignores late purchase results and stale listeners after principal change", async () => {
     const bridge = new FakeBridge();
     bridge.offering = {
+      identifier: OFFERING_ID,
       availablePackages: [
         packageItem({
           packageIdentifier: "monthly",
@@ -380,6 +433,7 @@ describe("RevenueCat subscription adapter", () => {
   it("treats Apple purchase cancellation as a neutral result", async () => {
     const bridge = new FakeBridge();
     bridge.offering = {
+      identifier: OFFERING_ID,
       availablePackages: [
         packageItem({
           packageIdentifier: "monthly",

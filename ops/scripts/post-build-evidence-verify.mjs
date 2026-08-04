@@ -23,8 +23,22 @@ const MAX_RESTORE_DRILL_AGE_MS = 90 * 24 * 60 * 60 * 1000;
 const MAX_APP_REVIEW_EVIDENCE_AGE_MS = 24 * 60 * 60 * 1000;
 const CLERK_SHUTDOWN_STATUS_SOURCE = "exact_app_store_connect_submission";
 const CLERK_SHUTDOWN_SLO_MINUTES = 15;
-const RELEASE_CONTROL_BEGIN = "<!-- CUT_OS_RELEASE_CONTROL_V1_BEGIN -->";
-const RELEASE_CONTROL_END = "<!-- CUT_OS_RELEASE_CONTROL_V1_END -->";
+const RELEASE_CONTROL_BEGIN = "<!-- CUT_OS_RELEASE_CONTROL_V2_BEGIN -->";
+const RELEASE_CONTROL_END = "<!-- CUT_OS_RELEASE_CONTROL_V2_END -->";
+// Keep this release-record ingress rule aligned with
+// artifacts/api-server/src/lib/allowedHosts.ts.
+const NON_PUBLIC_DNS_SUFFIXES = Object.freeze([
+  ".example",
+  ".home",
+  ".home.arpa",
+  ".internal",
+  ".invalid",
+  ".lan",
+  ".local",
+  ".localhost",
+  ".onion",
+  ".test",
+]);
 
 const REQUIRED_RELEASE_SECTIONS = Object.freeze([
   "## Manifest control",
@@ -71,8 +85,11 @@ const REQUIRED_AUTOMATED_GATES = Object.freeze([
   "database_generation_drift",
   "expo_doctor",
   "legal_hosting_fail_closed",
+  "tracked_secret_boundary",
+  "production_topology_dry_run",
   "production_release_config",
   "production_ios_export",
+  "production_archive_secret_boundary",
 ]);
 
 const REQUIRED_RELEASE_SAFETY_CHECKS = Object.freeze([
@@ -165,6 +182,12 @@ const RELEASE_MANIFEST_PATH =
   /^release-evidence\/[A-Za-z0-9][A-Za-z0-9._-]{0,180}\.md$/u;
 const PUBLIC_RELEASE_MUTABLE_EVIDENCE_PATH =
   "app-store/app-store-submission.json";
+const APP_STORE_RELEASE_TARGETS = new Set(["app_review", "public_release"]);
+const REQUIRED_FINALIZED_LISTING_PATHS = Object.freeze([
+  Object.freeze(["supportUrl", "/support"]),
+  Object.freeze(["privacyPolicyUrl", "/privacy"]),
+  Object.freeze(["termsUrl", "/terms"]),
+]);
 
 export class PostBuildEvidenceError extends Error {
   constructor(code) {
@@ -432,6 +455,129 @@ function isResolvedText(value, { allowNotApplicable = false } = {}) {
   return !/^(?:none|pending|tbd|todo|unknown)$/iu.test(trimmed);
 }
 
+function isExactNonSecretProviderIdentifier(value) {
+  return (
+    isResolvedText(value) && /^[A-Za-z0-9][A-Za-z0-9._-]{0,255}$/u.test(value)
+  );
+}
+
+function isValidPublicDnsHostname(hostname) {
+  const normalized = hostname.toLowerCase();
+  const labels = normalized.split(".");
+  return Boolean(
+    normalized.length <= 253 &&
+    labels.length >= 2 &&
+    labels.every(
+      (label) =>
+        label.length > 0 &&
+        label.length <= 63 &&
+        /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/u.test(label),
+    ) &&
+    !/^\d{1,3}(?:\.\d{1,3}){3}$/u.test(normalized) &&
+    !NON_PUBLIC_DNS_SUFFIXES.some((suffix) => normalized.endsWith(suffix)),
+  );
+}
+
+function canonicalHttpsOrigin(value) {
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = new URL(value);
+    if (
+      parsed.protocol !== "https:" ||
+      parsed.username !== "" ||
+      parsed.password !== "" ||
+      parsed.port !== "" ||
+      parsed.pathname !== "/" ||
+      parsed.search !== "" ||
+      parsed.hash !== "" ||
+      parsed.origin !== value ||
+      !isValidPublicDnsHostname(parsed.hostname)
+    ) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function validateReplitProductionHosting(value) {
+  const code = "release_manifest_replit_hosting_identity_invalid";
+  requireExactKeys(
+    value,
+    [
+      "provider",
+      "accountAlias",
+      "workspaceId",
+      "deploymentId",
+      "databaseId",
+      "providerDeploymentOrigin",
+      "publicOrigin",
+      "deploymentType",
+      "region",
+      "machineClass",
+      "minimumInstances",
+      "maximumInstances",
+      "fixedMonthlyCostUsdCentsBeforeTax",
+      "usageBasedServiceShutdownLimitUsdCentsBeforeTax",
+      "approvedMonthlyCostCeilingUsdCentsBeforeTax",
+      "costApprovedBy",
+      "costApprovedAtUtc",
+      "costApprovalEvidenceReference",
+      "configurationVerifiedAtUtc",
+      "configurationEvidenceReference",
+    ],
+    code,
+  );
+
+  const providerOrigin = canonicalHttpsOrigin(value.providerDeploymentOrigin);
+  const publicOrigin = canonicalHttpsOrigin(value.publicOrigin);
+  const fixedMonthlyCost = value.fixedMonthlyCostUsdCentsBeforeTax;
+  const usageShutdownLimit =
+    value.usageBasedServiceShutdownLimitUsdCentsBeforeTax;
+  const approvedMonthlyCeiling =
+    value.approvedMonthlyCostCeilingUsdCentsBeforeTax;
+  if (
+    value.provider !== "replit" ||
+    ![
+      value.accountAlias,
+      value.workspaceId,
+      value.deploymentId,
+      value.databaseId,
+    ].every(isExactNonSecretProviderIdentifier) ||
+    providerOrigin === null ||
+    !providerOrigin.hostname.endsWith(".replit.app") ||
+    publicOrigin === null ||
+    value.deploymentType !== "reserved_vm" ||
+    !isResolvedText(value.region) ||
+    !isResolvedText(value.machineClass) ||
+    value.minimumInstances !== 1 ||
+    value.maximumInstances !== 1 ||
+    !Number.isSafeInteger(fixedMonthlyCost) ||
+    fixedMonthlyCost <= 0 ||
+    !Number.isSafeInteger(usageShutdownLimit) ||
+    usageShutdownLimit < 0 ||
+    !Number.isSafeInteger(approvedMonthlyCeiling) ||
+    approvedMonthlyCeiling <= 0 ||
+    fixedMonthlyCost + usageShutdownLimit > approvedMonthlyCeiling ||
+    !isResolvedText(value.costApprovedBy) ||
+    !isUtcTimestamp(value.costApprovedAtUtc) ||
+    !isResolvedText(value.costApprovalEvidenceReference) ||
+    !isUtcTimestamp(value.configurationVerifiedAtUtc) ||
+    !isResolvedText(value.configurationEvidenceReference)
+  ) {
+    fail(code);
+  }
+}
+
+function validateFinalizedListingOriginBinding(submission, publicOrigin) {
+  const code = "release_manifest_listing_origin_binding_invalid";
+  if (!isRecord(submission) || !isRecord(submission.listing)) fail(code);
+  for (const [field, pathname] of REQUIRED_FINALIZED_LISTING_PATHS) {
+    if (submission.listing[field] !== `${publicOrigin}${pathname}`) fail(code);
+  }
+}
+
 function escapeRegularExpression(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
@@ -558,7 +704,7 @@ function validatePreBuildReleaseManifestDraft({
     fail(code);
   }
   if (
-    control?.schemaVersion !== 1 ||
+    control?.schemaVersion !== 2 ||
     control?.status !== "DRAFT" ||
     control?.releaseId !== expectedReleaseId ||
     control?.target !== expectedTarget
@@ -764,7 +910,7 @@ function validateReleaseControl(
     controlCode,
   );
   if (
-    control.schemaVersion !== 1 ||
+    control.schemaVersion !== 2 ||
     control.status !== "FINAL" ||
     !isResolvedText(control.releaseId) ||
     ![
@@ -809,6 +955,7 @@ function validateReleaseControl(
       "publicLegalRevision",
       "previousPublicLegalRevision",
       "databaseMigrationRevision",
+      "replitProductionHosting",
       "easBuildId",
       "appStoreConnectBuildId",
     ],
@@ -837,6 +984,7 @@ function validateReleaseControl(
   ) {
     fail("release_manifest_database_migration_identity_mismatch");
   }
+  validateReplitProductionHosting(control.deployments.replitProductionHosting);
   for (const field of [
     "previousProductionApiRevision",
     "previousPublicLegalRevision",
@@ -863,6 +1011,14 @@ function validateReleaseControl(
         control.deployments.publicLegalRevision)
   ) {
     fail(deploymentCode);
+  }
+  if (
+    control.deployments.productionApiRevision !==
+      control.deployments.publicLegalRevision ||
+    control.deployments.previousProductionApiRevision !==
+      control.deployments.previousPublicLegalRevision
+  ) {
+    fail("release_manifest_single_host_revision_mismatch");
   }
 
   const automatedGates = requireExactRecordMap(
@@ -1619,6 +1775,26 @@ function verifyEvidenceCommit({
     expectedDatabaseMigrationRevision,
     clock,
   });
+  const shouldReadEvidenceSubmission =
+    phase === "public_release" ||
+    APP_STORE_RELEASE_TARGETS.has(releaseManifest.target);
+  const evidenceSubmission = shouldReadEvidenceSubmission
+    ? parseJsonBlob(
+        repoRoot,
+        evidenceCommit,
+        PUBLIC_RELEASE_MUTABLE_EVIDENCE_PATH,
+        phase === "public_release"
+          ? "public_release_submission_transition_invalid"
+          : "app_review_submission_snapshot_invalid",
+      )
+    : null;
+  if (APP_STORE_RELEASE_TARGETS.has(releaseManifest.target)) {
+    validateFinalizedListingOriginBinding(
+      evidenceSubmission,
+      releaseManifest.immutableIdentity.deployments.replitProductionHosting
+        .publicOrigin,
+    );
+  }
   const buildDraftEntry = treeEntry(
     repoRoot,
     expectedBuildSha,
@@ -1657,12 +1833,7 @@ function verifyEvidenceCommit({
 
   if (phase === "initial" && releaseManifest.target === "app_review") {
     validateAppReviewSubmissionSnapshot(
-      parseJsonBlob(
-        repoRoot,
-        evidenceCommit,
-        PUBLIC_RELEASE_MUTABLE_EVIDENCE_PATH,
-        "app_review_submission_snapshot_invalid",
-      ),
+      evidenceSubmission,
       releaseManifest.finalizedAtUtc,
     );
   }
@@ -1697,12 +1868,7 @@ function verifyEvidenceCommit({
         PUBLIC_RELEASE_MUTABLE_EVIDENCE_PATH,
         "public_release_submission_transition_invalid",
       ),
-      publicReleaseSubmission: parseJsonBlob(
-        repoRoot,
-        evidenceCommit,
-        PUBLIC_RELEASE_MUTABLE_EVIDENCE_PATH,
-        "public_release_submission_transition_invalid",
-      ),
+      publicReleaseSubmission: evidenceSubmission,
       appReviewManifestFinalizedAtUtc: priorEvidence?.finalizedAtUtc,
       publicReleaseManifestFinalizedAtUtc: releaseManifest.finalizedAtUtc,
     });

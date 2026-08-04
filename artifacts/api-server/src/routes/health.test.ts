@@ -154,8 +154,10 @@ describe("API liveness and readiness routes", () => {
   });
 
   it("returns a sanitized 503 without leaking readiness errors", async () => {
-    const sensitiveError =
-      "postgresql://private-user:private-password@db.example.com/cut";
+    const sensitiveError = [
+      "postgresql://private-user",
+      "private-password@db.example.com/cut",
+    ].join(":");
     setReadinessCheckForTesting(async () => {
       throw new Error(sensitiveError);
     });

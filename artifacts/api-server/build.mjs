@@ -15,7 +15,14 @@ async function buildAll() {
   await rm(distDir, { recursive: true, force: true });
 
   await esbuild({
-    entryPoints: [path.resolve(artifactDir, "src/index.ts")],
+    entryPoints: {
+      index: path.resolve(artifactDir, "src/index.ts"),
+      app: path.resolve(artifactDir, "src/app.ts"),
+      productionConfig: path.resolve(
+        artifactDir,
+        "src/lib/productionConfig.ts",
+      ),
+    },
     platform: "node",
     bundle: true,
     format: "esm",
@@ -125,6 +132,15 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
   await cp(
     path.resolve(artifactDir, "../../lib/db/migrations"),
     path.resolve(distDir, "migrations"),
+    { recursive: true },
+  );
+
+  // The API bundle is the sole production HTTP entry point. Package the exact
+  // source-controlled landing/legal templates beside it so startup and legal
+  // approval hashes never depend on an ambient checkout path.
+  await cp(
+    path.resolve(artifactDir, "../cut-os/server/templates"),
+    path.resolve(distDir, "public-site/templates"),
     { recursive: true },
   );
 }

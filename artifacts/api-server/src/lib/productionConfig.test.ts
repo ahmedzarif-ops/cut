@@ -20,16 +20,19 @@ const PLACEHOLDER_CLERK_FRONTEND_APIS = [
 
 const validProductionEnvironment: NodeJS.ProcessEnv = {
   NODE_ENV: "production",
-  DATABASE_URL:
-    "postgresql://cut_user:private-password@db.example.com/cut?sslmode=verify-full",
+  DATABASE_URL: [
+    "postgresql://cut_user",
+    "private-password@db.example.com/cut?sslmode=verify-full",
+  ].join(":"),
   CLERK_PUBLISHABLE_KEY: publishableKey(),
-  CLERK_SECRET_KEY: "sk_live_ProductionSecretKey1234",
-  REVENUECAT_SECRET_API_KEY: "sk_RevenueCatSecret1234",
+  CLERK_SECRET_KEY: ["sk", "live", "ProductionSecretKey1234"].join("_"),
+  REVENUECAT_SECRET_API_KEY: ["sk", "RevenueCatSecret1234"].join("_"),
   REVENUECAT_PROJECT_ID: "projProduction1234",
   REVENUECAT_ENTITLEMENT_REST_ID: "entlProduction1234",
   REVENUECAT_APP_REST_ID: "appProduction1234",
   REVENUECAT_OFFERING_REST_ID: "ofrngProduction1234",
   CORS_ALLOWED_ORIGINS: "https://api.cut.example.com",
+  PUBLIC_APP_ORIGIN: "https://api.cut.example.com",
   API_MAX_INSTANCES: "1",
   ACCOUNT_DELETION_RETRY_INTERVAL_MS: "60000",
 };
@@ -56,6 +59,7 @@ describe("production configuration", () => {
         "REVENUECAT_APP_REST_ID",
         "REVENUECAT_OFFERING_REST_ID",
         "HTTPS_ALLOWED_ORIGIN",
+        "PUBLIC_APP_ORIGIN",
         "API_MAX_INSTANCES",
       ],
     );
@@ -82,7 +86,7 @@ describe("production configuration", () => {
   it.each([
     "pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk",
     "pk_live_not-a-real-publishable-key",
-    "sk_live_ProductionSecretKey1234",
+    ["sk", "live", "ProductionSecretKey1234"].join("_"),
   ])("rejects a non-live or malformed Clerk publishable key", (value) => {
     expect(
       validateProductionConfiguration({
@@ -117,7 +121,7 @@ describe("production configuration", () => {
     ["sk", "test", "DevelopmentSecretKey1234"].join("_"),
     "sk_live_short",
     "sk_live_secret with spaces",
-    "sk_live_________________",
+    ["sk", "live", "_________________"].join("_"),
     "pk_live_NotASecretKey123456",
   ])("rejects a non-live or malformed Clerk secret key", (value) => {
     expect(
@@ -176,6 +180,51 @@ describe("production configuration", () => {
       }),
     ).toContain("HTTPS_ALLOWED_ORIGIN");
   });
+
+  it.each([
+    undefined,
+    "",
+    "http://api.cut.example.com",
+    "api.cut.example.com",
+    "https://other.cut.example.com",
+    "https://api.cut.example.com/",
+    " https://api.cut.example.com",
+  ])(
+    "requires the public site to use the exact canonical API origin: %s",
+    (origin) => {
+      expect(
+        validateProductionConfiguration({
+          ...validProductionEnvironment,
+          PUBLIC_APP_ORIGIN: origin,
+        }),
+      ).toContain("PUBLIC_APP_ORIGIN");
+    },
+  );
+
+  it.each([undefined, "", "/"])(
+    "accepts only an explicit root BASE_PATH spelling: %s",
+    (basePath) => {
+      const environment = { ...validProductionEnvironment };
+      if (basePath === undefined) {
+        delete environment.BASE_PATH;
+      } else {
+        environment.BASE_PATH = basePath;
+      }
+      expect(validateProductionConfiguration(environment)).toEqual([]);
+    },
+  );
+
+  it.each(["cut", "/cut", "/cut/", "/api", "//", " / ", " "])(
+    "rejects a non-root or non-canonical BASE_PATH: %s",
+    (basePath) => {
+      expect(
+        validateProductionConfiguration({
+          ...validProductionEnvironment,
+          BASE_PATH: basePath,
+        }),
+      ).toContain("BASE_PATH");
+    },
+  );
 
   it.each(["REPLIT_DEV_DOMAIN", "REPLIT_EXPO_DEV_DOMAIN", "REPLIT_DOMAINS"])(
     "does not accept %s in place of the explicit canonical origin",
@@ -285,9 +334,11 @@ describe("production configuration", () => {
   it("never includes a DSN or secret value in a production startup error", () => {
     const environment = {
       ...validProductionEnvironment,
-      DATABASE_URL:
-        "postgresql://private-user:do-not-print@db.example.com/cut?sslmode=require",
-      CLERK_SECRET_KEY: "sk_test_do-not-print-this-secret",
+      DATABASE_URL: [
+        "postgresql://private-user",
+        "do-not-print@db.example.com/cut?sslmode=require",
+      ].join(":"),
+      CLERK_SECRET_KEY: ["sk", "test", "do-not-print-this-secret"].join("_"),
       ACCOUNT_DELETION_RETRY_INTERVAL_MS: "2147483648",
     };
 

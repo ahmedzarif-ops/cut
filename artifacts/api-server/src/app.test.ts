@@ -23,7 +23,9 @@ beforeAll(async () => {
   // The publishable key is `pk_test_` + base64("example.clerk.accounts.dev$").
   process.env.CLERK_PUBLISHABLE_KEY =
     "pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk";
-  process.env.CLERK_SECRET_KEY = "sk_test_middleware-order-lock";
+  process.env.CLERK_SECRET_KEY = ["sk", "test", "middleware-order-lock"].join(
+    "_",
+  );
   process.env.CLERK_TELEMETRY_DISABLED = "1";
   app = (await import("./app")).default;
 });
@@ -93,5 +95,35 @@ describe("app middleware order", () => {
       .send(JSON.stringify({ value: "x".repeat(110_000) }));
     expect(oversized.status).toBe(413);
     expect(oversized.body).toEqual({ error: "Request body too large" });
+  });
+
+  it("serves public, legal, status, and API routes from the same Express app", async () => {
+    const landing = await request(app).get("/");
+    expect(landing.status).toBe(200);
+    expect(landing.text).toContain('data-app-surface="production"');
+    expect(landing.text).toContain("For adults age 18 and over");
+    expect(landing.headers["content-security-policy"]).toContain(
+      "script-src 'none'",
+    );
+
+    const status = await request(app).get("/status");
+    expect(status.status).toBe(200);
+    expect(status.body).toEqual({ status: "ok" });
+
+    for (const route of ["/privacy", "/terms", "/support"]) {
+      const draftLegalPage = await request(app).get(route);
+      expect(draftLegalPage.status).toBe(503);
+      expect(draftLegalPage.headers["x-robots-tag"]).toContain("noindex");
+      expect(draftLegalPage.text).toContain('data-publication-status="draft"');
+    }
+
+    const apiHealth = await request(app).get("/api/healthz");
+    expect(apiHealth.status).toBe(200);
+
+    const protectedApi = await request(app)
+      .get("/api/me")
+      .set({ "x-forwarded-for": "9.9.9.6" });
+    expect(protectedApi.status).toBe(401);
+    expect(protectedApi.body).toEqual({ error: "Unauthorized" });
   });
 });

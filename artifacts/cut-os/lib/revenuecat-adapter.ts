@@ -38,6 +38,7 @@ const bridge: RevenueCatBridge = {
     const offering = (await Purchases.getOfferings()).current;
     if (!offering) return null;
     return {
+      identifier: offering.identifier,
       availablePackages: offering.availablePackages.map((item) => ({
         identifier: item.identifier,
         product: {

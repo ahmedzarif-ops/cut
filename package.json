@@ -10,6 +10,9 @@
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run codegen:check && pnpm run typecheck && pnpm run test && pnpm -r --if-present run build",
+    "build:production": "pnpm --filter @workspace/api-server run build",
+    "start:production": "node --enable-source-maps artifacts/api-server/dist/index.mjs",
+    "dry-run:production": "pnpm run build:production && node ops/scripts/production-topology-dry-run.mjs",
     "codegen": "pnpm --filter @workspace/api-spec run codegen",
     "codegen:check": "node ops/scripts/codegen-check.mjs",
     "validate:app-store": "node scripts/app-store/validate.mjs",
@@ -17,7 +20,7 @@
     "test:app-store": "node --test scripts/app-store/validate.test.mjs",
     "verify:deploy": "node ops/scripts/deploy-verify.mjs",
     "verify:post-build-evidence": "node ops/scripts/post-build-evidence-verify.mjs",
-    "test:release-ops": "node --test ops/scripts/deploy-verify.test.mjs ops/scripts/post-build-evidence-verify.test.mjs ops/scripts/production-migration-policy.test.mjs ops/scripts/release-main-ancestry-verify.test.mjs",
+    "test:release-ops": "node --test ops/scripts/deploy-verify.test.mjs ops/scripts/post-build-evidence-verify.test.mjs ops/scripts/production-migration-policy.test.mjs ops/scripts/release-main-ancestry-verify.test.mjs ops/scripts/secret-boundary-scan.test.mjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "test": "pnpm run test:release-ops && pnpm run test:app-store && pnpm -r --if-present run test"

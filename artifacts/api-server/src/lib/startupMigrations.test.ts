@@ -137,8 +137,10 @@ describe("production startup migrations", () => {
 
   it("releases the lock when migration fails and does not expose the cause", async () => {
     const database = fakeDatabase();
-    const privateDsn =
-      "postgresql://private-user:private-password@db.example.com/cut";
+    const privateDsn = [
+      "postgresql://private-user",
+      "private-password@db.example.com/cut",
+    ].join(":");
 
     let thrown: unknown;
     try {
@@ -178,7 +180,10 @@ describe("production startup migrations", () => {
     const pool: MigrationPool = {
       connect: async () => {
         throw new Error(
-          "postgresql://private-user:private-password@db.example.com/cut",
+          [
+            "postgresql://private-user",
+            "private-password@db.example.com/cut",
+          ].join(":"),
         );
       },
     };

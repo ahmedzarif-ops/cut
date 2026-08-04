@@ -3,7 +3,7 @@
 **Assessment:** Proceed with conditions — do not submit for App Review or begin
 public sales yet.
 
-**Review date:** August 3, 2026
+**Review date:** August 4, 2026
 **Working launch position:** United States; adults age 18 and older
 **Scope reviewed:** The current paid-v1 repository/source, backend design,
 subscription design, nutrition catalog, privacy data map, and App Store launch
@@ -22,8 +22,11 @@ gating, server-authoritative paid access, subscription restoration, and account
 deletion. Public launch remains conditional because the app collects linked
 weight, body, fitness, and nutrition information; its reproducible meal
 calculations, allergen statements, dietary tags, and cultural naming have no
-qualified final approval; it lacks approved public legal/support pages; and it
-has no confirmed legal operator or Apple seller type.
+qualified final approval; and it lacks approved public legal/support pages.
+The owner has supplied the public legal operator **Zarif Ahmed**, selected an
+individual Apple seller path, and identified a Texas sole proprietorship, but
+Apple activation and counsel review remain pending. The applicable county was
+supplied privately and is not recorded in this public repository.
 
 The highest-risk business decision is the Apple seller account. Apple's App
 Review Guidelines say apps that require sensitive user information should be
@@ -51,7 +54,7 @@ appropriate, form and enroll an organization before App Review.
 
 | #   | Requirement                                                          | Status     | Action needed                                                                                                                                                                                                                                                                          |
 | --- | -------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Confirm the legal operator and Apple seller type                     | Not met    | Obtain counsel's recommendation on Apple's sensitive-data/legal-entity guidance. Form and enroll the entity if advised; otherwise document the rationale and accepted review risk.                                                                                                     |
+| 1   | Confirm the legal operator and Apple seller type                     | Partly met | Owner supplied Zarif Ahmed and selected an individual seller/Texas sole-proprietor path. Verify Apple's activated seller identity and obtain counsel's recommendation on the sensitive-data/legal-entity guidance; document the accepted rationale or change path before submission.   |
 | 2   | Confirm Apple Developer Program and App Store Connect authority      | Not met    | Account Holder verifies active membership, seller identity, contracts, tax/banking, and role access. Financial acceptance remains owner-only.                                                                                                                                          |
 | 3   | Publish accurate Privacy, Terms/EULA, and Support pages              | Not met    | Resolve all owner/counsel placeholders, publish at stable HTTPS URLs, link them in-app and in App Store Connect, and keep them live during review.                                                                                                                                     |
 | 3A  | Implement approved Terms assent and Privacy acknowledgment           | Not met    | Sign-up now has separate provisional age and Terms/Privacy controls. Counsel must approve the exact acceptance/acknowledgment language and the durable policy-version and acceptance-timestamp evidence requirements; engineering then implements and tests only that approved design. |
@@ -64,7 +67,7 @@ appropriate, form and enroll an organization before App Review.
 | 10  | Finalize the adults-only policy                                      | Partly met | Counsel approves the notice, transient-DOB processing, permanent per-identity ineligibility behavior, later-new-account path, support process, and adequacy of self-declaration for every launch jurisdiction.                                                                         |
 | 11  | Finalize subscription disclosures and QA                             | Partly met | Owner approves product terms; verify localized price/period, renewal/cancellation disclosure, purchase, restore, refund/expiry, account switching, subscription management, and deletion behavior in Apple Sandbox and TestFlight.                                                     |
 | 12  | Complete final App Store privacy and age answers                     | Not met    | Answer from the shipped archive and then-current questionnaires; retain dated evidence and approvals.                                                                                                                                                                                  |
-| 13  | Clear the product name and public branding                           | Unknown    | Conduct an appropriate trademark/name clearance for the intended regions before committing to listing, domain, and paid marketing. Search-engine checks alone are insufficient.                                                                                                        |
+| 13  | Clear the product name and public branding                           | Partly met | The August 4 preliminary screen found no exact `CUT OS` result but found meaningful same-market `CUT` records and App Store uses. Qualified trademark counsel must complete federal/state/common-law clearance before the listing, domain, or paid marketing is locked.                |
 
 The current sign-up checkbox is provisional UI only. It does not close gate 3A
 or establish durable proof of assent. Engineering must not choose or store an
@@ -90,13 +93,12 @@ evidence must be implemented and tested before this gate can be marked met.
 
 ## Recommended actions
 
-1. Pause the Apple seller-type decision until counsel reviews the sensitive-data
-   legal-entity issue. If organization enrollment is chosen, form the entity,
-   obtain its D-U-N-S record, use a domain-based work email, and publish a
-   functional company website before enrollment.
-2. Resolve the legal operator name, public contact, domain, launch states, and
-   retention decisions; then have counsel approve and publish the legal/support
-   pages.
+1. Verify the activated Apple seller identity and obtain counsel review of the
+   selected individual path before submission. If counsel recommends changing
+   to an organization, form and enroll it through the appropriate Apple path.
+2. Resolve the public host, launch-state, DBA, support-response, and retention
+   decisions; then have counsel approve and publish the legal/support pages
+   using the owner-authorized `Zarif Ahmed` and public contact.
 3. Complete or remove the six-meal nutrition catalog using
    `NUTRITION_CATALOG_EVIDENCE.md` as the release gate.
 4. Complete the privacy/vendor/HBNR analysis and incident-response plan from

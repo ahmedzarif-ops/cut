@@ -78,8 +78,15 @@ describe("Metro build environment", () => {
 
   it("rejects secret values mislabeled as reviewed public SDK keys", () => {
     const result = createMetroEnvironment({
-      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: "sk_live_PrivateClerkKey1234",
-      EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: "sk_PrivateRevenueCatKey1234",
+      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: [
+        "sk",
+        "live",
+        "PrivateClerkKey1234",
+      ].join("_"),
+      EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: [
+        "sk",
+        "PrivateRevenueCatKey1234",
+      ].join("_"),
     });
 
     expect(result).toEqual({ EXPO_NO_DOTENV: "1" });

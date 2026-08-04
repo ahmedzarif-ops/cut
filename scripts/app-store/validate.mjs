@@ -138,6 +138,7 @@ const EXPECTED_SUBMISSION_KEYS = Object.freeze([
 const EXPECTED_SUBMISSION_REFERENCE_KEYS = Object.freeze([
   "humanRecord",
   "appConfig",
+  "subscriptionIdentity",
   "privacyDataMap",
   "reviewRunbook",
   "testFlightRecord",
@@ -414,6 +415,13 @@ const SUPPORTED_SUBSCRIPTION_DURATIONS = Object.freeze([
   "6_months",
   "1_year",
 ]);
+const APPLE_IAP_FIELD_LIMITS = Object.freeze({
+  productReferenceName: 64,
+  productId: 100,
+  productDisplayNameMin: 2,
+  productDisplayNameMax: 30,
+  localizedDescriptionMax: 45,
+});
 
 const EXPECTED_ACCESSIBILITY_KEYS = Object.freeze([
   "status",
@@ -588,6 +596,29 @@ const EXPECTED_AVAILABILITY_APPROVAL_KEYS = Object.freeze([
   "owner",
   "appStoreConnectConfirmed",
 ]);
+const EXPECTED_AVAILABILITY_KEYS = Object.freeze([
+  "status",
+  "distributionMethod",
+  "appleSiliconMacAvailability",
+  "appleVisionProAvailability",
+  "approval",
+]);
+const EXPECTED_AVAILABILITY_DECISION_KEYS = Object.freeze([
+  "decision",
+  "status",
+  "savedAtUtc",
+  "evidenceReference",
+]);
+const APP_DISTRIBUTION_METHODS = Object.freeze(["public", "private"]);
+const COMPATIBLE_IOS_APP_AVAILABILITY_DECISIONS = Object.freeze([
+  "make_available",
+  "do_not_make_available",
+]);
+const APP_STORE_AVAILABILITY_DECISION_STATUSES = Object.freeze([
+  "pending_owner_decision",
+  "pending_app_store_connect_confirmation",
+  "confirmed_in_app_store_connect",
+]);
 
 const EXPECTED_MEDICAL_DEVICE_APPROVAL_KEYS = Object.freeze([
   "owner",
@@ -704,6 +735,9 @@ const REQUIRED_OWNER_FIELDS = Object.freeze([
   "listing.privacyPolicyUrl",
   "listing.termsUrl",
   "listing.initialTerritories",
+  "availability.distributionMethod.decision",
+  "availability.appleSiliconMacAvailability.decision",
+  "availability.appleVisionProAvailability.decision",
 ]);
 
 const EXPECTED_LEGAL_URL_PLACEMENT_KEYS = Object.freeze([
@@ -758,6 +792,77 @@ function hasExactKeys(value, expectedKeys) {
     isObject(value) &&
     arraysEqual(Object.keys(value).sort(), [...expectedKeys].sort())
   );
+}
+
+export function validateSubscriptionIdentity({
+  identity,
+  submission,
+  appConfig,
+}) {
+  const errors = [];
+  const check = (condition, message) => {
+    if (!condition) errors.push(message);
+  };
+  const revenueCatIdentity = identity?.revenueCat;
+  check(
+    hasExactKeys(identity, ["schemaVersion", "iosBundleId", "revenueCat"]),
+    "subscription identity must contain exactly the required keys",
+  );
+  check(
+    identity?.schemaVersion === 1,
+    "subscription identity schemaVersion must be 1",
+  );
+  check(
+    typeof identity?.iosBundleId === "string" &&
+      /^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(identity.iosBundleId),
+    "subscription identity iosBundleId must be an application identifier",
+  );
+  check(
+    hasExactKeys(revenueCatIdentity, [
+      "entitlementId",
+      "offeringId",
+      "productId",
+    ]),
+    "subscription identity revenueCat must contain exactly the required keys",
+  );
+  for (const field of ["entitlementId", "offeringId", "productId"]) {
+    check(
+      typeof revenueCatIdentity?.[field] === "string" &&
+        /^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(revenueCatIdentity?.[field] ?? ""),
+      `subscription identity revenueCat.${field} must be an identifier`,
+    );
+  }
+  check(
+    typeof revenueCatIdentity?.productId === "string" &&
+      typeof identity?.iosBundleId === "string" &&
+      revenueCatIdentity.productId.startsWith(`${identity.iosBundleId}.`),
+    "subscription identity productId must be namespaced to iosBundleId",
+  );
+
+  check(
+    submission?.listing?.bundleId === identity?.iosBundleId,
+    "App Store bundle ID must match the subscription identity contract",
+  );
+  check(
+    appConfig?.expo?.ios?.bundleIdentifier === identity?.iosBundleId,
+    "mobile iOS bundle identifier must match the subscription identity contract",
+  );
+  check(
+    submission?.subscription?.entitlementId ===
+      revenueCatIdentity?.entitlementId,
+    "App Store entitlement ID must match the subscription identity contract",
+  );
+  check(
+    submission?.subscription?.revenueCat?.offeringId ===
+      revenueCatIdentity?.offeringId,
+    "App Store RevenueCat offering ID must match the subscription identity contract",
+  );
+  check(
+    submission?.subscription?.productId === revenueCatIdentity?.productId,
+    "App Store subscription product ID must match the subscription identity contract",
+  );
+
+  return errors;
 }
 
 function validateApprovalRecord({
@@ -830,6 +935,73 @@ function validateConfirmationEvidenceRecord({
       `${label} confirmed status requires evidenceReference`,
     );
   }
+}
+
+function validateAppStoreAvailabilityDecision({
+  value,
+  label,
+  allowedDecisions,
+  required,
+  requirementLabel,
+  check,
+}) {
+  check(
+    hasExactKeys(value, EXPECTED_AVAILABILITY_DECISION_KEYS),
+    `${label} must contain exactly decision, status, savedAtUtc, and evidenceReference`,
+  );
+  check(
+    value?.decision === null || allowedDecisions.includes(value?.decision),
+    `${label}.decision is invalid`,
+  );
+  check(
+    APP_STORE_AVAILABILITY_DECISION_STATUSES.includes(value?.status),
+    `${label}.status is invalid`,
+  );
+  check(
+    value?.savedAtUtc === null || validIsoTimestamp(value?.savedAtUtc),
+    `${label}.savedAtUtc must be null or a UTC ISO timestamp`,
+  );
+  check(
+    nullableNonEmptyString(value?.evidenceReference),
+    `${label}.evidenceReference must be null or non-empty`,
+  );
+
+  if (value?.status === "pending_owner_decision") {
+    check(
+      value?.decision === null &&
+        value?.savedAtUtc === null &&
+        value?.evidenceReference === null,
+      `${label} pending_owner_decision requires a null decision and null App Store Connect evidence`,
+    );
+  } else if (value?.status === "pending_app_store_connect_confirmation") {
+    check(
+      allowedDecisions.includes(value?.decision),
+      `${label} pending_app_store_connect_confirmation requires an explicit owner decision`,
+    );
+    check(
+      value?.savedAtUtc === null && value?.evidenceReference === null,
+      `${label} pending_app_store_connect_confirmation requires null App Store Connect evidence`,
+    );
+  }
+
+  const confirmationRequired =
+    required || value?.status === "confirmed_in_app_store_connect";
+  if (!confirmationRequired) return;
+
+  check(
+    value?.status === "confirmed_in_app_store_connect",
+    `${requirementLabel} requires ${label}.status confirmed_in_app_store_connect`,
+  );
+  check(
+    allowedDecisions.includes(value?.decision),
+    `${requirementLabel} requires ${label}.decision`,
+  );
+  check(
+    validIsoTimestamp(value?.savedAtUtc) &&
+      typeof value?.evidenceReference === "string" &&
+      value.evidenceReference.trim().length > 0,
+    `${requirementLabel} requires ${label} saved UTC evidence`,
+  );
 }
 
 function nullableNonEmptyString(value) {
@@ -2248,6 +2420,19 @@ function validateSubscription({ value, listing, release, check }) {
     "subscription.productId must contain only App Store-safe identifier characters",
   );
   check(
+    value.productReferenceName === null ||
+      (typeof value.productReferenceName === "string" &&
+        [...value.productReferenceName].length <=
+          APPLE_IAP_FIELD_LIMITS.productReferenceName),
+    "subscription.productReferenceName must be 64 characters or fewer",
+  );
+  check(
+    value.productId === null ||
+      (typeof value.productId === "string" &&
+        [...value.productId].length <= APPLE_IAP_FIELD_LIMITS.productId),
+    "subscription.productId must be 100 characters or fewer",
+  );
+  check(
     value.duration === null ||
       SUPPORTED_SUBSCRIPTION_DURATIONS.includes(value.duration),
     "subscription.duration must be null or an Apple-supported duration",
@@ -2423,6 +2608,22 @@ function validateSubscription({ value, listing, release, check }) {
     );
   }
   check(
+    localization?.productDisplayName === null ||
+      (typeof localization?.productDisplayName === "string" &&
+        [...localization.productDisplayName].length >=
+          APPLE_IAP_FIELD_LIMITS.productDisplayNameMin &&
+        [...localization.productDisplayName].length <=
+          APPLE_IAP_FIELD_LIMITS.productDisplayNameMax),
+    "subscription.localizations.en-US.productDisplayName must be 2 to 30 characters",
+  );
+  check(
+    localization?.description === null ||
+      (typeof localization?.description === "string" &&
+        [...localization.description].length <=
+          APPLE_IAP_FIELD_LIMITS.localizedDescriptionMax),
+    "subscription.localizations.en-US.description must be 45 characters or fewer",
+  );
+  check(
     localization?.appNameDisplayOption === null ||
       ["use_app_name", "custom_name"].includes(
         localization?.appNameDisplayOption,
@@ -2531,6 +2732,7 @@ function validateSubscription({ value, listing, release, check }) {
   const revenueCat = value.revenueCat;
   check(
     hasExactKeys(revenueCat, [
+      "offeringId",
       "productionMappingStatus",
       "appStoreConnectApiKeyStatus",
       "subscriptionKeyStatus",
@@ -2540,6 +2742,11 @@ function validateSubscription({ value, listing, release, check }) {
       "evidenceReference",
     ]),
     "subscription.revenueCat must contain exactly the required keys",
+  );
+  check(
+    typeof revenueCat?.offeringId === "string" &&
+      /^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(revenueCat.offeringId),
+    "subscription.revenueCat.offeringId must be a RevenueCat offering identifier",
   );
   for (const field of [
     "productionMappingStatus",
@@ -3382,6 +3589,7 @@ export function validateMetadata({
   const expectedReferences = {
     humanRecord: "APP_STORE_METADATA.md",
     appConfig: "artifacts/cut-os/app.json",
+    subscriptionIdentity: "lib/domain/src/subscriptionIdentity.json",
     privacyDataMap: "PRIVACY_DATA_MAP.md",
     reviewRunbook: "APP_REVIEW_RUNBOOK.md",
     testFlightRecord: "app-store/testflight-submission.json",
@@ -3709,8 +3917,8 @@ export function validateMetadata({
   check(isObject(availability), "submission.availability must be an object");
   if (isObject(availability)) {
     check(
-      hasExactKeys(availability, ["status", "approval"]),
-      "availability must contain exactly status and approval",
+      hasExactKeys(availability, EXPECTED_AVAILABILITY_KEYS),
+      "availability must contain exactly the required keys",
     );
     check(
       [
@@ -3719,6 +3927,49 @@ export function validateMetadata({
       ].includes(availability.status),
       "availability.status must remain pending or be confirmed in App Store Connect",
     );
+    const availabilityConfirmationRequired =
+      release || availability.status === "confirmed_in_app_store_connect";
+    const availabilityRequirementLabel = release
+      ? "release mode"
+      : "confirmed availability";
+    validateAppStoreAvailabilityDecision({
+      value: availability.distributionMethod,
+      label: "availability.distributionMethod",
+      allowedDecisions: APP_DISTRIBUTION_METHODS,
+      required: availabilityConfirmationRequired,
+      requirementLabel: availabilityRequirementLabel,
+      check,
+    });
+    validateAppStoreAvailabilityDecision({
+      value: availability.appleSiliconMacAvailability,
+      label: "availability.appleSiliconMacAvailability",
+      allowedDecisions: COMPATIBLE_IOS_APP_AVAILABILITY_DECISIONS,
+      required: availabilityConfirmationRequired,
+      requirementLabel: availabilityRequirementLabel,
+      check,
+    });
+    validateAppStoreAvailabilityDecision({
+      value: availability.appleVisionProAvailability,
+      label: "availability.appleVisionProAvailability",
+      allowedDecisions: COMPATIBLE_IOS_APP_AVAILABILITY_DECISIONS,
+      required: availabilityConfirmationRequired,
+      requirementLabel: availabilityRequirementLabel,
+      check,
+    });
+    if (availability.approval?.owner === true) {
+      check(
+        [
+          availability.distributionMethod,
+          availability.appleSiliconMacAvailability,
+          availability.appleVisionProAvailability,
+        ].every(
+          (record) =>
+            record?.decision !== null &&
+            record?.status !== "pending_owner_decision",
+        ),
+        "availability.approval.owner requires explicit distribution, Mac, and Vision Pro owner decisions",
+      );
+    }
     validateApprovalRecord({
       approval: availability.approval,
       expectedKeys: EXPECTED_AVAILABILITY_APPROVAL_KEYS,
@@ -4967,6 +5218,9 @@ export function validateBundle({
   const releaseRequired =
     release || submission?.status === "approved_for_submission";
   const appConfig = readJson(path.join(repoRoot, "artifacts/cut-os/app.json"));
+  const subscriptionIdentity = readJson(
+    path.join(repoRoot, "lib/domain/src/subscriptionIdentity.json"),
+  );
   const easConfig = readJson(path.join(repoRoot, "artifacts/cut-os/eas.json"));
   const territoryCatalog = readJson(
     path.join(repoRoot, "app-store/app-store-connect-territories.json"),
@@ -4983,6 +5237,11 @@ export function validateBundle({
     markdown: appReviewRunbook,
   });
   const errors = [
+    ...validateSubscriptionIdentity({
+      identity: subscriptionIdentity,
+      submission,
+      appConfig,
+    }),
     ...validateMetadata({
       submission,
       appConfig,

@@ -7,29 +7,32 @@ Use this checklist only as the iOS portion of
 `RELEASE_OPERATIONS_RUNBOOK.md`. Before App Store staging or production work,
 open distinct `app_review` and `public_release` draft copies of
 `RELEASE_EVIDENCE_MANIFEST_TEMPLATE.md`. Reserve the same release ID and explicit
-targets first; bind both to the exact build, EAS and Apple IDs, API/legal
-deployment identities, and BUILD_SHA-derived database migration after those
-values exist. Target-specific smoke and closure evidence may be refreshed at
-finalization.
+targets first; bind both to the exact build, EAS and Apple IDs, combined
+application deployment identity, and BUILD_SHA-derived database migration after
+those values exist. Target-specific smoke and closure evidence may be refreshed
+at finalization.
 
 ## Release configuration contract
 
 The production EAS environment must contain all of these client-visible values:
 
-| Variable                             | Required value                                                                                        |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `EXPO_PUBLIC_DOMAIN`                 | Public API hostname only, such as `api.example.com`; no scheme, path, credentials, query, or fragment |
-| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`  | Production Clerk publishable key beginning with `pk_live_`                                            |
-| `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` | RevenueCat public Apple-platform SDK key; never a secret or Test Store production key                 |
-| `EXPO_PUBLIC_REVENUECAT_PRODUCT_ID`  | Exact owner-approved App Store product ID; must match the committed subscription release record       |
-| `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | Owner/counsel-approved public HTTPS Privacy Policy; exact match for `listing.privacyPolicyUrl`        |
-| `EXPO_PUBLIC_TERMS_URL`              | Owner/counsel-approved public HTTPS Terms; exact match for `listing.termsUrl`                         |
-| `EXPO_PUBLIC_SUPPORT_URL`            | Functional public HTTPS support page; exact match for `listing.supportUrl`                            |
-| `EXPO_PUBLIC_CLERK_PROXY_URL`        | Required canonical same-origin route: `https://<EXPO_PUBLIC_DOMAIN>/api/__clerk`                      |
+| Variable                             | Required value                                                                                           |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `EXPO_PUBLIC_DOMAIN`                 | Canonical lowercase public app/API hostname only; no scheme, path, port, credentials, query, or fragment |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`  | Production Clerk publishable key beginning with `pk_live_`                                               |
+| `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` | RevenueCat public Apple-platform SDK key; never a secret or Test Store production key                    |
+| `EXPO_PUBLIC_REVENUECAT_PRODUCT_ID`  | Exact owner-approved App Store product ID; must match the committed subscription release record          |
+| `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | Exactly `https://<EXPO_PUBLIC_DOMAIN>/privacy` and `listing.privacyPolicyUrl`                            |
+| `EXPO_PUBLIC_TERMS_URL`              | Exactly `https://<EXPO_PUBLIC_DOMAIN>/terms` and `listing.termsUrl`                                      |
+| `EXPO_PUBLIC_SUPPORT_URL`            | Exactly `https://<EXPO_PUBLIC_DOMAIN>/support` and `listing.supportUrl`                                  |
+| `EXPO_PUBLIC_CLERK_PROXY_URL`        | Required canonical same-origin route: `https://<EXPO_PUBLIC_DOMAIN>/api/__clerk`                         |
 
 Every `EXPO_PUBLIC_*` value is embedded in the app and must be treated as
-public. Never place `CLERK_SECRET_KEY`, `DATABASE_URL`, Apple credentials, or
-any other server secret in an `EXPO_PUBLIC_*` variable. The API deployment
+public. The three legal/support URLs and the Clerk proxy must share the exact
+lowercase `EXPO_PUBLIC_DOMAIN`; alternate hosts, path spellings, trailing
+slashes, queries, and fragments block a production build. Never place
+`CLERK_SECRET_KEY`, `DATABASE_URL`, Apple credentials, or any other server secret
+in an `EXPO_PUBLIC_*` variable. The combined application deployment
 separately requires `REVENUECAT_SECRET_API_KEY`, `REVENUECAT_PROJECT_ID`,
 `REVENUECAT_ENTITLEMENT_REST_ID`, `REVENUECAT_APP_REST_ID`, and
 `REVENUECAT_OFFERING_REST_ID`. The secret is a least-privilege RevenueCat REST
@@ -355,6 +358,42 @@ Before uploading the archive to App Store Connect:
 2. Generate the archive privacy report. Reconcile every embedded SDK and the
    bundled `PrivacyInfo.xcprivacy` against `PRIVACY_DATA_MAP.md` and App Store
    Connect.
+3. Scan the exact expanded signed app package for server secrets, release
+   credentials, and server-only variable names. The scanner accepts a directory,
+   not a compressed `.ipa`, and fails closed on symlinks or special files. On
+   the Mac that downloaded the exact authorized IPA, replace the placeholder
+   with its local path and run:
+
+   ```sh
+   CUT_SIGNED_IPA_PATH="/absolute/path/to/exact-signed.ipa"
+   (
+     set -eu
+     : "${CUT_SIGNED_IPA_PATH:?Set CUT_SIGNED_IPA_PATH to the exact signed IPA}"
+     test -f "$CUT_SIGNED_IPA_PATH"
+
+     CUT_IPA_SCAN_DIRECTORY="$(mktemp -d)"
+     cleanup_ipa_scan() {
+       scan_status=$?
+       trap - EXIT
+       rm -rf -- "${CUT_IPA_SCAN_DIRECTORY:?}" || true
+       exit "$scan_status"
+     }
+     trap cleanup_ipa_scan EXIT
+     trap 'exit 129' HUP
+     trap 'exit 130' INT
+     trap 'exit 143' TERM
+
+     ditto -x -k "$CUT_SIGNED_IPA_PATH" "$CUT_IPA_SCAN_DIRECTORY"
+     node ops/scripts/secret-boundary-scan.mjs archive "$CUT_IPA_SCAN_DIRECTORY"
+   )
+   ```
+
+   Record only the exact build identity, scanner Git SHA, UTC, and pass/fail.
+   Never attach scanner input or a matched value to release evidence. A finding
+   requires revocation/rotation, configuration correction, and a new signed
+   build; deleting bytes from the expanded copy is not remediation. The trap
+   removes the expanded temporary copy on both success and failure. CI applies
+   the same archive rule to its production-configured Expo export.
 
 ### Deterministic EAS upload from `BUILD_SHA`
 

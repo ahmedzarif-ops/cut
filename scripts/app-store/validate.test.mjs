@@ -17,6 +17,7 @@ import {
   validateExactBuildBindings,
   validateMetadata,
   validateScreenshotManifest,
+  validateSubscriptionIdentity,
   validateTestFlightSubmission,
   verifyAppStoreReleaseEvidenceBoundary,
 } from "./validate.mjs";
@@ -112,8 +113,125 @@ function validationInputs() {
   };
 }
 
-test("committed working App Store records validate", () => {
+test("committed owner-approved working App Store records validate", () => {
   assert.deepEqual(validateBundle(), []);
+  const { submission } = validationInputs();
+  assert.deepEqual(submission.listing.initialTerritories, ["US"]);
+  assert.equal(submission.availability.approval.owner, false);
+  assert.deepEqual(submission.ownerControlledFields.slice(-3), [
+    "availability.distributionMethod.decision",
+    "availability.appleSiliconMacAvailability.decision",
+    "availability.appleVisionProAvailability.decision",
+  ]);
+  for (const field of [
+    "distributionMethod",
+    "appleSiliconMacAvailability",
+    "appleVisionProAvailability",
+  ]) {
+    assert.deepEqual(submission.availability[field], {
+      decision: null,
+      status: "pending_owner_decision",
+      savedAtUtc: null,
+      evidenceReference: null,
+    });
+  }
+  assert.equal(submission.commercialAndLegal.appDownloadPrice, "free_download");
+  assert.equal(
+    submission.subscription.productId,
+    "com.zarifahmed.cut.pro.monthly",
+  );
+  assert.equal(submission.subscription.entitlementId, "CUT_OS_PRO");
+  assert.equal(submission.subscription.revenueCat.offeringId, "default");
+  assert.equal(submission.subscription.duration, "1_month");
+  assert.equal(submission.subscription.usPricing.amount, "4.99");
+  assert.equal(submission.subscription.introductoryOfferDecision, "none");
+  assert.equal(submission.subscription.familySharingDecision, "disabled");
+  assert.equal(
+    submission.subscription.localizations["en-US"].description,
+    null,
+  );
+  assert.equal(submission.subscription.approval.owner, false);
+});
+
+test("subscription identity binds App Store and mobile release identifiers", () => {
+  const { submission, appConfig } = validationInputs();
+  const identity = readJson("lib/domain/src/subscriptionIdentity.json");
+  assert.deepEqual(
+    validateSubscriptionIdentity({ identity, submission, appConfig }),
+    [],
+  );
+
+  const cases = [
+    {
+      expected:
+        "App Store bundle ID must match the subscription identity contract",
+      mutate(record) {
+        record.submission.listing.bundleId = "com.example.other";
+      },
+    },
+    {
+      expected:
+        "mobile iOS bundle identifier must match the subscription identity contract",
+      mutate(record) {
+        record.appConfig.expo.ios.bundleIdentifier = "com.example.other";
+      },
+    },
+    {
+      expected:
+        "App Store entitlement ID must match the subscription identity contract",
+      mutate(record) {
+        record.submission.subscription.entitlementId = "OTHER_PRO";
+      },
+    },
+    {
+      expected:
+        "App Store RevenueCat offering ID must match the subscription identity contract",
+      mutate(record) {
+        record.submission.subscription.revenueCat.offeringId = "other";
+      },
+    },
+    {
+      expected:
+        "App Store subscription product ID must match the subscription identity contract",
+      mutate(record) {
+        record.submission.subscription.productId =
+          "com.zarifahmed.cut.pro.annual";
+      },
+    },
+  ];
+
+  for (const { expected, mutate } of cases) {
+    const record = {
+      identity: clone(identity),
+      submission: clone(submission),
+      appConfig: clone(appConfig),
+    };
+    mutate(record);
+    assert.ok(validateSubscriptionIdentity(record).includes(expected));
+  }
+});
+
+test("subscription identity rejects malformed or unnamespaced canonical data", () => {
+  const { submission, appConfig } = validationInputs();
+  const identity = readJson("lib/domain/src/subscriptionIdentity.json");
+  identity.revenueCat.productId = "unrelated.monthly";
+  identity.unreviewedShortcut = true;
+
+  const errors = validateSubscriptionIdentity({
+    identity,
+    submission,
+    appConfig,
+  });
+  assert.ok(
+    errors.includes(
+      "subscription identity must contain exactly the required keys",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "subscription identity productId must be namespaced to iosBundleId",
+    ),
+  );
 });
 
 test("calendar-only record dates reject normalized invalid dates", () => {
@@ -238,7 +356,7 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
   assert.ok(errors.includes("release mode requires listing.sku"));
   assert.ok(
     errors.includes(
-      "release mode requires at least one owner-approved initial territory",
+      "release mode requires initial territories confirmed in App Store Connect",
     ),
   );
   assert.ok(
@@ -346,7 +464,6 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
   for (const retainedGate of [
     "release mode requires a boolean content-rights declaration",
     "listing.supportUrl must be public HTTPS without credentials",
-    "release mode requires at least one owner-approved initial territory",
     "appReview.exactBuild.buildNumber is required",
     "screenshots.captureDefaults.buildNumber is required",
     "release mode requires screenshots.captureDefaults.capturedAtUtc as a UTC ISO timestamp",
@@ -1238,6 +1355,7 @@ test("initial territories must be explicit, valid, unique, and approved", () => 
   );
 
   submission.listing.initialTerritories = ["CA"];
+  submission.availability.approval.owner = false;
   const releaseErrors = validateMetadata({
     ...inputs,
     submission,
@@ -1251,6 +1369,135 @@ test("initial territories must be explicit, valid, unique, and approved", () => 
       "release mode requires initial territories confirmed in App Store Connect",
     ),
   );
+});
+
+test("distribution and compatible-platform availability require explicit saved decisions", () => {
+  const inputs = validationInputs();
+  const submission = clone(inputs.submission);
+  const decisionLabels = [
+    "availability.distributionMethod",
+    "availability.appleSiliconMacAvailability",
+    "availability.appleVisionProAvailability",
+  ];
+
+  const releaseErrors = validateMetadata({
+    ...inputs,
+    submission,
+    release: true,
+    releaseTarget: "app_review",
+  });
+  for (const label of decisionLabels) {
+    assert.ok(
+      releaseErrors.includes(
+        `release mode requires ${label}.status confirmed_in_app_store_connect`,
+      ),
+    );
+    assert.ok(
+      releaseErrors.includes(`release mode requires ${label}.decision`),
+    );
+    assert.ok(
+      releaseErrors.includes(
+        `release mode requires ${label} saved UTC evidence`,
+      ),
+    );
+  }
+
+  submission.availability.approval.owner = true;
+  assert.ok(
+    validateMetadata({ ...inputs, submission }).includes(
+      "availability.approval.owner requires explicit distribution, Mac, and Vision Pro owner decisions",
+    ),
+  );
+  submission.availability.approval.owner = false;
+
+  submission.availability.distributionMethod.decision = "public";
+  assert.ok(
+    validateMetadata({ ...inputs, submission }).includes(
+      "availability.distributionMethod pending_owner_decision requires a null decision and null App Store Connect evidence",
+    ),
+  );
+
+  Object.assign(submission.availability.distributionMethod, {
+    decision: null,
+    status: "pending_app_store_connect_confirmation",
+  });
+  assert.ok(
+    validateMetadata({ ...inputs, submission }).includes(
+      "availability.distributionMethod pending_app_store_connect_confirmation requires an explicit owner decision",
+    ),
+  );
+
+  Object.assign(submission.availability.distributionMethod, {
+    decision: "public",
+    status: "confirmed_in_app_store_connect",
+    savedAtUtc: "not-a-timestamp",
+    evidenceReference: null,
+  });
+  const missingSavedEvidence = validateMetadata({ ...inputs, submission });
+  assert.ok(
+    missingSavedEvidence.includes(
+      "availability.distributionMethod.savedAtUtc must be null or a UTC ISO timestamp",
+    ),
+  );
+  assert.ok(
+    missingSavedEvidence.includes(
+      "confirmed availability requires availability.distributionMethod saved UTC evidence",
+    ),
+  );
+});
+
+test("availability schema accepts only App Store distribution and platform choices", () => {
+  const inputs = validationInputs();
+  const invalid = clone(inputs.submission);
+  invalid.availability.distributionMethod.decision = "automatic_default";
+  invalid.availability.appleSiliconMacAvailability.decision =
+    "automatic_default";
+  invalid.availability.appleVisionProAvailability.unreviewedShortcut = true;
+  const invalidErrors = validateMetadata({ ...inputs, submission: invalid });
+  assert.ok(
+    invalidErrors.includes(
+      "availability.distributionMethod.decision is invalid",
+    ),
+  );
+  assert.ok(
+    invalidErrors.includes(
+      "availability.appleSiliconMacAvailability.decision is invalid",
+    ),
+  );
+  assert.ok(
+    invalidErrors.includes(
+      "availability.appleVisionProAvailability must contain exactly decision, status, savedAtUtc, and evidenceReference",
+    ),
+  );
+
+  const confirmed = clone(inputs.submission);
+  confirmed.availability.status = "confirmed_in_app_store_connect";
+  confirmed.availability.approval.owner = true;
+  confirmed.availability.approval.appStoreConnectConfirmed = true;
+  const evidenceTime = "2026-08-04T12:00:00Z";
+  for (const [field, decision] of [
+    ["distributionMethod", "public"],
+    ["appleSiliconMacAvailability", "do_not_make_available"],
+    ["appleVisionProAvailability", "make_available"],
+  ]) {
+    Object.assign(confirmed.availability[field], {
+      decision,
+      status: "confirmed_in_app_store_connect",
+      savedAtUtc: evidenceTime,
+      evidenceReference: `evidence/${field}`,
+    });
+  }
+  const confirmedErrors = validateMetadata({
+    ...inputs,
+    submission: confirmed,
+    release: true,
+    releaseTarget: "app_review",
+  }).filter(
+    (error) =>
+      error.startsWith("availability") ||
+      error.includes("requires availability."),
+  );
+  assert.deepEqual(confirmedErrors, []);
 });
 
 test("territory catalog drift remains visible and release-blocking", () => {
@@ -2287,6 +2534,88 @@ test("subscription app-name display options reject stale or missing custom names
   );
 });
 
+test("App Store in-app purchase text fields enforce Apple's exact character limits", () => {
+  const inputs = validationInputs();
+  const cases = [
+    {
+      label: "Product Reference Name",
+      accepted: "r".repeat(64),
+      rejected: "r".repeat(65),
+      error: "subscription.productReferenceName must be 64 characters or fewer",
+      set: (submission, value) => {
+        submission.subscription.productReferenceName = value;
+      },
+    },
+    {
+      label: "Product ID",
+      accepted: "p".repeat(100),
+      rejected: "p".repeat(101),
+      error: "subscription.productId must be 100 characters or fewer",
+      set: (submission, value) => {
+        submission.subscription.productId = value;
+      },
+    },
+    {
+      label: "Display Name maximum",
+      accepted: "d".repeat(30),
+      rejected: "d".repeat(31),
+      error:
+        "subscription.localizations.en-US.productDisplayName must be 2 to 30 characters",
+      set: (submission, value) => {
+        submission.subscription.localizations["en-US"].productDisplayName =
+          value;
+      },
+    },
+    {
+      label: "localized Description",
+      accepted: "x".repeat(45),
+      rejected: "x".repeat(46),
+      error:
+        "subscription.localizations.en-US.description must be 45 characters or fewer",
+      set: (submission, value) => {
+        submission.subscription.localizations["en-US"].description = value;
+      },
+    },
+  ];
+
+  for (const testCase of cases) {
+    const atLimit = clone(inputs.submission);
+    testCase.set(atLimit, testCase.accepted);
+    assert.equal(
+      validateMetadata({ ...inputs, submission: atLimit }).includes(
+        testCase.error,
+      ),
+      false,
+      `${testCase.label} should accept the exact limit`,
+    );
+
+    const oneOver = clone(inputs.submission);
+    testCase.set(oneOver, testCase.rejected);
+    assert.ok(
+      validateMetadata({ ...inputs, submission: oneOver }).includes(
+        testCase.error,
+      ),
+      `${testCase.label} should reject one character over the limit`,
+    );
+  }
+
+  for (const [displayName, accepted] of [
+    ["dd", true],
+    ["d", false],
+  ]) {
+    const submission = clone(inputs.submission);
+    submission.subscription.localizations["en-US"].productDisplayName =
+      displayName;
+    assert.equal(
+      validateMetadata({ ...inputs, submission }).includes(
+        "subscription.localizations.en-US.productDisplayName must be 2 to 30 characters",
+      ),
+      !accepted,
+      `Display Name length ${displayName.length} acceptance`,
+    );
+  }
+});
+
 test("accessibility support claims cover every common task and media N/A is narrow", () => {
   const inputs = validationInputs();
   const submission = clone(inputs.submission);
@@ -2334,6 +2663,9 @@ test("structured US pricing and introductory-offer terms fail closed", () => {
     amount: "4.99",
     effectiveStatus: "scheduled",
     effectiveAtUtc: "2026-08-05T00:00:00Z",
+    evidenceReference: null,
+    ownerDecisionRevision: null,
+    ownerDecisionEvidenceReference: null,
   });
   const missingPriceEvidence = validateMetadata({ ...inputs, submission });
   for (const field of [

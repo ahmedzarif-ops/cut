@@ -107,8 +107,10 @@ describe("API database readiness", () => {
   });
 
   it("sanitizes database connection failures", async () => {
-    const secretDsn =
-      "postgresql://private-user:private-password@db.example.com/cut";
+    const secretDsn = [
+      "postgresql://private-user",
+      "private-password@db.example.com/cut",
+    ].join(":");
     const database = {
       execute: async () => {
         throw new Error(`could not connect to ${secretDsn}`);

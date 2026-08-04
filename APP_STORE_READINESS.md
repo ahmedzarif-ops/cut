@@ -81,40 +81,46 @@ social features. Those are backlog, not submission truth.
 - [ ] Confirm Apple Developer Program membership and Account Holder access, then
       record each confirmation UTC and a non-secret controlled evidence reference
       under `commercialAndLegal.appleCommerceReadiness`.
-- [ ] Resolve the Apple seller type with qualified counsel before enrollment or
-      submission. CUT OS requires linked weight, body, fitness, and nutrition
-      information, and App Review Guideline 5.1.1(ix) says apps requiring
-      sensitive user information should be submitted by a legal entity rather
-      than an individual developer. An individual submission is not documented
-      here as prohibited, but it is a material review risk.
+- [ ] The owner selected an individual Apple seller account and authorized
+      `Zarif Ahmed` as the public legal operator for a Texas sole
+      proprietorship; the applicable county is retained outside this public
+      repository. Before submission, verify Apple's activated personal
+      seller name and have qualified counsel review the selected path and any
+      assumed-name filing. CUT OS requires linked weight, body, fitness, and
+      nutrition information, and App Review Guideline 5.1.1(ix) directs apps
+      requiring sensitive user information toward a legal entity. An individual
+      submission is not documented here as prohibited, but it is a material
+      review risk.
 - [ ] Accept the Paid Apps Agreement and complete tax/banking. These are
       sensitive financial actions and remain owner-only; record only each
       confirmation status, UTC, and non-secret evidence reference. Never record
       tax, bank, agreement, or account credentials or values in the repository.
-- [ ] Approve the first product's immutable Product ID, duration, price, and
-      trial decision. Price and final offer approval remain owner decisions. As
-      a fail-closed engineering allowlist—not commercial approval—the current
-      runtime accepts only the proposed product ID, `P1M`, and no introductory
-      offer. Any approved change requires coordinated source, release-record,
-      configuration, and test updates before a signed build.
-- [ ] Approve the app download price, standard-versus-custom EULA, app and
-      subscription tax categories, DSA trader position, Family Sharing, and
-      subscription App Name Display Option. All remain machine-recorded as
-      pending.
-- [ ] Separately approve the Subscription Group Reference Name, Subscription
-      Product Reference Name, and each localized group display name,
-      subscription display name, and description. No-trial is the shortest
-      path to the first paid transaction, but it is still an owner decision.
-- [ ] Before populating those subscription names/descriptions or the immutable
-      Product ID, recheck every current field limit in Apple's official App Store
-      Connect reference and add at-limit/one-over validator tests. The repository
-      deliberately does not guess limits that were not verified in this pass.
+- [x] Owner approved the first product's immutable Product ID, `P1M` duration,
+      $4.99 U.S. monthly price, and no-introductory-offer decision. Any change
+      requires coordinated source, release-record, configuration, and test
+      updates before a signed build.
+- [x] Owner approved a free app download and Family Sharing disabled.
+- [ ] Approve the standard-versus-custom EULA, app and subscription tax
+      categories, DSA position, and subscription App Name Display Option.
+- [ ] Owner approved the Subscription Group Reference Name, Subscription Product
+      Reference Name, and English (U.S.) group and product display names. The
+      initially approved description is 54 characters, exceeding Apple's live
+      45-character limit; approve a compliant replacement before creation.
+- [x] Apple's live reference now verifies Product Reference Name at 64
+      characters, Product ID at 100, product Display Name at 2–30, localizable
+      description at 45, and Review Notes at 4,000; at-limit/one-over validator
+      tests now enforce the in-app purchase fields. Continue to avoid guessing
+      undocumented group-field limits.
 - [ ] Complete `listing.approval` only after controlled evidence exists for name
       clearance, App Store Connect exact-name acceptance, owner approval, legal
       review, qualified nutrition review, and exact-build claims review.
 - [ ] Approve App Review submission and later public release.
-- [ ] Approve the initial storefront territories. Do not infer worldwide
-      availability from the subscription price decision.
+- [x] Owner approved United States-only initial availability. Live App Store
+      Connect availability confirmation remains pending.
+- [ ] Approve Public or Private distribution and separately choose Apple-silicon
+      Mac and Apple Vision Pro compatibility availability. Current QA is
+      iPhone-only; the fastest safe proposal is Public distribution with both
+      untested compatibility surfaces opted out for v1.
 
 ### External services
 
@@ -279,8 +285,9 @@ social features. Those are backlog, not submission truth.
 
 1. Keep the completed subscription, deletion, auth-recovery, App Store artifact,
    and release-operations gates green on a clean commit.
-2. Owner and counsel resolve the legal operator and Apple seller type, including
-   Guideline 5.1.1(ix), before Developer Program enrollment or submission.
+2. Verify the activated personal seller name and have counsel review the owner's
+   selected individual-seller path and intended Texas sole proprietorship,
+   including Guideline 5.1.1(ix), before submission.
 3. Owner completes financial/store decisions and service credentials.
 4. Publish approved legal/support pages and deploy the production backend.
 5. Configure App Store products, RevenueCat, EAS, and Apple notifications.

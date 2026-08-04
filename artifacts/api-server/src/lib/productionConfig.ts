@@ -17,6 +17,8 @@ export type ProductionConfigurationIssue =
   | "REVENUECAT_APP_REST_ID"
   | "REVENUECAT_OFFERING_REST_ID"
   | "HTTPS_ALLOWED_ORIGIN"
+  | "PUBLIC_APP_ORIGIN"
+  | "BASE_PATH"
   | "API_MAX_INSTANCES"
   | "SHARED_RATE_LIMIT_STORE"
   | "ACCOUNT_DELETION_RETRY_INTERVAL_MS"
@@ -120,6 +122,28 @@ function hasCanonicalHttpsAllowedOrigin(env: NodeJS.ProcessEnv): boolean {
   return parseProductionCanonicalOrigin(env.CORS_ALLOWED_ORIGINS) !== undefined;
 }
 
+function hasMatchingPublicAppOrigin(env: NodeJS.ProcessEnv): boolean {
+  const allowedOrigin = parseProductionCanonicalOrigin(
+    env.CORS_ALLOWED_ORIGINS,
+  );
+  const publicOrigin = parseProductionCanonicalOrigin(env.PUBLIC_APP_ORIGIN);
+  return Boolean(
+    allowedOrigin &&
+    publicOrigin &&
+    allowedOrigin.origin === publicOrigin.origin,
+  );
+}
+
+/**
+ * The combined production ingress is rooted at `/`. Accept the two explicit
+ * root spellings plus an absent value, but reject normalization-dependent
+ * aliases and every mounted path so API, Clerk, public, and legal URLs cannot
+ * silently diverge.
+ */
+export function hasRootProductionBasePath(value: string | undefined): boolean {
+  return value === undefined || value === "" || value === "/";
+}
+
 function parseMaximumInstanceCount(value: string | undefined): number | null {
   if (!value || !/^[1-9]\d*$/u.test(value)) return null;
   const parsed = Number(value);
@@ -161,6 +185,12 @@ export function validateProductionConfiguration(
   }
   if (!hasCanonicalHttpsAllowedOrigin(env)) {
     issues.push("HTTPS_ALLOWED_ORIGIN");
+  }
+  if (!hasMatchingPublicAppOrigin(env)) {
+    issues.push("PUBLIC_APP_ORIGIN");
+  }
+  if (!hasRootProductionBasePath(env.BASE_PATH)) {
+    issues.push("BASE_PATH");
   }
   if (
     parseAccountDeletionRetryInterval(

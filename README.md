@@ -16,7 +16,7 @@ the product public-launch ready. See `ADR_003_ADULT_ELIGIBILITY.md` and
 | Path                       | What it is                                            |
 | -------------------------- | ----------------------------------------------------- |
 | `artifacts/cut-os`         | The Expo mobile app (SDK 54, expo-router, Clerk auth) |
-| `artifacts/api-server`     | Express 5 API (Clerk-verified, Drizzle ORM)           |
+| `artifacts/api-server`     | One Express production server: API + public/legal     |
 | `lib/api-spec`             | OpenAPI contract → Orval codegen                      |
 | `lib/api-client-react`     | Generated typed react-query client                    |
 | `lib/api-zod`              | Generated Zod validators (server-side)                |
@@ -34,6 +34,10 @@ pnpm --filter @workspace/api-server run dev
 
 # Mobile development preview (configured Clerk environment required)
 pnpm --filter @workspace/cut-os run dev
+
+# Reproducible production artifact and non-billable loopback smoke run
+pnpm run build:production
+pnpm run dry-run:production
 ```
 
 The Expo app never starts Clerk with a missing, malformed, or known example
@@ -56,17 +60,18 @@ real App Store purchases.
 | `CLERK_PUBLISHABLE_KEY`              | api-server, cut-os dev script | Clerk client key for local/Replit development                   |
 | `CLERK_SECRET_KEY`                   | api-server                    | Clerk server key, FAPI proxy, and backend account deletion      |
 | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`  | cut-os EAS release            | Clerk publishable key embedded in the submitted app             |
-| `EXPO_PUBLIC_DOMAIN`                 | cut-os EAS release            | HTTPS API hostname embedded in the submitted app                |
+| `EXPO_PUBLIC_DOMAIN`                 | cut-os EAS release            | One lowercase app/API hostname embedded in the submitted app    |
 | `EXPO_PUBLIC_CLERK_PROXY_URL`        | cut-os EAS release            | Exact same-origin `https://<domain>/api/__clerk` route          |
 | `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` | cut-os EAS release            | RevenueCat public Apple SDK key embedded in the app             |
 | `EXPO_PUBLIC_REVENUECAT_PRODUCT_ID`  | cut-os EAS release            | Exact approved App Store subscription product ID                |
-| `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | cut-os EAS release            | Public policy; must exactly match the App Store listing record  |
-| `EXPO_PUBLIC_TERMS_URL`              | cut-os EAS release            | Public terms; must exactly match the App Store listing record   |
-| `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Public support; must exactly match the App Store listing record |
-| `PUBLIC_APP_ORIGIN`                  | cut-os public server          | Canonical launch/legal origin; preview also derives deep links  |
-| `CORS_ALLOWED_ORIGINS`               | api-server                    | One canonical HTTPS origin in production; lists allowed in dev  |
+| `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | cut-os EAS release            | Exact `https://<domain>/privacy` and App Store listing URL      |
+| `EXPO_PUBLIC_TERMS_URL`              | cut-os EAS release            | Exact `https://<domain>/terms` and App Store listing URL        |
+| `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Exact `https://<domain>/support` and App Store listing URL      |
+| `PUBLIC_APP_ORIGIN`                  | api-server public routes      | Canonical launch/legal origin; must equal production CORS host  |
+| `CORS_ALLOWED_ORIGINS`               | api-server                    | Same canonical HTTPS origin in production; lists allowed in dev |
+| `BASE_PATH`                          | api-server public routes      | Production must be unset, empty, or `/`; mounted paths fail     |
 | `CLERK_PROXY_URL`                    | cut-os development preview    | Relative API proxy path; configured value is `/api/__clerk`     |
-| `LEGAL_SITE_PUBLICATION_STATUS`      | cut-os public server          | `draft` until approved legal sources and hashes are recorded    |
+| `LEGAL_SITE_PUBLICATION_STATUS`      | api-server public routes      | `draft` until approved legal sources and hashes are recorded    |
 | `PORT`                               | api-server                    | Listen port (Replit-provided)                                   |
 | `API_MAX_INSTANCES`                  | api-server production         | Actual platform max; only `1` is supported until shared limits  |
 | `API_RATE_LIMIT`                     | api-server production         | Optional requests/minute integer `1`-`10000`; default `100`     |
@@ -87,9 +92,10 @@ values automatically, but an EAS build does not inherit that shell mapping.
 See `EAS_RELEASE_RUNBOOK.md`.
 
 `CLERK_PROXY_URL` is the relative server route used only while Replit assembles
-its browser/development preview configuration. The production public-site build
-does not start Metro or bundle it. EAS does not inherit it: native builds require
-the full same-origin `EXPO_PUBLIC_CLERK_PROXY_URL`. Keep
+its browser/development preview configuration. The production API build mounts
+the public site on the same listener and does not start Metro or bundle it. EAS
+does not inherit it: native builds require the full same-origin
+`EXPO_PUBLIC_CLERK_PROXY_URL`. Keep
 `LEGAL_SITE_PUBLICATION_STATUS=draft` until the exact Privacy, Terms, and
 Support sources have owner/counsel approval and the committed hash gate passes.
 
@@ -98,11 +104,14 @@ also configure the exact `EXPO_PUBLIC_REVENUECAT_PRODUCT_ID`; a preview or Test
 Store build with an unbound catalog fails validation instead of reaching a
 paywall that can never load a purchasable plan.
 
-`PUBLIC_APP_ORIGIN` is required by the production public server and is never
-derived from request headers. API production startup also fails closed unless
-`API_MAX_INSTANCES` is explicitly `1`. This is a launch-only single-instance
-control: the release record must prove the provider maximum is one, and a
-multi-replica deployment requires a real shared rate-limit store first.
+`PUBLIC_APP_ORIGIN` is required by the production server, is never derived from
+request headers, and must exactly equal the canonical
+`CORS_ALLOWED_ORIGINS`. A non-root production `BASE_PATH` also fails before
+binding so public, legal, Clerk proxy, and API routes cannot split. Production
+startup also fails closed unless `API_MAX_INSTANCES` is explicitly `1`. This is
+a launch-only single-instance control: the release record must prove the
+provider maximum is one, and a multi-replica deployment requires a real shared
+rate-limit store first.
 The account-deletion worker runs once immediately at startup, then waits for
 each non-overlapping run to settle before scheduling the next bounded retry.
 Because that retry scheduler lives in the API process, launch also requires a
@@ -135,6 +144,7 @@ closed.
 pnpm run typecheck   # all packages
 pnpm run test        # vitest: domain + database + API integration (PGlite) + mobile unit
 pnpm run build       # typecheck + build everything
+pnpm run dry-run:production # build + one-listener loopback smoke, no providers
 pnpm --filter @workspace/cut-os run validate:release-config
 ```
 

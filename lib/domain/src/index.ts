@@ -6,3 +6,4 @@ export * from "./nextAction";
 export * from "./weightUnits";
 export * from "./balancedMeals";
 export * from "./adultEligibility";
+export * from "./subscriptionIdentity";

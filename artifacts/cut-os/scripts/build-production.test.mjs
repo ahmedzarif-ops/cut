@@ -40,7 +40,7 @@ describe("Replit production public-site build", () => {
     }
   });
 
-  it("keeps legacy Expo bundling behind an explicit preview command", () => {
+  it("keeps legacy Expo bundling and the mobile artifact behind development commands", () => {
     const packageRecord = JSON.parse(
       readFileSync(resolve(artifactDirectory, "package.json"), "utf8"),
     );
@@ -55,17 +55,21 @@ describe("Replit production public-site build", () => {
       resolve(artifactDirectory, ".replit-artifact/artifact.toml"),
       "utf8",
     );
+    expect(artifactConfiguration).not.toMatch(/^\[services\.production\]$/mu);
     expect(artifactConfiguration).toMatch(
-      /\[services\.production\][\s\S]*?"@workspace\/cut-os", "run", "build"/u,
-    );
-    expect(artifactConfiguration).not.toMatch(
-      /\[services\.production\][\s\S]*?build:preview/u,
+      /\[services\.development\][\s\S]*?@workspace\/cut-os[\s\S]*?run dev/u,
     );
 
     const workspacePackage = JSON.parse(
       readFileSync(resolve(workspaceDirectory, "package.json"), "utf8"),
     );
     expect(workspacePackage.packageManager).toBe("pnpm@10.34.5");
+    expect(workspacePackage.scripts["build:production"]).toBe(
+      "pnpm --filter @workspace/api-server run build",
+    );
+    expect(workspacePackage.scripts["start:production"]).toBe(
+      "node --enable-source-maps artifacts/api-server/dist/index.mjs",
+    );
   });
 
   it("fails closed when the canonical public origin is missing", () => {

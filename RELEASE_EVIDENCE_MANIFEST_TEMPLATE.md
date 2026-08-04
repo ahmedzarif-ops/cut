@@ -36,11 +36,11 @@ after `createdAtUtc` and no later than `finalizedAtUtc`. Finalization cannot be
 future-dated. The restore drill may predate record creation but must be no more
 than 90 days old at finalization.
 
-<!-- CUT_OS_RELEASE_CONTROL_V1_BEGIN -->
+<!-- CUT_OS_RELEASE_CONTROL_V2_BEGIN -->
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "status": "DRAFT",
   "releaseId": "<unique release ID>",
   "target": "<staging | internal_testflight | app_review | public_release>",
@@ -63,6 +63,28 @@ than 90 days old at finalization.
       "tag": "<latest BUILD_SHA Drizzle migration tag>",
       "createdAt": "<latest BUILD_SHA Drizzle journal epoch milliseconds>",
       "sha256": "<lowercase SHA-256 of the latest BUILD_SHA migration SQL>"
+    },
+    "replitProductionHosting": {
+      "provider": "replit",
+      "accountAlias": "<non-secret Replit account or team alias>",
+      "workspaceId": "<exact Replit workspace ID>",
+      "deploymentId": "<exact Replit production deployment ID>",
+      "databaseId": "<exact Replit production database ID>",
+      "providerDeploymentOrigin": "<canonical https Replit deployment origin>",
+      "publicOrigin": "<canonical public https origin>",
+      "deploymentType": "reserved_vm",
+      "region": "<exact Replit deployment region>",
+      "machineClass": "<exact Replit machine configuration>",
+      "minimumInstances": 1,
+      "maximumInstances": 1,
+      "fixedMonthlyCostUsdCentsBeforeTax": "<positive integer cents>",
+      "usageBasedServiceShutdownLimitUsdCentsBeforeTax": "<nonnegative integer cents>",
+      "approvedMonthlyCostCeilingUsdCentsBeforeTax": "<positive integer cents>",
+      "costApprovedBy": "<name or approved role alias>",
+      "costApprovedAtUtc": "<UTC>",
+      "costApprovalEvidenceReference": "<reference>",
+      "configurationVerifiedAtUtc": "<UTC>",
+      "configurationEvidenceReference": "<reference>"
     },
     "easBuildId": "<TestFlight EAS build ID>",
     "appStoreConnectBuildId": "<TestFlight App Store Connect build ID>"
@@ -123,12 +145,27 @@ than 90 days old at finalization.
       "atUtc": "<UTC>",
       "evidenceReference": "<reference>"
     },
+    "tracked_secret_boundary": {
+      "status": "<PASS>",
+      "atUtc": "<UTC>",
+      "evidenceReference": "<reference>"
+    },
+    "production_topology_dry_run": {
+      "status": "<PASS>",
+      "atUtc": "<UTC>",
+      "evidenceReference": "<reference>"
+    },
     "production_release_config": {
       "status": "<PASS>",
       "atUtc": "<UTC>",
       "evidenceReference": "<reference>"
     },
     "production_ios_export": {
+      "status": "<PASS>",
+      "atUtc": "<UTC>",
+      "evidenceReference": "<reference>"
+    },
+    "production_archive_secret_boundary": {
       "status": "<PASS>",
       "atUtc": "<UTC>",
       "evidenceReference": "<reference>"
@@ -570,7 +607,7 @@ than 90 days old at finalization.
 }
 ```
 
-<!-- CUT_OS_RELEASE_CONTROL_V1_END -->
+<!-- CUT_OS_RELEASE_CONTROL_V2_END -->
 
 Finalization rules:
 
@@ -578,7 +615,8 @@ Finalization rules:
    required `BUILD_SHA` acknowledgment lines below. Use
    `N/A — reason — approver` only where the JSON schema permits it.
    Replace the quoted `databaseMigrationRevision.createdAt` placeholder with
-   the journal's positive integer literal; do not leave it as a string.
+   the journal's positive integer literal, and replace all three quoted hosting
+   cost placeholders with integer-cent literals; do not leave them as strings.
 2. In the one target manifest being finalized, set its human-readable status
    line and canonical JSON `status` to `FINAL`, set `finalizedAtUtc` to the
    actual current UTC time, and change both recovery confirmation booleans to
@@ -676,10 +714,19 @@ recorded only in the external handoff.
 
 ## Environment identity — non-secret aliases only
 
-The canonical deployment fields and `releaseSafetyChecks.production_service_set`
-evidence reference identify the approved non-secret service map. Detailed
-provider aliases stay in that controlled reference, never in a second manifest
-record.
+The canonical deployment fields machine-bind the one Replit production service:
+the exact non-secret account, workspace, deployment, database, provider origin,
+public origin, Reserved VM shape, and before-tax cost controls live in
+`deployments.replitProductionHosting`. Its fixed monthly cost plus the
+usage-based service-shutdown limit must not exceed the attributable
+owner-approved monthly ceiling. `productionApiRevision` and `publicLegalRevision`
+must be the same current single-process revision, and their previous revisions
+must also match. `releaseSafetyChecks.production_service_set` points to the
+sanitized provider proof for those values; do not duplicate the record or put
+credentials in it. For `app_review` and `public_release`, the integrated
+verifier reads the exact evidence commit's App Store listing bytes and requires
+`supportUrl`, `privacyPolicyUrl`, and `termsUrl` to equal the recorded public
+origin plus `/support`, `/privacy`, and `/terms`, respectively.
 
 ## API limiter topology and live abuse gate
 
@@ -716,8 +763,10 @@ backup, restore, RPO/RTO, and recovery-approval record.
 
 ## Deployment identity and provenance
 
-The canonical `deployments` object is the sole deployment-identity record.
-Archive, privacy-report, build-image, and export-compliance details live in its
+The canonical `deployments` object is the sole deployment-identity record. The
+API, landing page, status, Privacy, Terms, and Support routes must resolve to the
+same `productionApiRevision` / `publicLegalRevision` value. Archive,
+privacy-report, build-image, and export-compliance details live in its
 controlled evidence references.
 
 ## Approved legal publication

@@ -12,6 +12,10 @@ The server requires an owner-configured `PUBLIC_APP_ORIGIN`, for example
 with no path, port, credentials, query, or fragment. The server never builds
 canonical URLs or preview deep links from `Host`, `X-Forwarded-Host`, or
 `X-Forwarded-Proto`; missing or invalid configuration fails startup.
+When publication is approved, each rendered legal page must contain exactly one
+canonical URL equal to `${PUBLIC_APP_ORIGIN}${BASE_PATH}/privacy`, `/terms`, or
+`/support` for its route. A second host, alternate path spelling, or duplicate
+canonical link blocks startup.
 
 The executable deployment entry point always starts in production mode: `/` is
 a no-JavaScript CUT launch page. Expo Go manifests, bundles, and static preview
@@ -62,8 +66,8 @@ not require approved legal pages.
 The server itself repeats the important release checks. If
 `LEGAL_SITE_PUBLICATION_STATUS=approved` is set while a placeholder, draft
 marker, `noindex`, unapproved counsel flag, incomplete/non-binding wording, or
-missing public canonical URL remains, server creation fails instead of exposing
-a draft policy as `200`.
+canonical URL that differs from the runtime origin/base path remains, server
+creation fails instead of exposing a draft or misbound policy as `200`.
 
 `templates/legal-publication-approval.json` is a second, independent release
 gate. It starts in `draft` and records no approval. For an approved release it
@@ -94,7 +98,8 @@ stores only its reference.
 5. Remove each draft banner and blocker, replace `noindex` with the approved
    indexing position, set the body attributes to
    `data-publication-status="approved"` and `data-counsel-approved="true"`, and
-   add the correct public HTTPS canonical URL to each template.
+   add exactly one canonical URL to each template using the final
+   `PUBLIC_APP_ORIGIN`, normalized `BASE_PATH`, and route.
 6. Render the three deployable templates with the final app name and base path.
    Have counsel approve those exact rendered pages and stylesheet in writing.
 7. Record the approver, timestamp, evidence reference, rendering inputs, and

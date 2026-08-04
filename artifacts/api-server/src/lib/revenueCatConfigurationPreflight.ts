@@ -1,8 +1,14 @@
+import {
+  CUT_OS_APP_STORE_SUBSCRIPTION_PRODUCT_ID as SHARED_PRODUCT_IDENTIFIER,
+  CUT_OS_IOS_BUNDLE_ID as SHARED_IOS_BUNDLE_ID,
+  CUT_OS_REVENUECAT_OFFERING_ID as SHARED_OFFERING_IDENTIFIER,
+} from "@workspace/domain";
+
 import { REVENUECAT_ENTITLEMENT_ID } from "../services/revenueCatSubscriptionService";
 
-export const CUT_OS_IOS_BUNDLE_ID = "com.zarifahmed.cut" as const;
-export const CUT_OS_MONTHLY_PRODUCT_IDENTIFIER =
-  "com.zarifahmed.cut.pro.monthly" as const;
+export const CUT_OS_IOS_BUNDLE_ID = SHARED_IOS_BUNDLE_ID;
+export const CUT_OS_MONTHLY_PRODUCT_IDENTIFIER = SHARED_PRODUCT_IDENTIFIER;
+export const CUT_OS_REVENUECAT_OFFERING_IDENTIFIER = SHARED_OFFERING_IDENTIFIER;
 
 export type RevenueCatConfigurationPreflightFailureReason =
   | "invalid_configuration"
@@ -48,6 +54,7 @@ interface RevenueCatConfigurationPreflightOptions {
   offeringRestId: string | undefined;
   expectedEntitlementLookupKey?: string;
   expectedBundleId?: string;
+  expectedOfferingIdentifier?: string;
   expectedProductIdentifier?: string;
   fetchImpl?: FetchImplementation;
   timeoutMs?: number;
@@ -315,6 +322,7 @@ function verifyOfferingPayload(
   expected: {
     projectId: string;
     offeringRestId: string;
+    offeringIdentifier: string;
     appRestId: string;
     productIdentifier: string;
     productRestId: string;
@@ -325,6 +333,7 @@ function verifyOfferingPayload(
     typeof payload.object !== "string" ||
     typeof payload.state !== "string" ||
     typeof payload.id !== "string" ||
+    typeof payload.lookup_key !== "string" ||
     typeof payload.project_id !== "string" ||
     typeof payload.is_current !== "boolean" ||
     !isRecord(payload.packages) ||
@@ -343,6 +352,7 @@ function verifyOfferingPayload(
     payload.object !== "offering" ||
     payload.state !== "active" ||
     payload.id !== expected.offeringRestId ||
+    payload.lookup_key !== expected.offeringIdentifier ||
     payload.project_id !== expected.projectId ||
     payload.is_current !== true ||
     payload.packages.items.length !== 1 ||
@@ -413,6 +423,7 @@ export async function verifyRevenueCatConfiguration({
   offeringRestId: rawOfferingRestId,
   expectedEntitlementLookupKey = REVENUECAT_ENTITLEMENT_ID,
   expectedBundleId = CUT_OS_IOS_BUNDLE_ID,
+  expectedOfferingIdentifier = CUT_OS_REVENUECAT_OFFERING_IDENTIFIER,
   expectedProductIdentifier = CUT_OS_MONTHLY_PRODUCT_IDENTIFIER,
   fetchImpl = globalThis.fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
@@ -431,6 +442,7 @@ export async function verifyRevenueCatConfiguration({
     !validResourceId(offeringRestId, "ofrng") ||
     expectedEntitlementLookupKey !== REVENUECAT_ENTITLEMENT_ID ||
     expectedBundleId !== CUT_OS_IOS_BUNDLE_ID ||
+    expectedOfferingIdentifier !== CUT_OS_REVENUECAT_OFFERING_IDENTIFIER ||
     expectedProductIdentifier !== CUT_OS_MONTHLY_PRODUCT_IDENTIFIER
   ) {
     throw new RevenueCatConfigurationPreflightError("invalid_configuration");
@@ -483,6 +495,7 @@ export async function verifyRevenueCatConfiguration({
   verifyOfferingPayload(offering, {
     projectId,
     offeringRestId,
+    offeringIdentifier: expectedOfferingIdentifier,
     appRestId,
     productIdentifier: expectedProductIdentifier,
     productRestId,

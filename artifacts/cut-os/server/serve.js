@@ -171,7 +171,27 @@ function validatePublicationStatus(status) {
   }
 }
 
-function assertApprovedTemplates(templates, appName, basePath) {
+function canonicalHrefs(template) {
+  const linkTags =
+    template.match(/<link\b(?:(?:"[^"]*"|'[^']*'|[^'">])*)>/giu) ?? [];
+  return linkTags.flatMap((tag) => {
+    const rel = /\brel\s*=\s*(["'])(.*?)\1/iu.exec(tag)?.[2];
+    if (
+      !rel?.split(/\s+/u).some((token) => token.toLowerCase() === "canonical")
+    ) {
+      return [];
+    }
+    const href = /\bhref\s*=\s*(["'])(.*?)\1/iu.exec(tag)?.[2];
+    return [href ?? null];
+  });
+}
+
+function assertApprovedTemplates(
+  templates,
+  appName,
+  basePath,
+  publicAppOrigin,
+) {
   const combined = Object.values(templates.legal).join("\n");
   const issues = [];
 
@@ -193,8 +213,16 @@ function assertApprovedTemplates(templates, appName, basePath) {
     ) {
       issues.push(`${route} still contains a draft publication control`);
     }
-    if (!/<link rel="canonical" href="https:\/\//u.test(template)) {
-      issues.push(`${route} has no public HTTPS canonical URL`);
+    const renderedTemplate = renderLegalTemplate(template, appName, basePath);
+    const expectedCanonicalUrl = `${publicAppOrigin}${basePath}${route}`;
+    const renderedCanonicalHrefs = canonicalHrefs(renderedTemplate);
+    if (
+      renderedCanonicalHrefs.length !== 1 ||
+      renderedCanonicalHrefs[0] !== expectedCanonicalUrl
+    ) {
+      issues.push(
+        `${route} canonical URL does not exactly match the runtime public origin and base path`,
+      );
     }
     if (
       /<script(?:\s|>)/iu.test(template) ||
@@ -224,14 +252,8 @@ function assertApprovedTemplates(templates, appName, basePath) {
   }
 }
 
-function loadTemplates(
-  templateRoot,
-  publicationStatus,
-  appName,
-  basePath,
-  previewMode,
-) {
-  const templates = {
+function loadTemplates(templateRoot, previewMode) {
+  return {
     landing: readTemplate(
       templateRoot,
       previewMode ? "landing-page.html" : "production-landing-page.html",
@@ -247,11 +269,6 @@ function loadTemplates(
       readTemplate(templateRoot, APPROVAL_RECORD_FILENAME),
     ),
   };
-
-  if (publicationStatus === "approved") {
-    assertApprovedTemplates(templates, appName, basePath);
-  }
-  return templates;
 }
 
 function assertStaticRoot(staticRoot) {
@@ -428,16 +445,13 @@ function createRequestHandler(options = {}) {
   // The production process serves the source-controlled launch/legal surface
   // and must not depend on a legacy Expo Go static build it will never expose.
   if (previewMode) assertStaticRoot(staticRoot);
-  const templates = loadTemplates(
-    templateRoot,
-    publicationStatus,
-    appName,
-    basePath,
-    previewMode,
-  );
+  const templates = loadTemplates(templateRoot, previewMode);
   const publicApp = parsePublicAppOrigin(
     options.publicAppOrigin ?? process.env.PUBLIC_APP_ORIGIN,
   );
+  if (publicationStatus === "approved") {
+    assertApprovedTemplates(templates, appName, basePath, publicApp.origin);
+  }
 
   return (req, res) => {
     if (req.method !== "GET" && req.method !== "HEAD") {

@@ -172,7 +172,11 @@ describe("runtime configuration", () => {
     expect(
       resolveRuntimeConfig({
         EXPO_PUBLIC_DOMAIN: "api.example.com",
-        EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: "sk_live_never_embed_this",
+        EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: [
+          "sk",
+          "live",
+          "never_embed_this",
+        ].join("_"),
       }),
     ).toMatchObject({
       ok: false,

@@ -32,6 +32,10 @@ jobs:
           node-version: 24.14.0
           cache: pnpm
 
+      - name: Test and scan the tracked-source secret boundary
+        run: |
+          node --test ops/scripts/secret-boundary-scan.test.mjs
+          node ops/scripts/secret-boundary-scan.mjs tracked
       - run: pnpm install --frozen-lockfile
       - name: Reject high-severity runtime and build dependency advisories
         run: pnpm audit --audit-level high
@@ -40,8 +44,8 @@ jobs:
       - run: pnpm run test
       - name: Validate working App Store submission artifacts
         run: pnpm run validate:app-store
-      - name: Build the production API bundle
-        run: pnpm --filter @workspace/api-server run build
+      - name: Build and smoke-test the single-host production bundle
+        run: pnpm run dry-run:production
       - name: Verify the Replit production public-site build contract
         env:
           LEGAL_SITE_PUBLICATION_STATUS: draft
@@ -72,9 +76,9 @@ jobs:
             echo "EXPO_PUBLIC_CLERK_PROXY_URL=https://api.example.com/api/__clerk"
             echo "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=appl_PublicIosKey1234"
             echo "EXPO_PUBLIC_REVENUECAT_PRODUCT_ID=com.zarifahmed.cut.pro.monthly"
-            echo "EXPO_PUBLIC_PRIVACY_POLICY_URL=https://example.com/privacy"
-            echo "EXPO_PUBLIC_TERMS_URL=https://example.com/terms"
-            echo "EXPO_PUBLIC_SUPPORT_URL=https://example.com/support"
+            echo "EXPO_PUBLIC_PRIVACY_POLICY_URL=https://api.example.com/privacy"
+            echo "EXPO_PUBLIC_TERMS_URL=https://api.example.com/terms"
+            echo "EXPO_PUBLIC_SUPPORT_URL=https://api.example.com/support"
           } >> "$GITHUB_ENV"
       - name: Validate and bundle the production iOS app
         run: |
@@ -85,9 +89,9 @@ jobs:
           const record = JSON.parse(readFileSync(path, "utf8"));
           record.subscription.productId = "com.zarifahmed.cut.pro.monthly";
           record.subscription.introductoryOfferDecision = "none";
-          record.listing.privacyPolicyUrl = "https://example.com/privacy";
-          record.listing.termsUrl = "https://example.com/terms";
-          record.listing.supportUrl = "https://example.com/support";
+          record.listing.privacyPolicyUrl = "https://api.example.com/privacy";
+          record.listing.termsUrl = "https://api.example.com/terms";
+          record.listing.supportUrl = "https://api.example.com/support";
           writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, "utf8");
           NODE
           pnpm --filter @workspace/cut-os run validate:release-config
@@ -95,6 +99,7 @@ jobs:
           test -z "$(git status --porcelain --untracked-files=all)"
           pnpm --filter @workspace/cut-os exec expo config --type introspect > /dev/null
           pnpm --filter @workspace/cut-os exec expo export --platform ios --output-dir "$RUNNER_TEMP/cut-ios-export"
+          node ops/scripts/secret-boundary-scan.mjs archive "$RUNNER_TEMP/cut-ios-export"
 
   release-evidence:
     name: Release evidence boundary

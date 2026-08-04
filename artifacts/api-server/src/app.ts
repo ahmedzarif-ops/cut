@@ -16,6 +16,7 @@ import helmet from "helmet";
 import { createApiLimiter, createClerkLimiter } from "./middlewares/rateLimit";
 import { buildAllowedHosts, buildAllowedOrigins } from "./lib/allowedHosts";
 import healthRouter from "./routes/health";
+import { createProductionPublicSiteMiddleware } from "./publicSite";
 
 const app: Express = express();
 
@@ -98,6 +99,7 @@ app.use("/api", createApiLimiter());
 // publishableKeyFromHost, which throws on an empty host when the fallback key
 // is a live (pk_live_) key.
 app.use(
+  "/api",
   clerkMiddleware((req) => {
     const host = getClerkProxyHost(req, allowedHosts);
     return {
@@ -109,6 +111,12 @@ app.use(
 );
 
 app.use("/api", router);
+
+// One production listener owns every public route. Keep this after the API and
+// Clerk proxy stack so their middleware order and security boundaries remain
+// unchanged; the public handler is a read-only, fail-closed fallback for the
+// launch, legal, support, and status surfaces.
+app.use(createProductionPublicSiteMiddleware());
 
 // Catch-all error normalizer — must be registered last, after all routes.
 app.use(errorHandler);

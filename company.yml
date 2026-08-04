@@ -4,18 +4,18 @@
 
 company:
   name: "CUT"
-  legal_entity: "" # not formed yet — revisit before revenue
-  domain: "" # no website domain yet — App Store product first
+  legal_entity: "Zarif Ahmed (Texas sole proprietor)" # no separate entity; exact public operator spelling authorized 2026-08-04
+  domain: "" # no custom domain; the Replit provider address is not yet owner-approved
   one_liner: "CUT is an adults-only mobile app that gives lifters one practical daily cut check-in across weigh-ins and balanced meals."
 
 owner:
-  name: "Zarif"
-  email: "ahmed.zarif@gmail.com"
+  name: "Zarif Ahmed"
+  email: "ahmed.zarif@gmail.com" # owner authorized this as the public support/privacy email on 2026-08-04
   is_technical: false # plain English, no jargon, real trade-offs, starred recommendations
 
 offer:
   summary: "A paid App Store subscription for one daily next action, consistent weigh-ins, six curated balanced-meal choices, meal logging, and daily nutrition totals."
-  pricing_notes: "App Store subscription via RevenueCat; price not decided yet — skills that need a price must ask first, never assume."
+  pricing_notes: "Owner-approved v1: free download; one US-only $4.99/month subscription; no trial; Family Sharing off; manual release. App Store Connect creation and live price evidence remain pending."
   booking_link: ""
 
 icp:
@@ -30,7 +30,7 @@ brand:
 kb_dir: "kb/"
 
 legal:
-  jurisdiction: "US"
+  jurisdiction: "Texas, United States"
   regulated_claims: "No health or medical claims — CUT is a coaching tool, not medical advice. Privacy hard rule (GTM change order §6): body weight, calories, macros, and measurements never appear in URLs, logs, analytics events, or third-party SDKs."
 
 integrations:

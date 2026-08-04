@@ -9,6 +9,12 @@ PostgreSQL as the source of truth.
 - Replit service, deployment, and post-merge commands invoke
   `corepack pnpm@10.34.5` so the runtime uses the exact version pinned by the
   repository instead of Replit's ambient package-manager binary.
+- `pnpm run build:production` — build the one production HTTP artifact (API +
+  Clerk proxy + public launch/legal/support/status routes)
+- `pnpm run start:production` — start that sole production process on the
+  platform-provided `PORT`
+- `pnpm run dry-run:production` — build and smoke-test the exact combined app
+  on an ephemeral loopback port without publishing, provider calls, or billing
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm --filter @workspace/cut-os run dev` — run the Expo dev server (Replit iOS simulator / Expo Go)
 - `pnpm --filter @workspace/cut-os run build` — validate the production
@@ -41,8 +47,12 @@ PostgreSQL as the source of truth.
   the documented read API does not expose it; transient provider failures leave
   account APIs up in a sanitized degraded state while subscription checks
   continue to fail closed;
-  `PUBLIC_APP_ORIGIN` — owner-approved canonical
-  HTTPS origin for the production public server; `API_MAX_INSTANCES` — actual
+  `PUBLIC_APP_ORIGIN` — owner-approved canonical HTTPS origin for the public
+  site; it must exactly equal the sole canonical `CORS_ALLOWED_ORIGINS` value
+  so landing/legal, API CORS, and Clerk cannot drift onto different hosts;
+  `BASE_PATH` — leave absent/empty or set exactly `/`; any mounted production
+  path fails startup;
+  `API_MAX_INSTANCES` — actual
   API platform maximum (currently must be `1` until shared rate limiting
   exists). Production must also use a provider-verified always-on minimum of one
   API machine because account-deletion retries are scheduled in-process; an
@@ -55,12 +65,22 @@ PostgreSQL as the source of truth.
   `LEGAL_SITE_PUBLICATION_STATUS=draft` — keep draft until owner/counsel approval
   and the legal source-hash gate pass; never flip this as a deployment shortcut
 
-The Replit production public artifact runs the source-controlled launch and
-legal server. Its build step constructs that production handler to validate the
-canonical origin, templates, publication status, and approval hashes; it does
-not start Metro or require `static-build`. Production still returns `404` for
-all Expo manifests and preview assets. Preview mode retains the readable-static-
-root startup gate.
+The API artifact is the only Replit production service. Its single Express
+listener mounts the existing `/api` and `/api/__clerk` stacks first, then the
+source-controlled `/`, `/privacy`, `/terms`, `/support`, `/legal.css`, and
+`/status` surface. The build copies the exact legal templates beside the API
+bundle, and startup validates the canonical origin, publication status, and
+approval hashes before binding `PORT`. The built process requires its packaged
+templates and never falls back to the source checkout. Production returns `404`
+for all Expo manifests and preview assets. The mobile artifact remains available
+for Replit development/Expo preview but intentionally declares no production
+service.
+
+For a Reserved VM draft, set the Publishing **Build command** to
+`corepack pnpm@10.34.5 run build:production` and the **Run command** to
+`corepack pnpm@10.34.5 run start:production`, choose one Web Server port mapped
+to the injected `PORT`, and keep the app unpublished until the owner approves
+hosting and all production secrets and release gates are complete.
 
 ## Stack
 

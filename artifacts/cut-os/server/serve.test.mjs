@@ -21,6 +21,7 @@ const {
 
 const servers = [];
 const temporaryDirectories = [];
+const DEFAULT_PUBLIC_APP_ORIGIN = "https://preview.cutos.app";
 
 async function createStaticRoot() {
   const root = await mkdtemp(join(tmpdir(), "cut-os-server-"));
@@ -39,14 +40,19 @@ async function createStaticRoot() {
   return root;
 }
 
-function approvedLegalTemplate(route, label, extraCopy = "") {
+function approvedLegalTemplate(
+  route,
+  label,
+  extraCopy = "",
+  canonicalUrl = `${DEFAULT_PUBLIC_APP_ORIGIN}${route}`,
+) {
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${label} · APP_NAME_PLACEHOLDER</title>
-    <link rel="canonical" href="https://www.cutos.app${route}" />
+    <link rel="canonical" href="${canonicalUrl}" />
     <link rel="stylesheet" href="LEGAL_BASE_PATH_PLACEHOLDER/legal.css" />
   </head>
   <body data-publication-status="approved" data-counsel-approved="true">
@@ -60,15 +66,30 @@ async function createApprovedTemplateRoot(options = {}) {
   temporaryDirectories.push(root);
   const appName = options.appName ?? "CUT OS";
   const basePath = options.basePath ?? "";
+  const publicAppOrigin = options.publicAppOrigin ?? DEFAULT_PUBLIC_APP_ORIGIN;
+  const canonicalUrls = options.canonicalUrls ?? {};
+  const canonicalUrl = (route) =>
+    canonicalUrls[route] ?? `${publicAppOrigin}${basePath}${route}`;
   const legalCss = "body { color: #111; }\n";
   const legal = {
     "/privacy": approvedLegalTemplate(
       "/privacy",
       "Privacy Policy",
       options.privacyCopy,
+      canonicalUrl("/privacy"),
     ),
-    "/terms": approvedLegalTemplate("/terms", "Terms of Use"),
-    "/support": approvedLegalTemplate("/support", "Support"),
+    "/terms": approvedLegalTemplate(
+      "/terms",
+      "Terms of Use",
+      "",
+      canonicalUrl("/terms"),
+    ),
+    "/support": approvedLegalTemplate(
+      "/support",
+      "Support",
+      "",
+      canonicalUrl("/support"),
+    ),
   };
   const templates = { legal, legalCss };
   const approvalRecord = {
@@ -101,7 +122,7 @@ async function createApprovedTemplateRoot(options = {}) {
 
 async function listen(options = {}) {
   const server = createAppServer({
-    publicAppOrigin: "https://preview.cutos.app",
+    publicAppOrigin: DEFAULT_PUBLIC_APP_ORIGIN,
     previewMode: true,
     ...options,
   });
@@ -466,15 +487,21 @@ describe("CUT OS public server", () => {
   it("refuses approved mode while any legal publication gate is unresolved", async () => {
     const staticRoot = await createStaticRoot();
     expect(() =>
-      createAppServer({ staticRoot, publicationStatus: "approved" }),
+      createAppServer({
+        staticRoot,
+        publicationStatus: "approved",
+        publicAppOrigin: DEFAULT_PUBLIC_APP_ORIGIN,
+      }),
     ).toThrow(/Legal templates are not publication-ready/u);
   });
 
   it("serves approved pages only when counsel approval matches the exact rendering", async () => {
     const staticRoot = await createStaticRoot();
+    const publicAppOrigin = "https://approved.cutos.app";
     const { root: templateRoot } = await createApprovedTemplateRoot({
       appName: "CUT OS",
       basePath: "/cut",
+      publicAppOrigin,
     });
     const { port } = await listen({
       staticRoot,
@@ -482,14 +509,48 @@ describe("CUT OS public server", () => {
       publicationStatus: "approved",
       appName: "CUT OS",
       basePath: "/cut",
+      publicAppOrigin,
     });
 
-    const response = await request(port, "/cut/privacy");
-    expect(response.status).toBe(200);
-    expect(response.headers["x-robots-tag"]).toBeUndefined();
-    expect(response.body).toContain("Privacy Policy · CUT OS");
-    expect(response.body).toContain('href="/cut/legal.css"');
+    for (const route of ["/privacy", "/terms", "/support"]) {
+      const response = await request(port, `/cut${route}`);
+      expect(response.status).toBe(200);
+      expect(response.headers["x-robots-tag"]).toBeUndefined();
+      expect(response.body).toContain(
+        `<link rel="canonical" href="${publicAppOrigin}/cut${route}" />`,
+      );
+      expect(response.body).toContain('href="/cut/legal.css"');
+    }
   });
+
+  it.each(["/privacy", "/terms", "/support"])(
+    "refuses an approved %s canonical URL on a different origin or path",
+    async (route) => {
+      const staticRoot = await createStaticRoot();
+      const publicAppOrigin = "https://approved.cutos.app";
+      const { root: templateRoot } = await createApprovedTemplateRoot({
+        publicAppOrigin,
+        canonicalUrls: {
+          [route]: `https://other.cutos.app/wrong${route}`,
+        },
+      });
+
+      expect(() =>
+        createAppServer({
+          staticRoot,
+          templateRoot,
+          publicationStatus: "approved",
+          appName: "CUT OS",
+          publicAppOrigin,
+        }),
+      ).toThrow(
+        new RegExp(
+          `${route} canonical URL does not exactly match the runtime public origin and base path`,
+          "u",
+        ),
+      );
+    },
+  );
 
   it("refuses approved mode after an approved page changes", async () => {
     const staticRoot = await createStaticRoot();
@@ -509,6 +570,7 @@ describe("CUT OS public server", () => {
         templateRoot,
         publicationStatus: "approved",
         appName: "CUT OS",
+        publicAppOrigin: DEFAULT_PUBLIC_APP_ORIGIN,
       }),
     ).toThrow(/privacy content changed after the recorded counsel approval/u);
   });
@@ -526,6 +588,7 @@ describe("CUT OS public server", () => {
         publicationStatus: "approved",
         appName: "CUT OS",
         basePath: "/different-path",
+        publicAppOrigin: DEFAULT_PUBLIC_APP_ORIGIN,
       }),
     ).toThrow(/runtime base path does not match/u);
   });

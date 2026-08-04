@@ -1,4 +1,9 @@
 import {
+  CUT_OS_APP_STORE_SUBSCRIPTION_PRODUCT_ID,
+  CUT_OS_REVENUECAT_OFFERING_ID,
+} from "@workspace/domain";
+
+import {
   CUT_OS_PRO_ENTITLEMENT_ID,
   formatSubscriptionPeriod,
   safeHttpsUrl,
@@ -28,6 +33,7 @@ export interface RawStorePackage {
 }
 
 export interface RawOffering {
+  identifier: string;
   availablePackages: RawStorePackage[];
 }
 
@@ -87,10 +93,12 @@ export interface SubscriptionAdapter {
 export function createSubscriptionAdapter(
   bridge: RevenueCatBridge,
   productionProductIdentifier = process.env.EXPO_PUBLIC_REVENUECAT_PRODUCT_ID,
+  productionOfferingIdentifier = CUT_OS_REVENUECAT_OFFERING_ID,
 ): SubscriptionAdapter {
   return new PrincipalIsolatedSubscriptionAdapter(
     bridge,
     productionProductIdentifier,
+    productionOfferingIdentifier,
   );
 }
 
@@ -105,6 +113,7 @@ class PrincipalIsolatedSubscriptionAdapter implements SubscriptionAdapter {
   constructor(
     private readonly bridge: RevenueCatBridge,
     private readonly productionProductIdentifier: string | undefined,
+    private readonly productionOfferingIdentifier: string,
   ) {}
 
   connect(
@@ -267,6 +276,10 @@ class PrincipalIsolatedSubscriptionAdapter implements SubscriptionAdapter {
     if (!offering) return [];
     this.assertPrincipal(internalUserId, generation);
 
+    if (offering.identifier !== this.productionOfferingIdentifier) {
+      throw new SubscriptionAdapterError("unavailable");
+    }
+
     const productIdentifier = this.requireProductionProductIdentifier();
     const availablePackages = offering.availablePackages;
     if (availablePackages.length === 0) return [];
@@ -314,7 +327,8 @@ class PrincipalIsolatedSubscriptionAdapter implements SubscriptionAdapter {
     if (
       !productIdentifier ||
       productIdentifier !== productIdentifier.trim() ||
-      !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(productIdentifier)
+      !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(productIdentifier) ||
+      productIdentifier !== CUT_OS_APP_STORE_SUBSCRIPTION_PRODUCT_ID
     ) {
       throw new SubscriptionAdapterError("unavailable");
     }

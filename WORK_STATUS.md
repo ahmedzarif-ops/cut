@@ -136,7 +136,21 @@ not a public-launch readiness claim.
 - Malformed and oversized JSON requests now return sanitized `400`/`413`
   responses rather than becoming generic server errors.
 - pnpm is pinned to `10.34.5`, and GitHub CI now runs frozen install, generated
-  contract drift, typecheck, and all tests on pull requests and `main`.
+  contract drift, typecheck, all tests, tracked-source secret scanning, the
+  single-host production dry-run, and production iOS archive scanning on pull
+  requests and `main`.
+- Production is source-locked to one always-on API process serving the landing,
+  Privacy, Terms, Support, status, Clerk proxy, and API routes on one canonical
+  HTTPS origin. Split hosts, non-root production paths, competing Replit
+  production services, unpackaged legal templates, or mismatched canonical
+  URLs fail closed before release.
+- One canonical subscription identity now binds the iOS bundle, RevenueCat
+  entitlement/offering, and App Store product across mobile, API, App Store,
+  and production release validation.
+- The owner authorized `Zarif Ahmed` as the public legal operator for the
+  selected individual/Texas-sole-proprietor path. The applicable county was
+  supplied privately and is not committed to this public repository; Apple's
+  activated seller-name verification and qualified-counsel review remain open.
 
 ## Verification
 
@@ -145,20 +159,26 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 1,077 tests** (release operations 158, App Store
-  artifacts 43, domain 33, database 4, mobile 386, API 453).
+- `pnpm run test`: **PASS — 1,232 tests** (release operations 247, App Store
+  artifacts 48, domain 33, database 4, mobile 404, API 496).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
-- Expo iOS bundle rehearsal: **PASS — 1,756 modules; 7.37 MB Hermes bundle;
-  17 MB disposable export**. This was not a native archive or App Store build.
-- Replit production public-site build: **PASS** in a clean disposable snapshot;
-  it validates the zero-JavaScript launch/legal handler and does not create or
-  require the development-only `static-build` preview.
+- Production-configured Expo iOS bundle rehearsal: **PASS — 1,770 modules;
+  7.42 MB Hermes bundle; 17 MB disposable export**. The archive boundary scan
+  checked 62 files with zero findings. This was not a signed native archive or
+  App Store build.
+- Combined production topology: **PASS** — the API build packages the legal
+  templates, enforces one canonical origin, and the production loopback dry-run
+  serves public, legal, status, and API surfaces from one listener without live
+  provider or database calls. The public-site build remains zero-JavaScript and
+  does not generate or require the development-only `static-build` preview.
 - App Store records: **PASS** in working mode; target-aware strict validation
-  intentionally rejects **286** unresolved requirements for `app_review` and
-  **285** for `public_release`, covering owner, provider, legal, screenshot,
+  intentionally rejects **288** unresolved requirements for `app_review` and
+  **287** for `public_release`, covering owner, provider, legal, screenshot,
   exact-build, and App Store Connect evidence.
+- Secret boundaries: **PASS** — 10 scanner tests, 729 tracked files with zero
+  findings, and 62 production-export files with zero findings.
 - Production release-environment preflight: **PASS** with representative
   non-secret values; missing, malformed, private, reserved, cross-origin, and
   insecure configurations fail closed in automated coverage.
@@ -211,21 +231,21 @@ launch gate.
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
-1. Approve the first real App Store subscription Product ID, monthly price,
-   no-trial/trial choice, subscription group, and localization; then create and
-   map the Apple product in RevenueCat.
-2. Have qualified counsel resolve Apple's sensitive-data/legal-entity guidance
-   before selecting the Apple seller type. If organization enrollment is
-   chosen, form/confirm the entity, D-U-N-S record, domain-based work email,
-   functional website, Account Holder authority, and Developer Program
-   membership before creating the App Store Connect record for
-   `com.zarifahmed.cut`.
+1. Obtain owner approval for the corrected 45-character subscription
+   description and the Public/iPhone-only v1 distribution choices. Once Apple
+   activates App Store Connect, create the approved free app and one U.S.-only
+   $4.99 monthly/no-trial subscription, then map the exact Apple product in
+   RevenueCat. Family Sharing remains off and release manual.
+2. Verify Apple's activated personal seller name and have qualified counsel
+   review the owner's selected individual-seller path and intended Texas sole
+   proprietorship under the sensitive-data/legal-entity guidance before
+   submission.
 3. Publish owner/counsel-approved Privacy, Terms, and Support pages and supply
    their final HTTPS destinations to the production EAS environment.
 4. Complete RevenueCat email verification, create a least-privilege server v2
    key, and configure the Apple public SDK key/notifications without exposing
    secrets in the repository or binary.
-5. Link the intended Apple and Expo/EAS projects, configure the seven validated
+5. Link the intended Apple and Expo/EAS projects, configure the eight validated
    production values, and create an internal TestFlight build.
 6. Complete native-device acceptance for `adult-18-v1`, including deep links,
    offline/relaunch, shared-device account switching, stale-cache clearing,
@@ -252,11 +272,17 @@ more sensitive preference data:
 
 ## Owner actions required for the next external step
 
-The local paid-v1 engineering checkpoint is complete. The Apple seller decision
-now requires counsel because the app asks for linked weight, body, fitness, and
-nutrition information and Guideline 5.1.1(ix) directs sensitive-data apps
-toward legal-entity submission. Apple enrollment, paid product terms, financial
-agreements/tax/banking, production credentials,
+The local paid-v1 engineering checkpoint is complete. The owner selected an
+individual Apple seller, authorized `Zarif Ahmed` as the public legal operator,
+and approved the free-download, U.S.-only $4.99 monthly/no-trial,
+Family-Sharing-off, manual-release offer. Apple's 45-character limit requires
+owner approval of a shortened subscription description before creation. The
+seller path and intended Texas sole proprietorship require Apple seller-name
+verification and counsel review because Guideline 5.1.1(ix) directs
+sensitive-data apps toward legal-entity submission. Preliminary name screening
+also found a crowded same-market `CUT` field, so qualified `CUT OS` clearance
+remains open. Apple activation,
+financial agreements/tax/banking, production credentials,
 RevenueCat secret-key authorization, EAS/Apple authentication, TestFlight
 distribution, App Store questionnaire/privacy publication, Submit for Review,
 and public release remain owner-controlled gates. The owner has confirmed an

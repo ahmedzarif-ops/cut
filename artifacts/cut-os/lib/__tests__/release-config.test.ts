@@ -35,21 +35,39 @@ const validatorPath = resolve(
   process.cwd(),
   "scripts/validate-release-config.mjs",
 );
+const BUNDLE_ID = "com.zarifahmed.cut";
+const ENTITLEMENT_ID = "CUT_OS_PRO";
+const OFFERING_ID = "default";
 const PRODUCT_ID = "com.zarifahmed.cut.pro.monthly";
-const PRIVACY_POLICY_URL = "https://example.com/privacy";
-const TERMS_URL = "https://example.com/terms";
-const SUPPORT_URL = "https://example.com/support";
+const PRIVACY_POLICY_URL = "https://api.example.com/privacy";
+const TERMS_URL = "https://api.example.com/terms";
+const SUPPORT_URL = "https://api.example.com/support";
 const approvedSubscriptionReleaseRecord = {
+  entitlementId: ENTITLEMENT_ID,
   productId: PRODUCT_ID,
   introductoryOfferDecision: "none",
+  revenueCat: { offeringId: OFFERING_ID },
 };
 const approvedAppStoreReleaseRecord = {
   listing: {
+    bundleId: BUNDLE_ID,
     privacyPolicyUrl: PRIVACY_POLICY_URL,
     termsUrl: TERMS_URL,
     supportUrl: SUPPORT_URL,
   },
   subscription: approvedSubscriptionReleaseRecord,
+};
+const approvedSubscriptionIdentity = {
+  schemaVersion: 1,
+  iosBundleId: BUNDLE_ID,
+  revenueCat: {
+    entitlementId: ENTITLEMENT_ID,
+    offeringId: OFFERING_ID,
+    productId: PRODUCT_ID,
+  },
+};
+const approvedMobileAppConfig = {
+  expo: { ios: { bundleIdentifier: BUNDLE_ID } },
 };
 
 const productionEnvironment = {
@@ -70,6 +88,8 @@ function runValidator(
     string,
     unknown
   > = approvedAppStoreReleaseRecord,
+  subscriptionIdentity: Record<string, unknown> = approvedSubscriptionIdentity,
+  mobileAppConfig: Record<string, unknown> = approvedMobileAppConfig,
 ) {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "cut-release-config-test-"));
   const copiedValidatorPath = join(
@@ -80,12 +100,31 @@ function runValidator(
     temporaryRoot,
     "app-store/app-store-submission.json",
   );
+  const copiedSubscriptionIdentityPath = join(
+    temporaryRoot,
+    "lib/domain/src/subscriptionIdentity.json",
+  );
+  const copiedMobileAppConfigPath = join(
+    temporaryRoot,
+    "artifacts/cut-os/app.json",
+  );
   mkdirSync(dirname(copiedValidatorPath), { recursive: true });
   mkdirSync(dirname(copiedReleaseRecordPath), { recursive: true });
+  mkdirSync(dirname(copiedSubscriptionIdentityPath), { recursive: true });
   copyFileSync(validatorPath, copiedValidatorPath);
   writeFileSync(
     copiedReleaseRecordPath,
     JSON.stringify(appStoreReleaseRecord),
+    "utf8",
+  );
+  writeFileSync(
+    copiedSubscriptionIdentityPath,
+    JSON.stringify(subscriptionIdentity),
+    "utf8",
+  );
+  writeFileSync(
+    copiedMobileAppConfigPath,
+    JSON.stringify(mobileAppConfig),
     "utf8",
   );
 
@@ -295,6 +334,77 @@ describe("release configuration validator", () => {
     expect(`${result.stdout}${result.stderr}`).not.toContain(recordProductId);
   });
 
+  it("rejects a compiled product that differs from the canonical identity", () => {
+    const differentProductId = "com.zarifahmed.cut.pro.other";
+    const result = runValidator({
+      ...productionEnvironment,
+      EXPO_PUBLIC_REVENUECAT_PRODUCT_ID: differentProductId,
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "EXPO_PUBLIC_REVENUECAT_PRODUCT_ID must match the subscription identity contract",
+    );
+    expect(`${result.stdout}${result.stderr}`).not.toContain(PRODUCT_ID);
+    expect(`${result.stdout}${result.stderr}`).not.toContain(
+      differentProductId,
+    );
+  });
+
+  it.each([
+    [
+      "App Store bundle ID",
+      "App Store bundle ID must match the subscription identity contract",
+      (record: typeof approvedAppStoreReleaseRecord) => {
+        record.listing.bundleId = "com.example.other";
+      },
+    ],
+    [
+      "App Store entitlement ID",
+      "App Store entitlement ID must match the subscription identity contract",
+      (record: typeof approvedAppStoreReleaseRecord) => {
+        record.subscription.entitlementId = "OTHER_PRO";
+      },
+    ],
+    [
+      "App Store offering ID",
+      "App Store RevenueCat offering ID must match the subscription identity contract",
+      (record: typeof approvedAppStoreReleaseRecord) => {
+        record.subscription.revenueCat.offeringId = "other";
+      },
+    ],
+    [
+      "App Store product ID",
+      "App Store subscription product ID must match the subscription identity contract",
+      (record: typeof approvedAppStoreReleaseRecord) => {
+        record.subscription.productId = "com.zarifahmed.cut.pro.other";
+      },
+    ],
+  ])("rejects a mismatched %s", (_label, expected, mutate) => {
+    const record = structuredClone(approvedAppStoreReleaseRecord);
+    mutate(record);
+    const result = runValidator(productionEnvironment, record);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(expected);
+  });
+
+  it("rejects a mismatched mobile bundle identifier", () => {
+    const mobileAppConfig = structuredClone(approvedMobileAppConfig);
+    mobileAppConfig.expo.ios.bundleIdentifier = "com.example.other";
+    const result = runValidator(
+      productionEnvironment,
+      approvedAppStoreReleaseRecord,
+      approvedSubscriptionIdentity,
+      mobileAppConfig,
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "Mobile iOS bundle identifier must match the subscription identity contract",
+    );
+  });
+
   it("rejects a production release record with an introductory offer", () => {
     const result = runValidator(productionEnvironment, {
       ...approvedAppStoreReleaseRecord,
@@ -320,10 +430,89 @@ describe("release configuration validator", () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(
-      "EXPO_PUBLIC_PRIVACY_POLICY_URL must match the App Store listing release record",
+      "App Store listing privacyPolicyUrl must exactly match EXPO_PUBLIC_DOMAIN and its fixed /privacy path",
     );
     expect(result.stderr).not.toContain(PRIVACY_POLICY_URL);
     expect(result.stderr).not.toContain(differentPrivacyUrl);
+  });
+
+  it.each([
+    [
+      "EXPO_PUBLIC_PRIVACY_POLICY_URL",
+      "https://legal.example.com/privacy",
+      "/privacy",
+    ],
+    [
+      "EXPO_PUBLIC_PRIVACY_POLICY_URL",
+      "https://API.example.com/privacy",
+      "/privacy",
+    ],
+    ["EXPO_PUBLIC_TERMS_URL", "https://api.example.com/terms/", "/terms"],
+    [
+      "EXPO_PUBLIC_SUPPORT_URL",
+      "https://api.example.com/support?source=app",
+      "/support",
+    ],
+  ])(
+    "rejects %s when it is not the exact single-host URL",
+    (environmentName, value, pathname) => {
+      const result = runValidator({
+        ...productionEnvironment,
+        [environmentName]: value,
+      });
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(
+        `${environmentName} must exactly match EXPO_PUBLIC_DOMAIN and its fixed ${pathname} path`,
+      );
+      expect(`${result.stdout}${result.stderr}`).not.toContain(value);
+    },
+  );
+
+  it("rejects a non-lowercase production domain instead of creating a second canonical spelling", () => {
+    const result = runValidator({
+      ...productionEnvironment,
+      EXPO_PUBLIC_DOMAIN: "API.example.com",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "EXPO_PUBLIC_DOMAIN must be a canonical lowercase hostname for production",
+    );
+  });
+
+  it("rejects production-domain whitespace instead of silently normalizing it", () => {
+    const result = runValidator({
+      ...productionEnvironment,
+      EXPO_PUBLIC_DOMAIN: " api.example.com ",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "EXPO_PUBLIC_DOMAIN must not contain surrounding whitespace or control characters",
+    );
+  });
+
+  it("rejects a listing and embedded URL that collude on a second host", () => {
+    const alternateUrl = "https://legal.example.com/privacy";
+    const record = structuredClone(approvedAppStoreReleaseRecord);
+    record.listing.privacyPolicyUrl = alternateUrl;
+    const result = runValidator(
+      {
+        ...productionEnvironment,
+        EXPO_PUBLIC_PRIVACY_POLICY_URL: alternateUrl,
+      },
+      record,
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "EXPO_PUBLIC_PRIVACY_POLICY_URL must exactly match EXPO_PUBLIC_DOMAIN and its fixed /privacy path",
+    );
+    expect(result.stderr).toContain(
+      "App Store listing privacyPolicyUrl must exactly match EXPO_PUBLIC_DOMAIN and its fixed /privacy path",
+    );
+    expect(`${result.stdout}${result.stderr}`).not.toContain(alternateUrl);
   });
 
   it("fails closed when the full App Store release record omits listing metadata", () => {
@@ -335,13 +524,13 @@ describe("release configuration validator", () => {
     expect(result.stderr).toContain(
       "App Store listing release record must be readable",
     );
-    for (const name of [
-      "EXPO_PUBLIC_PRIVACY_POLICY_URL",
-      "EXPO_PUBLIC_TERMS_URL",
-      "EXPO_PUBLIC_SUPPORT_URL",
+    for (const [listingField, pathname] of [
+      ["privacyPolicyUrl", "/privacy"],
+      ["termsUrl", "/terms"],
+      ["supportUrl", "/support"],
     ]) {
       expect(result.stderr).toContain(
-        `${name} must match the App Store listing release record`,
+        `App Store listing ${listingField} must exactly match EXPO_PUBLIC_DOMAIN and its fixed ${pathname} path`,
       );
     }
     for (const url of [PRIVACY_POLICY_URL, TERMS_URL, SUPPORT_URL]) {

@@ -1,4 +1,6 @@
-export const CUT_OS_PRO_ENTITLEMENT_ID = "CUT_OS_PRO" as const;
+import { CUT_OS_REVENUECAT_ENTITLEMENT_ID } from "@workspace/domain";
+
+export const CUT_OS_PRO_ENTITLEMENT_ID = CUT_OS_REVENUECAT_ENTITLEMENT_ID;
 
 export const APPLE_SUBSCRIPTION_MANAGEMENT_URL =
   "https://apps.apple.com/account/subscriptions";

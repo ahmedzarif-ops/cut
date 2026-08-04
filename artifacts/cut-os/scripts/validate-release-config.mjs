@@ -8,19 +8,27 @@ const APP_STORE_RELEASE_RECORD_PATH = resolve(
   DIRECTORY,
   "../../../app-store/app-store-submission.json",
 );
+const SUBSCRIPTION_IDENTITY_PATH = resolve(
+  DIRECTORY,
+  "../../../lib/domain/src/subscriptionIdentity.json",
+);
+const MOBILE_APP_CONFIG_PATH = resolve(DIRECTORY, "../app.json");
 
 const PUBLIC_LISTING_URL_BINDINGS = Object.freeze([
   Object.freeze({
     environmentName: "EXPO_PUBLIC_PRIVACY_POLICY_URL",
     listingField: "privacyPolicyUrl",
+    pathname: "/privacy",
   }),
   Object.freeze({
     environmentName: "EXPO_PUBLIC_TERMS_URL",
     listingField: "termsUrl",
+    pathname: "/terms",
   }),
   Object.freeze({
     environmentName: "EXPO_PUBLIC_SUPPORT_URL",
     listingField: "supportUrl",
+    pathname: "/support",
   }),
 ]);
 
@@ -231,6 +239,27 @@ function readAppStoreReleaseRecord() {
   }
 }
 
+function readJsonObject(filePath) {
+  try {
+    const parsed = JSON.parse(readFileSync(filePath, "utf8"));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function hasExactKeys(value, expectedKeys) {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.keys(value).sort().join(",") === [...expectedKeys].sort().join(","),
+  );
+}
+
 function isLiteralUrlValue(value) {
   return Boolean(
     typeof value === "string" &&
@@ -261,8 +290,14 @@ export function validateReleaseEnvironment(environment) {
   const errors = [];
   let apiHostname = null;
 
+  const rawDomain = environment.EXPO_PUBLIC_DOMAIN;
   const domain = requiredValue(environment, "EXPO_PUBLIC_DOMAIN", errors);
   if (domain) {
+    if (!isLiteralUrlValue(rawDomain)) {
+      errors.push(
+        "EXPO_PUBLIC_DOMAIN must not contain surrounding whitespace or control characters",
+      );
+    }
     const hostname = parseHostnameOnly(domain);
     if (!hostname) {
       errors.push("EXPO_PUBLIC_DOMAIN must contain only a valid hostname");
@@ -272,6 +307,11 @@ export function validateReleaseEnvironment(environment) {
       );
     } else {
       apiHostname = hostname;
+      if (production && domain !== hostname) {
+        errors.push(
+          "EXPO_PUBLIC_DOMAIN must be a canonical lowercase hostname for production",
+        );
+      }
     }
   }
 
@@ -356,6 +396,8 @@ export function validateReleaseEnvironment(environment) {
 
   if (production) {
     const appStoreReleaseRecord = readAppStoreReleaseRecord();
+    const subscriptionIdentity = readJsonObject(SUBSCRIPTION_IDENTITY_PATH);
+    const mobileAppConfig = readJsonObject(MOBILE_APP_CONFIG_PATH);
     if (!appStoreReleaseRecord) {
       errors.push("App Store release record must be readable");
     } else {
@@ -392,6 +434,7 @@ export function validateReleaseEnvironment(environment) {
       for (const {
         environmentName,
         listingField,
+        pathname,
       } of PUBLIC_LISTING_URL_BINDINGS) {
         const rawValue = environment[environmentName];
         const value = requiredValue(environment, environmentName, errors);
@@ -402,7 +445,7 @@ export function validateReleaseEnvironment(environment) {
           );
         }
         const safeHttps = isSafeHttpsUrl(value, {
-          allowQueryAndFragment: true,
+          allowQueryAndFragment: false,
         });
         const publicHostname = safeHttps
           ? isPublicHostname(new URL(value).hostname)
@@ -412,11 +455,95 @@ export function validateReleaseEnvironment(environment) {
             `${environmentName} must be a public HTTPS URL without credentials`,
           );
         }
-        if (listingReleaseRecord?.[listingField] !== value) {
+        const expectedUrl = apiHostname
+          ? `https://${apiHostname}${pathname}`
+          : null;
+        if (expectedUrl && value !== expectedUrl) {
           errors.push(
-            `${environmentName} must match the App Store listing release record`,
+            `${environmentName} must exactly match EXPO_PUBLIC_DOMAIN and its fixed ${pathname} path`,
           );
         }
+        if (
+          expectedUrl &&
+          listingReleaseRecord?.[listingField] !== expectedUrl
+        ) {
+          errors.push(
+            `App Store listing ${listingField} must exactly match EXPO_PUBLIC_DOMAIN and its fixed ${pathname} path`,
+          );
+        }
+      }
+    }
+
+    const revenueCatIdentity = subscriptionIdentity?.revenueCat;
+    if (
+      !hasExactKeys(subscriptionIdentity, [
+        "schemaVersion",
+        "iosBundleId",
+        "revenueCat",
+      ]) ||
+      subscriptionIdentity?.schemaVersion !== 1 ||
+      !parseAppStoreProductIdentifier(subscriptionIdentity?.iosBundleId) ||
+      !hasExactKeys(revenueCatIdentity, [
+        "entitlementId",
+        "offeringId",
+        "productId",
+      ]) ||
+      !parseAppStoreProductIdentifier(revenueCatIdentity?.entitlementId) ||
+      !parseAppStoreProductIdentifier(revenueCatIdentity?.offeringId) ||
+      !parseAppStoreProductIdentifier(revenueCatIdentity?.productId) ||
+      !revenueCatIdentity.productId.startsWith(
+        `${subscriptionIdentity.iosBundleId}.`,
+      )
+    ) {
+      errors.push("Subscription identity contract must be readable");
+    } else {
+      if (
+        mobileAppConfig?.expo?.ios?.bundleIdentifier !==
+        subscriptionIdentity.iosBundleId
+      ) {
+        errors.push(
+          "Mobile iOS bundle identifier must match the subscription identity contract",
+        );
+      }
+      if (
+        appStoreReleaseRecord?.listing?.bundleId !==
+        subscriptionIdentity.iosBundleId
+      ) {
+        errors.push(
+          "App Store bundle ID must match the subscription identity contract",
+        );
+      }
+      if (
+        appStoreReleaseRecord?.subscription?.entitlementId !==
+        revenueCatIdentity.entitlementId
+      ) {
+        errors.push(
+          "App Store entitlement ID must match the subscription identity contract",
+        );
+      }
+      if (
+        appStoreReleaseRecord?.subscription?.revenueCat?.offeringId !==
+        revenueCatIdentity.offeringId
+      ) {
+        errors.push(
+          "App Store RevenueCat offering ID must match the subscription identity contract",
+        );
+      }
+      if (
+        appStoreReleaseRecord?.subscription?.productId !==
+        revenueCatIdentity.productId
+      ) {
+        errors.push(
+          "App Store subscription product ID must match the subscription identity contract",
+        );
+      }
+      if (
+        parsedProductIdentifier &&
+        parsedProductIdentifier !== revenueCatIdentity.productId
+      ) {
+        errors.push(
+          "EXPO_PUBLIC_REVENUECAT_PRODUCT_ID must match the subscription identity contract",
+        );
       }
     }
   }

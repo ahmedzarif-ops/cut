@@ -1,4 +1,6 @@
-export const REVENUECAT_ENTITLEMENT_ID = "CUT_OS_PRO" as const;
+import { CUT_OS_REVENUECAT_ENTITLEMENT_ID } from "@workspace/domain";
+
+export const REVENUECAT_ENTITLEMENT_ID = CUT_OS_REVENUECAT_ENTITLEMENT_ID;
 
 export interface SubscriptionStatus {
   entitled: boolean;

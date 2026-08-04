@@ -19,10 +19,10 @@ App Review, or release publicly without the recorded approval for that action.
   evidence commit may contain only its machine-allowlisted non-runtime changes.
 - Before establishing `BUILD_SHA`, create distinct `app_review` and
   `public_release` draft copies of `RELEASE_EVIDENCE_MANIFEST_TEMPLATE.md`. They
-  represent one release ID, build, API deployment, database revision, EAS build,
-  and Apple build number at two different evidence targets. Missing either
-  pre-created draft after signing requires a new candidate.
-- Treat the manifest's canonical `CUT_OS_RELEASE_CONTROL_V1` JSON as the sole
+  represent one release ID, build, combined application deployment, database
+  revision, EAS build, and Apple build number at two different evidence targets.
+  Missing either pre-created draft after signing requires a new candidate.
+- Treat the manifest's canonical `CUT_OS_RELEASE_CONTROL_V2` JSON as the sole
   editable release record. Do not duplicate identities, results, approvals,
   timestamps, or evidence references in the navigation prose below it. Detailed
   operational output belongs in the controlled references named by the JSON.
@@ -63,16 +63,70 @@ connection values. If any identity is ambiguous, stop.
 | Database             | Isolated, disposable test data; same migration chain | Approved production database with verified recovery       |
 | Clerk                | Development/test instance; no FAPI proxy             | Exact production instance and enabled canonical proxy     |
 | RevenueCat/StoreKit  | Test/Sandbox configuration                           | Exact approved project and App Store products             |
-| API and legal hosts  | Stable HTTPS staging hosts                           | Stable owner-approved HTTPS hosts                         |
-| Public app origin    | Explicit canonical `PUBLIC_APP_ORIGIN`               | Owner-approved canonical `PUBLIC_APP_ORIGIN`              |
+| Application host     | One stable HTTPS staging host                        | One stable owner-approved HTTPS host                      |
+| Public app origin    | One canonical origin shared by app/API/legal         | One owner-approved origin shared by app/API/legal         |
 | API process topology | Recorded actual provider minimum and maximum         | Always-on minimum one; maximum one; `API_MAX_INSTANCES=1` |
 | Mobile distribution  | Internal development/preview build only              | Production EAS build, then internal TestFlight first      |
 | Monitoring           | Same signal names and probes as production           | Approved alert destinations and escalation owner          |
 
+### Clerk no-spend boundary
+
+Clerk paid spend is **not authorized** by a Replit hosting approval or by the
+App Store subscription offer approval. Until the owner records a separate,
+Clerk-specific approval, the Clerk spend ceiling is `$0`: do not start a free
+trial, choose or upgrade a paid plan, add a payment method, accept an automatic
+trial conversion or renewal, enable paid add-ons or overages, or accept any
+screen that can create a present or future charge. A trial with `$0` due today
+still counts as a paid-plan commitment and is blocked.
+
+A free-plan action may continue only when the final confirmation proves all of
+the following before the click: `$0` due today, no trial, no automatic paid
+conversion or upgrade, no paid overage/add-on commitment, and no payment method
+required. If the dashboard does not make every condition explicit, stop. A
+future Clerk approval must name the exact plan, charge due immediately,
+recurring maximum before tax, tax treatment, renewal/conversion date, trial
+terms, overage behavior, and the exact action approved. Never infer that
+approval from an overall launch budget.
+
+### Deployment-only production secret and configuration matrix
+
+Replit's development workspace and its live deployment are separate trust
+boundaries. Production values must be created only in the live deployment's
+secret/environment controls after that deployment is approved. Do not put them
+in Replit workspace/development secrets, `.replit`, a tracked or untracked
+`.env` file, shell history, chat, screenshots, logs, or a copied environment
+dump. Do not assume the deployment inherits a safe value from development.
+
+| Value or group                                                                                                                                                                                                                   | Classification                                    | Replit development workspace                       | Live Replit deployment                                                      | Production EAS/mobile archive                                                                   |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                                                                                                                                                                                                   | Server secret                                     | Separate non-production database only              | Exact production TLS DSN; deployment secret only                            | Prohibited                                                                                      |
+| `CLERK_SECRET_KEY`                                                                                                                                                                                                               | Server secret                                     | Separate `sk_test_*` instance only                 | Exact `sk_live_*`; deployment secret only                                   | Prohibited                                                                                      |
+| `REVENUECAT_SECRET_API_KEY`                                                                                                                                                                                                      | Server secret                                     | Separate non-production server key only, if needed | Exact least-privilege production v2 key; deployment secret only             | Prohibited                                                                                      |
+| `CLERK_PUBLISHABLE_KEY`                                                                                                                                                                                                          | Public but environment-bound server configuration | Exact development `pk_test_*`                      | Exact production `pk_live_*` used by the API                                | Use only as the separately named `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`                            |
+| `REVENUECAT_PROJECT_ID`, `REVENUECAT_ENTITLEMENT_REST_ID`, `REVENUECAT_APP_REST_ID`, `REVENUECAT_OFFERING_REST_ID`                                                                                                               | Non-secret production identifiers                 | Separate test identifiers only                     | Exact production identifiers; deployment environment only                   | Prohibited; the app receives only its public SDK key and product ID                             |
+| `CORS_ALLOWED_ORIGINS`, `PUBLIC_APP_ORIGIN`, `BASE_PATH`, `API_MAX_INSTANCES`, `ACCOUNT_DELETION_RETRY_INTERVAL_MS`, `API_RATE_LIMIT`, `CLERK_RATE_LIMIT`, `PG_POOL_MAX`, `LEGAL_SITE_PUBLICATION_STATUS`, `SHUTDOWN_TIMEOUT_MS` | Non-secret production controls                    | Development values only                            | Exact reviewed production values; provider topology must match the manifest | Prohibited unless an explicit `EXPO_PUBLIC_*` counterpart is listed in `EAS_RELEASE_RUNBOOK.md` |
+| `NODE_ENV`                                                                                                                                                                                                                       | Public build-mode marker                          | Development/test value                             | `production`                                                                | Its name may be embedded by Expo tooling; it is not a credential or a server-binding value      |
+| Eight `EXPO_PUBLIC_*` values listed in `EAS_RELEASE_RUNBOOK.md`                                                                                                                                                                  | Public, binary-embedded mobile configuration      | Preview/test values only                           | Not a substitute for server values                                          | Production EAS environment only; treat every value as public                                    |
+| Apple signing/submission credentials, EAS access tokens, Clerk billing credentials                                                                                                                                               | Release credentials                               | Prohibited                                         | Prohibited                                                                  | Credential manager/provider flow only; never an app variable or archive value                   |
+| `PORT` and Replit platform routing metadata                                                                                                                                                                                      | Provider-injected runtime values                  | Provider-managed                                   | Provider-managed; do not copy between environments                          | Not applicable                                                                                  |
+
+Create each approved production entry directly in the live deployment control
+plane. Verify only the variable names, deployment alias, and sanitized
+pass/fail state in release evidence; never export or compare raw values. Before
+traffic, prove the development workspace still points only to development/test
+services and prove the live deployment has no `pk_test_*`, `sk_test_*`, Test
+Store, preview, or development-database value. A value exposed to the wrong
+boundary is an incident: stop, revoke/rotate it at the provider, replace it in
+the correct control plane, rebuild every affected mobile artifact, and rerun
+the release gates.
+
 `CORS_ALLOWED_ORIGINS` must be one canonical public `https://host` origin in
 production: no list, port, path, credentials, query, fragment, or surrounding
 whitespace. Provider-injected Replit development domains are ignored at that
-boundary. Development may retain its documented multi-origin convenience.
+boundary. `PUBLIC_APP_ORIGIN` must be that exact same canonical origin, and
+production `BASE_PATH` must be absent, empty, or exactly `/`; any mounted path
+blocks startup. Development may retain its documented multi-origin and mounted-
+preview convenience.
 
 Do not call an environment production-like until its service map, migration
 revision, health probes, auth guard, legal resources, and monitoring signals are
@@ -114,7 +168,7 @@ implemented, durable managed scheduler or queue first.
 4. Record the exact environment aliases and provider deployment commands that
    the authorized owner will use. Do not leave a deploy command to improvisation
    during the release window.
-5. Record the previous known-good API and public-site deployments, the exact
+5. Record the previous known-good combined application deployment, the exact
    BUILD_SHA-derived database-migration tuple, its approved recovery point, and
    the previous mobile build. If any required identity is unknown, rollback is
    not ready.
@@ -126,13 +180,15 @@ From the repository root on the candidate commit:
 ```sh
 git status --porcelain
 git rev-parse HEAD
+node --test ops/scripts/secret-boundary-scan.test.mjs
+node ops/scripts/secret-boundary-scan.mjs tracked
 pnpm install --frozen-lockfile
 pnpm audit --audit-level high
 pnpm run codegen:check
 pnpm run typecheck
 pnpm run test
 pnpm run validate:app-store
-pnpm --filter @workspace/api-server run build
+pnpm run dry-run:production
 PUBLIC_APP_ORIGIN=<PUBLIC_ORIGIN> LEGAL_SITE_PUBLICATION_STATUS=<draft-or-approved> pnpm --filter @workspace/cut-os run build
 pnpm --filter @workspace/db run generate
 git diff --exit-code -- lib/db/migrations
@@ -143,12 +199,16 @@ pnpm --filter @workspace/cut-os run validate:legal-site
 ```
 
 The first command and the migration-scoped status command must print nothing.
-The diff command must pass. Together these checks catch both modified and newly
-generated untracked migration files. The working App Store validator keeps the
-draft metadata, privacy mapping, authentication-security gate, screenshot plan,
-and app configuration in sync; it is not the post-capture release approval.
-Record the CI run URL and result for the exact commit. Do not copy CI logs that
-may contain environment values into the manifest.
+The diff command and both secret-boundary commands must pass. The tracked scan
+uses Git's tracked-file list, reports rule names and byte offsets only, and
+never prints a matched value. It supplements provider secret scanning; it does
+not prove that a credential pasted into an external dashboard, chat, log, or
+untracked file is safe. Together the migration checks catch both modified and
+newly generated untracked migration files. The working App Store validator
+keeps the draft metadata, privacy mapping, authentication-security gate,
+screenshot plan, and app configuration in sync; it is not the post-capture
+release approval. Record the CI run URL and result for the exact commit. Do not
+copy CI logs that may contain environment values into the manifest.
 
 When production EAS environment access is authorized, run the non-secret
 preflight in `EAS_RELEASE_RUNBOOK.md`. It validates variable names and reasons,
@@ -197,9 +257,10 @@ service map and deployment command are recorded:
 
 1. Confirm staging has no production users or production credentials.
 2. Capture a staging backup or disposable reset point.
-3. Deploy the candidate API using the recorded provider command. Allow its
-   startup migration gate to run once; do not launch a concurrent manual
-   migration.
+3. Deploy the combined application candidate using the recorded provider
+   command. Its one listener owns the public, legal, status, Clerk proxy, and
+   `/api` routes. Allow its startup migration gate to run once; do not launch a
+   concurrent manual migration or a separate public-site service.
 4. Confirm the deployed database's newest migration matches the candidate's
    `EXPECTED_MIGRATION` tag, timestamp, and SHA-256 from
    `artifacts/api-server/src/lib/readiness.ts`.
@@ -210,11 +271,11 @@ service map and deployment command are recorded:
    in release evidence:
 
 ```sh
-pnpm run verify:deploy -- <STAGING_API_ORIGIN>/api/healthz json-health
-pnpm run verify:deploy -- <STAGING_API_ORIGIN>/api/readyz json-readiness
-pnpm run verify:deploy -- <STAGING_API_ORIGIN>/api/me auth-guard
-pnpm run verify:deploy -- <STAGING_PUBLIC_ORIGIN>/status json-readiness
-pnpm run verify:deploy -- <STAGING_PUBLIC_ORIGIN>/ cut-public-root
+pnpm run verify:deploy -- <STAGING_APP_ORIGIN>/api/healthz json-health
+pnpm run verify:deploy -- <STAGING_APP_ORIGIN>/api/readyz json-readiness
+pnpm run verify:deploy -- <STAGING_APP_ORIGIN>/api/me auth-guard
+pnpm run verify:deploy -- <STAGING_APP_ORIGIN>/status json-readiness
+pnpm run verify:deploy -- <STAGING_APP_ORIGIN>/ cut-public-root
 ```
 
 The `cut-public-root` check requires the CUT production marker, exact canonical
@@ -224,11 +285,13 @@ deep link, and `404` responses from origin-absolute and mounted
 automated server contract protects this boundary; the live check proves the
 deployed process is actually using production mode.
 
-The Replit production build is intentionally validation-only: it constructs the
-same launch/legal request handler used at runtime and must not start Metro or
-generate an Expo `static-build`. `build:preview` is development-only. Production
-does not require that preview directory because it refuses every preview route;
-preview mode continues to fail startup if its static bundle is absent.
+The Replit production build creates the one combined API/public application
+artifact and packages the exact launch/legal templates beside it. The
+non-billable `pnpm run dry-run:production` check runs the built production-only
+configuration gates and a real ephemeral loopback listener without contacting
+Clerk, RevenueCat, PostgreSQL, or Replit Publishing. Production must not start
+Metro or generate an Expo `static-build`; `build:preview` is development-only,
+and every preview manifest route remains unavailable in production.
 
 6. With the approved staging legal URLs supplied through the normal environment
    mechanism, run:
@@ -279,7 +342,8 @@ applicable with a reason:
 - the parent Apple commerce readiness decision plus confirmed Developer Program
   membership, Account Holder access, Paid Apps Agreement, tax forms, and
   banking evidence;
-- production API, database, Clerk, RevenueCat, EAS, and Apple service aliases;
+- production application, database, Clerk, RevenueCat, EAS, and Apple service
+  aliases;
 - direct, sanitized RevenueCat-dashboard evidence that the exact iOS app has
   its production mapping, App Store Connect API key, Apple in-app
   purchase/subscription key, server-key customer read/write permission, and
@@ -287,8 +351,8 @@ applicable with a reason:
   with restore-after-deletion, StoreKit, and purchase QA on the exact submitted
   build as defined in `EAS_RELEASE_RUNBOOK.md`;
 - the Clerk production instance/domain aliases, non-secret domain ID, exact
-  canonical proxy URL, candidate API deployment/Git SHA, audited edge trust
-  topology, provider proof that no direct or shorter origin path bypasses the
+  canonical proxy URL, candidate application deployment/Git SHA, audited edge
+  trust topology, provider proof that no direct or shorter origin path bypasses the
   edge, exact XFF/XFH overwrite-or-rightmost-append semantics, adversarial
   spoof/missing-XFF regression results, and the planned proxy-activation
   verifier command from `EAS_RELEASE_RUNBOOK.md`;
@@ -326,17 +390,19 @@ does not guess a hosting command.
 1. Announce the change window to the recorded monitoring/incident owner.
 2. Confirm the recovery evidence is still current and record the final pre-deploy
    backup/PITR timestamp.
-3. Deploy the API candidate. If the provider supports a no-traffic revision or
-   canary, verify it before promotion; otherwise record that capability as
-   unavailable rather than pretending a canary occurred.
+3. Deploy the one combined application candidate. Do not deploy a second
+   public/legal process or origin. If the provider supports a no-traffic
+   revision or canary, verify it before promotion; otherwise record that
+   capability as unavailable rather than pretending a canary occurred.
 4. Reconfirm from the provider control plane that the API minimum and maximum
    are both still one and that the running revision has
    `API_MAX_INSTANCES=1`; a value in the process environment is not evidence of
    either provider setting.
 5. Watch startup logs for the sanitized migration failure codes listed below.
    Confirm `/api/readyz` succeeds before routing normal traffic.
-6. Run the same API liveness, readiness, and auth-guard commands used in staging,
-   substituting the production origin.
+6. Run the same liveness, readiness, auth-guard, status, and production-surface
+   commands used in staging, substituting the one production application
+   origin for every route.
 7. Complete the fail-closed Clerk production proxy activation gate in
    `EAS_RELEASE_RUNBOOK.md`: enable only the exact deployed canonical URL in the
    production Clerk domain, run the bounded `clerk-proxy-health` check, and
@@ -351,12 +417,14 @@ does not guess a hosting command.
 8. From two approved, genuinely distinct external client connections, perform
    the bounded live limiter isolation check recorded in the manifest. Never use
    a client-supplied forwarding header as evidence of a distinct client.
-9. Publish the exact counsel-approved legal/static candidate only after the
-   publication approval is recorded. Run the live legal verifier, the public
-   `/status` readiness check, and the production-surface check:
+9. Confirm the same application revision is running the exact
+   counsel-approved, hash-bound legal templates with
+   `LEGAL_SITE_PUBLICATION_STATUS=approved`; do not copy or publish them through
+   a separate static service. Run the live legal verifier, the public `/status`
+   readiness check, and the production-surface check on that same origin:
 
    ```sh
-   pnpm run verify:deploy -- <PRODUCTION_PUBLIC_ORIGIN>/ cut-public-root
+   pnpm run verify:deploy -- <PRODUCTION_APP_ORIGIN>/ cut-public-root
    ```
 
 10. Exercise one controlled, non-review production smoke account from its
@@ -399,7 +467,7 @@ production gate remains closed.
 | Account deletion    | `account_deletion_worker_failed`, request failures, or pending age/retry count above approved threshold                                               | Stop promotion; protect deletion records; start worker/provider triage              |
 | Database            | Connection/pool saturation, lock pressure, storage, replication, or backup failure beyond provider-approved threshold                                 | Stop writes/promotion as appropriate; engage recovery owner                         |
 | Mobile              | Crash/hang rate or critical flow failure above approved baseline                                                                                      | Stop TestFlight/App Store promotion; prepare corrected build                        |
-| Legal/support       | Public legal or support resource unavailable, redirected, draft, or hash-mismatched                                                                   | Stop submission/promotion; restore approved static release                          |
+| Legal/support       | Public legal or support resource unavailable, redirected, draft, or hash-mismatched                                                                   | Stop submission/promotion; restore an approved compatible application revision      |
 | Privacy/security    | Any cross-user access, credential exposure, or sensitive health/nutrition data in logs/analytics                                                      | Immediate containment and incident escalation; no numeric threshold                 |
 
 Alerts must route to a tested destination with a primary and backup owner. Test
@@ -423,11 +491,11 @@ Decide the path from evidence, not pressure. Stop promotion immediately on:
 
 | Observed state                                                                 | Safe response                                                                                                                                                                                                                |
 | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Candidate has not migrated production                                          | Route no traffic to it; redeploy the previous known-good API revision                                                                                                                                                        |
+| Candidate has not migrated production                                          | Route no traffic to it; redeploy the previous known-good combined application revision                                                                                                                                       |
 | Migration failed before a committed change                                     | Keep candidate out of service; prove database state and use the previous revision only if exact-schema readiness passes                                                                                                      |
-| Additive migration completed and compatibility with the previous API is proven | Re-route to the recorded previous revision, then verify health/readiness/auth and data integrity                                                                                                                             |
-| State-changing or destructive migration completed, or compatibility is unknown | Do **not** roll back only the API. Stop promotion/traffic or writes as the incident requires, then roll forward with a corrected compatible API or execute the tested coordinated database snapshot plus application restore |
-| Legal/static deployment failed                                                 | Restore the previous approved static deployment and rerun live legal/hash verification                                                                                                                                       |
+| Additive migration completed and compatibility with the prior app is proven    | Re-route to the recorded previous application revision, then verify public/legal/health/readiness/auth and data integrity                                                                                                    |
+| State-changing or destructive migration completed, or compatibility is unknown | Do **not** roll back only the application. Stop promotion/traffic or writes as the incident requires, then roll forward with a corrected compatible app or execute the tested coordinated database snapshot plus app restore |
+| Combined application's legal surface failed                                    | Stop promotion; use the application/database compatibility matrix before restoring a previous approved application revision, then rerun live legal/hash verification                                                         |
 | Internal TestFlight build failed                                               | Stop distribution to additional testers, notify the test owner, fix, increment the build number, and upload a new build; an installed build is not remotely replaced                                                         |
 | App Review submission is pending                                               | Owner decides whether to remove/hold the submission in App Store Connect; record the action                                                                                                                                  |
 | Public App Store binary is faulty                                              | Owner stops phased/manual promotion where available and prepares an expedited corrected version; a server rollback must still obey database compatibility                                                                    |
@@ -513,7 +581,7 @@ The owner authorizes all Apple actions. Engineering may prepare the evidence:
     metadata, privacy, full age-questionnaire, App Review account, subscription,
     accessibility, and security field is evidenced and approved, remeasure the
     resolved App Review Notes below 4,000 UTF-8 bytes. Complete the manifest's
-    canonical `CUT_OS_RELEASE_CONTROL_V1` JSON block without changing its keys or
+    canonical `CUT_OS_RELEASE_CONTROL_V2` JSON block without changing its keys or
     fixed control IDs. This JSON is the sole editable release record; do not add
     parallel human-readable outcome or approval tables. It must bind the
     TestFlight build identities and contain

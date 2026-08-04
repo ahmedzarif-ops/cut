@@ -33,6 +33,9 @@ const releaseManifestTemplate = fileURLToPath(
 const ciWorkflow = fileURLToPath(
   new URL("../../.github/workflows/ci.yml", import.meta.url),
 );
+const rootPackageJson = fileURLToPath(
+  new URL("../../package.json", import.meta.url),
+);
 const appReviewReleaseManifestPath =
   "release-evidence/1.0.0-1-app-review-20260803T120000Z.md";
 const publicReleaseManifestPath =
@@ -53,6 +56,7 @@ const databaseMigrationRevision = Object.freeze({
     .digest("hex"),
 });
 const validationClock = () => new Date("2026-08-04T00:00:00Z");
+const productionPublicOrigin = "https://cut-production-public.com";
 
 const automatedGateIds = [
   "frozen_install",
@@ -66,8 +70,11 @@ const automatedGateIds = [
   "database_generation_drift",
   "expo_doctor",
   "legal_hosting_fail_closed",
+  "tracked_secret_boundary",
+  "production_topology_dry_run",
   "production_release_config",
   "production_ios_export",
+  "production_archive_secret_boundary",
 ];
 
 const approvalIds = [
@@ -154,7 +161,7 @@ function approved(id) {
 
 function completeReleaseControl(buildSha, target = "app_review") {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     status: "FINAL",
     releaseId: "cut-os-1.0.0-1",
     target,
@@ -169,11 +176,33 @@ function completeReleaseControl(buildSha, target = "app_review") {
     },
     deployments: {
       stagingApiRevision: "staging-api-r17",
-      productionApiRevision: "production-api-r17",
-      previousProductionApiRevision: "production-api-r16",
-      publicLegalRevision: "public-legal-r9",
-      previousPublicLegalRevision: "public-legal-r8",
+      productionApiRevision: "production-service-r17",
+      previousProductionApiRevision: "production-service-r16",
+      publicLegalRevision: "production-service-r17",
+      previousPublicLegalRevision: "production-service-r16",
       databaseMigrationRevision: { ...databaseMigrationRevision },
+      replitProductionHosting: {
+        provider: "replit",
+        accountAlias: "cut-release-owner",
+        workspaceId: "cut-production-workspace",
+        deploymentId: "cut-production-deployment",
+        databaseId: "cut-production-database",
+        providerDeploymentOrigin: "https://cut-production.replit.app",
+        publicOrigin: productionPublicOrigin,
+        deploymentType: "reserved_vm",
+        region: "North America",
+        machineClass: "0.5 vCPU / 2 GiB",
+        minimumInstances: 1,
+        maximumInstances: 1,
+        fixedMonthlyCostUsdCentsBeforeTax: 1500,
+        usageBasedServiceShutdownLimitUsdCentsBeforeTax: 500,
+        approvedMonthlyCostCeilingUsdCentsBeforeTax: 2000,
+        costApprovedBy: "business-owner",
+        costApprovedAtUtc: "2026-08-03T12:20:00Z",
+        costApprovalEvidenceReference: "approvals/replit-cost-ceiling",
+        configurationVerifiedAtUtc: "2026-08-03T12:25:00Z",
+        configurationEvidenceReference: "provider/replit-production-config",
+      },
       easBuildId: exactBuildIdentity.easBuildId,
       appStoreConnectBuildId: exactBuildIdentity.appStoreConnectBuildId,
     },
@@ -245,8 +274,8 @@ function completeReleaseControl(buildSha, target = "app_review") {
       decisionOwner: "release-owner",
       decisionAtUtc: "2026-08-03T12:55:00Z",
       schemaSafetyEvidenceReference: "rollback/schema-safety",
-      previousApplicationRevision: "production-api-r16",
-      previousPublicLegalRevision: "public-legal-r8",
+      previousApplicationRevision: "production-service-r16",
+      previousPublicLegalRevision: "production-service-r16",
       databaseRecoveryPointReference: "provider/recovery-points/17",
       runbookReference: "runbooks/release-rollback",
       postActionProbes: passingEvidence("post-action-probes"),
@@ -270,11 +299,11 @@ function completeReleaseManifest(
 
 ## Machine-verifiable release control
 
-<!-- CUT_OS_RELEASE_CONTROL_V1_BEGIN -->
+<!-- CUT_OS_RELEASE_CONTROL_V2_BEGIN -->
 \`\`\`json
 ${JSON.stringify(control, null, 2)}
 \`\`\`
-<!-- CUT_OS_RELEASE_CONTROL_V1_END -->
+<!-- CUT_OS_RELEASE_CONTROL_V2_END -->
 
 ## Candidate identity
 
@@ -364,7 +393,13 @@ function submissionForClerkState(
   return {
     status: "approved_for_submission",
     updated,
-    listing: { appName: "CUT OS", releaseMethod: "manual" },
+    listing: {
+      appName: "CUT OS",
+      releaseMethod: "manual",
+      supportUrl: `${productionPublicOrigin}/support`,
+      privacyPolicyUrl: `${productionPublicOrigin}/privacy`,
+      termsUrl: `${productionPublicOrigin}/terms`,
+    },
     appReview: {
       status: "ready_for_review",
       clerkReviewAccess: {
@@ -731,8 +766,8 @@ test("accepts a complete, identity-bound release manifest", () => {
 
 test("the release manifest template carries canonical control JSON", () => {
   const template = readFileSync(releaseManifestTemplate, "utf8");
-  const beginMarker = "<!-- CUT_OS_RELEASE_CONTROL_V1_BEGIN -->";
-  const endMarker = "<!-- CUT_OS_RELEASE_CONTROL_V1_END -->";
+  const beginMarker = "<!-- CUT_OS_RELEASE_CONTROL_V2_BEGIN -->";
+  const endMarker = "<!-- CUT_OS_RELEASE_CONTROL_V2_END -->";
   assert.equal(template.split(beginMarker).length, 2);
   assert.equal(template.split(endMarker).length, 2);
 
@@ -744,6 +779,7 @@ test("the release manifest template carries canonical control JSON", () => {
   assert.ok(fencedJson);
   const control = JSON.parse(fencedJson[1]);
   assert.equal(fencedJson[1], JSON.stringify(control, null, 2));
+  assert.equal(control.schemaVersion, 2);
   assert.deepEqual(Object.keys(control), [
     "schemaVersion",
     "status",
@@ -768,6 +804,29 @@ test("the release manifest template carries canonical control JSON", () => {
     "createdAt",
     "sha256",
   ]);
+  assert.deepEqual(Object.keys(control.deployments.replitProductionHosting), [
+    "provider",
+    "accountAlias",
+    "workspaceId",
+    "deploymentId",
+    "databaseId",
+    "providerDeploymentOrigin",
+    "publicOrigin",
+    "deploymentType",
+    "region",
+    "machineClass",
+    "minimumInstances",
+    "maximumInstances",
+    "fixedMonthlyCostUsdCentsBeforeTax",
+    "usageBasedServiceShutdownLimitUsdCentsBeforeTax",
+    "approvedMonthlyCostCeilingUsdCentsBeforeTax",
+    "costApprovedBy",
+    "costApprovedAtUtc",
+    "costApprovalEvidenceReference",
+    "configurationVerifiedAtUtc",
+    "configurationEvidenceReference",
+  ]);
+  assert.deepEqual(Object.keys(control.automatedGates), automatedGateIds);
   const navigation = template.slice(
     template.indexOf(endMarker) + endMarker.length,
   );
@@ -795,6 +854,34 @@ test("release-evidence CI retains full history and proves current-base ancestry"
   assert.match(
     releaseEvidenceJob,
     /node ops\/scripts\/release-main-ancestry-verify\.mjs/u,
+  );
+});
+
+test("CI and release-operations execute every machine-recorded local gate", () => {
+  const workflow = readFileSync(ciWorkflow, "utf8");
+  const trackedTest = workflow.indexOf(
+    "node --test ops/scripts/secret-boundary-scan.test.mjs",
+  );
+  const trackedScan = workflow.indexOf(
+    "node ops/scripts/secret-boundary-scan.mjs tracked",
+  );
+  const install = workflow.indexOf("pnpm install --frozen-lockfile");
+  const topologyDryRun = workflow.indexOf("pnpm run dry-run:production");
+  const iosExport = workflow.indexOf("expo export --platform ios");
+  const archiveScan = workflow.indexOf(
+    'node ops/scripts/secret-boundary-scan.mjs archive "$RUNNER_TEMP/cut-ios-export"',
+  );
+  assert.ok(trackedTest >= 0);
+  assert.ok(trackedScan > trackedTest);
+  assert.ok(install > trackedScan);
+  assert.ok(topologyDryRun > install);
+  assert.ok(iosExport > topologyDryRun);
+  assert.ok(archiveScan > iosExport);
+
+  const rootPackage = JSON.parse(readFileSync(rootPackageJson, "utf8"));
+  assert.match(
+    rootPackage.scripts["test:release-ops"],
+    /(?:^|\s)ops\/scripts\/secret-boundary-scan\.test\.mjs(?:\s|$)/u,
   );
 });
 
@@ -855,11 +942,17 @@ test("release manifest content fails closed on incomplete critical evidence", as
   await t.test("non-canonical control JSON", () => {
     expectInvalid({
       manifest: completeReleaseManifest(buildSha).replace(
-        '"schemaVersion": 1',
-        '"schemaVersion":1',
+        '"schemaVersion": 2',
+        '"schemaVersion":2',
       ),
       code: "release_manifest_control_invalid",
     });
+  });
+
+  await t.test("legacy release-control schema", () => {
+    const control = completeReleaseControl(buildSha);
+    control.schemaVersion = 1;
+    expectInvalid({ control, code: "release_manifest_control_invalid" });
   });
 
   await t.test("non-passing automated gate", () => {
@@ -868,6 +961,39 @@ test("release manifest content fails closed on incomplete critical evidence", as
     expectInvalid({
       control,
       code: "release_manifest_critical_check_not_pass",
+    });
+  });
+
+  for (const gateId of [
+    "tracked_secret_boundary",
+    "production_topology_dry_run",
+    "production_archive_secret_boundary",
+  ]) {
+    await t.test(`missing ${gateId} automated gate`, () => {
+      const control = completeReleaseControl(buildSha);
+      delete control.automatedGates[gateId];
+      expectInvalid({
+        control,
+        code: "release_manifest_automated_gates_invalid",
+      });
+    });
+
+    await t.test(`non-passing ${gateId} automated gate`, () => {
+      const control = completeReleaseControl(buildSha);
+      control.automatedGates[gateId].status = "FAIL";
+      expectInvalid({
+        control,
+        code: "release_manifest_critical_check_not_pass",
+      });
+    });
+  }
+
+  await t.test("unexpected automated gate", () => {
+    const control = completeReleaseControl(buildSha);
+    control.automatedGates.unreviewed_gate = passingEvidence("unreviewed");
+    expectInvalid({
+      control,
+      code: "release_manifest_automated_gates_invalid",
     });
   });
 
@@ -958,6 +1084,121 @@ test("release manifest content fails closed on incomplete critical evidence", as
     expectInvalid({
       control,
       code: "release_manifest_deployment_identity_mismatch",
+    });
+  });
+
+  await t.test("missing Replit production hosting record", () => {
+    const control = completeReleaseControl(buildSha);
+    delete control.deployments.replitProductionHosting;
+    expectInvalid({
+      control,
+      code: "release_manifest_deployment_identity_mismatch",
+    });
+  });
+
+  await t.test("incomplete Replit production hosting record", () => {
+    const control = completeReleaseControl(buildSha);
+    delete control.deployments.replitProductionHosting.databaseId;
+    expectInvalid({
+      control,
+      code: "release_manifest_replit_hosting_identity_invalid",
+    });
+  });
+
+  for (const [field, value] of [
+    ["provider", "another-provider"],
+    ["accountAlias", "account alias with spaces"],
+    ["workspaceId", "none"],
+    ["deploymentId", "https://cut-production.replit.app"],
+    ["databaseId", ""],
+    ["providerDeploymentOrigin", "https://replit.example.com"],
+    ["publicOrigin", "http://cut.example.com"],
+    ["publicOrigin", "https://cut.example.com/path"],
+    ["deploymentType", "autoscale"],
+    ["region", "none"],
+    ["machineClass", ""],
+    ["minimumInstances", 0],
+    ["maximumInstances", 2],
+    ["fixedMonthlyCostUsdCentsBeforeTax", 0],
+    ["fixedMonthlyCostUsdCentsBeforeTax", 15.5],
+    ["usageBasedServiceShutdownLimitUsdCentsBeforeTax", -1],
+    ["approvedMonthlyCostCeilingUsdCentsBeforeTax", 0],
+    ["costApprovedBy", "none"],
+    ["costApprovedAtUtc", "2026-08-03"],
+    ["costApprovalEvidenceReference", ""],
+    ["configurationVerifiedAtUtc", "not-a-timestamp"],
+    ["configurationEvidenceReference", "none"],
+  ]) {
+    await t.test(`invalid Replit hosting ${field}: ${String(value)}`, () => {
+      const control = completeReleaseControl(buildSha);
+      control.deployments.replitProductionHosting[field] = value;
+      expectInvalid({
+        control,
+        code: "release_manifest_replit_hosting_identity_invalid",
+      });
+    });
+  }
+
+  for (const field of ["providerDeploymentOrigin", "publicOrigin"]) {
+    for (const origin of [
+      "https://localhost",
+      "https://cut.localhost",
+      "https://192.0.2.1",
+      "https://[2001:db8::1]",
+      "https://cut",
+      "https://cut.example",
+      "https://cut.home",
+      "https://cut.home.arpa",
+      "https://cut.internal",
+      "https://cut.invalid",
+      "https://cut.lan",
+      "https://cut.local",
+      "https://cut.onion",
+      "https://cut.test",
+      "https://-cut.com",
+      "https://cut-.com",
+    ]) {
+      await t.test(`non-public Replit hosting ${field}: ${origin}`, () => {
+        const control = completeReleaseControl(buildSha);
+        control.deployments.replitProductionHosting[field] = origin;
+        expectInvalid({
+          control,
+          code: "release_manifest_replit_hosting_identity_invalid",
+        });
+      });
+    }
+  }
+
+  await t.test("Replit configured maximum exceeds the approved ceiling", () => {
+    const control = completeReleaseControl(buildSha);
+    control.deployments.replitProductionHosting.approvedMonthlyCostCeilingUsdCentsBeforeTax = 1999;
+    expectInvalid({
+      control,
+      code: "release_manifest_replit_hosting_identity_invalid",
+    });
+  });
+
+  await t.test(
+    "production API and public routes must share one revision",
+    () => {
+      const control = completeReleaseControl(buildSha);
+      control.deployments.publicLegalRevision = "split-public-revision";
+      expectInvalid({
+        control,
+        code: "release_manifest_single_host_revision_mismatch",
+      });
+    },
+  );
+
+  await t.test("previous API and public routes must share one revision", () => {
+    const control = completeReleaseControl(buildSha);
+    control.deployments.previousPublicLegalRevision =
+      "split-previous-public-revision";
+    control.rollback.previousPublicLegalRevision =
+      "split-previous-public-revision";
+    expectInvalid({
+      control,
+      code: "release_manifest_single_host_revision_mismatch",
     });
   });
 
@@ -1081,6 +1322,69 @@ test("accepts exactly one clean, content- and checksum-bound evidence child", as
     postBuildEvidenceSha,
     changedPathCount: 6,
     releaseTarget: "app_review",
+  });
+});
+
+test("App Review binds the finalized listing URLs to the manifest public origin", async (t) => {
+  await t.test("exact origin and route paths", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    assert.doesNotThrow(() =>
+      verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+    );
+  });
+
+  for (const [label, mutateSubmission] of [
+    [
+      "support origin",
+      (submission) => {
+        submission.listing.supportUrl =
+          "https://other-production-host.com/support";
+      },
+    ],
+    [
+      "privacy path",
+      (submission) => {
+        submission.listing.privacyPolicyUrl = `${productionPublicOrigin}/privacy-policy`;
+      },
+    ],
+    [
+      "terms query",
+      (submission) => {
+        submission.listing.termsUrl = `${productionPublicOrigin}/terms?version=1`;
+      },
+    ],
+    [
+      "missing support URL",
+      (submission) => {
+        delete submission.listing.supportUrl;
+      },
+    ],
+  ]) {
+    await t.test(label, async (t) => {
+      const { buildSha, repoRoot } = await createRepository(t);
+      const submission = submissionForClerkState("enabled_for_app_review");
+      mutateSubmission(submission);
+      await writeEvidenceCommit(repoRoot, buildSha, { submission });
+      assert.throws(
+        () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+        expectCode("release_manifest_listing_origin_binding_invalid"),
+      );
+    });
+  }
+
+  await t.test("manifest origin differs from listing bytes", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    const control = completeReleaseControl(buildSha);
+    control.deployments.replitProductionHosting.publicOrigin =
+      "https://other-production-host.com";
+    await writeEvidenceCommit(repoRoot, buildSha, {
+      manifestContents: completeReleaseManifest(buildSha, control),
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("release_manifest_listing_origin_binding_invalid"),
+    );
   });
 });
 
@@ -1420,7 +1724,8 @@ test("public-release transition preserves immutable submission and build evidenc
     await writeEvidenceCommit(repoRoot, buildSha);
     await writePublicReleaseTransition(repoRoot, buildSha, {
       mutateControl: (control) => {
-        control.deployments.productionApiRevision = "production-api-r18";
+        control.deployments.productionApiRevision = "production-service-r18";
+        control.deployments.publicLegalRevision = "production-service-r18";
       },
     });
     assert.throws(
@@ -1428,6 +1733,78 @@ test("public-release transition preserves immutable submission and build evidenc
       expectCode("public_release_transition_control_identity_mismatch"),
     );
   });
+
+  await t.test("Replit hosting identity and cost ceiling", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    await writePublicReleaseTransition(repoRoot, buildSha, {
+      mutateControl: (control) => {
+        control.deployments.replitProductionHosting.deploymentId =
+          "different-production-deployment";
+        control.deployments.replitProductionHosting.approvedMonthlyCostCeilingUsdCentsBeforeTax = 2500;
+      },
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("public_release_transition_control_identity_mismatch"),
+    );
+  });
+
+  await t.test("listing-only public-origin transition", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    const submission = submissionForClerkState("disabled_for_public_release", {
+      updated: "2026-08-04",
+    });
+    submission.listing.supportUrl = "https://other-production-host.com/support";
+    await writePublicReleaseTransition(repoRoot, buildSha, { submission });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("release_manifest_listing_origin_binding_invalid"),
+    );
+  });
+
+  await t.test("manifest-only public-origin transition", async (t) => {
+    const { buildSha, repoRoot } = await createRepository(t);
+    await writeEvidenceCommit(repoRoot, buildSha);
+    await writePublicReleaseTransition(repoRoot, buildSha, {
+      mutateControl: (control) => {
+        control.deployments.replitProductionHosting.publicOrigin =
+          "https://other-production-host.com";
+      },
+    });
+    assert.throws(
+      () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+      expectCode("release_manifest_listing_origin_binding_invalid"),
+    );
+  });
+
+  await t.test(
+    "coordinated manifest and listing rebind remains immutable",
+    async (t) => {
+      const { buildSha, repoRoot } = await createRepository(t);
+      await writeEvidenceCommit(repoRoot, buildSha);
+      const otherOrigin = "https://other-production-host.com";
+      const submission = submissionForClerkState(
+        "disabled_for_public_release",
+        { updated: "2026-08-04" },
+      );
+      submission.listing.supportUrl = `${otherOrigin}/support`;
+      submission.listing.privacyPolicyUrl = `${otherOrigin}/privacy`;
+      submission.listing.termsUrl = `${otherOrigin}/terms`;
+      await writePublicReleaseTransition(repoRoot, buildSha, {
+        submission,
+        mutateControl: (control) => {
+          control.deployments.replitProductionHosting.publicOrigin =
+            otherOrigin;
+        },
+      });
+      assert.throws(
+        () => verifyPostBuildEvidenceBoundary({ buildSha, repoRoot }),
+        expectCode("public_release_submission_changed_immutable_fields"),
+      );
+    },
+  );
 
   await t.test("database migration identity", async (t) => {
     const { buildSha, repoRoot } = await createRepository(t);

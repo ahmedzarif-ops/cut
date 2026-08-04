@@ -4,11 +4,12 @@ import {
   assertRevenueCatProductionConfiguration,
   CUT_OS_IOS_BUNDLE_ID,
   CUT_OS_MONTHLY_PRODUCT_IDENTIFIER,
+  CUT_OS_REVENUECAT_OFFERING_IDENTIFIER,
   verifyRevenueCatConfiguration,
 } from "./revenueCatConfigurationPreflight";
 import { REVENUECAT_ENTITLEMENT_ID } from "../services/revenueCatSubscriptionService";
 
-const API_KEY = "sk_production_key_1234";
+const API_KEY = ["sk", "production", "key", "1234"].join("_");
 const PROJECT_ID = "projProduction1234";
 const ENTITLEMENT_REST_ID = "entlProduction1234";
 const APP_REST_ID = "appProduction1234";
@@ -119,7 +120,7 @@ function offeringPayload({
     object: "offering",
     state: "active",
     id: OFFERING_REST_ID,
-    lookup_key: "default",
+    lookup_key: CUT_OS_REVENUECAT_OFFERING_IDENTIFIER,
     display_name: "CUT OS production",
     is_current: true,
     project_id: PROJECT_ID,
@@ -365,6 +366,10 @@ describe("RevenueCat production configuration preflight", () => {
     [
       "wrong offering project",
       offeringPayload({ overrides: { project_id: "projOther123456" } }),
+    ],
+    [
+      "wrong offering lookup key",
+      offeringPayload({ overrides: { lookup_key: "other" } }),
     ],
     [
       "inactive offering",

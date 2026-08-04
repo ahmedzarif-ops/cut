@@ -5,6 +5,7 @@
   "references": {
     "humanRecord": "APP_STORE_METADATA.md",
     "appConfig": "artifacts/cut-os/app.json",
+    "subscriptionIdentity": "lib/domain/src/subscriptionIdentity.json",
     "privacyDataMap": "PRIVACY_DATA_MAP.md",
     "reviewRunbook": "APP_REVIEW_RUNBOOK.md",
     "testFlightRecord": "app-store/testflight-submission.json",
@@ -42,11 +43,11 @@
       }
     },
     "ageSuitabilityUrl": null,
-    "sellerLegalOperator": null,
+    "sellerLegalOperator": "Zarif Ahmed",
     "sku": null,
     "copyright": null,
     "contentRightsDeclaration": null,
-    "initialTerritories": null,
+    "initialTerritories": ["US"],
     "approval": {
       "status": "pending",
       "nameClearance": {
@@ -94,10 +95,31 @@
     "listing.supportUrl",
     "listing.privacyPolicyUrl",
     "listing.termsUrl",
-    "listing.initialTerritories"
+    "listing.initialTerritories",
+    "availability.distributionMethod.decision",
+    "availability.appleSiliconMacAvailability.decision",
+    "availability.appleVisionProAvailability.decision"
   ],
   "availability": {
     "status": "pending_owner_and_app_store_connect",
+    "distributionMethod": {
+      "decision": null,
+      "status": "pending_owner_decision",
+      "savedAtUtc": null,
+      "evidenceReference": null
+    },
+    "appleSiliconMacAvailability": {
+      "decision": null,
+      "status": "pending_owner_decision",
+      "savedAtUtc": null,
+      "evidenceReference": null
+    },
+    "appleVisionProAvailability": {
+      "decision": null,
+      "status": "pending_owner_decision",
+      "savedAtUtc": null,
+      "evidenceReference": null
+    },
     "approval": {
       "owner": false,
       "appStoreConnectConfirmed": false
@@ -105,7 +127,7 @@
   },
   "commercialAndLegal": {
     "status": "pending_owner_legal_and_app_store_connect",
-    "appDownloadPrice": null,
+    "appDownloadPrice": "free_download",
     "licenseAgreement": null,
     "appTaxCategory": null,
     "dsaStatus": null,
@@ -261,23 +283,23 @@
   "subscription": {
     "status": "pending_owner_app_store_connect_and_exact_build_evidence",
     "entitlementId": "CUT_OS_PRO",
-    "subscriptionGroupReferenceName": null,
-    "productReferenceName": null,
-    "productId": null,
-    "duration": null,
+    "subscriptionGroupReferenceName": "CUT OS Pro",
+    "productReferenceName": "CUT OS Pro Monthly",
+    "productId": "com.zarifahmed.cut.pro.monthly",
+    "duration": "1_month",
     "priceScheduleEvidenceReference": null,
     "usPricing": {
       "storefront": "US",
       "currency": "USD",
-      "amount": null,
+      "amount": "4.99",
       "effectiveStatus": "pending",
       "effectiveAtUtc": null,
       "evidenceReference": null,
-      "ownerDecisionRevision": null,
-      "ownerDecisionEvidenceReference": null
+      "ownerDecisionRevision": "owner-offer-2026-08-04-v1",
+      "ownerDecisionEvidenceReference": "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription"
     },
     "availabilityEvidenceReference": null,
-    "introductoryOfferDecision": null,
+    "introductoryOfferDecision": "none",
     "introductoryOfferTerms": {
       "duration": null,
       "numberOfPeriods": null,
@@ -285,12 +307,12 @@
       "eligibility": null,
       "evidenceReference": null
     },
-    "familySharingDecision": null,
+    "familySharingDecision": "disabled",
     "taxCategory": null,
     "localizations": {
       "en-US": {
-        "groupDisplayName": null,
-        "productDisplayName": null,
+        "groupDisplayName": "CUT OS Pro",
+        "productDisplayName": "CUT OS Pro Monthly",
         "description": null,
         "appNameDisplayOption": null,
         "customAppName": null
@@ -312,6 +334,7 @@
       }
     },
     "revenueCat": {
+      "offeringId": "default",
       "productionMappingStatus": "pending",
       "appStoreConnectApiKeyStatus": "pending",
       "subscriptionKeyStatus": "pending",
