@@ -6,8 +6,8 @@
 
 ## Current launch addendum — August 4, 2026
 
-- **1,291/1,291 automated tests pass:** 295 release operations, 51 App Store, 33
-  domain, 4 database, 412 mobile, and 496 API.
+- **1,314/1,314 automated tests pass:** 298 release operations, 52 App Store, 33
+  domain, 4 database, 431 mobile, and 496 API.
 - Root TypeScript, generated-code drift, working App Store validation,
   changed-file formatting, `.replit` parsing, migration drift, Expo dependency
   health, and a non-secret production-profile Expo bundle rehearsal pass. The
@@ -22,6 +22,10 @@
   check. Customer write/delete permission, both Apple credential settings, and
   restore behavior remain direct dashboard evidence gates, with exact-build
   restore-after-deletion QA required after internal TestFlight upload.
+- A least-privilege RevenueCat API v2 key plus the exact project, entitlement,
+  and offering REST IDs are configured directly in Replit. The Apple app REST
+  ID and real App Store product remain intentionally absent until App Store
+  Connect activates; production therefore continues to fail closed.
 - Database statements, startup migrations, API/public-server shutdown, and
   readiness recovery now have cross-tested timeout boundaries. Metro receives
   an allowlist with dotenv loading disabled instead of the server environment.
@@ -45,6 +49,11 @@
   installation resolves 98 dependencies and 99 total pods, all 222 current pod
   deployment-target settings resolve to iOS 17.0, a simulated future 19.0
   requirement remains 19.0, and unknown expressions fail closed.
+- A fresh clean rehearsal also passed a production-only mobile install with all
+  32 runtime packages and no direct development-package links, Expo Doctor
+  18/18, a generic-iPhone unsigned Release archive, and a 118-file native app
+  secret scan with zero findings. This is structural evidence only, not a signed
+  EAS/TestFlight archive or physical-device result.
 - An unsigned Xcode 27 Release simulator compile and iOS 27 scene-launch
   rehearsal pass. A separately produced Hermes release bundle was installed in
   that app; the process remained running with an active `UIWindowScene`, and the
@@ -57,12 +66,23 @@
 - App Store password recovery now uses Clerk's prebuilt sign-in-only native
   `AuthView`; public web uses Clerk's prebuilt `SignIn` with sign-up and transfer
   disabled. The development tenant has Strict enumeration protection enabled.
-- Authentication remains pending signed physical-iPhone evidence and equivalent
-  Strict/Native API configuration in the future production tenant.
+- A Clerk production instance now exists on the free Hobby plan for
+  `cut-ahmedzarif1.replit.app`, with live keys transferred directly into Replit.
+  Authentication remains pending exact production Strict/Native API and iOS
+  registration evidence, deployed proxy health, and signed physical-iPhone QA.
 - The exact $4.99 monthly/no-trial/Family-Sharing-off offer is now bound to the
   recorded names, identifiers, U.S. price, 45-character description, and
   `use_app_name` choice. Working validation rejects changes even if a matching
   decision object is edited in the same patch.
+- StoreKit offer loading now fails closed on empty, whitespace-padded,
+  control-character, oversized, or digit-free display fields and withholds the
+  purchase package. Legitimate localized Unicode prices remain byte-for-byte
+  unchanged.
+- The settled one-plan paywall has a conservative 6.9-inch vertical budget and
+  keeps the real StoreKit title, description, price, purchase/recheck/restore/
+  manage controls, renewal disclosure, legal/support links, and sign-out
+  visible with 44-point-or-larger targets. Exact-build viewport capture remains
+  a signed-device evidence gate.
 - Public iPhone-only distribution is recorded with Mac and Vision Pro opted out;
   App Store Connect confirmation remains pending. The configured 1024px opaque
   icon is now SHA-256-bound and technically inspected by the release validator.

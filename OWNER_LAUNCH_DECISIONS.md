@@ -117,17 +117,29 @@ name and description are reviewed.
 
 ## Decision 3 — RevenueCat production authorization
 
-**Status:** Awaiting production App Store configuration and owner approval.
+**Status:** Least-privilege server preparation complete; owner ratification,
+exact Apple connection, restore approval, and production evidence remain
+pending.
 
-**Verified August 3, 2026:** The CUT RevenueCat project is accessible, but it is
-still configured only with RevenueCat's Test Store. It has no real App Store
-product mapping and cannot collect live subscription revenue yet. After the
-Apple app and subscription exist, the owner may approve the real iOS app
-connection and creation of a least-privilege RevenueCat REST v2 server key
-limited to the customer access required by CUT OS.
+**Verified August 4, 2026:** A secret RevenueCat API v2 key named
+`CUT Replit Production` was created with Charts set to no access, Customer info
+set to Read & write, and Project configuration set to Read only. Its value was
+transferred directly into Replit without being printed or committed. The exact
+CUT project, entitlement, and default offering REST IDs are also configured in
+Replit. The existing Test Store product remains test-only and cannot collect
+the approved live subscription revenue.
+
+This key preparation is a completed technical fact, not owner approval. The
+real Apple app, App Store product mapping, Apple public iOS SDK key, and
+`REVENUECAT_APP_REST_ID` cannot be created or verified until Apple activates
+App Store Connect and the exact app/subscription records exist. This preparation
+does not approve or claim the production Apple connection, restore policy, or
+key ratification.
 
 The production project must also use RevenueCat's **Transfer to new App User
-ID** restore behavior. This is still **pending direct dashboard verification**.
+ID** restore behavior. The live dashboard currently displays that setting, but
+controlled evidence and owner approval remain pending until the exact Apple
+identifiers exist.
 It is required so an Apple subscription that continues after CUT account
 deletion can move to a replacement CUT account after Restore, without leaving
 the deleted account's old App User ID entitled. The dashboard setting and the
@@ -139,17 +151,18 @@ documentation.
 
 Exact approval phrase:
 
-> Approve the CUT App Store connection, RevenueCat Transfer to new App User ID
-> restore behavior, and least-privilege RevenueCat server key after the exact
-> Apple app and subscription identifiers are verified.
+> Ratify the prepared least-privilege RevenueCat server key and approve the CUT
+> App Store connection and RevenueCat Transfer to new App User ID restore
+> behavior after the exact Apple app and subscription identifiers are verified.
 
 Never paste a secret key into source code, the mobile app, screenshots, support
 messages, or this decision record.
 
 ## Decision 4 — public legal and support identity
 
-**Status:** Owner supplied and authorized the public operator name and contact;
-domain/host approval, retention decisions, and counsel approval remain pending.
+**Status:** Owner supplied and authorized the public operator name, contact, and
+working v1 Replit host; legal-page publication, retention decisions, qualified
+review, and exact-live evidence remain pending.
 
 **Owner facts recorded August 4, 2026:**
 
@@ -163,9 +176,10 @@ domain/host approval, retention decisions, and counsel approval remain pending.
 - no custom domain currently exists.
 
 Use only the owner-supplied spelling `Zarif Ahmed`; do not substitute the app
-name, GitHub account, or email display name. The stable Replit provider address
-also remains unapproved as the public domain until the hosting choice is
-explicit.
+name, GitHub account, or email display name. The owner-approved Replit hosting
+draft establishes `cut-ahmedzarif1.replit.app` as the working v1 provider
+address; public legal publication at that address still requires the remaining
+qualified review and exact-live-page evidence.
 
 The draft Privacy, Terms, and Support pages cannot be published until the
 remaining identity, hosting, operating, and legal gates are complete:
@@ -269,8 +283,8 @@ approved secret storage.
 
 ## Decision 7 — production hosting and database spend
 
-**Status:** Provider sign-in and live price inspection are complete; unambiguous
-owner cost approval and private phone verification remain pending.
+**Status:** Owner cost approval and private phone verification complete;
+deployment and recurring server charge have not started.
 
 The API's current rate limits and account-deletion retry scheduler are
 process-local. The fastest safe launch topology therefore keeps exactly one API
@@ -287,9 +301,9 @@ database has been purchased or deployed yet.
 North America Reserved VM with 0.5 vCPU and 2 GiB for **$15 USD per month** at
 `cut-ahmedzarif1.replit.app`. The production PostgreSQL database and excess
 outbound transfer are separate usage-based services. Replit supports a
-service-shutdown limit for those variable services and requires private owner
-phone verification before publishing. No phone number was entered, no code was
-sent, and no recurring deployment was started.
+service-shutdown limit for those variable services. Private owner phone
+verification is complete, the Publish control is available, and no recurring
+deployment was started.
 
 **Working recommendation:** use one stable HTTPS host for the API, Clerk proxy,
 landing page, Privacy, Terms, and Support. A stable `.replit.app` address is
@@ -300,24 +314,27 @@ service-shutdown limit**, for a combined maximum of **$20/month before tax**.
 Reaching the variable limit can suspend the database or app until the next
 billing cycle, so usage must be monitored after launch.
 
-Do not change a paid plan, add a payment method, create a paid database, or
-start a billable deployment until the owner explicitly says: **Approve Replit
-up to $20/month before tax**.
-
-The August 4 owner response included both “approve up to $20/month before tax”
-and “do not approve” separated by a slash. It is therefore recorded as
-ambiguous, not as spend authorization. No paid hosting action may start until
-one choice is stated without the alternative.
+**Recorded owner approval August 4, 2026:** **Approve Replit up to $20/month
+before tax**. Replit's current-period usage budget is set so the already-incurred
+extra usage leaves exactly $5.00 of new usage-based headroom; combined with the
+$15 Reserved VM, this enforces the newly approved ceiling from the approval
+point. Publishing must still wait until the exact Apple/RevenueCat/database
+production preflight can pass. Immediately before publish, verify that Replit's
+**Set up your production database with your current development data** control
+remains off because the UI can reset it after a reload.
 
 ## Decision 8 — Clerk production plan and billing
 
-**Status:** Existing development workspace verified on Hobby; production cost
-and feature fit remain pending read-only inspection.
+**Status:** Production instance created on the existing free Hobby plan; no
+trial, paid upgrade, or billing action was started.
 
-The live Clerk dashboard currently identifies the owner's Personal Workspace as
-**Hobby** and the CUT OS instance as **development**. Signing up with GitHub and
-opening the production-instance flow do not authorize a paid plan, free trial,
-billing method, or upgrade.
+**Verified August 4, 2026:** The owner's Personal Workspace remains on
+**Hobby**. A production CUT OS instance was created by cloning the reviewed
+development configuration for `cut-ahmedzarif1.replit.app`; its live
+publishable and secret keys were transferred directly into masked Replit
+deployment secrets without being printed or committed. Its expected production
+frontend API/proxy is `https://cut-ahmedzarif1.replit.app/__clerk`, which cannot
+be verified until the host is live.
 
 Engineering may create no Clerk trial, paid production plan, or billing change
 unless the exact required feature and current total monthly cost are shown to

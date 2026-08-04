@@ -7,10 +7,14 @@
 
 - Working branch: `codex/app-store-v1`.
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
+- Exact green checkpoint:
+  `05048a1866d76053c46de620be703f5d449ed089`; GitHub CI run
+  [30944853396](https://github.com/ahmedzarif-ops/cut/actions/runs/30944853396)
+  passed both jobs on that exact commit.
 - The agent must not self-merge the pull request; the owner merges or explicitly
   overrides that repository rule.
-- The current repository checkpoint passes **1,291 automated tests** (295 release
-  operations, 51 App Store, 33 domain, 4 database, 412 mobile, and 496 API), all
+- The current repository checkpoint passes **1,314 automated tests** (298 release
+  operations, 52 App Store, 33 domain, 4 database, 431 mobile, and 496 API), all
   TypeScript checks, generated-code drift, working App Store validation,
   changed-file formatting, `.replit`/migration parsing and drift checks, Expo
   dependency health, and the clean zero-JavaScript Replit production-build
@@ -25,6 +29,10 @@
   exact-build restore QA remain evidence gates. Database/migration and shutdown
   timeout relationships are cross-tested, and Metro gets only reviewed public
   values with dotenv loading forced off.
+- Malformed StoreKit display data now withholds purchase, and the settled
+  one-plan paywall has a tested conservative 6.9-inch layout budget while
+  preserving its real offer, account actions, renewal disclosure, legal/support
+  links, and accessible targets. Exact signed-device capture remains pending.
 - Target-aware strict validation currently rejects **216** unresolved gates for
   `app_review` and **215** for `public_release`, covering external, owner, legal,
   exact-build, screenshot, and App Store Connect evidence.
@@ -34,15 +42,18 @@
   launch-screen status bar readable and excludes Clerk's optional Google
   Sign-In pod.
 - Clean Expo iOS prebuild and CocoaPods installation pass with fail-closed scene-
-  lifecycle and iOS 17 pod-target plugins. An unsigned Xcode 27 Release app also
-  compiled and remained alive on iOS 27 with an active `UIWindowScene`; this was
-  a local launch rehearsal, not a signed archive, physical-device flow, or full
-  tap-through.
+  lifecycle and iOS 17 pod-target plugins. A clean production-only mobile
+  install retains all 32 runtime dependencies without direct development links;
+  an unsigned generic-iPhone Xcode 27 Release archive and its 118-file secret
+  scan also pass. This is a local structural rehearsal, not a signed EAS archive,
+  physical-device flow, or full tap-through.
 - CUT password recovery now uses Clerk's prebuilt sign-in-only native and web
   flows. The Clerk development tenant has Strict enumeration protection,
-  Client Trust, bot protection, and lockout protection enabled. Production
-  Strict/Native API configuration and signed physical-iPhone evidence remain
-  release gates.
+  Client Trust, bot protection, and lockout protection enabled. A production
+  instance now exists on the free Hobby plan for
+  `cut-ahmedzarif1.replit.app`, and its live keys are held only in Replit.
+  Production Strict/Native API/iOS-registration evidence, deployed proxy health,
+  and signed physical-iPhone evidence remain release gates.
 - App Review access is now a target-bound release gate: its controlled window
   requires Clerk production test mode, Client Trust, five reserved synthetic
   accounts, and exact-build new-device proof; public release separately
@@ -65,36 +76,39 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   a clean tree; the superseded Replit-only workflow change remains in a named
   stash. The live Publishing draft must remain a one-machine Reserved VM and be
   re-verified after every sync.
-- No Replit production deployment or recurring charge has started. The owner
-  must explicitly approve up to **$20/month before tax**: $15 Reserved VM plus
-  a $5 usage-based service-shutdown limit, then privately complete Replit phone
-  verification.
+- The owner approved Replit up to **$20/month before tax**: a $15 Reserved VM
+  plus $5 of new usage-based headroom. Phone verification is complete. No
+  Replit production deployment or $15 recurring server charge has started; the
+  one-machine draft remains stopped and unpublished, with development-data copy
+  off and subject to an immediate pre-publish recheck.
 - The owner reports paying Apple's $99 membership fee. Apple activation and App
   Store Connect access remain pending; do not repeat the purchase.
-- RevenueCat is Test Store only. The owner-approved real offer is a free download with
-  `com.zarifahmed.cut.pro.monthly` at $4.99/month, no trial, Family Sharing off,
-  United States only initially, and manual release. Read-only inspection at
-  `2026-08-04T09:06:49Z` informally showed Project Settings using **Transfer to
-  new App User ID** with no separate sandbox override. That observation is not
-  the controlled production evidence: the machine record correctly remains
-  pending until attributable production evidence and exact-build
-  restore-after-deletion QA exist.
+- RevenueCat now has a least-privilege server API v2 key plus the exact CUT
+  project, entitlement, and offering REST IDs configured directly in Replit.
+  The existing Test Store product remains test-only. The owner-approved real
+  offer is a free download with `com.zarifahmed.cut.pro.monthly` at $4.99/month,
+  no trial, Family Sharing off, United States only initially, and manual
+  release. The real Apple app, product mapping, and iOS SDK key remain pending
+  Apple activation. The dashboard currently shows **Transfer to new App User
+  ID**, but controlled production evidence and exact-build
+  restore-after-deletion QA remain required.
 
 ## RUNNING QUEUE
 
 1. Keep PR #9 draft and require exact GitHub CI success after every new commit;
    never rely on a green run from an older revision and never self-merge.
 2. Keep Replit on the exact pushed commit with a clean tree and verify the
-   Publishing draft still says Reserved VM after every sync. Do not publish or
-   start a charge without the owner cost approval.
+   Publishing draft still says Reserved VM after every sync. The cost ceiling is
+   approved, but do not publish until the Apple/RevenueCat/database production
+   preflight can pass and the development-data copy setting is rechecked off.
 3. Continue read-only Apple activation checks. After activation, verify the
    actual team/seller type before creating any App Store record.
-4. Obtain one unambiguous Replit hosting-cap decision. The offer, individual
-   seller path, `Zarif Ahmed` operator name, public email, U.S.-only/manual
-   release, and iPhone-only compatibility choices are already recorded and must
-   not be requested again. The provider domain follows if hosting is approved.
-5. Create production Clerk, Replit, App Store Connect, and RevenueCat records
-   only after their prerequisites and owner-controlled approvals are satisfied.
+4. After Apple activates, create the exact App Store Connect app/subscription
+   records and RevenueCat Apple app mapping; do not request the already-recorded
+   offer, seller path, operator, public email, U.S.-only/manual-release, or
+   iPhone-only choices again.
+5. Complete Replit production database, Clerk proxy/security, and RevenueCat
+   Apple configuration only after their exact prerequisites can pass.
 6. Build the exact signed TestFlight candidate and complete physical-iPhone
    authentication, recovery, purchase, restore, deletion, accessibility, and
    screenshot evidence before App Review.

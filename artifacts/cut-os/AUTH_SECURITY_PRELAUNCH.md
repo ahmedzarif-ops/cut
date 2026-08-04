@@ -70,6 +70,17 @@ Official provider references:
 - https://clerk.com/docs/reference/expo/native-components/auth-view
 - https://clerk.com/docs/guides/secure/user-enumeration-protection
 
+**Provider-support verification — August 4, 2026; reviewer: Codex
+release-readiness audit.** Clerk's current official Expo overview identifies
+native `AuthView` as a prebuilt component that supports password recovery. The
+current native-component reference documents `mode="signIn"` and states that it
+restricts the interface to existing-account sign-in. Clerk's current security
+guide states that Strict user-enumeration protection hides whether accounts
+exist. This verifies the selected provider-supported recovery architecture
+only. Owner approval, independent security review, production Strict/Native API
+configuration, production-tenant behavior, and exact signed-device evidence
+remain pending.
+
 The public Expo web route uses Clerk's prebuilt web `<SignIn />`, sets
 `transferable={false}`, and explicitly pins `signUpUrl="/sign-up"`. Live testing
 of CUT's locked Clerk SDK showed that `withSignUp={false}` alone does not remove

@@ -139,6 +139,13 @@ not a public-launch readiness claim.
   contract drift, typecheck, all tests, tracked-source secret scanning, the
   single-host production dry-run, and production iOS archive scanning on pull
   requests and `main`.
+- The mobile workspace now classifies all 32 runtime/native/workspace packages
+  as production dependencies while keeping 11 build/test-only packages in
+  development dependencies. A clean production-only install proves every
+  runtime package remains linked without direct development-package links.
+- The native archive secret scanner narrowly permits only RevenueCat's two exact
+  terminated receipt-request event names while continuing to detect realistic
+  secret keys and prefixed/suffixed variants.
 - Production is source-locked to one always-on API process serving the landing,
   Privacy, Terms, Support, status, Clerk proxy, and API routes on one canonical
   HTTPS origin. Split hosts, non-root production paths, competing Replit
@@ -147,6 +154,11 @@ not a public-launch readiness claim.
 - One canonical subscription identity now binds the iOS bundle, RevenueCat
   entitlement/offering, and App Store product across mobile, API, App Store,
   and production release validation.
+- StoreKit display fields now fail closed before purchase when they are blank,
+  padded, controlled, oversized, or lack a localized decimal digit. The compact
+  settled-offer layout keeps the real title, description, price, controls,
+  renewal disclosure, and legal/support links within a conservative 6.9-inch
+  screenshot budget while smaller or larger-text devices remain scrollable.
 - The owner authorized `Zarif Ahmed` as the public legal operator for the
   selected individual/Texas-sole-proprietor path. The applicable county was
   supplied privately and is not committed to this public repository; Apple's
@@ -159,13 +171,13 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 1,291 tests** (release operations 295, App Store
-  artifacts 51, domain 33, database 4, mobile 412, API 496).
+- `pnpm run test`: **PASS — 1,314 tests** (release operations 298, App Store
+  artifacts 52, domain 33, database 4, mobile 431, API 496).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
-- Production-configured Expo iOS bundle rehearsal: **PASS — 1,770 modules;
-  7.42 MB Hermes bundle; 17 MB disposable export**. The archive boundary scan
+- Production-configured Expo iOS bundle rehearsal: **PASS — 1,771 modules;
+  7.48 MB Hermes bundle; 17 MB disposable export**. The archive boundary scan
   checked 62 files with zero findings. This was not a signed native archive or
   App Store build.
 - Combined production topology: **PASS** — the API build packages the legal
@@ -181,8 +193,9 @@ native/App Store acceptance.
   light-content status bar over the dark splash, Clerk Expo is pinned to 4.2.0,
   and Apple autolinking contains `ClerkExpo` without the optional Google Sign-In
   pod.
-- Secret boundaries: **PASS** — 10 scanner tests, 731 tracked files with zero
-  findings, and 62 production-export files with zero findings.
+- Secret boundaries: **PASS** — 13 scanner tests and 731 tracked files with zero
+  findings. A fresh unsigned generic-iPhone Release archive also passed its
+  118-file native app scan with zero findings.
 - Production release-environment preflight: **PASS** with representative
   non-secret values; missing, malformed, private, reserved, cross-origin, and
   insecure configurations fail closed in automated coverage.
@@ -230,6 +243,28 @@ was recovered from its configured canonical origin,
 physical-iPhone testing of the exact signed TestFlight build remains an explicit
 launch gate.
 
+## Current live launch setup
+
+- Exact source checkpoint:
+  `05048a1866d76053c46de620be703f5d449ed089`; draft pull request #9 remains
+  unmerged, and GitHub CI run 30944853396 passed both jobs on that exact commit.
+- Apple Developer membership still displays **Z A (Pending)** and says the
+  completed purchase may take up to 48 hours to process. Do not repeat the
+  purchase while it remains pending.
+- Replit hosting is owner-approved up to **$20/month before tax** and phone
+  verification is complete. The clean workspace matches the exact source
+  checkpoint. The one-machine $15 Reserved VM remains stopped and unpublished,
+  so its recurring server charge has not started; production database creation
+  and its exact TLS mode remain unverified until publish.
+- Clerk production exists on the free Hobby plan for
+  `cut-ahmedzarif1.replit.app`; live keys were transferred directly into Replit
+  without entering source. Proxy health and exact production security/iOS
+  settings remain post-deployment and signed-device evidence gates.
+- Replit contains a least-privilege RevenueCat API v2 key plus the exact CUT
+  project, entitlement, and offering REST IDs. The Apple app REST ID and real
+  App Store product mapping remain absent until Apple membership and App Store
+  Connect activate, so production continues to fail closed.
+
 ## Highest-priority next slice
 
 Close the public-launch safety and native acceptance gates before collecting
@@ -246,10 +281,11 @@ more sensitive preference data:
    submission.
 3. Publish owner/counsel-approved Privacy, Terms, and Support pages and supply
    their final HTTPS destinations to the production EAS environment.
-4. Complete RevenueCat email verification, create a least-privilege server v2
-   key, and configure the Apple public SDK key without exposing secrets in the
-   repository or binary. Optional App Store Server Notifications can follow
-   after first release.
+4. After the real App Store app and product exist, create the RevenueCat Apple
+   app, configure its Apple credentials and public iOS SDK key, bind the exact
+   app REST ID/product/offering, and capture controlled evidence without
+   exposing secrets in the repository or binary. Optional App Store Server
+   Notifications can follow after first release.
 5. Link the intended Apple and Expo/EAS projects, configure the eight validated
    production values, and create an internal TestFlight build.
 6. Complete native-device acceptance for `adult-18-v1`, including deep links,
@@ -288,8 +324,9 @@ verification and counsel review because Guideline 5.1.1(ix) directs
 sensitive-data apps toward legal-entity submission. Preliminary name screening
 also found a crowded same-market `CUT` field, so qualified `CUT OS` clearance
 remains open. Apple activation,
-financial agreements/tax/banking, production credentials,
-RevenueCat secret-key authorization, EAS/Apple authentication, TestFlight
+financial agreements/tax/banking, Apple signing and RevenueCat Apple
+credentials, RevenueCat Apple-connection/restore authorization and prepared-key
+ratification, EAS/Apple authentication, TestFlight
 distribution, App Store questionnaire/privacy publication, Submit for Review,
 and public release remain owner-controlled gates. The owner has confirmed an
 18+ launch position; the final rating questionnaire and legal policy still need

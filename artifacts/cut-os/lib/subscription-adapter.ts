@@ -14,6 +14,12 @@ import {
 
 export const CUT_OS_MONTHLY_SUBSCRIPTION_PERIOD = "P1M" as const;
 
+const MAX_STORE_PLAN_TITLE_CODE_POINTS = 256;
+const MAX_STORE_PLAN_DESCRIPTION_CODE_POINTS = 4_096;
+const MAX_STORE_PLAN_PRICE_STRING_CODE_POINTS = 128;
+const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f-\u009f]/u;
+const UNICODE_DECIMAL_DIGIT_PATTERN = /\p{Decimal_Number}/u;
+
 export interface RawCustomerInfo {
   entitlements: { active: Record<string, unknown> };
   managementURL: string | null;
@@ -298,7 +304,20 @@ class PrincipalIsolatedSubscriptionAdapter implements SubscriptionAdapter {
         item.product.subscriptionPeriod !==
           CUT_OS_MONTHLY_SUBSCRIPTION_PERIOD ||
         periodLabel !== "month" ||
-        item.product.introPrice !== null
+        item.product.introPrice !== null ||
+        !isValidStoreDisplayValue(
+          item.product.title,
+          MAX_STORE_PLAN_TITLE_CODE_POINTS,
+        ) ||
+        !isValidStoreDisplayValue(
+          item.product.description,
+          MAX_STORE_PLAN_DESCRIPTION_CODE_POINTS,
+        ) ||
+        !isValidStoreDisplayValue(
+          item.product.priceString,
+          MAX_STORE_PLAN_PRICE_STRING_CODE_POINTS,
+        ) ||
+        !UNICODE_DECIMAL_DIGIT_PATTERN.test(item.product.priceString)
       ) {
         throw new SubscriptionAdapterError("unavailable");
       }
@@ -365,6 +384,19 @@ class PrincipalIsolatedSubscriptionAdapter implements SubscriptionAdapter {
     );
     return result;
   }
+}
+
+function isValidStoreDisplayValue(
+  value: unknown,
+  maximumCodePoints: number,
+): value is string {
+  return Boolean(
+    typeof value === "string" &&
+    value.length > 0 &&
+    value === value.trim() &&
+    !CONTROL_CHARACTER_PATTERN.test(value) &&
+    Array.from(value).length <= maximumCodePoints,
+  );
 }
 
 function customerSnapshot(info: RawCustomerInfo): StoreCustomerSnapshot {

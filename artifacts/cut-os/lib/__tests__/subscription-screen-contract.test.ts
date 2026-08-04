@@ -4,6 +4,12 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import {
+  APP_STORE_69_PORTRAIT_HEIGHT_POINTS,
+  SUBSCRIPTION_OFFER_READY_LAYOUT,
+  subscriptionOfferReadyVerticalBudgetPoints,
+} from "../subscription-offer-layout";
+
 const testDirectory = dirname(fileURLToPath(import.meta.url));
 const subscriptionScreenSource = readFileSync(
   resolve(testDirectory, "../../app/(app)/subscription.tsx"),
@@ -27,8 +33,11 @@ describe("subscription screen App Store contract", () => {
     expect(subscriptionScreenSource).toContain(
       'import { formatPlanBilling } from "@/lib/subscription";',
     );
+    expect(subscriptionScreenSource).toContain(
+      "const billing = formatPlanBilling(",
+    );
     expect(subscriptionScreenSource).toMatch(
-      /<Text\s+style=\{s\.planPrice\}>\s*\{formatPlanBilling\(\s*plan\.priceString,\s*plan\.subscriptionPeriod,?\s*\)\}\s*<\/Text>/u,
+      /<Text[\s\S]*?style=\{s\.planPrice\}[\s\S]*?>\s*\{billing\}\s*<\/Text>/u,
     );
     expect(subscriptionScreenSource).toContain("{plan.introductoryText ? (");
     expect(subscriptionScreenSource).not.toMatch(HARDCODED_DOLLAR_PRICE);
@@ -47,15 +56,95 @@ describe("subscription screen App Store contract", () => {
       "await WebBrowser.openBrowserAsync(subscription.managementUrl);",
     );
     expect(subscriptionScreenSource).toContain(
-      "<Text style={s.secondaryButtonText}>Manage subscription</Text>",
+      'accessibilityLabel="Manage App Store subscription"',
     );
     expect(subscriptionScreenSource).toContain("onPress={() => void manage()}");
   });
 
   it("keeps the automatic-renewal and cancellation disclosure visible", () => {
     expect(subscriptionScreenSource).toMatch(
-      /Subscriptions renew automatically until canceled\.\s*Manage or cancel in\s*App Store settings\./u,
+      /auto-renewable subscription\s*renews until canceled\.\s*Manage or cancel in App Store settings\./u,
     );
+  });
+
+  it("keeps the settled 6.9-inch offer inside a deterministic vertical budget", () => {
+    const layout = SUBSCRIPTION_OFFER_READY_LAYOUT;
+    const budget = subscriptionOfferReadyVerticalBudgetPoints();
+
+    expect(budget).toBeLessThanOrEqual(
+      APP_STORE_69_PORTRAIT_HEIGHT_POINTS - 120,
+    );
+    for (const target of [
+      layout.topActionMinHeight,
+      layout.purchaseButtonMinHeight,
+      layout.secondaryButtonMinHeight,
+      layout.legalLinkMinHeight,
+      layout.signOutButtonMinHeight,
+    ]) {
+      expect(target).toBeGreaterThanOrEqual(44);
+    }
+
+    for (const binding of [
+      "compactReadyLayout && s.readyContainer",
+      "compactReadyLayout && s.readyTopRow",
+      "compactReadyLayout && s.readyTitle",
+      "compactReadyLayout && s.readyPlanList",
+      "compactReadyLayout && s.readyPlanCard",
+      "compactReadyLayout && s.readyPrimaryButton",
+      "compactReadyLayout && s.readySecondaryActions",
+      "compactReadyLayout && s.readySecondaryButton",
+      "compactReadyLayout && s.readyDisclosure",
+      "compactReadyLayout && s.readySignOutButton",
+    ]) {
+      expect(subscriptionScreenSource).toContain(binding);
+    }
+    expect(subscriptionScreenSource).toContain("{!readyOfferVisible ? (");
+    expect(subscriptionScreenSource).toContain(
+      "SUBSCRIPTION_OFFER_READY_LAYOUT.minimumCompactViewportWidthPoints",
+    );
+    expect(subscriptionScreenSource).toContain(
+      "SUBSCRIPTION_OFFER_READY_LAYOUT.minimumCompactViewportHeightPoints",
+    );
+    expect(subscriptionScreenSource).toContain(
+      "SUBSCRIPTION_OFFER_READY_LAYOUT.maximumCompactFontScale",
+    );
+    expect(subscriptionScreenSource).toContain("{plan.description}");
+    expect(subscriptionScreenSource).toContain(
+      "SUBSCRIPTION_OFFER_READY_LAYOUT.planDescriptionMaximumLines",
+    );
+    for (const maximumLineBinding of [
+      "titleMaximumLines",
+      "planTitleMaximumLines",
+      "planDescriptionMaximumLines",
+      "planPriceMaximumLines",
+      "introductoryTextMaximumLines",
+      "purchaseLabelMaximumLines",
+      "disclosureMaximumLines",
+    ]) {
+      expect(subscriptionScreenSource).toContain(
+        `SUBSCRIPTION_OFFER_READY_LAYOUT.${maximumLineBinding}`,
+      );
+    }
+    expect(subscriptionScreenSource.match(/onTextLayout=/gu)).toHaveLength(7);
+    expect(subscriptionScreenSource).toContain(
+      "setCompactOverflowDetected(true)",
+    );
+    expect(subscriptionScreenSource.match(/numberOfLines=/gu)).toHaveLength(3);
+    expect(
+      subscriptionScreenSource.match(
+        /numberOfLines=\{compactReadyLayout \? 2 : undefined\}/gu,
+      ),
+    ).toHaveLength(3);
+    expect(legalSupportLinksSource).toContain(
+      `compactContainer: { marginTop: ${layout.legalLinksMarginTop} }`,
+    );
+    expect(legalSupportLinksSource).toMatch(
+      new RegExp(
+        `compactLink: \\{[\\s\\S]*?minHeight: ${layout.legalLinkMinHeight},`,
+        "u",
+      ),
+    );
+    expect(subscriptionScreenSource).toContain("<ScrollView");
   });
 
   it("keeps Privacy Policy, Terms of Use, and Support controls", () => {

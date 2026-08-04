@@ -2874,6 +2874,7 @@ function validateSubscription({ value, listing, release, check }) {
   check(
     hasExactKeys(revenueCat, [
       "offeringId",
+      "ownerAuthorization",
       "productionMappingStatus",
       "appStoreConnectApiKeyStatus",
       "subscriptionKeyStatus",
@@ -2889,6 +2890,14 @@ function validateSubscription({ value, listing, release, check }) {
       /^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(revenueCat.offeringId),
     "subscription.revenueCat.offeringId must be a RevenueCat offering identifier",
   );
+  const revenueCatOwnerAuthorization = revenueCat?.ownerAuthorization;
+  validateConfirmationEvidenceRecord({
+    value: revenueCatOwnerAuthorization,
+    label: "subscription.revenueCat.ownerAuthorization",
+    required: false,
+    requirementLabel: "confirmed RevenueCat owner authorization",
+    check,
+  });
   for (const field of [
     "productionMappingStatus",
     "appStoreConnectApiKeyStatus",
@@ -3142,6 +3151,13 @@ function validateSubscription({ value, listing, release, check }) {
       typeof revenueCat?.evidenceReference === "string" &&
       revenueCat.evidenceReference.trim().length > 0,
     `${prefix} requires verified RevenueCat production mapping, customer read/write permission, and Apple credential dashboard evidence`,
+  );
+  check(
+    revenueCatOwnerAuthorization?.status === "confirmed" &&
+      validIsoTimestamp(revenueCatOwnerAuthorization?.verifiedAtUtc) &&
+      typeof revenueCatOwnerAuthorization?.evidenceReference === "string" &&
+      revenueCatOwnerAuthorization.evidenceReference.trim().length > 0,
+    `${prefix} requires confirmed owner authorization for the prepared least-privilege RevenueCat server key, production Apple connection, and Transfer to new App User ID restore behavior`,
   );
   check(
     restoreAfterAccountDeletion?.dashboardBehavior ===

@@ -14,6 +14,39 @@ const PUBLIC_KEY = "appl_PublicIosKey1234";
 const PRODUCT_ID = "com.zarifahmed.cut.pro.monthly";
 const OFFERING_ID = "default";
 
+type StoreDisplayOverride = Partial<{
+  title: string;
+  description: string;
+  priceString: string;
+}>;
+
+const INVALID_STORE_DISPLAY_CASES: Array<
+  [label: string, override: StoreDisplayOverride]
+> = [
+  ["empty title", { title: "" }],
+  ["whitespace-only title", { title: " \u00a0 " }],
+  ["title with surrounding whitespace", { title: " Monthly" }],
+  ["title with a control character", { title: "Monthly\nPlan" }],
+  ["absurdly long title", { title: "界".repeat(257) }],
+  ["empty description", { description: "" }],
+  ["whitespace-only description", { description: "\u00a0" }],
+  [
+    "description with surrounding whitespace",
+    { description: "Monthly access " },
+  ],
+  [
+    "description with a control character",
+    { description: "Monthly\u0000access" },
+  ],
+  ["absurdly long description", { description: "界".repeat(4_097) }],
+  ["empty localized price", { priceString: "" }],
+  ["whitespace-only localized price", { priceString: " \u00a0" }],
+  ["localized price with surrounding whitespace", { priceString: " $4.99" }],
+  ["localized price with a control character", { priceString: "$4.99\t" }],
+  ["absurdly long localized price", { priceString: `$${"4".repeat(128)}` }],
+  ["localized price without a Unicode digit", { priceString: "€four" }],
+];
+
 function customer(
   entitled = false,
   managementURL: string | null = null,
@@ -118,6 +151,7 @@ function packageItem(input: {
   packageIdentifier: string;
   productIdentifier: string;
   title: string;
+  description?: string;
   priceString: string;
   period: string | null;
   intro?: {
@@ -132,7 +166,7 @@ function packageItem(input: {
     product: {
       identifier: input.productIdentifier,
       title: input.title,
-      description: `${input.title} description`,
+      description: input.description ?? `${input.title} description`,
       priceString: input.priceString,
       subscriptionPeriod: input.period,
       introPrice: input.intro ?? null,
@@ -181,6 +215,66 @@ describe("RevenueCat subscription adapter", () => {
     });
     expect(bridge.calls.some((call) => call.name === "checkIntro")).toBe(false);
   });
+
+  it("preserves legitimate localized Unicode offer display fields", async () => {
+    const bridge = new FakeBridge();
+    const localizedTitle = "CUT OS プロ月額 🏋️";
+    const localizedDescription = "毎日の計量、バランスのよい食事、栄養合計。";
+    const localizedPrice = "\u200f٤٫٩٩\u00a0ر.س.\u200f";
+    bridge.offering = {
+      identifier: OFFERING_ID,
+      availablePackages: [
+        packageItem({
+          packageIdentifier: "monthly",
+          productIdentifier: PRODUCT_ID,
+          title: localizedTitle,
+          description: localizedDescription,
+          priceString: localizedPrice,
+          period: "P1M",
+        }),
+      ],
+    };
+    const adapter = adapterFor(bridge);
+    await adapter.connect(PUBLIC_KEY, USER_A, () => {});
+
+    await expect(adapter.loadPlans(USER_A)).resolves.toEqual([
+      expect.objectContaining({
+        title: localizedTitle,
+        description: localizedDescription,
+        priceString: localizedPrice,
+      }),
+    ]);
+  });
+
+  it.each(INVALID_STORE_DISPLAY_CASES)(
+    "fails closed for an offer with %s",
+    async (_label, override) => {
+      const bridge = new FakeBridge();
+      bridge.offering = {
+        identifier: OFFERING_ID,
+        availablePackages: [
+          packageItem({
+            packageIdentifier: "monthly",
+            productIdentifier: PRODUCT_ID,
+            title: override.title ?? "CUT OS Pro Monthly",
+            description: override.description ?? "Monthly CUT OS Pro access",
+            priceString: override.priceString ?? "$4.99",
+            period: "P1M",
+          }),
+        ],
+      };
+      const adapter = adapterFor(bridge);
+      await adapter.connect(PUBLIC_KEY, USER_A, () => {});
+
+      await expect(adapter.loadPlans(USER_A)).rejects.toEqual(
+        new SubscriptionAdapterError("unavailable"),
+      );
+      await expect(adapter.purchase(USER_A, "monthly")).rejects.toEqual(
+        new SubscriptionAdapterError("plan_unavailable"),
+      );
+      expect(bridge.calls.some((call) => call.name === "purchase")).toBe(false);
+    },
+  );
 
   it("fails closed when RevenueCat returns a different current offering", async () => {
     const bridge = new FakeBridge();

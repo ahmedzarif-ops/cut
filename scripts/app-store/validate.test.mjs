@@ -187,6 +187,12 @@ test("committed working App Store records preserve approved and pending scopes",
     exactBuildVerified: false,
     appStoreConnectConfirmed: false,
   });
+  assert.deepEqual(submission.authenticationSecurity.approval, {
+    owner: false,
+    securityReviewer: false,
+    clerkSupportVerified: true,
+    productionTenantEvidenceVerified: false,
+  });
   assert.equal(
     submission.subscription.ownerDecision.revision,
     "owner-offer-2026-08-04-v2",
@@ -1172,6 +1178,7 @@ test("verified or ready states cannot omit their supporting evidence", () => {
   submission.subscription.revenueCat.subscriptionKeyStatus = "verified";
   submission.subscription.revenueCat.customerReadWritePermissionStatus =
     "verified";
+  submission.subscription.revenueCat.ownerAuthorization.status = "confirmed";
   submission.subscription.exactBuildEvidence.storeKitOfferStatus = "verified";
   submission.accessibility.status = "evaluated_for_release";
   submission.accessibility.appStoreConnectDecision.decision =
@@ -1199,6 +1206,16 @@ test("verified or ready states cannot omit their supporting evidence", () => {
   assert.ok(
     errors.includes(
       "verified RevenueCat customer read/write permission requires dashboard UTC evidence",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "subscription.revenueCat.ownerAuthorization confirmed status requires verifiedAtUtc",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "subscription.revenueCat.ownerAuthorization confirmed status requires evidenceReference",
     ),
   );
   assert.ok(
@@ -1260,6 +1277,61 @@ test("RevenueCat restore after account deletion requires transfer behavior and n
       /restoreAfterAccountDeletion|restore-after-account-deletion|RevenueCat restore behavior/u.test(
         error,
       ),
+    ),
+    false,
+  );
+});
+
+test("RevenueCat technical readiness cannot substitute for distinct owner authorization", () => {
+  const inputs = validationInputs();
+  const submission = clone(inputs.submission);
+  const revenueCat = submission.subscription.revenueCat;
+  const evidenceTime = "2026-08-03T23:59:00Z";
+  const technicalGateError =
+    "release mode requires verified RevenueCat production mapping, customer read/write permission, and Apple credential dashboard evidence";
+  const ownerAuthorizationError =
+    "release mode requires confirmed owner authorization for the prepared least-privilege RevenueCat server key, production Apple connection, and Transfer to new App User ID restore behavior";
+
+  Object.assign(revenueCat, {
+    productionMappingStatus: "verified",
+    appStoreConnectApiKeyStatus: "verified",
+    subscriptionKeyStatus: "verified",
+    customerReadWritePermissionStatus: "verified",
+    verifiedAtUtc: evidenceTime,
+    evidenceReference: "evidence/revenuecat-production-mapping",
+  });
+  Object.assign(revenueCat.restoreAfterAccountDeletion, {
+    dashboardBehavior: "transfer_to_new_app_user_id",
+    dashboardVerifiedAtUtc: evidenceTime,
+    dashboardEvidenceReference: "evidence/revenuecat-restore-behavior",
+    nativeQaStatus: "verified",
+    nativeQaTestedAtUtc: evidenceTime,
+    nativeQaEvidenceReference:
+      "evidence/restore-after-account-deletion-native-qa",
+  });
+
+  const pendingErrors = validateMetadata({
+    ...inputs,
+    submission,
+    release: true,
+  });
+  assert.equal(
+    pendingErrors.includes(technicalGateError),
+    false,
+    "the technical RevenueCat gate should be complete in this fixture",
+  );
+  assert.ok(pendingErrors.includes(ownerAuthorizationError));
+  assert.equal(submission.subscription.approval.owner, true);
+
+  Object.assign(revenueCat.ownerAuthorization, {
+    status: "confirmed",
+    verifiedAtUtc: evidenceTime,
+    evidenceReference:
+      "evidence/revenuecat-server-key-apple-connection-restore-owner-authorization",
+  });
+  assert.equal(
+    validateMetadata({ ...inputs, submission, release: true }).includes(
+      ownerAuthorizationError,
     ),
     false,
   );
@@ -1931,6 +2003,12 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
   subscription.revenueCat.verifiedAtUtc = evidenceTime;
   subscription.revenueCat.evidenceReference =
     "evidence/revenuecat-production-mapping";
+  Object.assign(subscription.revenueCat.ownerAuthorization, {
+    status: "confirmed",
+    verifiedAtUtc: evidenceTime,
+    evidenceReference:
+      "evidence/revenuecat-server-key-apple-connection-restore-owner-authorization",
+  });
   Object.assign(subscription.revenueCat.restoreAfterAccountDeletion, {
     dashboardBehavior: "transfer_to_new_app_user_id",
     dashboardVerifiedAtUtc: evidenceTime,

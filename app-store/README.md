@@ -142,7 +142,10 @@ Other fail-closed bindings are deliberate:
   as credential proof; the bounded customer-list `GET` proves read access only
   and the release process never issues a test deletion.
   Dashboard evidence must be paired with purchase, StoreKit-offer, and TestFlight
-  QA bound to the exact submitted build; and
+  QA bound to the exact submitted build. The core-offer approval does not
+  ratify the prepared least-privilege server key or authorize the production
+  Apple connection or restore-transfer policy: a distinct attributable owner
+  authorization must be confirmed before either release target can pass; and
 - Accessibility Nutrition Labels are currently voluntary. The initial release
   explicitly records that they are not reported and rejects any contradictory
   feature, exact-build, or App Store Connect evidence. If CUT later publishes a

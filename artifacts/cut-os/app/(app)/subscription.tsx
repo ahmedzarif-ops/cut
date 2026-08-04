@@ -7,12 +7,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LegalSupportLinks } from "@/components/LegalSupportLinks";
 import { useColors } from "@/hooks/useColors";
+import { SUBSCRIPTION_OFFER_READY_LAYOUT } from "@/lib/subscription-offer-layout";
 import { formatPlanBilling } from "@/lib/subscription";
 import { useSubscriptionGate } from "@/lib/subscription-gate";
 import { runSubscriptionSignOut } from "@/lib/subscription-provider-state";
@@ -26,6 +28,11 @@ const BENEFITS = [
 export default function SubscriptionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const {
+    fontScale,
+    height: viewportHeight,
+    width: viewportWidth,
+  } = useWindowDimensions();
   const c = useColors();
   const s = makeStyles(c);
   const subscription = useSubscriptionGate();
@@ -39,6 +46,8 @@ export default function SubscriptionScreen() {
   const [message, setMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [pendingAccess, setPendingAccess] = React.useState(false);
+  const [compactOverflowDetected, setCompactOverflowDetected] =
+    React.useState(false);
 
   React.useEffect(() => {
     setSelectedPackageId((current) => {
@@ -54,10 +63,54 @@ export default function SubscriptionScreen() {
     });
   }, [subscription.plans]);
 
+  const effectiveSelectedPackageId =
+    selectedPackageId ?? subscription.plans[0]?.packageIdentifier ?? null;
   const selectedPlan = subscription.plans.find(
-    (plan) => plan.packageIdentifier === selectedPackageId,
+    (plan) => plan.packageIdentifier === effectiveSelectedPackageId,
   );
+  const readyOfferVisible =
+    subscription.storeStatus === "ready" &&
+    subscription.catalogStatus === "ready" &&
+    subscription.plans.length > 0;
+  const compactOfferContentKey = JSON.stringify(
+    subscription.plans.map((plan) => [
+      plan.packageIdentifier,
+      plan.title,
+      plan.description,
+      plan.priceString,
+      plan.subscriptionPeriod,
+      plan.introductoryText,
+    ]),
+  );
+  const compactReadyLayoutEligible =
+    readyOfferVisible &&
+    viewportWidth >=
+      SUBSCRIPTION_OFFER_READY_LAYOUT.minimumCompactViewportWidthPoints &&
+    viewportHeight >=
+      SUBSCRIPTION_OFFER_READY_LAYOUT.minimumCompactViewportHeightPoints &&
+    fontScale <= SUBSCRIPTION_OFFER_READY_LAYOUT.maximumCompactFontScale;
+  const compactReadyLayout =
+    compactReadyLayoutEligible && !compactOverflowDetected;
   const actionBusy = busyAction !== null;
+
+  React.useEffect(() => {
+    setCompactOverflowDetected(false);
+  }, [
+    compactOfferContentKey,
+    fontScale,
+    readyOfferVisible,
+    viewportHeight,
+    viewportWidth,
+  ]);
+
+  const rejectCompactLineOverflow = React.useCallback(
+    (renderedLineCount: number, maximumLineCount: number) => {
+      if (compactReadyLayout && renderedLineCount > maximumLineCount) {
+        setCompactOverflowDetected(true);
+      }
+    },
+    [compactReadyLayout],
+  );
 
   const purchase = async () => {
     if (!selectedPlan || actionBusy) return;
@@ -186,10 +239,22 @@ export default function SubscriptionScreen() {
       style={s.flex}
       contentContainerStyle={[
         s.container,
-        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 36 },
+        compactReadyLayout && s.readyContainer,
+        {
+          paddingTop:
+            insets.top +
+            (compactReadyLayout
+              ? SUBSCRIPTION_OFFER_READY_LAYOUT.containerTopPadding
+              : 20),
+          paddingBottom:
+            insets.bottom +
+            (compactReadyLayout
+              ? SUBSCRIPTION_OFFER_READY_LAYOUT.containerBottomPadding
+              : 36),
+        },
       ]}
     >
-      <View style={s.topRow}>
+      <View style={[s.topRow, compactReadyLayout && s.readyTopRow]}>
         <Text style={s.brand}>CUT OS PRO</Text>
         <Pressable
           accessibilityRole="button"
@@ -200,24 +265,37 @@ export default function SubscriptionScreen() {
         </Pressable>
       </View>
 
-      <Text accessibilityRole="header" style={s.title}>
+      <Text
+        accessibilityRole="header"
+        onTextLayout={(event) =>
+          rejectCompactLineOverflow(
+            event.nativeEvent.lines.length,
+            SUBSCRIPTION_OFFER_READY_LAYOUT.titleMaximumLines,
+          )
+        }
+        style={[s.title, compactReadyLayout && s.readyTitle]}
+      >
         Make the next choice simple.
       </Text>
-      <Text style={s.subtitle}>
-        CUT OS Pro keeps your daily check-in, weigh-in, and practical nutrition
-        guidance together.
-      </Text>
+      {!readyOfferVisible ? (
+        <>
+          <Text style={s.subtitle}>
+            CUT OS Pro keeps your daily check-in, weigh-in, and practical
+            nutrition guidance together.
+          </Text>
 
-      <View style={s.benefitsCard}>
-        {BENEFITS.map((benefit) => (
-          <View key={benefit} style={s.benefitRow}>
-            <View style={s.checkCircle}>
-              <Text style={s.check}>✓</Text>
-            </View>
-            <Text style={s.benefitText}>{benefit}</Text>
+          <View style={s.benefitsCard}>
+            {BENEFITS.map((benefit) => (
+              <View key={benefit} style={s.benefitRow}>
+                <View style={s.checkCircle}>
+                  <Text style={s.check}>✓</Text>
+                </View>
+                <Text style={s.benefitText}>{benefit}</Text>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
+        </>
+      ) : null}
 
       {subscription.storeStatus === "loading" ? (
         <View style={s.loadingCard}>
@@ -237,17 +315,27 @@ export default function SubscriptionScreen() {
       {subscription.storeStatus === "ready" &&
       subscription.catalogStatus === "ready" ? (
         subscription.plans.length > 0 ? (
-          <View accessibilityRole="radiogroup" style={s.planList}>
+          <View
+            accessibilityRole="radiogroup"
+            style={[s.planList, compactReadyLayout && s.readyPlanList]}
+          >
             {subscription.plans.map((plan) => {
-              const selected = plan.packageIdentifier === selectedPackageId;
+              const selected =
+                plan.packageIdentifier === effectiveSelectedPackageId;
+              const billing = formatPlanBilling(
+                plan.priceString,
+                plan.subscriptionPeriod,
+              );
               return (
                 <Pressable
                   key={plan.packageIdentifier}
+                  accessibilityLabel={`${plan.title}, ${plan.description}, ${billing}${plan.introductoryText ? `, ${plan.introductoryText}` : ""}`}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: selected }}
                   disabled={actionBusy}
                   style={({ pressed }) => [
                     s.planCard,
+                    compactReadyLayout && s.readyPlanCard,
                     selected && s.planCardSelected,
                     pressed && !actionBusy && s.pressed,
                     actionBusy && s.disabled,
@@ -256,12 +344,28 @@ export default function SubscriptionScreen() {
                 >
                   <View style={s.planHeader}>
                     <View style={s.planText}>
-                      <Text style={s.planTitle}>{plan.title}</Text>
-                      {plan.description ? (
-                        <Text style={s.planDescription}>
-                          {plan.description}
-                        </Text>
-                      ) : null}
+                      <Text
+                        onTextLayout={(event) =>
+                          rejectCompactLineOverflow(
+                            event.nativeEvent.lines.length,
+                            SUBSCRIPTION_OFFER_READY_LAYOUT.planTitleMaximumLines,
+                          )
+                        }
+                        style={s.planTitle}
+                      >
+                        {plan.title}
+                      </Text>
+                      <Text
+                        onTextLayout={(event) =>
+                          rejectCompactLineOverflow(
+                            event.nativeEvent.lines.length,
+                            SUBSCRIPTION_OFFER_READY_LAYOUT.planDescriptionMaximumLines,
+                          )
+                        }
+                        style={s.planDescription}
+                      >
+                        {plan.description}
+                      </Text>
                     </View>
                     <View
                       accessibilityElementsHidden
@@ -271,14 +375,29 @@ export default function SubscriptionScreen() {
                       {selected ? <Text style={s.radioCheck}>✓</Text> : null}
                     </View>
                   </View>
-                  <Text style={s.planPrice}>
-                    {formatPlanBilling(
-                      plan.priceString,
-                      plan.subscriptionPeriod,
-                    )}
+                  <Text
+                    onTextLayout={(event) =>
+                      rejectCompactLineOverflow(
+                        event.nativeEvent.lines.length,
+                        SUBSCRIPTION_OFFER_READY_LAYOUT.planPriceMaximumLines,
+                      )
+                    }
+                    style={s.planPrice}
+                  >
+                    {billing}
                   </Text>
                   {plan.introductoryText ? (
-                    <Text style={s.introText}>{plan.introductoryText}</Text>
+                    <Text
+                      onTextLayout={(event) =>
+                        rejectCompactLineOverflow(
+                          event.nativeEvent.lines.length,
+                          SUBSCRIPTION_OFFER_READY_LAYOUT.introductoryTextMaximumLines,
+                        )
+                      }
+                      style={s.introText}
+                    >
+                      {plan.introductoryText}
+                    </Text>
                   ) : null}
                 </Pressable>
               );
@@ -363,6 +482,7 @@ export default function SubscriptionScreen() {
         disabled={!selectedPlan || actionBusy}
         style={({ pressed }) => [
           s.primaryButton,
+          compactReadyLayout && s.readyPrimaryButton,
           (!selectedPlan || actionBusy) && s.disabled,
           pressed && selectedPlan && !actionBusy && s.pressed,
         ]}
@@ -371,7 +491,15 @@ export default function SubscriptionScreen() {
         {busyAction === "purchase" ? (
           <ActivityIndicator color={c.primaryForeground} />
         ) : (
-          <Text style={s.primaryButtonText}>
+          <Text
+            onTextLayout={(event) =>
+              rejectCompactLineOverflow(
+                event.nativeEvent.lines.length,
+                SUBSCRIPTION_OFFER_READY_LAYOUT.purchaseLabelMaximumLines,
+              )
+            }
+            style={s.primaryButtonText}
+          >
             {selectedPlan
               ? `Continue — ${formatPlanBilling(
                   selectedPlan.priceString,
@@ -382,7 +510,12 @@ export default function SubscriptionScreen() {
         )}
       </Pressable>
 
-      <View style={s.secondaryActions}>
+      <View
+        style={[
+          s.secondaryActions,
+          compactReadyLayout && s.readySecondaryActions,
+        ]}
+      >
         <Pressable
           accessibilityLabel={
             pendingAccess ? "Check access again" : "Check purchase access"
@@ -396,6 +529,7 @@ export default function SubscriptionScreen() {
           disabled={actionBusy}
           style={({ pressed }) => [
             s.secondaryButton,
+            compactReadyLayout && s.readySecondaryButton,
             actionBusy && s.disabled,
             pressed && !actionBusy && s.pressed,
           ]}
@@ -404,8 +538,14 @@ export default function SubscriptionScreen() {
           {busyAction === "verify" ? (
             <ActivityIndicator color={c.primary} />
           ) : (
-            <Text style={s.secondaryButtonText}>
-              {pendingAccess ? "Check access again" : "Check purchase access"}
+            <Text
+              numberOfLines={compactReadyLayout ? 2 : undefined}
+              style={[
+                s.secondaryButtonText,
+                compactReadyLayout && s.readySecondaryButtonText,
+              ]}
+            >
+              {pendingAccess ? "Check again" : "Check access"}
             </Text>
           )}
         </Pressable>
@@ -426,6 +566,7 @@ export default function SubscriptionScreen() {
           }
           style={({ pressed }) => [
             s.secondaryButton,
+            compactReadyLayout && s.readySecondaryButton,
             (actionBusy ||
               !subscription.capability.available ||
               subscription.storeStatus !== "ready") &&
@@ -437,7 +578,15 @@ export default function SubscriptionScreen() {
           {busyAction === "restore" ? (
             <ActivityIndicator color={c.primary} />
           ) : (
-            <Text style={s.secondaryButtonText}>Restore purchases</Text>
+            <Text
+              numberOfLines={compactReadyLayout ? 2 : undefined}
+              style={[
+                s.secondaryButtonText,
+                compactReadyLayout && s.readySecondaryButtonText,
+              ]}
+            >
+              Restore
+            </Text>
           )}
         </Pressable>
         <Pressable
@@ -447,20 +596,37 @@ export default function SubscriptionScreen() {
           disabled={actionBusy}
           style={({ pressed }) => [
             s.secondaryButton,
+            compactReadyLayout && s.readySecondaryButton,
             actionBusy && s.disabled,
             pressed && !actionBusy && s.pressed,
           ]}
           onPress={() => void manage()}
         >
-          <Text style={s.secondaryButtonText}>Manage subscription</Text>
+          <Text
+            numberOfLines={compactReadyLayout ? 2 : undefined}
+            style={[
+              s.secondaryButtonText,
+              compactReadyLayout && s.readySecondaryButtonText,
+            ]}
+          >
+            Manage
+          </Text>
         </Pressable>
       </View>
 
-      <Text style={s.disclosure}>
-        Payment is charged to your Apple ID after you confirm with Apple.
-        Subscriptions renew automatically until canceled. Manage or cancel in
-        App Store settings. Apple shows the exact price, billing period, and any
-        eligible introductory offer before confirmation.
+      <Text
+        onTextLayout={(event) =>
+          rejectCompactLineOverflow(
+            event.nativeEvent.lines.length,
+            SUBSCRIPTION_OFFER_READY_LAYOUT.disclosureMaximumLines,
+          )
+        }
+        style={[s.disclosure, compactReadyLayout && s.readyDisclosure]}
+      >
+        Payment is charged to your Apple ID. This auto-renewable subscription
+        renews until canceled. Manage or cancel in App Store settings. Apple
+        confirms the exact price, period, and any eligible offer before
+        purchase.
       </Text>
       <LegalSupportLinks variant="compact" />
       <Pressable
@@ -473,6 +639,7 @@ export default function SubscriptionScreen() {
         disabled={actionBusy}
         style={({ pressed }) => [
           s.signOutButton,
+          compactReadyLayout && s.readySignOutButton,
           actionBusy && s.disabled,
           pressed && !actionBusy && s.pressed,
         ]}
@@ -492,12 +659,16 @@ function makeStyles(c: ReturnType<typeof useColors>) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: c.background },
     container: { paddingHorizontal: 24 },
+    readyContainer: { paddingHorizontal: 20 },
     topRow: {
-      minHeight: 44,
+      minHeight: SUBSCRIPTION_OFFER_READY_LAYOUT.topActionMinHeight,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       marginBottom: 22,
+    },
+    readyTopRow: {
+      marginBottom: SUBSCRIPTION_OFFER_READY_LAYOUT.topRowMarginBottom,
     },
     brand: {
       color: c.primary,
@@ -506,7 +677,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       letterSpacing: 1.7,
     },
     settingsLink: {
-      minHeight: 44,
+      minHeight: SUBSCRIPTION_OFFER_READY_LAYOUT.topActionMinHeight,
       justifyContent: "center",
       paddingHorizontal: 8,
     },
@@ -520,6 +691,10 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontFamily: "Inter_700Bold",
       fontSize: 34,
       lineHeight: 40,
+    },
+    readyTitle: {
+      fontSize: 29,
+      lineHeight: SUBSCRIPTION_OFFER_READY_LAYOUT.titleLineHeight,
     },
     subtitle: {
       color: c.mutedForeground,
@@ -575,13 +750,21 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontSize: 14,
       marginTop: 10,
     },
-    planList: { gap: 10, marginBottom: 16 },
+    planList: { gap: 10, marginTop: 16, marginBottom: 16 },
+    readyPlanList: {
+      marginTop: SUBSCRIPTION_OFFER_READY_LAYOUT.planListMarginTop,
+      marginBottom: SUBSCRIPTION_OFFER_READY_LAYOUT.planListMarginBottom,
+    },
     planCard: {
       backgroundColor: c.card,
       borderColor: c.border,
       borderWidth: 1,
       borderRadius: c.radius,
       padding: 17,
+    },
+    readyPlanCard: {
+      paddingVertical: SUBSCRIPTION_OFFER_READY_LAYOUT.planCardVerticalPadding,
+      paddingHorizontal: 14,
     },
     planCardSelected: { borderColor: c.primary, borderWidth: 2 },
     planHeader: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
@@ -590,13 +773,14 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       color: c.cardForeground,
       fontFamily: "Inter_600SemiBold",
       fontSize: 17,
+      lineHeight: SUBSCRIPTION_OFFER_READY_LAYOUT.planTitleLineHeight,
     },
     planDescription: {
       color: c.mutedForeground,
       fontFamily: "Inter_400Regular",
       fontSize: 13,
-      lineHeight: 19,
-      marginTop: 4,
+      lineHeight: SUBSCRIPTION_OFFER_READY_LAYOUT.planDescriptionLineHeight,
+      marginTop: SUBSCRIPTION_OFFER_READY_LAYOUT.planDescriptionMarginTop,
     },
     radio: {
       width: 21,
@@ -621,13 +805,15 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       color: c.foreground,
       fontFamily: "Inter_600SemiBold",
       fontSize: 16,
-      marginTop: 12,
+      lineHeight: SUBSCRIPTION_OFFER_READY_LAYOUT.planPriceLineHeight,
+      marginTop: SUBSCRIPTION_OFFER_READY_LAYOUT.planPriceMarginTop,
     },
     introText: {
       color: c.success,
       fontFamily: "Inter_600SemiBold",
       fontSize: 13,
-      marginTop: 6,
+      lineHeight: SUBSCRIPTION_OFFER_READY_LAYOUT.introductoryTextLineHeight,
+      marginTop: SUBSCRIPTION_OFFER_READY_LAYOUT.introductoryTextMarginTop,
     },
     noticeCard: {
       backgroundColor: c.card,
@@ -674,6 +860,9 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       justifyContent: "center",
       paddingHorizontal: 15,
     },
+    readyPrimaryButton: {
+      minHeight: SUBSCRIPTION_OFFER_READY_LAYOUT.purchaseButtonMinHeight,
+    },
     primaryButtonText: {
       color: c.primaryForeground,
       fontFamily: "Inter_600SemiBold",
@@ -681,17 +870,28 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       textAlign: "center",
     },
     secondaryActions: { marginTop: 9, gap: 2 },
+    readySecondaryActions: {
+      flexDirection: "row",
+      gap: 6,
+      marginTop: SUBSCRIPTION_OFFER_READY_LAYOUT.secondaryActionsMarginTop,
+    },
     secondaryButton: {
       minHeight: 48,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: 12,
     },
+    readySecondaryButton: {
+      flex: 1,
+      minHeight: SUBSCRIPTION_OFFER_READY_LAYOUT.secondaryButtonMinHeight,
+      paddingHorizontal: 3,
+    },
     secondaryButtonText: {
       color: c.primary,
       fontFamily: "Inter_600SemiBold",
       fontSize: 15,
     },
+    readySecondaryButtonText: { fontSize: 13, textAlign: "center" },
     disclosure: {
       color: c.mutedForeground,
       fontFamily: "Inter_400Regular",
@@ -700,11 +900,19 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       textAlign: "center",
       marginTop: 12,
     },
+    readyDisclosure: {
+      lineHeight: SUBSCRIPTION_OFFER_READY_LAYOUT.disclosureLineHeight,
+      marginTop: SUBSCRIPTION_OFFER_READY_LAYOUT.disclosureMarginTop,
+    },
     signOutButton: {
       minHeight: 48,
       alignItems: "center",
       justifyContent: "center",
       marginTop: 12,
+    },
+    readySignOutButton: {
+      minHeight: SUBSCRIPTION_OFFER_READY_LAYOUT.signOutButtonMinHeight,
+      marginTop: SUBSCRIPTION_OFFER_READY_LAYOUT.signOutMarginTop,
     },
     signOutText: {
       color: c.mutedForeground,
