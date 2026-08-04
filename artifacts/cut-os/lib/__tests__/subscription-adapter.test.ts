@@ -192,7 +192,7 @@ describe("RevenueCat subscription adapter", () => {
     expect(plans[0]).toMatchObject({
       priceString: "€24,99",
       periodLabel: "3 months",
-      introductoryText: "Free for 2 weeks",
+      introductoryText: "Free for 2 weeks, then €24,99 per 3 months",
     });
     expect(plans[1]?.introductoryText).toBeNull();
   });

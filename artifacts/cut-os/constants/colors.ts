@@ -22,7 +22,7 @@ const dark = {
 
   // Primary action color
   primary: "#3B82F6",
-  primaryForeground: "#FFFFFF",
+  primaryForeground: "#0B1120",
 
   // Secondary / less-emphasis interactive surfaces
   secondary: "#1E293B",
@@ -38,7 +38,7 @@ const dark = {
 
   // Positive / on-track status
   success: "#22C55E",
-  successForeground: "#FFFFFF",
+  successForeground: "#0B1120",
 
   // Warning / attention
   warning: "#F59E0B",
@@ -46,7 +46,8 @@ const dark = {
 
   // Destructive actions
   destructive: "#EF4444",
-  destructiveForeground: "#FFFFFF",
+  destructiveForeground: "#0B1120",
+  destructiveText: "#F87171",
 
   // Borders and input outlines
   border: "#24314A",
@@ -83,6 +84,7 @@ const light: typeof dark = {
 
   destructive: "#DC2626",
   destructiveForeground: "#FFFFFF",
+  destructiveText: "#B91C1C",
 
   border: "#E2E8F0",
   input: "#E2E8F0",

@@ -33,11 +33,12 @@ export default function SubscriptionScreen() {
     string | null
   >(null);
   const [busyAction, setBusyAction] = React.useState<
-    "purchase" | "restore" | "manage" | "signout" | null
+    "purchase" | "restore" | "verify" | "manage" | "signout" | null
   >(null);
   const signOutLock = React.useRef(false);
   const [message, setMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [pendingAccess, setPendingAccess] = React.useState(false);
 
   React.useEffect(() => {
     setSelectedPackageId((current) => {
@@ -63,14 +64,16 @@ export default function SubscriptionScreen() {
     setBusyAction("purchase");
     setError(null);
     setMessage(null);
+    setPendingAccess(false);
     try {
       const result = await subscription.purchase(
         selectedPlan.packageIdentifier,
       );
       if (result === "cancelled") return;
       if (result === "pending") {
+        setPendingAccess(true);
         setMessage(
-          "Apple confirmed the purchase. CUT OS is waiting for secure access verification. Retry shortly if access does not open.",
+          "Apple confirmed the purchase. CUT OS is waiting for secure access verification. Tap Check access again shortly if access does not open.",
         );
       }
     } catch {
@@ -93,6 +96,7 @@ export default function SubscriptionScreen() {
     setBusyAction("restore");
     setError(null);
     setMessage(null);
+    setPendingAccess(false);
     try {
       const result = await subscription.restore();
       if (result === "not_entitled") {
@@ -100,13 +104,37 @@ export default function SubscriptionScreen() {
           "No active CUT OS Pro purchase was found for this Apple ID.",
         );
       } else if (result === "pending") {
+        setPendingAccess(true);
         setMessage(
-          "The restore check finished. CUT OS is still waiting for secure access verification. Try Restore purchases again shortly if access does not open.",
+          "The restore check finished. CUT OS is still waiting for secure access verification. Tap Check access again shortly if access does not open.",
         );
       }
     } catch {
       setError(
         "CUT OS couldn't restore purchases. Check your connection and try again.",
+      );
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const recheckAccess = async () => {
+    if (actionBusy) return;
+    setBusyAction("verify");
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await subscription.recheckAccess();
+      if (result === "pending") {
+        setPendingAccess(true);
+        setMessage(
+          "Secure verification completed, but CUT OS Pro is not active yet. Wait a moment and check again, or restore purchases.",
+        );
+      }
+    } catch {
+      setPendingAccess(true);
+      setError(
+        "CUT OS couldn't verify purchase access. Check your connection and try again.",
       );
     } finally {
       setBusyAction(null);
@@ -343,6 +371,29 @@ export default function SubscriptionScreen() {
       <View style={s.secondaryActions}>
         <Pressable
           accessibilityRole="button"
+          accessibilityHint="Securely asks CUT OS to verify your App Store purchase again"
+          accessibilityState={{
+            disabled: actionBusy,
+            busy: busyAction === "verify",
+          }}
+          disabled={actionBusy}
+          style={({ pressed }) => [
+            s.secondaryButton,
+            actionBusy && s.disabled,
+            pressed && !actionBusy && s.pressed,
+          ]}
+          onPress={() => void recheckAccess()}
+        >
+          {busyAction === "verify" ? (
+            <ActivityIndicator color={c.primary} />
+          ) : (
+            <Text style={s.secondaryButtonText}>
+              {pendingAccess ? "Check access again" : "Check purchase access"}
+            </Text>
+          )}
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
           accessibilityState={{
             disabled:
               actionBusy ||
@@ -573,7 +624,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       marginBottom: 12,
     },
     error: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_500Medium",
       fontSize: 13,
       lineHeight: 19,

@@ -59,28 +59,43 @@ immediate-discard request behavior, subject to owner/counsel confirmation.
 
 ## App Store disclosure working position
 
-Apple's final questionnaire should be answered from the shipped behavior and every third-party SDK. Likely categories for the current design include:
+Apple's final questionnaire must be answered from the shipped behavior and
+every third-party SDK. The table below is the copy-ready **provisional
+first-party baseline** represented by `artifacts/cut-os/app.json` and
+`app-store/app-store-submission.json`. It is deliberately exact rather than a
+list of possible categories.
 
-- Contact Info: display name and email address, for app
-  functionality/account management; display name also supports the
-  user-directed personalized greeting.
-- User Content or Other User Content: user-entered fitness and nutrition records, if the current questionnaire maps them there.
-- Health & Fitness: start/goal weight, daily weigh-ins, and nutrition-related
-  fitness data currently implemented. Paid v1 no longer collects sex, height,
-  activity level, training experience, or target date; migration
-  `0010_minimize_v1_profile.sql` clears any legacy values before launch. Add
-  workouts only if workout collection ships.
-- Identifiers: user/account identifiers used for authentication and app
-  functionality. Client IP/network metadata is processed for service delivery,
-  one-minute abuse throttling, and Clerk authentication; confirm its exact
-  current questionnaire category, linkage, and vendor retention from the final
-  hosting and Clerk configuration. Do not mark it as tracking.
-- Purchases: linked Purchase History used for App Functionality and Analytics
-  by Apple/RevenueCat, with tracking set to No.
-- Other Data Types: the stored adult-eligibility status, policy version,
-  decision timestamp, timezone, and unit preference, linked to the account and
-  used for App Functionality, subject to confirmation in the live
-  questionnaire.
+| App Store data type          | Manifest type                               | Collected | Linked | Tracking | Purposes                                   | Current v1 data                                                                                  |
+| ---------------------------- | ------------------------------------------- | --------- | ------ | -------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Contact Info — Name          | `NSPrivacyCollectedDataTypeName`            | Yes       | Yes    | No       | App Functionality; Product Personalization | Display name used for account setup and the user-directed greeting.                              |
+| Contact Info — Email Address | `NSPrivacyCollectedDataTypeEmailAddress`    | Yes       | Yes    | No       | App Functionality                          | Clerk sign-in and account support.                                                               |
+| Health & Fitness — Health    | `NSPrivacyCollectedDataTypeHealth`          | Yes       | Yes    | No       | App Functionality; Product Personalization | Start/goal weight, daily weigh-ins, and nutrition records that ship in v1.                       |
+| Health & Fitness — Fitness   | `NSPrivacyCollectedDataTypeFitness`         | Yes       | Yes    | No       | App Functionality; Product Personalization | Adults-who-lift goal context and current fitness-related check-in data; no workout logger ships. |
+| Identifiers — User ID        | `NSPrivacyCollectedDataTypeUserID`          | Yes       | Yes    | No       | App Functionality                          | Internal user UUID and authentication/account linkage.                                           |
+| Other Data Types             | `NSPrivacyCollectedDataTypeOtherDataTypes`  | Yes       | Yes    | No       | App Functionality; Product Personalization | Eligibility result/version/time, timezone, unit preference, goal, and records mapped here.       |
+| Purchases — Purchase History | `NSPrivacyCollectedDataTypePurchaseHistory` | Yes       | Yes    | No       | App Functionality; Analytics               | Apple/RevenueCat subscription, renewal, expiry, refund, and entitlement state.                   |
+
+Paid v1 does not collect workout logs. Do not add workout collection to the
+questionnaire merely because the audience lifts or because Apple groups Health
+and Fitness data together. Paid v1 also no longer collects sex, height,
+activity level, training experience, or target date; migration
+`0010_minimize_v1_profile.sql` clears any legacy values before launch.
+
+Two external-service mappings remain intentionally outside the table until
+production evidence exists:
+
+- Client IP/network metadata is processed for service delivery, one-minute
+  abuse throttling, and Clerk authentication. Confirm the exact App Store
+  category, linkage, and vendor retention from the final hosting and Clerk
+  configuration. Do not mark it as tracking.
+- Add Diagnostics or Usage Data only if the final archive, SDKs, or production
+  configuration collect them. Record their real purpose, linkage, and vendor
+  retention rather than inferring them from development tooling.
+
+If the live App Store questionnaire maps any current user-entered meal or
+fitness record to User Content rather than the manifest baseline above, stop,
+document that mapping, update the machine-readable file and app manifest as
+needed, and re-run validation before submission.
 
 Raw DOB is transmitted only to service the real-time decision and is discarded
 immediately. Apple's current App Privacy definition focuses on data retained

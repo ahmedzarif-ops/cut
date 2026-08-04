@@ -286,6 +286,8 @@ class PrincipalIsolatedSubscriptionAdapter implements SubscriptionAdapter {
         introductoryText: formatIntroductoryOffer(
           item.product.introPrice,
           eligibility[item.product.identifier] === true,
+          item.product.priceString,
+          item.product.subscriptionPeriod,
         ),
       });
     }

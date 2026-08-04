@@ -112,6 +112,20 @@ not a public-launch readiness claim.
     stale-worker fencing before local completion;
   - all API calls have a bounded whole-request deadline, and failed sign-out
     actions provide visible retryable feedback.
+- Native account recovery now supports Clerk's email-code password reset while
+  returning the same request notice whether an account exists or delivery
+  succeeds, and sign-up checks Clerk result objects before advancing.
+- The paywall always offers a server-authoritative purchase-access recheck,
+  including when StoreKit is unavailable, and the recheck is single-flight,
+  account-fenced, and fail closed.
+- App Store submission metadata, privacy answers, age/declaration approvals,
+  initial territories, and screenshot evidence now have machine-readable source
+  files. Working records validate in CI; the release validator intentionally
+  refuses submission until every owner, live App Store Connect, qualified
+  review, and real-capture gate is complete.
+- The release operations package now includes a reproducible evidence manifest,
+  staging/production/rollback runbook, and bounded sanitized deployment probes
+  for health, readiness, auth guards, indexing, redirects, and internal routes.
 - Malformed and oversized JSON requests now return sanitized `400`/`413`
   responses rather than becoming generic server errors.
 - pnpm is pinned to `10.34.5`, and GitHub CI now runs frozen install, generated
@@ -124,12 +138,12 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 431 tests across 45 files** (domain 33, database 4,
-  mobile 193, API 201).
+- `pnpm run test`: **PASS — 565 tests across 59 files** (release operations 15,
+  App Store artifacts 14, domain 33, database 4, mobile 239, API 260).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
-- Production-style Expo export for iOS: **PASS — 1,767 modules; 7.39 MB Hermes bundle; 17 MB disposable export**.
+- Production-style Expo export for iOS: **PASS — 1,756 modules; 7.37 MB Hermes bundle; 17 MB disposable export**.
 - Production release-environment preflight: **PASS** with representative
   non-secret values; missing, malformed, private, reserved, cross-origin, and
   insecure configurations fail closed in automated coverage.

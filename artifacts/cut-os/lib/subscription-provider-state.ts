@@ -1,3 +1,9 @@
+import { SubscriptionAdapterError } from "./subscription-adapter";
+import {
+  resolveServerSubscription,
+  type ServerSubscriptionSnapshot,
+} from "./subscription";
+
 export type SubscriptionActionResult =
   "cancelled" | "entitled" | "pending" | "not_entitled";
 
@@ -30,6 +36,46 @@ export class ProviderPrincipalGuard {
     this.owner = null;
     this.generation += 1;
   }
+}
+
+export async function confirmServerSubscriptionRefresh<
+  TStatus extends ServerSubscriptionSnapshot,
+>({
+  owner,
+  token,
+  guard,
+  refresh,
+  commit,
+}: {
+  owner: string;
+  token: ProviderPrincipalToken | null;
+  guard: ProviderPrincipalGuard;
+  refresh: () => Promise<TStatus>;
+  commit: (owner: string, status: TStatus) => void;
+}): Promise<TStatus> {
+  if (!token || token.owner !== owner || !guard.isCurrent(token)) {
+    throw new SubscriptionAdapterError("principal_changed");
+  }
+
+  const status = await refresh();
+
+  // A response captured for principal A must never write after B becomes the
+  // current principal, even though the query client is shared app-wide.
+  if (!guard.isCurrent(token)) {
+    throw new SubscriptionAdapterError("principal_changed");
+  }
+  if (resolveServerSubscription(status, false).state !== "ready") {
+    throw new SubscriptionAdapterError("unavailable");
+  }
+
+  commit(owner, status);
+  return status;
+}
+
+export function resolveAccessRecheck(
+  serverEntitled: boolean,
+): "entitled" | "pending" {
+  return serverEntitled ? "entitled" : "pending";
 }
 
 export function resolvePurchaseVerification(

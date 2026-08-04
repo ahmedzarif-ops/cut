@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "status": "planned_not_captured",
+  "updated": "2026-08-03",
+  "assetDirectory": "app-store/screenshots/files",
+  "technicalRequirements": {
+    "slot": "iPhone 6.9-inch portrait",
+    "acceptedFormats": ["png"],
+    "acceptedPixelDimensions": [
+      {
+        "width": 1260,
+        "height": 2736
+      },
+      {
+        "width": 1290,
+        "height": 2796
+      },
+      {
+        "width": 1320,
+        "height": 2868
+      }
+    ],
+    "alphaAllowed": false,
+    "minimumListingScreenshots": 1,
+    "maximumListingScreenshots": 10
+  },
+  "captureDefaults": {
+    "appVersion": null,
+    "buildNumber": null,
+    "gitCommit": null,
+    "easBuildReference": null,
+    "appStoreConnectDeviceSlot": "iPhone 6.9-inch portrait",
+    "captureDevice": null,
+    "iosVersion": null,
+    "locale": "en-US",
+    "appearance": null,
+    "capturedBy": null,
+    "capturedAtUtc": null
+  },
+  "listingSelection": [],
+  "reviewEvidenceSelection": [],
+  "shots": [
+    {
+      "order": 1,
+      "id": "01-today-next-action",
+      "intendedUse": "listing_candidate_and_review_evidence",
+      "requiredForReleaseEvidence": true,
+      "file": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 2,
+      "id": "02-today-weigh-in-complete",
+      "intendedUse": "listing_candidate",
+      "requiredForReleaseEvidence": true,
+      "file": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 3,
+      "id": "03-balanced-options",
+      "intendedUse": "listing_candidate",
+      "requiredForReleaseEvidence": true,
+      "file": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 4,
+      "id": "04-meal-preview",
+      "intendedUse": "listing_candidate",
+      "requiredForReleaseEvidence": true,
+      "file": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 5,
+      "id": "05-today-nutrition-logged",
+      "intendedUse": "listing_candidate",
+      "requiredForReleaseEvidence": true,
+      "file": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 6,
+      "id": "06-logged-meal-controls",
+      "intendedUse": "optional_listing_candidate_and_review_evidence",
+      "requiredForReleaseEvidence": true,
+      "file": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 7,
+      "id": "07-subscription-offer",
+      "intendedUse": "in_app_purchase_review_evidence",
+      "requiredForReleaseEvidence": true,
+      "file": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 8,
+      "id": "08-adult-eligibility",
+      "intendedUse": "review_evidence",
+      "requiredForReleaseEvidence": true,
+      "file": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 9,
+      "id": "09-settings-controls",
+      "intendedUse": "review_evidence",
+      "requiredForReleaseEvidence": true,
+      "file": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 10,
+      "id": "10-sign-up-18plus",
+      "intendedUse": "optional_review_evidence",
+      "requiredForReleaseEvidence": false,
+      "file": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    }
+  ]
+}

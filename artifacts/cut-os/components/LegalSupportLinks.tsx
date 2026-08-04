@@ -191,7 +191,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       marginTop: 12,
     },
     errorText: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_500Medium",
       fontSize: 13,
       lineHeight: 19,

@@ -1,12 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  confirmServerSubscriptionRefresh,
   ProviderPrincipalGuard,
+  resolveAccessRecheck,
   resolvePurchaseVerification,
   resolveRestoreVerification,
   runSignOutWithFeedback,
   runSubscriptionSignOut,
 } from "../subscription-provider-state";
+import { CUT_OS_PRO_ENTITLEMENT_ID } from "../subscription";
+import { SubscriptionAdapterError } from "../subscription-adapter";
 
 const USER_A = "d9428888-122b-4a5f-a4e8-0a0f874235a8";
 const USER_B = "7d444840-9dc0-11d1-b245-5ffdce74fad2";
@@ -17,6 +21,25 @@ function deferred() {
     resolve = resolvePromise;
   });
   return { promise, resolve };
+}
+
+function deferredValue<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, reject, resolve };
+}
+
+function subscriptionStatus(entitled: boolean) {
+  return {
+    entitled,
+    entitlementId: CUT_OS_PRO_ENTITLEMENT_ID,
+    expiresAt: null,
+    managementUrl: null,
+  };
 }
 
 describe("subscription provider state", () => {
@@ -32,6 +55,77 @@ describe("subscription provider state", () => {
     // A late cleanup for A must not deactivate the now-current B session.
     guard.deactivate(tokenA);
     expect(guard.isCurrent(tokenB)).toBe(true);
+  });
+
+  it("forces a refresh, commits only the scoped owner, and keeps false pending", async () => {
+    const guard = new ProviderPrincipalGuard();
+    const token = guard.activate(USER_A);
+    const status = subscriptionStatus(false);
+    const refresh = vi.fn(async () => status);
+    const ownerBCache = subscriptionStatus(true);
+    const cache = new Map([[USER_B, ownerBCache]]);
+    const commit = vi.fn((owner: string, value: typeof status) => {
+      cache.set(owner, value);
+    });
+
+    const verified = await confirmServerSubscriptionRefresh({
+      owner: USER_A,
+      token,
+      guard,
+      refresh,
+      commit,
+    });
+
+    expect(refresh).toHaveBeenCalledOnce();
+    expect(commit).toHaveBeenCalledWith(USER_A, status);
+    expect(cache.get(USER_A)).toBe(status);
+    expect(cache.get(USER_B)).toBe(ownerBCache);
+    expect(resolveAccessRecheck(verified.entitled)).toBe("pending");
+  });
+
+  it("rejects a late refresh after a principal switch without committing access", async () => {
+    const guard = new ProviderPrincipalGuard();
+    const tokenA = guard.activate(USER_A);
+    const operation = deferredValue<ReturnType<typeof subscriptionStatus>>();
+    const commit = vi.fn();
+
+    const confirmation = confirmServerSubscriptionRefresh({
+      owner: USER_A,
+      token: tokenA,
+      guard,
+      refresh: () => operation.promise,
+      commit,
+    });
+    guard.activate(USER_B);
+    operation.resolve(subscriptionStatus(true));
+
+    await expect(confirmation).rejects.toMatchObject({
+      name: "SubscriptionAdapterError",
+      code: "principal_changed",
+    });
+    expect(commit).not.toHaveBeenCalled();
+  });
+
+  it("never unlocks or commits when the forced refresh fails", async () => {
+    const guard = new ProviderPrincipalGuard();
+    const token = guard.activate(USER_A);
+    const commit = vi.fn();
+    const failure = new SubscriptionAdapterError("unavailable");
+
+    await expect(
+      confirmServerSubscriptionRefresh({
+        owner: USER_A,
+        token,
+        guard,
+        refresh: async () => {
+          throw failure;
+        },
+        commit,
+      }),
+    ).rejects.toBe(failure);
+    expect(commit).not.toHaveBeenCalled();
+    expect(resolveAccessRecheck(false)).toBe("pending");
+    expect(resolveAccessRecheck(true)).toBe("entitled");
   });
 
   it("keeps restore confirming when local Pro and server refresh disagree", () => {

@@ -35,12 +35,15 @@ jobs:
       - run: pnpm run codegen:check
       - run: pnpm run typecheck
       - run: pnpm run test
+      - name: Validate working App Store submission artifacts
+        run: pnpm run validate:app-store
       - name: Build the production API bundle
         run: pnpm --filter @workspace/api-server run build
       - name: Verify committed database migrations match the schema
         run: |
           pnpm --filter @workspace/db run generate
           git diff --exit-code -- lib/db/migrations
+          test -z "$(git status --porcelain --untracked-files=all -- lib/db/migrations)"
       - name: Verify Expo dependencies and project health
         run: |
           pnpm --filter @workspace/cut-os exec expo install --check

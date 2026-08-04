@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LegalSupportLinks } from "@/components/LegalSupportLinks";
 import { useColors } from "@/hooks/useColors";
+import { clerkOperationSucceeded } from "@/lib/auth-flow";
 
 const SIGN_UP_LEGAL_LINK_IDS = ["terms", "privacyPolicy"] as const;
 
@@ -31,6 +32,9 @@ export default function SignUpScreen() {
   const [code, setCode] = React.useState("");
   const [adultConfirmed, setAdultConfirmed] = React.useState(false);
   const [pendingVerification, setPendingVerification] = React.useState(false);
+  const [verificationNotice, setVerificationNotice] = React.useState<
+    string | null
+  >(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
 
   const busy = fetchStatus === "fetching";
@@ -39,25 +43,65 @@ export default function SignUpScreen() {
   const handleSubmit = async () => {
     if (createDisabled) return;
     setSubmitError(null);
-    const { error } = await signUp.password({ emailAddress, password });
-    if (error) {
+    setVerificationNotice(null);
+    const accountCreated = await clerkOperationSucceeded(() =>
+      signUp.password({ emailAddress, password }),
+    );
+    if (!accountCreated) {
       setSubmitError(
         "Couldn't create your account. Try another email or a stronger password.",
       );
       return;
     }
-    await signUp.verifications.sendEmailCode();
+
     setPendingVerification(true);
+    const codeSent = await clerkOperationSucceeded(() =>
+      signUp.verifications.sendEmailCode(),
+    );
+    if (!codeSent) {
+      setSubmitError(
+        "We couldn't send a verification code. Tap Send a new code to try again.",
+      );
+      return;
+    }
+    setVerificationNotice(`We sent a 6-digit code to ${emailAddress}.`);
   };
 
   const handleVerify = async () => {
+    if (!code || busy) return;
     setSubmitError(null);
-    await signUp.verifications.verifyEmailCode({ code });
-    if (signUp.status === "complete") {
-      await signUp.finalize({ navigate: () => router.replace("/today") });
-    } else {
+    const codeVerified = await clerkOperationSucceeded(() =>
+      signUp.verifications.verifyEmailCode({ code }),
+    );
+    if (!codeVerified || signUp.status !== "complete") {
       setSubmitError("That code didn't work. Request a new one and try again.");
+      return;
     }
+
+    const finalized = await clerkOperationSucceeded(() =>
+      signUp.finalize({ navigate: () => router.replace("/today") }),
+    );
+    if (!finalized) {
+      setSubmitError(
+        "Your email was verified, but we couldn't finish signing you in. Return to sign in and try again.",
+      );
+    }
+  };
+
+  const handleResend = async () => {
+    if (busy) return;
+    setSubmitError(null);
+    setVerificationNotice(null);
+    const codeSent = await clerkOperationSucceeded(() =>
+      signUp.verifications.sendEmailCode(),
+    );
+    if (!codeSent) {
+      setSubmitError(
+        "We couldn't send a new verification code. Check your connection and try again.",
+      );
+      return;
+    }
+    setVerificationNotice(`A new 6-digit code was sent to ${emailAddress}.`);
   };
 
   return (
@@ -80,12 +124,15 @@ export default function SignUpScreen() {
           <>
             <Text style={s.title}>Verify your email</Text>
             <Text style={s.subtitle}>
-              We sent a 6-digit code to {emailAddress}.
+              {verificationNotice ??
+                "Request a verification code, then enter it here to continue."}
             </Text>
 
             <Text style={s.label}>Verification code</Text>
             <TextInput
+              accessibilityLabel="Email verification code"
               style={s.input}
+              autoComplete="one-time-code"
               keyboardType="number-pad"
               placeholder="123456"
               placeholderTextColor={c.mutedForeground}
@@ -93,11 +140,19 @@ export default function SignUpScreen() {
               onChangeText={setCode}
             />
             {errors.fields.code && (
-              <Text style={s.error}>{errors.fields.code.message}</Text>
+              <Text accessibilityRole="alert" style={s.error}>
+                {errors.fields.code.message}
+              </Text>
             )}
-            {submitError && <Text style={s.error}>{submitError}</Text>}
+            {submitError && (
+              <Text accessibilityRole="alert" style={s.error}>
+                {submitError}
+              </Text>
+            )}
 
             <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: busy || !code, busy }}
               style={({ pressed }) => [
                 s.button,
                 (busy || !code) && s.buttonDisabled,
@@ -114,8 +169,11 @@ export default function SignUpScreen() {
             </Pressable>
 
             <Pressable
-              style={s.secondaryButton}
-              onPress={() => signUp.verifications.sendEmailCode()}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: busy, busy }}
+              disabled={busy}
+              style={[s.secondaryButton, busy && s.buttonDisabled]}
+              onPress={handleResend}
             >
               <Text style={s.secondaryButtonText}>Send a new code</Text>
             </Pressable>
@@ -181,7 +239,11 @@ export default function SignUpScreen() {
               variant="compact"
               includedIds={SIGN_UP_LEGAL_LINK_IDS}
             />
-            {submitError && <Text style={s.error}>{submitError}</Text>}
+            {submitError && (
+              <Text accessibilityRole="alert" style={s.error}>
+                {submitError}
+              </Text>
+            )}
 
             <Pressable
               accessibilityRole="button"
@@ -267,7 +329,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       paddingVertical: 14,
     },
     error: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_400Regular",
       fontSize: 13,
       marginTop: 8,

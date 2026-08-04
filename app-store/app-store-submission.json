@@ -1,0 +1,365 @@
+{
+  "schemaVersion": 1,
+  "status": "working_not_approved",
+  "updated": "2026-08-03",
+  "references": {
+    "humanRecord": "APP_STORE_METADATA.md",
+    "appConfig": "artifacts/cut-os/app.json",
+    "privacyDataMap": "PRIVACY_DATA_MAP.md",
+    "reviewRunbook": "APP_REVIEW_RUNBOOK.md",
+    "screenshotManifest": "app-store/screenshots/manifest.json"
+  },
+  "listing": {
+    "appName": "CUT OS",
+    "bundleId": "com.zarifahmed.cut",
+    "appVersion": "1.0.0",
+    "initialRelease": true,
+    "primaryLanguage": "en-US",
+    "subtitle": "Your daily cut check-in",
+    "description": "CUT OS gives adults who lift a simple daily sequence for the fundamentals of a\ncut.\n\n- See one clear next action for today.\n- Log or update one daily weigh-in.\n- Choose from six curated balanced-meal options.\n- Review ingredients, common allergens, portions, and estimated nutrition.\n- Log, edit, or delete meals and see today's estimated nutrition totals.\n- Keep account data synced and delete the account in-app.\n\nCUT OS provides general fitness and nutrition information, not medical advice.\nMeal nutrition is estimated. Ingredient and common-allergen lists must be\nreviewed against the exact products you use and are not an allergen-safety\nguarantee.\n\nCUT OS is for adults age 18 and older. Paid access uses an auto-renewable Apple\nsubscription. The exact localized price and billing period appear before you\nconfirm purchase. You can restore purchases in the app and manage or cancel the\nsubscription through Apple.",
+    "keywords": "cut,weight,meal,protein,macros,lifting,nutrition,weigh-in,fitness",
+    "primaryCategory": "Health & Fitness",
+    "secondaryCategory": null,
+    "madeForKids": false,
+    "promotionalText": null,
+    "marketingUrl": null,
+    "whatsNew": null,
+    "whatsNewPosition": "not_applicable_initial_release",
+    "releaseMethod": "manual",
+    "supportUrl": null,
+    "privacyPolicyUrl": null,
+    "termsUrl": null,
+    "ageSuitabilityUrl": null,
+    "sellerLegalOperator": null,
+    "sku": null,
+    "copyright": null,
+    "contentRightsDeclaration": null,
+    "initialTerritories": null
+  },
+  "ownerControlledFields": [
+    "listing.sellerLegalOperator",
+    "listing.sku",
+    "listing.copyright",
+    "listing.contentRightsDeclaration",
+    "listing.supportUrl",
+    "listing.privacyPolicyUrl",
+    "listing.termsUrl",
+    "listing.initialTerritories"
+  ],
+  "availability": {
+    "status": "pending_owner_and_app_store_connect",
+    "approval": {
+      "owner": false,
+      "appStoreConnectConfirmed": false
+    }
+  },
+  "authenticationSecurity": {
+    "status": "pending_supported_recovery_architecture_and_production_evidence",
+    "source": "artifacts/cut-os/AUTH_SECURITY_PRELAUNCH.md",
+    "risk": "password_reset_account_enumeration_timing",
+    "selectedRecoveryArchitecture": null,
+    "clerkSupportEvidenceReference": null,
+    "implementationEvidenceReference": null,
+    "productionTenantEvidence": {
+      "clerkTenantAlias": null,
+      "testedAtUtc": null,
+      "checks": {
+        "genericPublicResponse": {
+          "status": "pending",
+          "evidenceReference": null
+        },
+        "responseEnvelopeParity": {
+          "status": "pending",
+          "evidenceReference": null
+        },
+        "timingParity": {
+          "status": "pending",
+          "evidenceReference": null
+        },
+        "rateLimitEnumerationResistance": {
+          "status": "pending",
+          "evidenceReference": null
+        },
+        "providerFailureBehavior": {
+          "status": "pending",
+          "evidenceReference": null
+        },
+        "safeAbuseLogging": {
+          "status": "pending",
+          "evidenceReference": null
+        }
+      }
+    },
+    "approval": {
+      "owner": false,
+      "securityReviewer": false,
+      "clerkSupportVerified": false,
+      "productionTenantEvidenceVerified": false
+    }
+  },
+  "regulatedMedicalDevice": {
+    "status": "provisional_pending_territories_and_confirmation",
+    "workingPosition": "general_wellness_not_a_regulated_medical_device",
+    "basis": "CUT OS currently provides general fitness and nutrition information, not diagnosis, prevention, monitoring, treatment, clinical guidance, or regulated-device functionality. The final binary, claims, territories, and live regional declarations still require qualified review and confirmation.",
+    "appleReference": "https://developer.apple.com/help/app-store-connect/manage-app-information/declare-regulated-medical-device-status",
+    "regionalDeclarations": {
+      "US": {
+        "workingAnswer": "not_regulated_medical_device",
+        "status": "provisional_pending_confirmation"
+      },
+      "EU_EEA": {
+        "workingAnswer": "not_regulated_medical_device",
+        "status": "provisional_pending_confirmation"
+      },
+      "UK": {
+        "workingAnswer": "not_regulated_medical_device",
+        "status": "provisional_pending_confirmation"
+      }
+    },
+    "approval": {
+      "owner": false,
+      "legalOrQualifiedRegulatoryReviewer": false,
+      "finalBinaryVerified": false,
+      "appStoreConnectConfirmed": false
+    }
+  },
+  "ageRating": {
+    "targetAudience": "18_plus",
+    "questionnaireCheckedAt": "2026-08-03",
+    "workingAnswers": [
+      {
+        "id": "health_or_wellness_topics",
+        "answer": "yes",
+        "status": "provisional_pending_confirmation",
+        "basis": "The current app provides calorie, dieting, fitness, and exercise-related general wellness guidance.",
+        "evidence": [
+          "APP_STORE_METADATA.md#age-rating-and-questionnaire",
+          "artifacts/cut-os/app/(app)/meal-one.tsx"
+        ],
+        "confirmationGates": [
+          "owner",
+          "qualified_health_nutrition_review",
+          "final_binary",
+          "app_store_connect"
+        ]
+      },
+      {
+        "id": "medical_or_treatment_information",
+        "answer": "none",
+        "status": "provisional_pending_confirmation",
+        "basis": "The v1 scope and listing expressly provide general wellness information, not diagnosis, treatment, clinical guidance, or personalized medical advice.",
+        "evidence": [
+          "APP_STORE_METADATA.md#focused-v1-listing-copy",
+          "artifacts/cut-os/app/(app)/meal-one.tsx"
+        ],
+        "confirmationGates": [
+          "owner",
+          "legal",
+          "qualified_health_nutrition_review",
+          "final_binary",
+          "app_store_connect"
+        ]
+      },
+      {
+        "id": "age_assurance",
+        "answer": "yes",
+        "status": "provisional_pending_confirmation",
+        "basis": "Inference from Apple's current definition: CUT OS asks for self-declared full DOB solely to confirm that the user meets its 18+ requirement. This is not identity verification or verified age.",
+        "evidence": [
+          "ADR_003_ADULT_ELIGIBILITY.md",
+          "artifacts/cut-os/app/(app)/adult-eligibility.tsx"
+        ],
+        "confirmationGates": [
+          "owner",
+          "legal",
+          "final_binary",
+          "app_store_connect"
+        ]
+      },
+      {
+        "id": "social_media",
+        "answer": "no",
+        "status": "provisional_pending_confirmation",
+        "basis": "No social or community feature ships in paid v1.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "user_generated_content",
+        "answer": "no",
+        "status": "provisional_pending_confirmation",
+        "basis": "No public or shared user-generated content ships in paid v1.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "messaging_or_chat",
+        "answer": "no",
+        "status": "provisional_pending_confirmation",
+        "basis": "No messaging or chat feature ships in paid v1.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "advertising",
+        "answer": "no",
+        "status": "provisional_pending_confirmation",
+        "basis": "The current app has no advertising SDK or advertising feature.",
+        "evidence": ["PRIVACY_DATA_MAP.md#current-data-inventory"],
+        "confirmationGates": ["owner", "final_archive", "app_store_connect"]
+      },
+      {
+        "id": "unrestricted_web_access",
+        "answer": "no",
+        "status": "provisional_pending_confirmation",
+        "basis": "The app exposes only controlled legal and support links, not unrestricted browsing.",
+        "evidence": ["artifacts/cut-os/components/LegalSupportLinks.tsx"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      }
+    ],
+    "higherAgeOverride": {
+      "target": "18_plus",
+      "status": "pending_owner_legal_terms_and_app_store_connect",
+      "basis": "The owner confirmed an adults-only launch. If the final Terms/EULA minimum age is 18 and Apple's calculated rating is lower, select the 18+ higher-age override."
+    },
+    "approval": {
+      "owner": false,
+      "legal": false,
+      "qualifiedHealthNutritionReviewer": false,
+      "finalBinaryVerified": false,
+      "appStoreConnectConfirmed": false
+    }
+  },
+  "privacy": {
+    "status": "provisional_pending_production_reconciliation",
+    "manifestPath": "artifacts/cut-os/app.json",
+    "tracking": false,
+    "trackingDomains": [],
+    "dataTypes": [
+      {
+        "ascDataType": "Contact Info - Name",
+        "manifestType": "NSPrivacyCollectedDataTypeName",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          "NSPrivacyCollectedDataTypePurposeProductPersonalization"
+        ],
+        "ascPurposes": ["App Functionality", "Product Personalization"],
+        "v1Data": "Display name for account setup and the user-directed greeting."
+      },
+      {
+        "ascDataType": "Contact Info - Email Address",
+        "manifestType": "NSPrivacyCollectedDataTypeEmailAddress",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+        ],
+        "ascPurposes": ["App Functionality"],
+        "v1Data": "Clerk sign-in and account support."
+      },
+      {
+        "ascDataType": "Health & Fitness - Health",
+        "manifestType": "NSPrivacyCollectedDataTypeHealth",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          "NSPrivacyCollectedDataTypePurposeProductPersonalization"
+        ],
+        "ascPurposes": ["App Functionality", "Product Personalization"],
+        "v1Data": "Start and goal weight, daily weigh-ins, and nutrition records that ship in v1."
+      },
+      {
+        "ascDataType": "Health & Fitness - Fitness",
+        "manifestType": "NSPrivacyCollectedDataTypeFitness",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          "NSPrivacyCollectedDataTypePurposeProductPersonalization"
+        ],
+        "ascPurposes": ["App Functionality", "Product Personalization"],
+        "v1Data": "Adults-who-lift goal context and current fitness-related check-in data. No workout logger ships in v1."
+      },
+      {
+        "ascDataType": "Identifiers - User ID",
+        "manifestType": "NSPrivacyCollectedDataTypeUserID",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+        ],
+        "ascPurposes": ["App Functionality"],
+        "v1Data": "Internal user UUID and authentication/account linkage."
+      },
+      {
+        "ascDataType": "Other Data Types",
+        "manifestType": "NSPrivacyCollectedDataTypeOtherDataTypes",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          "NSPrivacyCollectedDataTypePurposeProductPersonalization"
+        ],
+        "ascPurposes": ["App Functionality", "Product Personalization"],
+        "v1Data": "Eligibility result, policy version, decision time, timezone, unit preference, goal, and records where the live questionnaire maps them here."
+      },
+      {
+        "ascDataType": "Purchases - Purchase History",
+        "manifestType": "NSPrivacyCollectedDataTypePurchaseHistory",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          "NSPrivacyCollectedDataTypePurposeAnalytics"
+        ],
+        "ascPurposes": ["App Functionality", "Analytics"],
+        "v1Data": "Apple and RevenueCat subscription, renewal, expiry, refund, and entitlement state."
+      }
+    ],
+    "externalVerificationGates": [
+      {
+        "id": "production_archive_and_embedded_sdks",
+        "status": "pending",
+        "requiredEvidence": "Final xcarchive privacy report, embedded SDK inventory, required-reason APIs, and production configuration."
+      },
+      {
+        "id": "ip_network_metadata_mapping",
+        "status": "pending",
+        "requiredEvidence": "Hosting and Clerk category, linkage, purpose, and retention confirmation."
+      },
+      {
+        "id": "diagnostics_and_usage_data",
+        "status": "pending",
+        "requiredEvidence": "Final SDK/archive and production collection behavior, including purpose and linkage."
+      },
+      {
+        "id": "public_policy_reconciliation",
+        "status": "pending",
+        "requiredEvidence": "Published Privacy Policy and notice-at-collection reconciled with production behavior and vendors."
+      },
+      {
+        "id": "app_store_connect_reconciliation",
+        "status": "pending",
+        "requiredEvidence": "Saved App Store Connect answers reviewed against this matrix and the submitted archive."
+      }
+    ],
+    "approval": {
+      "owner": false,
+      "legal": false,
+      "productionArchiveVerified": false,
+      "vendorsVerified": false,
+      "publicPolicyVerified": false,
+      "appStoreConnectConfirmed": false
+    }
+  }
+}

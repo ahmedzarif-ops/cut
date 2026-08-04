@@ -717,7 +717,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     inputError: { borderColor: c.destructive, borderWidth: 2 },
     errorText: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_500Medium",
       fontSize: 14,
       lineHeight: 21,

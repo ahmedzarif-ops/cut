@@ -53,6 +53,7 @@ import {
   scaleMealNutrition,
   type MealNutrition,
 } from "@/lib/meal-form";
+import { resolveMealScreenState } from "@/lib/meal-screen-state";
 
 function nutritionFromOption(option: MealOption): MealNutrition {
   return {
@@ -134,8 +135,18 @@ export default function MealOneScreen() {
     if (mealsQuery.error) dailyTimeZone.reject(mealsQuery.error);
   }, [dailyTimeZone, mealsQuery.error]);
 
-  const options = optionsQuery.data ?? [];
+  const catalogOptions = optionsQuery.data ?? [];
   const loggedMeals = mealsQuery.data?.entries ?? [];
+  const screenState = resolveMealScreenState({
+    hasPendingIntent: pendingIntent !== null,
+    mealsLoading: mealsQuery.isLoading,
+    mealsError: mealsQuery.isError,
+    catalogLoading: optionsQuery.isLoading,
+    catalogError: optionsQuery.isError,
+    optionCount: catalogOptions.length,
+    hasLoggedMeals: loggedMeals.length > 0,
+  });
+  const options = screenState.catalogState === "ready" ? catalogOptions : [];
   const selectedOption = options.find((option) => option.id === selectedId);
   const preview = selectedOption
     ? scaleMealNutrition(nutritionFromOption(selectedOption), servings)
@@ -501,8 +512,7 @@ export default function MealOneScreen() {
     );
   };
 
-  const retryQueries = () => {
-    void optionsQuery.refetch();
+  const retryMeals = () => {
     void mealsQuery.refetch();
   };
 
@@ -554,7 +564,7 @@ export default function MealOneScreen() {
     );
   }
 
-  if (!pendingIntent && (optionsQuery.isLoading || mealsQuery.isLoading)) {
+  if (screenState.blockingState === "loading") {
     return (
       <View
         style={[
@@ -563,12 +573,12 @@ export default function MealOneScreen() {
         ]}
       >
         <ActivityIndicator color={c.primary} />
-        <Text style={s.loadingText}>Loading balanced options…</Text>
+        <Text style={s.loadingText}>Loading today&apos;s meals…</Text>
       </View>
     );
   }
 
-  if (!pendingIntent && (optionsQuery.isError || mealsQuery.isError)) {
+  if (screenState.blockingState === "error") {
     return (
       <View
         style={[
@@ -586,37 +596,10 @@ export default function MealOneScreen() {
         <Pressable
           accessibilityRole="button"
           style={({ pressed }) => [s.button, pressed && s.buttonPressed]}
-          onPress={retryQueries}
+          onPress={retryMeals}
         >
           <Text style={s.buttonText}>Retry</Text>
         </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back to Today"
-          style={s.secondaryButton}
-          onPress={() => router.back()}
-        >
-          <Text style={s.secondaryButtonText}>Back to Today</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
-  if (options.length === 0 && !pendingIntent) {
-    return (
-      <View
-        style={[
-          s.centered,
-          s.centeredPad,
-          { paddingTop: insets.top, paddingBottom: insets.bottom },
-        ]}
-      >
-        <Text accessibilityRole="header" style={s.title}>
-          Balanced options are coming
-        </Text>
-        <Text style={s.subtitle}>
-          No curated meals are available yet. Your existing food log is safe.
-        </Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Back to Today"
@@ -741,7 +724,7 @@ export default function MealOneScreen() {
         </View>
       ) : null}
 
-      {loggedMeals.length > 0 ? (
+      {screenState.showLoggedMeals ? (
         <View style={s.section}>
           <Text style={s.sectionTitle}>Logged today</Text>
           <Text style={s.sectionDetail}>
@@ -867,64 +850,107 @@ export default function MealOneScreen() {
             Fixed single-serving recipe estimates—not personalized medical or
             allergy advice.
           </Text>
-          <View accessibilityRole="radiogroup" style={s.optionStack}>
-            {options.map((option) => {
-              const selected = option.id === selectedId;
-              const optionNutrition = nutritionFromOption(option);
-              const allergenText =
-                option.allergens.length > 0
-                  ? `Recipe ingredients include these common allergens: ${option.allergens.join(", ")}. Cross-contact is not assessed; review every ingredient and package label`
-                  : "No common allergens are identified from this recipe. This is not an allergen-free or cross-contact claim; review every ingredient and package label";
-              return (
-                <Pressable
-                  key={option.id}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: selected, disabled: busy }}
-                  accessibilityLabel={`${option.name}. ${option.cuisine}. ${option.description}. Ingredients: ${option.ingredients.join(", ")}. ${nutritionAccessibilityLabel(optionNutrition)}. ${allergenText}. ${option.fitReason}. Estimated nutrition.`}
-                  accessibilityHint="Select this meal"
-                  disabled={busy}
-                  style={({ pressed }) => [
-                    s.optionCard,
-                    selected && s.optionCardSelected,
-                    busy && s.controlDisabled,
-                    pressed && !busy && s.buttonPressed,
-                  ]}
-                  onPress={() => selectOption(option.id)}
-                >
-                  <View style={s.optionHeader}>
-                    <View style={s.optionTitleWrap}>
-                      <Text style={s.cardTitle}>{option.name}</Text>
+          {screenState.catalogState === "loading" ? (
+            <View style={s.catalogStateCard}>
+              <ActivityIndicator color={c.primary} />
+              <Text accessibilityLiveRegion="polite" style={s.catalogStateText}>
+                Loading balanced options… Your logged meals remain available
+                above.
+              </Text>
+            </View>
+          ) : screenState.catalogState === "error" ? (
+            <View style={[s.catalogStateCard, s.catalogErrorCard]}>
+              <Text accessibilityRole="alert" style={s.catalogStateText}>
+                CUT OS couldn&apos;t load balanced options. Your logged meals
+                remain available above.
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                style={s.catalogRetryButton}
+                onPress={() => void optionsQuery.refetch()}
+              >
+                <Text style={s.secondaryButtonText}>
+                  Retry balanced options
+                </Text>
+              </Pressable>
+            </View>
+          ) : screenState.catalogState === "empty" ? (
+            <View style={s.catalogStateCard}>
+              <Text style={s.catalogStateText}>
+                No curated meals are available yet. Your logged meals remain
+                available above.
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                style={s.catalogRetryButton}
+                onPress={() => void optionsQuery.refetch()}
+              >
+                <Text style={s.secondaryButtonText}>Check for options</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View accessibilityRole="radiogroup" style={s.optionStack}>
+              {options.map((option) => {
+                const selected = option.id === selectedId;
+                const optionNutrition = nutritionFromOption(option);
+                const allergenText =
+                  option.allergens.length > 0
+                    ? `Recipe ingredients include these common allergens: ${option.allergens.join(", ")}. Cross-contact is not assessed; review every ingredient and package label`
+                    : "No common allergens are identified from this recipe. This is not an allergen-free or cross-contact claim; review every ingredient and package label";
+                return (
+                  <Pressable
+                    key={option.id}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected, disabled: busy }}
+                    accessibilityLabel={`${option.name}. ${option.cuisine}. ${option.description}. Ingredients: ${option.ingredients.join(", ")}. ${nutritionAccessibilityLabel(optionNutrition)}. ${allergenText}. ${option.fitReason}. Estimated nutrition.`}
+                    accessibilityHint="Select this meal"
+                    disabled={busy}
+                    style={({ pressed }) => [
+                      s.optionCard,
+                      selected && s.optionCardSelected,
+                      busy && s.controlDisabled,
+                      pressed && !busy && s.buttonPressed,
+                    ]}
+                    onPress={() => selectOption(option.id)}
+                  >
+                    <View style={s.optionHeader}>
+                      <View style={s.optionTitleWrap}>
+                        <Text style={s.cardTitle}>{option.name}</Text>
+                      </View>
+                      <View
+                        style={[s.radioMark, selected && s.radioMarkSelected]}
+                      >
+                        {selected ? <Text style={s.checkMark}>✓</Text> : null}
+                      </View>
                     </View>
-                    <View
-                      style={[s.radioMark, selected && s.radioMarkSelected]}
-                    >
-                      {selected ? <Text style={s.checkMark}>✓</Text> : null}
-                    </View>
-                  </View>
-                  <Text style={s.cuisineLabel}>{option.cuisine}</Text>
-                  <Text style={s.cardDescription}>{option.description}</Text>
-                  <Text style={s.optionMacros}>
-                    {compactNumber(option.caloriesKcal)} kcal ·{" "}
-                    {compactNumber(option.proteinG)}g protein
-                  </Text>
-                  <Text style={s.optionDetails}>
-                    {compactNumber(option.carbsG)}g carbs ·{" "}
-                    {compactNumber(option.fatG)}g fat ·{" "}
-                    {compactNumber(option.fiberG)}g fiber
-                  </Text>
-                  <Text style={s.ingredients}>
-                    Per 1× recipe: {option.ingredients.join(", ")}
-                  </Text>
-                  <Text style={s.allergens}>{allergenText}</Text>
-                  <Text style={s.fitReason}>{option.fitReason}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
+                    <Text style={s.cuisineLabel}>{option.cuisine}</Text>
+                    <Text style={s.cardDescription}>{option.description}</Text>
+                    <Text style={s.optionMacros}>
+                      {compactNumber(option.caloriesKcal)} kcal ·{" "}
+                      {compactNumber(option.proteinG)}g protein
+                    </Text>
+                    <Text style={s.optionDetails}>
+                      {compactNumber(option.carbsG)}g carbs ·{" "}
+                      {compactNumber(option.fatG)}g fat ·{" "}
+                      {compactNumber(option.fiberG)}g fiber
+                    </Text>
+                    <Text style={s.ingredients}>
+                      Per 1× recipe: {option.ingredients.join(", ")}
+                    </Text>
+                    <Text style={s.allergens}>{allergenText}</Text>
+                    <Text style={s.fitReason}>{option.fitReason}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
         </View>
       ) : null}
 
-      {!recoveryLocked && selectedOption && preview ? (
+      {!recoveryLocked &&
+      screenState.catalogState === "ready" &&
+      selectedOption &&
+      preview ? (
         <View style={[s.optionCard, s.reviewCard]}>
           <Text style={s.overline}>YOUR MEAL</Text>
           <Text style={s.cardTitle}>{selectedOption.name}</Text>
@@ -1185,6 +1211,31 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       marginBottom: 12,
     },
     optionStack: { gap: 12 },
+    catalogStateCard: {
+      minHeight: 96,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.card,
+      borderColor: c.border,
+      borderWidth: 1,
+      borderRadius: c.radius,
+      padding: 16,
+    },
+    catalogErrorCard: { borderColor: c.destructive },
+    catalogStateText: {
+      color: c.cardForeground,
+      fontFamily: "Inter_400Regular",
+      fontSize: 14,
+      lineHeight: 20,
+      textAlign: "center",
+    },
+    catalogRetryButton: {
+      minHeight: 44,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 12,
+      marginTop: 8,
+    },
     optionCard: {
       backgroundColor: c.card,
       borderColor: c.border,
@@ -1402,7 +1453,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       marginBottom: 14,
     },
     errorText: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_500Medium",
       fontSize: 14,
       lineHeight: 20,
@@ -1477,7 +1528,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       paddingHorizontal: 8,
     },
     deleteText: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_600SemiBold",
       fontSize: 15,
     },

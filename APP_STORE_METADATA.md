@@ -5,7 +5,9 @@
 **Updated:** August 3, 2026
 
 This file records the intended App Store answers and the evidence still needed.
-App Store Connect must be completed from the shipped binary, production
+`app-store/app-store-submission.json` is its machine-checkable companion; the
+draft listing copy and privacy-manifest mapping must remain synchronized. App
+Store Connect must be completed from the shipped binary, production
 configuration, public policies, and then-current Apple questionnaire. Nothing
 here is a substitute for owner, legal, or App Review approval.
 
@@ -64,6 +66,39 @@ after the final binary and catalog review. StoreKit-localized price and period
 must never be typed into this listing until the owner creates and approves the
 actual App Store product.
 
+## App Store Connect field inventory
+
+The defaults below are safe working positions for the initial English (U.S.)
+1.0 listing. A `null` in the machine-checkable companion is deliberate: it
+means the field is unresolved or intentionally omitted, never that Codex should
+invent a value.
+
+| App Store Connect field    | Provisional v1 value                         | Release gate                                                                                                                                                                                                                                                                                             |
+| -------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App name                   | CUT OS                                       | Name clearance and owner approval remain open.                                                                                                                                                                                                                                                           |
+| Bundle ID                  | `com.zarifahmed.cut`                         | Must match the signed archive and existing App Store Connect record.                                                                                                                                                                                                                                     |
+| App version                | `1.0.0`                                      | Must match the submitted build.                                                                                                                                                                                                                                                                          |
+| Primary language           | English (U.S.) / `en-US`                     | Confirm in App Store Connect.                                                                                                                                                                                                                                                                            |
+| Subtitle                   | Your daily cut check-in                      | Owner/reviewer approval remains open.                                                                                                                                                                                                                                                                    |
+| Description                | Focused v1 listing copy above                | Owner, legal, nutrition, and final-binary review remain open.                                                                                                                                                                                                                                            |
+| Keywords                   | Draft above                                  | Recheck byte limit and owner approval before submission.                                                                                                                                                                                                                                                 |
+| Primary category           | Health & Fitness                             | Owner must confirm against the final feature set.                                                                                                                                                                                                                                                        |
+| Secondary category         | None                                         | Safe v1 omission unless the owner selects a supported second category.                                                                                                                                                                                                                                   |
+| Made for Kids              | No                                           | Do not select the Kids category.                                                                                                                                                                                                                                                                         |
+| Promotional text           | Omit for initial v1                          | Optional; any later copy must describe only shipped behavior.                                                                                                                                                                                                                                            |
+| Marketing URL              | Omit for initial v1                          | Optional; do not add until a public, accurate marketing page exists.                                                                                                                                                                                                                                     |
+| What's New                 | Not applicable to the initial 1.0 submission | Supply truthful release notes for later versions.                                                                                                                                                                                                                                                        |
+| Support URL                | Unresolved                                   | Owner must supply and verify a public, functional HTTPS page.                                                                                                                                                                                                                                            |
+| Privacy Policy URL         | Unresolved                                   | Owner/counsel must publish and verify the required HTTPS policy.                                                                                                                                                                                                                                         |
+| Terms/EULA URL             | Unresolved                                   | Owner/counsel must approve and publish the final 18+ terms position.                                                                                                                                                                                                                                     |
+| Age Suitability URL        | Omit unless owner approves one               | Optional; if supplied, it must describe the self-declared 18+ gate accurately.                                                                                                                                                                                                                           |
+| Seller/legal operator      | Unresolved                                   | Owner and counsel decision; never infer from the bundle ID or repository.                                                                                                                                                                                                                                |
+| SKU                        | Unresolved                                   | Owner chooses this immutable account-level identifier before the app record is created.                                                                                                                                                                                                                  |
+| Copyright                  | Unresolved                                   | Owner supplies the correct year and rights holder.                                                                                                                                                                                                                                                       |
+| Content-rights declaration | Unresolved                                   | Owner/counsel answer from the final catalog, artwork, copy, and licensed content.                                                                                                                                                                                                                        |
+| Initial territories        | Unresolved                                   | Owner selects the first storefronts; never infer worldwide availability or regulatory answers. Validate the repository's two-letter storefront codes against `app-store/app-store-connect-territories.json` and reconcile them to Apple's current three-letter App Store Connect API IDs before release. |
+| Release method             | Manual release                               | Keep manual until the owner explicitly approves both submission and public release in App Store Connect.                                                                                                                                                                                                 |
+
 ## Age rating and questionnaire
 
 The App Store age rating supports storefront disclosure and parental controls.
@@ -78,11 +113,18 @@ Working answers/evidence for the final questionnaire:
   choose answers merely to obtain a preferred rating.
 - **Health or Wellness Topics:** Yes. Current CUT OS behavior includes calorie,
   dieting, fitness, and exercise guidance.
-- **Medical or Treatment Information:** Answer from final claims and features.
-  The launch target is general wellness, not diagnosis or treatment; qualified
-  review must confirm the binary and metadata stay inside that boundary.
-- **Age Assurance:** Do not answer until owner/legal review confirms how Apple's
-  then-current definition applies to this self-declared, non-ID-verified flow.
+- **Medical or Treatment Information:** Provisional working answer **None**.
+  The current launch binary and listing provide general wellness information,
+  expressly not diagnosis, treatment, clinical guidance, or personalized
+  medical advice. This is not approved: qualified health/nutrition review,
+  legal review, owner review, final-binary verification, and confirmation in
+  the live App Store Connect questionnaire are mandatory before saving it.
+- **Age Assurance:** Provisional working answer **Yes**. This is an inference
+  from Apple's current definition because CUT OS asks for a full DOB solely to
+  confirm whether the user meets its 18+ requirement. The mechanism is
+  self-declared and must never be described as identity verification or
+  verified age. Owner, legal, final-binary, and live App Store Connect
+  confirmation are mandatory before saving this answer.
 - **Social Media:** No for the current v1 scope. Social/community is deferred.
 - **User-Generated Content, Messaging/Chat, Advertising, Unrestricted Web
   Access:** No for the current v1 scope, subject to final-binary verification.
@@ -103,11 +145,58 @@ September 2026; CUT OS should answer No unless the shipped product changes.
 
 ## Regulated medical device declaration
 
-Because Health & Fitness/Medical categorization or frequent medical/treatment
-content can trigger Apple's declaration, the App Store owner must complete it
-from the final product and distribution regions. Product copy must not claim
-regulated-device status, diagnosis, treatment, or clinical outcomes without
-documented regulatory and legal support.
+[Apple currently requires a regulated-medical-device declaration](https://developer.apple.com/help/app-store-connect/manage-app-information/declare-regulated-medical-device-status)
+when an app with a Health & Fitness or Medical category is available in the
+United States, European Union/European Economic Area, or United Kingdom. The
+live form uses region-specific regulatory positions, not one global checkbox.
+
+The evidence-backed working position for CUT OS is **not a regulated medical
+device** in each of those three region groups because current v1 provides
+general fitness and nutrition information, not diagnosis, prevention,
+monitoring, treatment, clinical guidance, or regulated-device functionality.
+This position is provisional, not approved. Do not save it in App Store Connect
+until:
+
+- the owner selects and approves the exact initial territories;
+- legal or a qualified regulatory reviewer checks each applicable regional
+  answer;
+- the final binary and all health/nutrition claims are verified; and
+- the applicable US, EU/EEA, and/or UK declaration is confirmed in the live App
+  Store Connect form.
+
+`app-store/app-store-submission.json` keeps initial territories `null` and all
+regional declaration approvals false until that evidence exists. Release
+validation must fail if Health & Fitness availability intersects one of these
+regions without the corresponding confirmed declaration. Product copy must not
+claim regulated-device status, diagnosis, treatment, or clinical outcomes
+without documented regulatory and legal support.
+
+## Authentication security prelaunch gate
+
+`artifacts/cut-os/AUTH_SECURITY_PRELAUNCH.md` is a public-launch blocker, not a
+future hardening suggestion. The current direct Clerk client recovery flow uses
+one generic message, but the additional delivery operation for an accepted
+identifier can still create observable timing differences. A client-side delay
+is not an enumeration defense.
+
+`app-store/app-store-submission.json` therefore keeps authentication security at
+`pending_supported_recovery_architecture_and_production_evidence`, with no
+architecture selected and every approval false. Release validation must remain
+blocked until all of the following are recorded:
+
+- one Clerk-supported hosted/prebuilt recovery path or Clerk-supported
+  server/proxy recovery architecture, with provider-support and exact
+  implementation evidence references;
+- production Clerk tenant evidence for the same generic public response,
+  response-envelope parity, timing parity, enumeration-resistant rate limits,
+  provider-failure behavior, and abuse logging that excludes raw reset codes and
+  passwords; and
+- explicit owner, security-reviewer, Clerk-support, and production-evidence
+  approvals.
+
+Use only non-secret tenant aliases and sanitized evidence references. Do not put
+email identifiers, reset codes, passwords, response bodies, raw timings tied to
+an identifier, or provider credentials in the repository.
 
 ## App Privacy working position
 
@@ -115,24 +204,29 @@ Reconcile this list against the production archive, backend, Clerk, RevenueCat
 when added, hosting/database logs and backups, crash reporting, analytics,
 support tools, and every embedded SDK:
 
-- Contact Info — display name and email address, linked to the user, App
-  Functionality; display name also supports the user-directed personalized
-  greeting.
-- Identifiers — account/user identifier, linked to the user, App Functionality.
-  Client IP/network metadata is processed for abuse prevention, request
-  delivery, and Clerk authentication; the final hosting and Clerk retention and
-  linkage determine whether the live questionnaire maps it to Identifiers,
-  Diagnostics, or Other Data Types. It is not used for tracking.
-- Health & Fitness — profile, body, weight, nutrition, and workout data that
-  actually ships; linked to the user; App Functionality and any truthful Product
-  Personalization use.
-- Other Data Types — adult eligibility status, policy version, decision
-  timestamp, timezone, and unit preference; linked to the user; App
-  Functionality, subject to the then-current questionnaire mapping.
-- Purchases — linked subscription/purchase history used for App Functionality
-  and Analytics by the shipped RevenueCat/App Store implementation; tracking No.
-- Diagnostics/Usage Data — only if the final SDK and production configuration
-  collect them; declare the actual purpose and linkage.
+The following table is a copy-ready **provisional baseline** for the seven
+first-party data types in the current app privacy manifest. `Collected` means
+the manifest declares the type. It is not final App Store Connect evidence
+until the production archive and every vendor are reconciled.
+
+| App Store data type          | Collected | Linked to user | Tracking | Purposes                                   | Current v1 examples/evidence                                                                                                    |
+| ---------------------------- | --------- | -------------- | -------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Contact Info — Name          | Yes       | Yes            | No       | App Functionality; Product Personalization | Display name for account setup and the user-directed greeting.                                                                  |
+| Contact Info — Email         | Yes       | Yes            | No       | App Functionality                          | Clerk sign-in and account support.                                                                                              |
+| Health & Fitness — Health    | Yes       | Yes            | No       | App Functionality; Product Personalization | Start/goal weight, daily weigh-ins, and nutrition records that ship in v1.                                                      |
+| Health & Fitness — Fitness   | Yes       | Yes            | No       | App Functionality; Product Personalization | Adults-who-lift goal context and current fitness-related check-in data; no workout logging ships in v1.                         |
+| Identifiers — User ID        | Yes       | Yes            | No       | App Functionality                          | Internal user UUID and authentication/account linkage.                                                                          |
+| Other Data Types             | Yes       | Yes            | No       | App Functionality; Product Personalization | Eligibility result/version/time, timezone, unit preference, goal, and meal records where the live questionnaire maps them here. |
+| Purchases — Purchase History | Yes       | Yes            | No       | App Functionality; Analytics               | Apple/RevenueCat subscription, renewal, expiry, refund, and entitlement state.                                                  |
+
+Do not add workout collection to the v1 answers: the current paid-v1 scope has
+no workout logger. Client IP/network metadata is processed for abuse
+prevention, request delivery, and Clerk authentication; the final hosting and
+Clerk retention/linkage determine whether the live questionnaire maps it to
+Identifiers, Diagnostics, or Other Data Types. Diagnostics or Usage Data must
+be added only if the final SDK/archive and production configuration collect
+them, with their actual purpose and linkage documented. Neither of these
+external-service questions is resolved by the app-level manifest alone.
 
 Raw DOB is transmitted only to make the real-time decision and is discarded
 immediately. Apple's current App Privacy definition of “collect” focuses on data
@@ -188,6 +282,9 @@ advertising audiences.
   allergen/dietary substantiation, claims, warnings, and recommendation scope.
 - **Engineering/QA:** production inventory, server enforcement, migration,
   generated contract, automated tests, and native release-build evidence.
+- **Security reviewer and owner:** supported password-recovery architecture,
+  production-tenant response/timing/rate-limit evidence, safe abuse logging, and
+  closure of `AUTH_SECURITY_PRELAUNCH.md` before public launch.
 
 ## Current Apple references
 

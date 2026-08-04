@@ -641,7 +641,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       width: 28,
     },
     error: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_500Medium",
       fontSize: 13,
       marginTop: 8,

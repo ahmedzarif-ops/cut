@@ -314,7 +314,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     chipTextActive: { color: c.primaryForeground },
     error: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_400Regular",
       fontSize: 13,
       marginTop: 16,

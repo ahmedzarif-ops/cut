@@ -25,7 +25,9 @@ import {
   type SubscriptionAdapter,
 } from "./subscription-adapter";
 import {
+  confirmServerSubscriptionRefresh,
   ProviderPrincipalGuard,
+  resolveAccessRecheck,
   resolvePurchaseVerification,
   resolveRestoreVerification,
   type ProviderPrincipalToken,
@@ -37,7 +39,7 @@ export type { SubscriptionActionResult } from "./subscription-provider-state";
 export class SubscriptionActionError extends Error {
   readonly name = "SubscriptionActionError";
 
-  constructor(readonly action: "purchase" | "restore") {
+  constructor(readonly action: "purchase" | "restore" | "verify") {
     super(action);
   }
 }
@@ -55,6 +57,7 @@ export interface SubscriptionGateValue {
   retryServer(): void;
   retryStore(): void;
   retryCatalog(): void;
+  recheckAccess(): Promise<"entitled" | "pending">;
   purchase(packageIdentifier: string): Promise<SubscriptionActionResult>;
   restore(): Promise<SubscriptionActionResult>;
   signOut(): Promise<void>;
@@ -158,28 +161,26 @@ export function SubscriptionGateProvider({
         !guard.isCurrent(serverRefreshInFlight.current.token)
       ) {
         let request: Promise<SubscriptionStatus>;
-        request = refreshServerSubscription()
-          .then((status) => {
-            if (!guard.isCurrent(token)) {
-              throw new SubscriptionAdapterError("principal_changed");
-            }
-            const resolved = resolveServerSubscription(status, false);
-            if (resolved.state !== "ready") {
-              throw new SubscriptionAdapterError("unavailable");
-            }
-            qc.setQueryData(queryKey, status);
-            return status;
-          })
-          .finally(() => {
-            if (serverRefreshInFlight.current?.request === request) {
-              serverRefreshInFlight.current = undefined;
-            }
-          });
+        request = confirmServerSubscriptionRefresh({
+          owner,
+          token,
+          guard,
+          refresh: refreshServerSubscription,
+          commit: (confirmedOwner, status) =>
+            qc.setQueryData(
+              [...getGetMySubscriptionQueryKey(), confirmedOwner],
+              status,
+            ),
+        }).finally(() => {
+          if (serverRefreshInFlight.current?.request === request) {
+            serverRefreshInFlight.current = undefined;
+          }
+        });
         serverRefreshInFlight.current = { token, request };
       }
       return serverRefreshInFlight.current.request;
     },
-    [qc, queryKey, refreshServerSubscription],
+    [qc, refreshServerSubscription],
   );
 
   React.useEffect(() => {
@@ -380,6 +381,24 @@ export function SubscriptionGateProvider({
       storeStatus,
     ]);
 
+  const recheckAccess = React.useCallback(async (): Promise<
+    "entitled" | "pending"
+  > => {
+    const owner = internalUserId;
+    try {
+      const verified = await confirmWithServer(owner);
+      return resolveAccessRecheck(verified.entitled);
+    } catch (error) {
+      if (
+        error instanceof SubscriptionAdapterError &&
+        error.code === "principal_changed"
+      ) {
+        throw error;
+      }
+      throw new SubscriptionActionError("verify");
+    }
+  }, [confirmWithServer, internalUserId]);
+
   const signOut = React.useCallback(async (): Promise<void> => {
     const token = principalTokenRef.current;
     if (
@@ -412,9 +431,10 @@ export function SubscriptionGateProvider({
       storeStatus,
       catalogStatus,
       plans,
-      retryServer: () => void serverQuery.refetch(),
+      retryServer: () => void recheckAccess().catch(() => undefined),
       retryStore: () => setConnectionAttempt((value) => value + 1),
       retryCatalog: () => setCatalogAttempt((value) => value + 1),
+      recheckAccess,
       purchase,
       restore,
       signOut,
@@ -425,10 +445,10 @@ export function SubscriptionGateProvider({
       internalUserId,
       plans,
       purchase,
+      recheckAccess,
       restore,
       server,
       serverManagementUrl,
-      serverQuery,
       signOut,
       storeCustomer?.managementUrl,
       storeStatus,

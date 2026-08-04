@@ -129,17 +129,28 @@ export function formatSubscriptionPeriod(period: string | null): string | null {
 export function formatIntroductoryOffer(
   offer: StoreIntroductoryOffer | null,
   eligible: boolean,
+  standardPriceString: string,
+  standardSubscriptionPeriod: string | null,
 ): string | null {
   if (!offer || !eligible) return null;
   const period = parseSubscriptionPeriod(offer.period);
-  if (!period || !Number.isSafeInteger(offer.cycles) || offer.cycles < 1) {
+  const standardPeriod = formatSubscriptionPeriod(standardSubscriptionPeriod);
+  if (
+    !period ||
+    !standardPriceString.trim() ||
+    !standardPeriod ||
+    !Number.isSafeInteger(offer.cycles) ||
+    offer.cycles < 1
+  ) {
     return null;
   }
 
   const duration = formatPeriodCount(period.count * offer.cycles, period.unit);
-  return offer.price === 0
-    ? `Free for ${duration}`
-    : `${offer.priceString} per ${formatPeriodCount(period.count, period.unit)} for ${offer.cycles} billing ${offer.cycles === 1 ? "period" : "periods"}`;
+  const offerDescription =
+    offer.price === 0
+      ? `Free for ${duration}`
+      : `${offer.priceString} per ${formatPeriodCount(period.count, period.unit)} for ${offer.cycles} billing ${offer.cycles === 1 ? "period" : "periods"}`;
+  return `${offerDescription}, then ${standardPriceString} per ${standardPeriod}`;
 }
 
 export function formatPlanBilling(

@@ -1,5 +1,5 @@
 import { useSignIn } from "@clerk/expo";
-import { Link, useRouter } from "expo-router";
+import { type Href, Link, useRouter } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
@@ -92,6 +92,10 @@ export default function SignInScreen() {
         )}
         {submitError && <Text style={s.error}>{submitError}</Text>}
 
+        <Link href={"/forgot-password" as Href} style={s.forgotLink}>
+          Forgot password?
+        </Link>
+
         <Pressable
           style={({ pressed }) => [
             s.button,
@@ -173,7 +177,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       paddingVertical: 14,
     },
     error: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_400Regular",
       fontSize: 13,
       marginTop: 8,
@@ -208,6 +212,15 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       color: c.primary,
       fontFamily: "Inter_600SemiBold",
       fontSize: 14,
+    },
+    forgotLink: {
+      alignSelf: "flex-end",
+      color: c.primary,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 14,
+      marginTop: 12,
+      minHeight: 44,
+      paddingVertical: 12,
     },
   });
 }

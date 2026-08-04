@@ -676,7 +676,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       marginBottom: 7,
     },
     dangerOverline: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_700Bold",
       fontSize: 11,
       letterSpacing: 1.2,
@@ -754,7 +754,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       gap: 10,
     },
     errorText: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_500Medium",
       fontSize: 13,
       lineHeight: 19,

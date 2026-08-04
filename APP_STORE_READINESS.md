@@ -50,6 +50,10 @@ social features. Those are backlog, not submission truth.
 - [x] RevenueCat customer deletion is part of the durable account-deletion
       provider workflow, including validated absence, queued-delete polling,
       multi-worker leases, stale-worker fencing, and cache invalidation.
+- [x] Email-code password recovery is implemented with account-enumeration-safe
+      request messaging and explicit Clerk-result handling.
+- [x] Purchase access can always be rechecked against the authoritative server;
+      local StoreKit state alone never unlocks paid features.
 - [x] Production API startup validates live credentials/TLS, applies bundled
       migrations under a bounded advisory lock, verifies the exact schema
       revision before binding, and exposes a single-flight guarded readiness
@@ -59,6 +63,9 @@ social features. Those are backlog, not submission truth.
       export pass after subscription integration. The complete dependency
       graph has no known high/critical advisories, and CI enforces that gate.
       The clean-commit gate is completed by the release checkpoint commit.
+- [x] Machine-readable App Store records, screenshot manifest, release-evidence
+      template, deployment verifier, and fail-closed submission validator are
+      wired into CI and the release runbooks.
 
 ## Submission blockers
 
@@ -80,6 +87,8 @@ social features. Those are backlog, not submission truth.
       subscription display name, and description. No-trial is the shortest
       path to the first paid transaction, but it is still an owner decision.
 - [ ] Approve App Review submission and later public release.
+- [ ] Approve the initial storefront territories. Do not infer worldwide
+      availability from the subscription price decision.
 
 ### External services
 
@@ -135,6 +144,11 @@ social features. Those are backlog, not submission truth.
 - [ ] Complete the current age-rating questionnaire truthfully, choose Health &
       Fitness if still accurate, do not mark Made for Kids, and apply the
       owner/legal-approved 18+ override when required.
+- [ ] Confirm the current App Store Connect regulated-medical-device declaration
+      for every selected US, EU/EEA, or UK territory. The working position is
+      general wellness/not a regulated medical device, but owner, qualified
+      review, final-binary review, and live App Store Connect confirmation are
+      still required.
 - [ ] Provide an eligible adult review account, exact full-access/purchase
       navigation, and a controlled restricted-path test with no real minor data.
 - [ ] Keep the production backend, Clerk, RevenueCat, and public pages live
@@ -189,8 +203,8 @@ social features. Those are backlog, not submission truth.
 
 ## Release sequence
 
-1. Finish subscription client, server gate, and vendor deletion; pass automated
-   tests from a clean commit.
+1. Keep the completed subscription, deletion, auth-recovery, App Store artifact,
+   and release-operations gates green on a clean commit.
 2. Owner and counsel resolve the legal operator and Apple seller type, including
    Guideline 5.1.1(ix), before Developer Program enrollment or submission.
 3. Owner completes financial/store decisions and service credentials.
@@ -198,8 +212,9 @@ social features. Those are backlog, not submission truth.
 5. Configure App Store products, RevenueCat, EAS, and Apple notifications.
 6. Build a native development client; pass Apple Sandbox purchase QA.
 7. Upload internal TestFlight; pass the critical matrix on real devices.
-8. Finish privacy, nutrition, legal, icon, screenshots, metadata, and review
-   account evidence.
+8. Finish privacy, nutrition, legal, icon, screenshots, metadata, initial
+   territories, regulated-medical-device declarations, and review-account
+   evidence; pass the release-mode App Store validator.
 9. Attach the first subscription and release build; owner approves Submit for
    Review.
 10. Fix only review blockers, re-run critical tests, and release manually after
@@ -211,6 +226,7 @@ social features. Those are backlog, not submission truth.
 
 - [Apple App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
 - [Apple Developer Program enrollment](https://developer.apple.com/programs/enroll/)
+- [Declare regulated medical device status](https://developer.apple.com/help/app-store-connect/manage-app-information/declare-regulated-medical-device-status)
 - [Offer auto-renewable subscriptions](https://developer.apple.com/help/app-store-connect/manage-subscriptions/offer-auto-renewable-subscriptions/)
 - [Auto-renewable subscription information fields](https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/auto-renewable-subscription-information)
 - [Submit an in-app purchase](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/)

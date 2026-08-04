@@ -924,7 +924,7 @@ function GateError({
       {signOutError ? (
         <Text
           accessibilityRole="alert"
-          style={[styles.signOutError, { color: c.destructive }]}
+          style={[styles.signOutError, { color: c.destructiveText }]}
         >
           {signOutError}
         </Text>

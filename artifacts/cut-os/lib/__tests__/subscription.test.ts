@@ -106,8 +106,10 @@ describe("subscription policy", () => {
       formatIntroductoryOffer(
         { price: 0, priceString: "€0,00", period: "P1W", cycles: 2 },
         true,
+        "€12,49",
+        "P1M",
       ),
-    ).toBe("Free for 2 weeks");
+    ).toBe("Free for 2 weeks, then €12,49 per month");
     expect(
       formatIntroductoryOffer(
         {
@@ -117,8 +119,10 @@ describe("subscription policy", () => {
           cycles: 3,
         },
         true,
+        "$9.99",
+        "P1M",
       ),
-    ).toBe("$1.99 per month for 3 billing periods");
+    ).toBe("$1.99 per month for 3 billing periods, then $9.99 per month");
     expect(
       formatIntroductoryOffer(
         {
@@ -128,12 +132,24 @@ describe("subscription policy", () => {
           cycles: 1,
         },
         true,
+        "$29.99",
+        "P1Y",
       ),
-    ).toBe("$9.99 per 3 months for 1 billing period");
+    ).toBe("$9.99 per 3 months for 1 billing period, then $29.99 per year");
     expect(
       formatIntroductoryOffer(
         { price: 0, priceString: "$0.00", period: "P1W", cycles: 1 },
         false,
+        "$9.99",
+        "P1M",
+      ),
+    ).toBeNull();
+    expect(
+      formatIntroductoryOffer(
+        { price: 0, priceString: "$0.00", period: "P1W", cycles: 1 },
+        true,
+        "$9.99",
+        null,
       ),
     ).toBeNull();
   });

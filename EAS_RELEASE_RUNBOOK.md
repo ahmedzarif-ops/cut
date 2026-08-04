@@ -3,6 +3,12 @@
 **Status:** Engineering-ready checklist; Apple, Expo, production-service, and
 public-policy setup still require the owner.
 
+Use this checklist only as the iOS portion of
+`RELEASE_OPERATIONS_RUNBOOK.md`. Open and populate a unique copy of
+`RELEASE_EVIDENCE_MANIFEST_TEMPLATE.md` before staging or production work; the
+manifest must tie the EAS build and Apple build number to the exact Git commit,
+API deployment, database migration, legal hashes, smoke results, and approvals.
+
 ## Release configuration contract
 
 The production EAS environment must contain all of these client-visible values:
@@ -66,6 +72,7 @@ production EAS environment without copying values into a committed file:
 pnpm run codegen:check
 pnpm run typecheck
 pnpm run test
+pnpm run validate:app-store
 pnpm exec eas env:exec --environment production \
   'pnpm --filter @workspace/cut-os run eas-build-pre-install'
 ```
@@ -114,6 +121,18 @@ Before external TestFlight or App Review:
    Support. Expo Go preview responses do not count.
 6. Upload to internal TestFlight first. Do not submit for review until every
    remaining gate in `APP_STORE_READINESS.md` has an owner and evidence.
+
+After the exact TestFlight/release-build screenshots are captured and all App
+Store metadata, age, privacy, and owner approvals are final, return to the
+repository root and run:
+
+```sh
+pnpm run validate:app-store:release
+```
+
+Record the passing result in the release evidence manifest before submission.
+This full gate is intentionally post-build and post-capture; do not add it to
+EAS pre-install, where it would create a build/screenshot dependency cycle.
 
 ## Release ownership boundary
 
