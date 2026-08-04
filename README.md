@@ -36,6 +36,14 @@ pnpm --filter @workspace/api-server run dev
 pnpm --filter @workspace/cut-os run dev
 ```
 
+The Expo app never starts Clerk with a missing, malformed, or known example
+publishable key. A local web preview instead shows a non-secret configuration
+screen naming the environment variables to fix, and authenticated routes remain
+unavailable. Replace the placeholder with a real development Clerk publishable
+key and configure the API hostname, then restart Expo. There is no implicit mock
+authentication mode; release and preview build validation reject the same known
+placeholder instance.
+
 Expo Go is useful for development preview only. Release acceptance requires a
 configured EAS development build or full Xcode/Simulator; Expo Go cannot verify
 real App Store purchases.

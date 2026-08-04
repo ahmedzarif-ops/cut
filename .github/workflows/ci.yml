@@ -56,7 +56,7 @@ jobs:
       - name: Prepare a non-secret production bundle fixture
         shell: bash
         run: |
-          clerk_frontend="$(node -p "Buffer.from('clerk.example.com$').toString('base64').replace(/=+$/, '')")"
+          clerk_frontend="$(node -p "Buffer.from('clerk.ci.example.com$').toString('base64').replace(/=+$/, '')")"
           {
             echo "EAS_BUILD_PROFILE=production"
             echo "EXPO_PUBLIC_DOMAIN=api.example.com"

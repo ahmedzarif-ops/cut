@@ -38,7 +38,12 @@ import {
   reduceClerkLaunchState,
   resolveClerkLaunchFallback,
 } from "@/lib/clerk-launch-state";
-import { resolveRuntimeConfig } from "@/lib/runtime-config";
+import {
+  resolveRuntimeLaunchDecision,
+  resolveRuntimeConfig,
+  runtimeConfigEnvironmentNames,
+  type RuntimeConfigIssue,
+} from "@/lib/runtime-config";
 
 const runtimeConfig = resolveRuntimeConfig({
   EXPO_PUBLIC_DOMAIN: process.env.EXPO_PUBLIC_DOMAIN,
@@ -73,17 +78,32 @@ function RootLayoutNav() {
   );
 }
 
-function ConfigurationErrorScreen() {
+function ConfigurationErrorScreen({
+  issues,
+}: {
+  issues: readonly RuntimeConfigIssue[];
+}) {
+  const localWebPreview = __DEV__ && Platform.OS === "web";
+  const environmentNames = runtimeConfigEnvironmentNames(issues);
+
   return (
     <View accessibilityRole="alert" style={configurationErrorStyles.container}>
       <Text style={configurationErrorStyles.eyebrow}>CUT OS</Text>
       <Text style={configurationErrorStyles.title}>
-        This build is not ready
+        {localWebPreview
+          ? "Local preview needs setup"
+          : "This build is not ready"}
       </Text>
       <Text style={configurationErrorStyles.message}>
-        The app is missing required launch settings. Please install a newer
-        build or contact CUT OS support.
+        {localWebPreview
+          ? "Launch is safely paused because required services are not configured. Add real development settings and restart Expo; authentication is not mocked or bypassed."
+          : "The app is missing required launch settings. Please install a newer build or contact CUT OS support."}
       </Text>
+      {localWebPreview ? (
+        <Text style={configurationErrorStyles.detail}>
+          Check: {environmentNames.join(", ")}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -177,7 +197,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (!runtimeConfig.ok || fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
@@ -197,7 +217,7 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (clerkLaunch.phase !== "loading") return;
+    if (!runtimeConfig.ok || clerkLaunch.phase !== "loading") return;
     const attempt = clerkLaunch.attempt;
     const timeout = setTimeout(
       () => dispatchClerkLaunch({ type: "timeout", attempt }),
@@ -210,9 +230,15 @@ export default function RootLayout() {
     dispatchClerkLaunch({ type: "loaded", attempt });
   }, []);
 
-  if (!fontsLoaded && !fontError) return null;
+  const launchDecision = resolveRuntimeLaunchDecision(runtimeConfig, {
+    loaded: fontsLoaded,
+    failed: Boolean(fontError),
+  });
+  if (launchDecision.surface === "configuration_error") {
+    return <ConfigurationErrorScreen issues={launchDecision.issues} />;
+  }
 
-  if (!runtimeConfig.ok) return <ConfigurationErrorScreen />;
+  if (launchDecision.surface === "asset_loading") return null;
 
   const launchFallback = resolveClerkLaunchFallback(clerkLaunch);
 
@@ -228,9 +254,9 @@ export default function RootLayout() {
 
         <ClerkProvider
           key={clerkLaunch.attempt}
-          publishableKey={runtimeConfig.config.clerkPublishableKey}
+          publishableKey={launchDecision.config.clerkPublishableKey}
           tokenCache={tokenCache}
-          proxyUrl={runtimeConfig.config.clerkProxyUrl}
+          proxyUrl={launchDecision.config.clerkProxyUrl}
         >
           {/*
             Keep using Clerk's exported loading/loaded controls, but never put
@@ -319,4 +345,42 @@ const launchStyles = StyleSheet.create({
   },
 });
 
-const configurationErrorStyles = launchStyles;
+const configurationErrorStyles = StyleSheet.create({
+  container: {
+    alignItems: "center",
+    backgroundColor: "#07111F",
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+  eyebrow: {
+    color: "#64D8CB",
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 2,
+    marginBottom: 14,
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  message: {
+    color: "#B4C1D1",
+    fontSize: 16,
+    lineHeight: 24,
+    maxWidth: 520,
+    textAlign: "center",
+  },
+  detail: {
+    color: "#64D8CB",
+    fontFamily: Platform.OS === "web" ? "monospace" : undefined,
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 20,
+    maxWidth: 520,
+    textAlign: "center",
+  },
+});

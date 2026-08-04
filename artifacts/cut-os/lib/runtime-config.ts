@@ -9,6 +9,7 @@ export type RuntimeConfigIssue =
   | "api_domain_missing"
   | "api_domain_invalid"
   | "clerk_publishable_key_missing"
+  | "clerk_publishable_key_placeholder"
   | "clerk_publishable_key_invalid"
   | "clerk_proxy_url_missing"
   | "clerk_proxy_url_invalid"
@@ -18,12 +19,47 @@ export type RuntimeConfigResult =
   | { ok: true; config: RuntimeConfig }
   | { ok: false; issues: RuntimeConfigIssue[] };
 
+export type RuntimeLaunchDecision =
+  | { surface: "configuration_error"; issues: RuntimeConfigIssue[] }
+  | { surface: "asset_loading" }
+  | { surface: "application"; config: RuntimeConfig };
+
 type RuntimeEnvironment = {
   EXPO_PUBLIC_DOMAIN?: string;
   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
   EXPO_PUBLIC_CLERK_PROXY_URL?: string;
   EXPO_PUBLIC_REVENUECAT_IOS_API_KEY?: string;
 };
+
+type ParsedClerkPublishableKey = {
+  value: string;
+  type: "test" | "live";
+  frontendApi: string;
+  placeholder: boolean;
+  environmentMismatch: boolean;
+};
+
+const RUNTIME_CONFIG_ENVIRONMENT_BY_ISSUE: Record<RuntimeConfigIssue, string> =
+  {
+    api_domain_missing: "EXPO_PUBLIC_DOMAIN",
+    api_domain_invalid: "EXPO_PUBLIC_DOMAIN",
+    clerk_publishable_key_missing: "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    clerk_publishable_key_placeholder: "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    clerk_publishable_key_invalid: "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    clerk_proxy_url_missing: "EXPO_PUBLIC_CLERK_PROXY_URL",
+    clerk_proxy_url_invalid: "EXPO_PUBLIC_CLERK_PROXY_URL",
+    revenuecat_ios_api_key_invalid: "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY",
+  };
+
+const PLACEHOLDER_CLERK_FRONTEND_APIS = new Set([
+  "example.accounts.dev",
+  "example.clerk.accounts.dev",
+  "clerk.example.com",
+]);
+
+function isClerkDevelopmentFrontendApi(frontendApi: string): boolean {
+  return frontendApi.endsWith(".accounts.dev");
+}
 
 const NON_PUBLIC_DNS_SUFFIXES = [
   ".example",
@@ -119,7 +155,9 @@ function decodeUnpaddedBase64(value: string): string | null {
   return output;
 }
 
-function parseClerkPublishableKey(value: string | undefined): string | null {
+function parseClerkPublishableKey(
+  value: string | undefined,
+): ParsedClerkPublishableKey | null {
   const candidate = value?.trim();
   if (!candidate) return null;
 
@@ -136,10 +174,19 @@ function parseClerkPublishableKey(value: string | undefined): string | null {
   // and then fail while ClerkProvider initializes.
   const decoded = decodeUnpaddedBase64(parts[2] ?? "");
   if (!decoded?.endsWith("$")) return null;
-  const frontendApi = decoded.slice(0, -1);
-  if (frontendApi.includes("$") || !frontendApi.includes(".")) return null;
+  const frontendApi = decoded.slice(0, -1).toLowerCase();
+  if (frontendApi.includes("$") || !isPublicDnsHostname(frontendApi)) {
+    return null;
+  }
 
-  return candidate;
+  return {
+    value: candidate,
+    type: parts[1],
+    frontendApi,
+    placeholder: PLACEHOLDER_CLERK_FRONTEND_APIS.has(frontendApi),
+    environmentMismatch:
+      parts[1] === "live" && isClerkDevelopmentFrontendApi(frontendApi),
+  };
 }
 
 function parseClerkProxyUrl(
@@ -190,9 +237,15 @@ export function resolveRuntimeConfig(
 ): RuntimeConfigResult {
   const issues: RuntimeConfigIssue[] = [];
   const apiDomain = parseApiDomain(environment.EXPO_PUBLIC_DOMAIN);
-  const publishableKey = parseClerkPublishableKey(
+  const parsedPublishableKey = parseClerkPublishableKey(
     environment.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
   );
+  const publishableKey =
+    parsedPublishableKey &&
+    !parsedPublishableKey.placeholder &&
+    !parsedPublishableKey.environmentMismatch
+      ? parsedPublishableKey.value
+      : null;
   const proxyUrl = parseClerkProxyUrl(
     environment.EXPO_PUBLIC_CLERK_PROXY_URL,
     apiDomain,
@@ -206,7 +259,8 @@ export function resolveRuntimeConfig(
   } else if (!apiDomain) {
     issues.push("api_domain_invalid");
   } else if (
-    publishableKey?.startsWith("pk_live_") &&
+    parsedPublishableKey?.type === "live" &&
+    !parsedPublishableKey.placeholder &&
     !isPublicDnsHostname(apiDomain)
   ) {
     issues.push("api_domain_invalid");
@@ -214,12 +268,18 @@ export function resolveRuntimeConfig(
 
   if (!environment.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim()) {
     issues.push("clerk_publishable_key_missing");
-  } else if (!publishableKey) {
+  } else if (!parsedPublishableKey) {
+    issues.push("clerk_publishable_key_invalid");
+  } else if (parsedPublishableKey.placeholder) {
+    issues.push("clerk_publishable_key_placeholder");
+  } else if (parsedPublishableKey.environmentMismatch) {
     issues.push("clerk_publishable_key_invalid");
   }
 
   if (
-    publishableKey?.startsWith("pk_live_") &&
+    parsedPublishableKey?.type === "live" &&
+    !parsedPublishableKey.placeholder &&
+    !parsedPublishableKey.environmentMismatch &&
     !environment.EXPO_PUBLIC_CLERK_PROXY_URL?.trim()
   ) {
     issues.push("clerk_proxy_url_missing");
@@ -244,4 +304,27 @@ export function resolveRuntimeConfig(
       ...(revenueCatIosApiKey ? { revenueCatIosApiKey } : {}),
     },
   };
+}
+
+/** Returns only public environment-variable names for local setup guidance. */
+export function runtimeConfigEnvironmentNames(
+  issues: readonly RuntimeConfigIssue[],
+): string[] {
+  return [
+    ...new Set(
+      issues.map((issue) => RUNTIME_CONFIG_ENVIRONMENT_BY_ISSUE[issue]),
+    ),
+  ];
+}
+
+/** Invalid configuration always wins over optional launch-asset loading. */
+export function resolveRuntimeLaunchDecision(
+  result: RuntimeConfigResult,
+  assets: { loaded: boolean; failed: boolean },
+): RuntimeLaunchDecision {
+  if (!result.ok) {
+    return { surface: "configuration_error", issues: result.issues };
+  }
+  if (!assets.loaded && !assets.failed) return { surface: "asset_loading" };
+  return { surface: "application", config: result.config };
 }

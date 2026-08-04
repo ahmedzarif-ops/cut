@@ -28,6 +28,16 @@ const NON_PUBLIC_DNS_SUFFIXES = [
   ".test",
 ];
 
+const PLACEHOLDER_CLERK_FRONTEND_APIS = new Set([
+  "example.accounts.dev",
+  "example.clerk.accounts.dev",
+  "clerk.example.com",
+]);
+
+function isClerkDevelopmentFrontendApi(frontendApi) {
+  return frontendApi.endsWith(".accounts.dev");
+}
+
 const NON_PRODUCTION_BUILD_PROFILES = new Set([
   "development",
   "preview",
@@ -171,9 +181,14 @@ function parseClerkPublishableKey(value) {
 
   const decoded = decodeUnpaddedBase64(parts[2] ?? "");
   if (!decoded?.endsWith("$")) return null;
-  const frontendApi = decoded.slice(0, -1);
-  if (frontendApi.includes("$") || !frontendApi.includes(".")) return null;
-  return { type: parts[1] };
+  const frontendApi = decoded.slice(0, -1).toLowerCase();
+  if (frontendApi.includes("$") || !isPublicHostname(frontendApi)) return null;
+  return {
+    type: parts[1],
+    placeholder: PLACEHOLDER_CLERK_FRONTEND_APIS.has(frontendApi),
+    environmentMismatch:
+      parts[1] === "live" && isClerkDevelopmentFrontendApi(frontendApi),
+  };
 }
 
 function parseRevenueCatIosApiKey(value) {
@@ -256,6 +271,14 @@ export function validateReleaseEnvironment(environment) {
   if (clerkKey && !parsedClerkKey) {
     errors.push(
       "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY must be a Clerk publishable key",
+    );
+  } else if (clerkKey && parsedClerkKey?.placeholder) {
+    errors.push(
+      "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY must not use a placeholder Clerk instance",
+    );
+  } else if (clerkKey && parsedClerkKey?.environmentMismatch) {
+    errors.push(
+      "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY must match its Clerk environment",
     );
   } else if (production && clerkKey && parsedClerkKey?.type !== "live") {
     errors.push(

@@ -12,12 +12,23 @@ import { dirname, join, resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-function publishableKey(type: "live" | "test"): string {
-  const encoded = Buffer.from("clerk.example.com$")
+function publishableKey(
+  type: "live" | "test",
+  frontendApi = type === "live"
+    ? "clerk.cut-os.example.com"
+    : "cut-os-13.clerk.accounts.dev",
+): string {
+  const encoded = Buffer.from(`${frontendApi}$`)
     .toString("base64")
     .replace(/=+$/, "");
   return `pk_${type}_${encoded}`;
 }
+
+const PLACEHOLDER_CLERK_FRONTEND_APIS = [
+  "example.accounts.dev",
+  "example.clerk.accounts.dev",
+  "clerk.example.com",
+] as const;
 
 const validatorPath = resolve(
   process.cwd(),
@@ -133,6 +144,52 @@ describe("release configuration validator", () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("valid for the preview build profile");
+  });
+
+  it.each(PLACEHOLDER_CLERK_FRONTEND_APIS)(
+    "rejects placeholder Clerk instance %s in preview without logging the key",
+    (frontendApi) => {
+      const placeholderKey = publishableKey("test", frontendApi);
+      const result = runValidator({
+        EAS_BUILD_PROFILE: "preview",
+        EXPO_PUBLIC_DOMAIN: "preview.example.com",
+        EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: placeholderKey,
+      });
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("placeholder Clerk instance");
+      expect(`${result.stdout}${result.stderr}`).not.toContain(placeholderKey);
+    },
+  );
+
+  it.each(PLACEHOLDER_CLERK_FRONTEND_APIS)(
+    "rejects placeholder Clerk instance %s in production",
+    (frontendApi) => {
+      const placeholderKey = publishableKey("live", frontendApi);
+      const result = runValidator({
+        ...productionEnvironment,
+        EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: placeholderKey,
+      });
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("placeholder Clerk instance");
+      expect(`${result.stdout}${result.stderr}`).not.toContain(placeholderKey);
+    },
+  );
+
+  it("rejects a live key that encodes a development Clerk frontend", () => {
+    const mismatchedKey = publishableKey(
+      "live",
+      "cut-os-13.clerk.accounts.dev",
+    );
+    const result = runValidator({
+      ...productionEnvironment,
+      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: mismatchedKey,
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("must match its Clerk environment");
+    expect(`${result.stdout}${result.stderr}`).not.toContain(mismatchedKey);
   });
 
   it("allows the no-signing simulator profile to use preview resources", () => {

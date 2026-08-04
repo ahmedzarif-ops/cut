@@ -35,7 +35,16 @@ const NON_PUBLIC_DNS_SUFFIXES = [
   ".onion",
   ".test",
 ];
+const PLACEHOLDER_CLERK_FRONTEND_APIS = new Set([
+  "example.accounts.dev",
+  "example.clerk.accounts.dev",
+  "clerk.example.com",
+]);
 const PG_POOL_MAXIMUM = 20;
+
+function isClerkDevelopmentFrontendApi(frontendApi: string): boolean {
+  return frontendApi.endsWith(".accounts.dev");
+}
 
 function isValidPublicHostname(hostname: string): boolean {
   const normalized = hostname.toLowerCase();
@@ -79,9 +88,18 @@ function isLiveClerkPublishableKey(value: string | undefined): boolean {
   if (!candidate || candidate !== value || !candidate.startsWith("pk_live_")) {
     return false;
   }
+  const parsed = parsePublishableKey(candidate);
+  const frontendApi = parsed?.frontendApi.toLowerCase();
+  if (
+    !isPublishableKey(candidate) ||
+    parsed?.instanceType !== "production" ||
+    !frontendApi
+  ) {
+    return false;
+  }
   return (
-    isPublishableKey(candidate) &&
-    parsePublishableKey(candidate)?.instanceType === "production"
+    !PLACEHOLDER_CLERK_FRONTEND_APIS.has(frontendApi) &&
+    !isClerkDevelopmentFrontendApi(frontendApi)
   );
 }
 

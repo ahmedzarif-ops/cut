@@ -5,12 +5,18 @@ import {
   validateProductionConfiguration,
 } from "./productionConfig";
 
-function publishableKey(): string {
-  const encoded = Buffer.from("clerk.cut.example.com$")
+function publishableKey(frontendApi = "clerk.cut.example.com"): string {
+  const encoded = Buffer.from(`${frontendApi}$`)
     .toString("base64")
     .replace(/=+$/, "");
   return `pk_live_${encoded}`;
 }
+
+const PLACEHOLDER_CLERK_FRONTEND_APIS = [
+  "example.accounts.dev",
+  "example.clerk.accounts.dev",
+  "clerk.example.com",
+] as const;
 
 const validProductionEnvironment: NodeJS.ProcessEnv = {
   NODE_ENV: "production",
@@ -80,6 +86,27 @@ describe("production configuration", () => {
       validateProductionConfiguration({
         ...validProductionEnvironment,
         CLERK_PUBLISHABLE_KEY: value,
+      }),
+    ).toContain("CLERK_PUBLISHABLE_KEY");
+  });
+
+  it.each(PLACEHOLDER_CLERK_FRONTEND_APIS)(
+    "rejects placeholder live Clerk frontend %s",
+    (frontendApi) => {
+      expect(
+        validateProductionConfiguration({
+          ...validProductionEnvironment,
+          CLERK_PUBLISHABLE_KEY: publishableKey(frontendApi),
+        }),
+      ).toContain("CLERK_PUBLISHABLE_KEY");
+    },
+  );
+
+  it("rejects a live key that encodes a development Clerk frontend", () => {
+    expect(
+      validateProductionConfiguration({
+        ...validProductionEnvironment,
+        CLERK_PUBLISHABLE_KEY: publishableKey("cut-os-13.clerk.accounts.dev"),
       }),
     ).toContain("CLERK_PUBLISHABLE_KEY");
   });

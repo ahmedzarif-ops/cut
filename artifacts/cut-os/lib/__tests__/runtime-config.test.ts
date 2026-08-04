@@ -1,9 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveRuntimeConfig } from "../runtime-config";
+import {
+  resolveRuntimeLaunchDecision,
+  resolveRuntimeConfig,
+  runtimeConfigEnvironmentNames,
+} from "../runtime-config";
 
-function publishableKey(type: "live" | "test"): string {
-  const encoded = Buffer.from("clerk.example.com$")
+function publishableKey(
+  type: "live" | "test",
+  frontendApi = type === "live"
+    ? "clerk.cut-os.example.com"
+    : "cut-os-13.clerk.accounts.dev",
+): string {
+  const encoded = Buffer.from(`${frontendApi}$`)
     .toString("base64")
     .replace(/=+$/, "");
   return `pk_${type}_${encoded}`;
@@ -32,6 +41,66 @@ describe("runtime configuration", () => {
       ok: false,
       issues: ["api_domain_missing", "clerk_publishable_key_missing"],
     });
+  });
+
+  it.each([
+    "example.accounts.dev",
+    "example.clerk.accounts.dev",
+    "clerk.example.com",
+  ])(
+    "rejects placeholder Clerk instance %s before the provider can initialize",
+    (frontendApi) => {
+      expect(
+        resolveRuntimeConfig({
+          EXPO_PUBLIC_DOMAIN: "api.example.com",
+          EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey(
+            "test",
+            frontendApi,
+          ),
+        }),
+      ).toEqual({
+        ok: false,
+        issues: ["clerk_publishable_key_placeholder"],
+      });
+    },
+  );
+
+  it("rejects a live key that encodes a development Clerk frontend", () => {
+    expect(
+      resolveRuntimeConfig({
+        EXPO_PUBLIC_DOMAIN: "api.example.com",
+        EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey(
+          "live",
+          "cut-os-13.clerk.accounts.dev",
+        ),
+        EXPO_PUBLIC_CLERK_PROXY_URL: "https://api.example.com/api/__clerk",
+      }),
+    ).toEqual({
+      ok: false,
+      issues: ["clerk_publishable_key_invalid"],
+    });
+  });
+
+  it("selects configuration UI before unresolved font assets", () => {
+    expect(
+      resolveRuntimeLaunchDecision(resolveRuntimeConfig({}), {
+        loaded: false,
+        failed: false,
+      }),
+    ).toEqual({
+      surface: "configuration_error",
+      issues: ["api_domain_missing", "clerk_publishable_key_missing"],
+    });
+  });
+
+  it("returns only safe environment names for local setup guidance", () => {
+    expect(
+      runtimeConfigEnvironmentNames([
+        "api_domain_missing",
+        "api_domain_invalid",
+        "clerk_publishable_key_placeholder",
+      ]),
+    ).toEqual(["EXPO_PUBLIC_DOMAIN", "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY"]);
   });
 
   it("accepts RevenueCat public iOS and Test Store SDK keys", () => {
