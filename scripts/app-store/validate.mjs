@@ -342,6 +342,7 @@ const EXPECTED_APP_REVIEW_APPROVAL_KEYS = Object.freeze([
 
 const EXPECTED_SUBSCRIPTION_KEYS = Object.freeze([
   "status",
+  "ownerDecision",
   "entitlementId",
   "subscriptionGroupReferenceName",
   "productReferenceName",
@@ -360,6 +361,53 @@ const EXPECTED_SUBSCRIPTION_KEYS = Object.freeze([
   "exactBuildEvidence",
   "approval",
 ]);
+const EXPECTED_SUBSCRIPTION_OWNER_DECISION_KEYS = Object.freeze([
+  "revision",
+  "authority",
+  "evidenceReference",
+  "binding",
+]);
+const EXPECTED_SUBSCRIPTION_OWNER_BINDING_KEYS = Object.freeze([
+  "entitlementId",
+  "subscriptionGroupReferenceName",
+  "productReferenceName",
+  "productId",
+  "duration",
+  "storefront",
+  "currency",
+  "amount",
+  "introductoryOfferDecision",
+  "familySharingDecision",
+  "groupDisplayName",
+  "productDisplayName",
+  "description",
+  "appNameDisplayOption",
+  "customAppName",
+]);
+const EXPECTED_SUBSCRIPTION_OWNER_DECISION = Object.freeze({
+  revision: "owner-offer-2026-08-04-v2",
+  authority:
+    "owner_approved_core_offer_and_standing_delegated_launch_execution",
+  evidenceReference:
+    "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription",
+  binding: Object.freeze({
+    entitlementId: "CUT_OS_PRO",
+    subscriptionGroupReferenceName: "CUT OS Pro",
+    productReferenceName: "CUT OS Pro Monthly",
+    productId: "com.zarifahmed.cut.pro.monthly",
+    duration: "1_month",
+    storefront: "US",
+    currency: "USD",
+    amount: "4.99",
+    introductoryOfferDecision: "none",
+    familySharingDecision: "disabled",
+    groupDisplayName: "CUT OS Pro",
+    productDisplayName: "CUT OS Pro Monthly",
+    description: "Weigh-ins, balanced meals & nutrition totals.",
+    appNameDisplayOption: "use_app_name",
+    customAppName: null,
+  }),
+});
 const EXPECTED_US_PRICING_KEYS = Object.freeze([
   "storefront",
   "currency",
@@ -738,6 +786,21 @@ const REQUIRED_OWNER_FIELDS = Object.freeze([
   "availability.distributionMethod.decision",
   "availability.appleSiliconMacAvailability.decision",
   "availability.appleVisionProAvailability.decision",
+  "subscription.entitlementId",
+  "subscription.subscriptionGroupReferenceName",
+  "subscription.productReferenceName",
+  "subscription.productId",
+  "subscription.duration",
+  "subscription.usPricing.storefront",
+  "subscription.usPricing.currency",
+  "subscription.usPricing.amount",
+  "subscription.introductoryOfferDecision",
+  "subscription.familySharingDecision",
+  "subscription.localizations.en-US.groupDisplayName",
+  "subscription.localizations.en-US.productDisplayName",
+  "subscription.localizations.en-US.description",
+  "subscription.localizations.en-US.appNameDisplayOption",
+  "subscription.localizations.en-US.customAppName",
 ]);
 
 const EXPECTED_LEGAL_URL_PLACEMENT_KEYS = Object.freeze([
@@ -2393,11 +2456,42 @@ function validateSubscription({ value, listing, release, check }) {
   );
   check(
     [
-      "pending_owner_app_store_connect_and_exact_build_evidence",
+      "pending_app_store_connect_and_exact_build_evidence",
       "ready_for_submission",
     ].includes(value.status),
     "subscription.status must remain pending or be ready_for_submission",
   );
+  const ownerDecision = value.ownerDecision;
+  check(
+    hasExactKeys(ownerDecision, EXPECTED_SUBSCRIPTION_OWNER_DECISION_KEYS),
+    "subscription.ownerDecision must contain exactly revision, authority, evidenceReference, and binding",
+  );
+  check(
+    ownerDecision?.revision === EXPECTED_SUBSCRIPTION_OWNER_DECISION.revision,
+    "subscription.ownerDecision.revision must remain bound to the recorded launch offer",
+  );
+  check(
+    ownerDecision?.authority === EXPECTED_SUBSCRIPTION_OWNER_DECISION.authority,
+    "subscription.ownerDecision.authority must preserve the recorded approval scope",
+  );
+  check(
+    ownerDecision?.evidenceReference ===
+      EXPECTED_SUBSCRIPTION_OWNER_DECISION.evidenceReference,
+    "subscription.ownerDecision.evidenceReference must identify the recorded launch decision",
+  );
+  const ownerBinding = ownerDecision?.binding;
+  check(
+    hasExactKeys(ownerBinding, EXPECTED_SUBSCRIPTION_OWNER_BINDING_KEYS),
+    "subscription.ownerDecision.binding must enumerate every approved launch-offer term",
+  );
+  for (const [field, expected] of Object.entries(
+    EXPECTED_SUBSCRIPTION_OWNER_DECISION.binding,
+  )) {
+    check(
+      ownerBinding?.[field] === expected,
+      `subscription.ownerDecision.binding.${field} must match the recorded launch decision`,
+    );
+  }
   check(
     value.entitlementId === "CUT_OS_PRO",
     "subscription.entitlementId must remain CUT_OS_PRO",
@@ -2643,6 +2737,39 @@ function validateSubscription({ value, listing, release, check }) {
       "subscription use_app_name display option requires customAppName null",
     );
   }
+
+  const currentOwnerControlledOffer = {
+    entitlementId: value.entitlementId,
+    subscriptionGroupReferenceName: value.subscriptionGroupReferenceName,
+    productReferenceName: value.productReferenceName,
+    productId: value.productId,
+    duration: value.duration,
+    storefront: usPricing?.storefront,
+    currency: usPricing?.currency,
+    amount: usPricing?.amount,
+    introductoryOfferDecision: value.introductoryOfferDecision,
+    familySharingDecision: value.familySharingDecision,
+    groupDisplayName: localization?.groupDisplayName,
+    productDisplayName: localization?.productDisplayName,
+    description: localization?.description,
+    appNameDisplayOption: localization?.appNameDisplayOption,
+    customAppName: localization?.customAppName,
+  };
+  for (const field of EXPECTED_SUBSCRIPTION_OWNER_BINDING_KEYS) {
+    check(
+      currentOwnerControlledOffer[field] === ownerBinding?.[field],
+      `subscription.${field} has drifted from subscription.ownerDecision.binding`,
+    );
+  }
+  check(
+    usPricing?.ownerDecisionRevision === ownerDecision?.revision,
+    "subscription.usPricing.ownerDecisionRevision must match subscription.ownerDecision.revision",
+  );
+  check(
+    usPricing?.ownerDecisionEvidenceReference ===
+      ownerDecision?.evidenceReference,
+    "subscription.usPricing.ownerDecisionEvidenceReference must match subscription.ownerDecision.evidenceReference",
+  );
 
   const appStoreConnect = value.appStoreConnect;
   check(
@@ -3393,6 +3520,26 @@ function listingFromMarkdown(markdown) {
   };
 }
 
+export function testFlightCopyFromMarkdown({ markdown }) {
+  if (typeof markdown !== "string") {
+    return { betaAppDescription: undefined, whatToTest: undefined };
+  }
+  const fencedCopy = markdown.match(
+    /### TestFlight Test Information draft[\s\S]*?```text[ \t]*\n([\s\S]*?)\n```/u,
+  )?.[1];
+  const fields = fencedCopy?.match(
+    /^Beta App Description\s*\n+([\s\S]*?)\n+What to Test\s*\n+([\s\S]*?)\s*$/u,
+  );
+  return {
+    betaAppDescription: fields?.[1]?.trim(),
+    whatToTest: fields?.[2]?.trim(),
+  };
+}
+
+function normalizeDocumentedCopy(value) {
+  return typeof value === "string" ? value.trim().replace(/\s+/gu, " ") : value;
+}
+
 function manifestDataTypes(appConfig) {
   return appConfig?.expo?.ios?.privacyManifests?.NSPrivacyCollectedDataTypes;
 }
@@ -3537,6 +3684,118 @@ export function inspectImage(buffer, extension) {
   const normalized = extension.toLowerCase().replace(/^\./, "");
   if (normalized === "png") return inspectPng(buffer);
   throw new Error(`unsupported image extension: ${extension}`);
+}
+
+export function validateAppIcon({
+  manifest,
+  appConfig,
+  repoRoot = DEFAULT_REPO_ROOT,
+  release = false,
+}) {
+  const errors = [];
+  const check = (condition, message) => {
+    if (!condition) errors.push(message);
+  };
+  check(
+    hasExactKeys(manifest, [
+      "schemaVersion",
+      "status",
+      "file",
+      "sha256",
+      "width",
+      "height",
+      "hasAlpha",
+    ]),
+    "icon manifest must contain exactly the required keys",
+  );
+  check(manifest?.schemaVersion === 1, "icon manifest schemaVersion must be 1");
+  check(
+    [
+      "technical_validation_passed_brand_approval_pending",
+      "approved_for_submission",
+    ].includes(manifest?.status),
+    "icon manifest status is invalid",
+  );
+  const configuredIcon = appConfig?.expo?.icon;
+  const configuredPath =
+    typeof configuredIcon === "string"
+      ? path.posix.normalize(`artifacts/cut-os/${configuredIcon}`)
+      : null;
+  check(
+    configuredPath === "artifacts/cut-os/assets/images/icon-v2.png",
+    "Expo app icon must remain the controlled icon-v2.png asset",
+  );
+  check(
+    manifest?.file === configuredPath,
+    "icon manifest file must match the configured Expo app icon",
+  );
+  check(
+    typeof manifest?.sha256 === "string" &&
+      /^[0-9a-f]{64}$/u.test(manifest.sha256),
+    "icon manifest sha256 must be 64 lowercase hexadecimal characters",
+  );
+  check(
+    manifest?.width === 1024 && manifest?.height === 1024,
+    "App Store icon manifest must require 1024x1024 pixels",
+  );
+  check(
+    manifest?.hasAlpha === false,
+    "App Store icon manifest must require an opaque image",
+  );
+
+  if (
+    manifest?.file === "artifacts/cut-os/assets/images/icon-v2.png" &&
+    manifest.file === configuredPath
+  ) {
+    const iconPath = path.resolve(repoRoot, manifest.file);
+    try {
+      const iconDirectory = path.dirname(iconPath);
+      const iconStat = fs.lstatSync(iconPath);
+      const directoryStat = fs.lstatSync(iconDirectory);
+      const realRepoRoot = fs.realpathSync(path.resolve(repoRoot));
+      const realIconDirectory = fs.realpathSync(iconDirectory);
+      const realIconPath = fs.realpathSync(iconPath);
+      const regularContainedFile =
+        iconStat.isFile() &&
+        !iconStat.isSymbolicLink() &&
+        directoryStat.isDirectory() &&
+        !directoryStat.isSymbolicLink() &&
+        realIconDirectory ===
+          path.join(realRepoRoot, "artifacts/cut-os/assets/images") &&
+        realIconPath === path.join(realIconDirectory, "icon-v2.png");
+      check(
+        regularContainedFile,
+        "App Store icon must be a regular non-symlink file in the controlled image directory",
+      );
+      if (regularContainedFile) {
+        const iconBytes = fs.readFileSync(iconPath);
+        const actualSha256 = createHash("sha256")
+          .update(iconBytes)
+          .digest("hex");
+        check(
+          actualSha256 === manifest.sha256,
+          "App Store icon sha256 does not match the configured image bytes",
+        );
+        const inspection = inspectImage(iconBytes, path.extname(iconPath));
+        check(
+          inspection.format === "png" &&
+            inspection.width === manifest.width &&
+            inspection.height === manifest.height &&
+            inspection.hasAlpha === manifest.hasAlpha,
+          "App Store icon image properties do not match the manifest",
+        );
+      }
+    } catch (error) {
+      errors.push(`App Store icon inspection failed: ${error.message}`);
+    }
+  }
+  if (release) {
+    check(
+      manifest?.status === "approved_for_submission",
+      "release mode requires the exact App Store icon approved for submission",
+    );
+  }
+  return errors;
 }
 
 export function validateMetadata({
@@ -3923,6 +4182,7 @@ export function validateMetadata({
     check(
       [
         "pending_owner_and_app_store_connect",
+        "pending_app_store_connect_confirmation",
         "confirmed_in_app_store_connect",
       ].includes(availability.status),
       "availability.status must remain pending or be confirmed in App Store Connect",
@@ -4510,6 +4770,7 @@ export function validateMetadata({
 export function validateTestFlightSubmission({
   record,
   expectedAppVersion,
+  documentedCopy,
   release = false,
 }) {
   const errors = [];
@@ -4546,6 +4807,13 @@ export function validateTestFlightSubmission({
         Buffer.byteLength(record[field], "utf8") <= 4000,
       `TestFlight ${field} must be 4,000 UTF-8 bytes or fewer`,
     );
+    if (documentedCopy !== undefined) {
+      check(
+        normalizeDocumentedCopy(record[field]) ===
+          normalizeDocumentedCopy(documentedCopy?.[field]),
+        `TestFlight ${field} must exactly match the canonical PURCHASE_QA_REPORT.md copy`,
+      );
+    }
   }
   check(
     typeof record.feedbackEmailConfiguredInAppStoreConnect === "boolean",
@@ -5215,6 +5483,9 @@ export function validateBundle({
   const testFlightSubmission = readJson(
     path.join(repoRoot, "app-store/testflight-submission.json"),
   );
+  const iconManifest = readJson(
+    path.join(repoRoot, "app-store/icon-manifest.json"),
+  );
   const releaseRequired =
     release || submission?.status === "approved_for_submission";
   const appConfig = readJson(path.join(repoRoot, "artifacts/cut-os/app.json"));
@@ -5233,6 +5504,13 @@ export function validateBundle({
     path.join(repoRoot, "APP_REVIEW_RUNBOOK.md"),
     "utf8",
   );
+  const purchaseQaReport = fs.readFileSync(
+    path.join(repoRoot, "PURCHASE_QA_REPORT.md"),
+    "utf8",
+  );
+  const documentedTestFlightCopy = testFlightCopyFromMarkdown({
+    markdown: purchaseQaReport,
+  });
   const notesTemplateSha256 = appReviewNotesTemplateSha256({
     markdown: appReviewRunbook,
   });
@@ -5257,9 +5535,16 @@ export function validateBundle({
       repoRoot,
       release: releaseRequired,
     }),
+    ...validateAppIcon({
+      manifest: iconManifest,
+      appConfig,
+      repoRoot,
+      release: releaseRequired,
+    }),
     ...validateTestFlightSubmission({
       record: testFlightSubmission,
       expectedAppVersion: submission?.listing?.appVersion,
+      documentedCopy: documentedTestFlightCopy,
       release: releaseRequired,
     }),
     ...validateExactBuildBindings({

@@ -4,6 +4,7 @@ import {
   createClerkLaunchState,
   reduceClerkLaunchState,
   resolveClerkLaunchFallback,
+  resolveClerkLaunchStatusBarStyle,
   type ClerkLaunchState,
 } from "../clerk-launch-state";
 
@@ -68,5 +69,11 @@ describe("Clerk launch state", () => {
       const hasLoadedApp = state.phase === "loaded";
       expect(hasFallback || hasLoadedApp).toBe(true);
     }
+  });
+
+  it("keeps dark launch fallbacks legible and follows appearance once loaded", () => {
+    expect(resolveClerkLaunchStatusBarStyle("loading")).toBe("light");
+    expect(resolveClerkLaunchStatusBarStyle("retry")).toBe("light");
+    expect(resolveClerkLaunchStatusBarStyle(null)).toBe("auto");
   });
 });

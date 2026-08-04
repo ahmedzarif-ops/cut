@@ -101,13 +101,13 @@ invent a value.
 | Terms/EULA URL             | Unresolved                                   | Owner/counsel must approve and publish the final 18+ terms position.                                                                      |
 | Age Suitability URL        | Omit unless owner approves one               | Optional; if supplied, it must describe the self-declared 18+ gate accurately.                                                            |
 | Seller/legal operator      | Zarif Ahmed; individual sole proprietor      | Verify Apple's activated personal seller name matches the owner-supplied record and obtain counsel review before submission.              |
-| SKU                        | Unresolved                                   | Owner chooses this immutable account-level identifier before the app record is created.                                                   |
+| SKU                        | `cut-ios-v1`                                 | Internal identifier selected under standing launch authority; confirm the exact value before creating Apple's immutable app record.       |
 | Copyright                  | Unresolved                                   | Owner supplies the correct year and rights holder.                                                                                        |
 | Content-rights declaration | Unresolved                                   | Owner/counsel answer from the final catalog, artwork, copy, and licensed content.                                                         |
 | Initial territories        | United States only (`US`)                    | Owner-approved; still reconcile the repository code to Apple's current App Store Connect territory ID and confirm the saved availability. |
-| App distribution method    | Pending owner decision                       | Select Public or Private in Pricing and Availability; retain saved UTC evidence before App Review.                                        |
-| Apple silicon Mac          | Pending owner compatibility decision         | Explicitly make the iPhone/iPad app available or opt out; retain saved UTC evidence.                                                      |
-| Apple Vision Pro           | Pending owner compatibility decision         | Explicitly make the iPhone/iPad app available or opt out; retain saved UTC evidence.                                                      |
+| App distribution method    | Public                                       | Routine launch choice recorded; retain saved App Store Connect UTC evidence before App Review.                                            |
+| Apple silicon Mac          | Do Not Make Available                        | iPhone-only v1 choice recorded; retain saved App Store Connect UTC evidence.                                                              |
+| Apple Vision Pro           | Do Not Make Available                        | iPhone-only v1 choice recorded; retain saved App Store Connect UTC evidence.                                                              |
 | App download price         | Free download                                | Owner-approved; confirm the saved App Store Connect value.                                                                                |
 | License agreement          | Unresolved                                   | Owner/counsel chooses Apple's standard EULA or an approved custom EULA.                                                                   |
 | App tax category           | Unresolved                                   | Owner/counsel/finance confirms the live App Store Connect value; do not copy the subscription tax category by assumption.                 |
@@ -118,11 +118,10 @@ invent a value.
 These three availability choices are explicit because Apple can otherwise make
 an iPhone/iPad app available through additional distribution or compatibility
 surfaces. CUT's current launch QA is iPhone-only. The machine record therefore
-keeps the [distribution method](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/set-distribution-methods),
+records Public [distribution](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/set-distribution-methods),
 [Apple silicon Mac availability](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/manage-availability-of-iphone-and-ipad-apps-on-macs-with-apple-silicon),
 and [Apple Vision Pro availability](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/manage-availability-of-iphone-and-ipad-apps-on-apple-vision-pro)
-pending until the owner decides and the saved App Store Connect state is
-evidenced.
+as Do Not Make Available. Saved App Store Connect evidence is still pending.
 
 Across the machine records, these URL fields use closed schemas. Support,
 Privacy, Terms, Marketing, Accessibility, and Age Suitability URLs must be
@@ -335,12 +334,12 @@ not prove the submitted archive.
 
 The machine record now carries the owner-approved subscription group/product
 reference names, immutable product ID, monthly duration, proposed U.S. USD
-price, no-introductory-offer decision, Family Sharing disabled, and English
-(U.S.) display names. Apple's live reference limits the localizable description
-to 45 characters; the initially approved 54-character sentence must not be
-entered, and the compliant replacement remains pending owner approval. The live
-price schedule/effective-date evidence, tax category, and App Name Display
-Option also remain unresolved.
+price, no-introductory-offer decision, Family Sharing disabled, English (U.S.)
+display names, exact 45-character description, and `use_app_name` selection.
+Apple's live reference limits the localizable description to 45 characters; the
+initially approved 54-character sentence must not be entered. The exact
+corrected offer is bound to its recorded decision by working validation. The
+live price schedule/effective-date evidence and tax category remain unresolved.
 Release requires App Store Connect confirmation, attachment to version 1.0,
 review notes, an uploaded review screenshot whose SHA-256 equals approved shot
 07, verified RevenueCat mapping, exact-build StoreKit/Purchase QA/TestFlight

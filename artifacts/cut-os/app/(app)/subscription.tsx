@@ -441,9 +441,15 @@ export default function SubscriptionScreen() {
           )}
         </Pressable>
         <Pressable
+          accessibilityLabel="Manage App Store subscription"
           accessibilityRole="link"
+          accessibilityState={{ disabled: actionBusy }}
           disabled={actionBusy}
-          style={({ pressed }) => [s.secondaryButton, pressed && s.pressed]}
+          style={({ pressed }) => [
+            s.secondaryButton,
+            actionBusy && s.disabled,
+            pressed && !actionBusy && s.pressed,
+          ]}
           onPress={() => void manage()}
         >
           <Text style={s.secondaryButtonText}>Manage subscription</Text>

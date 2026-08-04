@@ -12,6 +12,8 @@ import {
   DEFAULT_REPO_ROOT,
   EXPECTED_LISTING_SHOT_IDS,
   inspectImage,
+  testFlightCopyFromMarkdown,
+  validateAppIcon,
   validateAppReviewNotesDraft,
   validateBundle,
   validateExactBuildBindings,
@@ -113,24 +115,32 @@ function validationInputs() {
   };
 }
 
-test("committed owner-approved working App Store records validate", () => {
+test("committed working App Store records preserve approved and pending scopes", () => {
   assert.deepEqual(validateBundle(), []);
   const { submission } = validationInputs();
   assert.deepEqual(submission.listing.initialTerritories, ["US"]);
-  assert.equal(submission.availability.approval.owner, false);
-  assert.deepEqual(submission.ownerControlledFields.slice(-3), [
+  assert.equal(submission.listing.sku, "cut-ios-v1");
+  assert.equal(submission.availability.approval.owner, true);
+  for (const field of [
     "availability.distributionMethod.decision",
     "availability.appleSiliconMacAvailability.decision",
     "availability.appleVisionProAvailability.decision",
-  ]);
+  ]) {
+    assert.ok(submission.ownerControlledFields.includes(field));
+  }
+  assert.deepEqual(submission.availability.distributionMethod, {
+    decision: "public",
+    status: "pending_app_store_connect_confirmation",
+    savedAtUtc: null,
+    evidenceReference: null,
+  });
   for (const field of [
-    "distributionMethod",
     "appleSiliconMacAvailability",
     "appleVisionProAvailability",
   ]) {
     assert.deepEqual(submission.availability[field], {
-      decision: null,
-      status: "pending_owner_decision",
+      decision: "do_not_make_available",
+      status: "pending_app_store_connect_confirmation",
       savedAtUtc: null,
       evidenceReference: null,
     });
@@ -148,9 +158,58 @@ test("committed owner-approved working App Store records validate", () => {
   assert.equal(submission.subscription.familySharingDecision, "disabled");
   assert.equal(
     submission.subscription.localizations["en-US"].description,
-    null,
+    "Weigh-ins, balanced meals & nutrition totals.",
   );
-  assert.equal(submission.subscription.approval.owner, false);
+  assert.equal(
+    submission.subscription.localizations["en-US"].appNameDisplayOption,
+    "use_app_name",
+  );
+  assert.equal(submission.subscription.approval.owner, true);
+  assert.equal(
+    submission.subscription.ownerDecision.revision,
+    "owner-offer-2026-08-04-v2",
+  );
+});
+
+test("recorded subscription offer rejects drift in every owner-controlled term", () => {
+  const inputs = validationInputs();
+  const cases = [
+    (submission) => {
+      submission.subscription.usPricing.amount = "9.99";
+    },
+    (submission) => {
+      submission.subscription.duration = "1_year";
+    },
+    (submission) => {
+      submission.subscription.familySharingDecision = "enabled";
+    },
+    (submission) => {
+      submission.subscription.productReferenceName = "Different Product";
+    },
+    (submission) => {
+      submission.subscription.localizations["en-US"].description =
+        "Different description";
+    },
+  ];
+
+  for (const mutate of cases) {
+    const submission = clone(inputs.submission);
+    mutate(submission);
+    assert.ok(
+      validateMetadata({ ...inputs, submission }).some((error) =>
+        error.includes("has drifted from subscription.ownerDecision.binding"),
+      ),
+    );
+  }
+
+  const rewrittenDecision = clone(inputs.submission);
+  rewrittenDecision.subscription.usPricing.amount = "9.99";
+  rewrittenDecision.subscription.ownerDecision.binding.amount = "9.99";
+  assert.ok(
+    validateMetadata({ ...inputs, submission: rewrittenDecision }).includes(
+      "subscription.ownerDecision.binding.amount must match the recorded launch decision",
+    ),
+  );
 });
 
 test("subscription identity binds App Store and mobile release identifiers", () => {
@@ -353,7 +412,7 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
       "release mode requires submission.status approved_for_submission",
     ),
   );
-  assert.ok(errors.includes("release mode requires listing.sku"));
+  assert.ok(errors.includes("release mode requires listing.copyright"));
   assert.ok(
     errors.includes(
       "release mode requires initial territories confirmed in App Store Connect",
@@ -924,7 +983,7 @@ test("records cannot claim approval without satisfying release evidence", () => 
   submission.status = "approved_for_submission";
   assert.ok(
     validateMetadata({ ...inputs, submission }).includes(
-      "release mode requires listing.sku",
+      "release mode requires listing.copyright",
     ),
   );
 
@@ -1379,6 +1438,20 @@ test("distribution and compatible-platform availability require explicit saved d
     "availability.appleSiliconMacAvailability",
     "availability.appleVisionProAvailability",
   ];
+  submission.availability.status = "pending_owner_and_app_store_connect";
+  submission.availability.approval.owner = false;
+  for (const field of [
+    "distributionMethod",
+    "appleSiliconMacAvailability",
+    "appleVisionProAvailability",
+  ]) {
+    Object.assign(submission.availability[field], {
+      decision: null,
+      status: "pending_owner_decision",
+      savedAtUtc: null,
+      evidenceReference: null,
+    });
+  }
 
   const releaseErrors = validateMetadata({
     ...inputs,
@@ -1739,8 +1812,8 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
   });
   Object.assign(subscription.localizations["en-US"], {
     groupDisplayName: "CUT OS Pro",
-    productDisplayName: "Monthly",
-    description: "Monthly access to CUT OS Pro.",
+    productDisplayName: "CUT OS Pro Monthly",
+    description: "Weigh-ins, balanced meals & nutrition totals.",
     appNameDisplayOption: "use_app_name",
   });
   subscription.appStoreConnect.groupStatus = "confirmed_in_app_store_connect";
@@ -1752,8 +1825,9 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
     effectiveStatus: "scheduled",
     effectiveAtUtc: evidenceTime,
     evidenceReference: "evidence/us-price-schedule",
-    ownerDecisionRevision: "owner-price-decision-v1",
-    ownerDecisionEvidenceReference: "evidence/owner-price-decision-v1",
+    ownerDecisionRevision: "owner-offer-2026-08-04-v2",
+    ownerDecisionEvidenceReference:
+      "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription",
   });
   Object.assign(subscription.appStoreConnect.reviewScreenshotUpload, {
     status: "uploaded_in_app_store_connect",
@@ -2783,9 +2857,31 @@ test("saved App Store Connect age-questionnaire evidence is release-gated", () =
 
 test("TestFlight record distinguishes internal testing from external review", () => {
   const record = readJson("app-store/testflight-submission.json");
+  const documentedCopy = testFlightCopyFromMarkdown({
+    markdown: fs.readFileSync(
+      path.join(DEFAULT_REPO_ROOT, "PURCHASE_QA_REPORT.md"),
+      "utf8",
+    ),
+  });
   assert.deepEqual(
-    validateTestFlightSubmission({ record, expectedAppVersion: "1.0.0" }),
+    validateTestFlightSubmission({
+      record,
+      expectedAppVersion: "1.0.0",
+      documentedCopy,
+    }),
     [],
+  );
+
+  const driftedCopy = clone(record);
+  driftedCopy.whatToTest = `${driftedCopy.whatToTest} Unreviewed extra step.`;
+  assert.ok(
+    validateTestFlightSubmission({
+      record: driftedCopy,
+      expectedAppVersion: "1.0.0",
+      documentedCopy,
+    }).includes(
+      "TestFlight whatToTest must exactly match the canonical PURCHASE_QA_REPORT.md copy",
+    ),
   );
 
   const extraKey = clone(record);
@@ -2899,6 +2995,60 @@ test("image inspection accepts supported opaque PNG and rejects every JPEG", () 
   assert.throws(
     () => inspectImage(corruptJpeg, ".jpg"),
     /unsupported image extension: \.jpg/u,
+  );
+});
+
+test("configured App Store icon is hash-bound and technically valid", (t) => {
+  const manifest = readJson("app-store/icon-manifest.json");
+  const appConfig = readJson("artifacts/cut-os/app.json");
+  assert.deepEqual(validateAppIcon({ manifest, appConfig }), []);
+
+  const driftedHash = clone(manifest);
+  driftedHash.sha256 = "0".repeat(64);
+  assert.ok(
+    validateAppIcon({ manifest: driftedHash, appConfig }).includes(
+      "App Store icon sha256 does not match the configured image bytes",
+    ),
+  );
+
+  const releaseErrors = validateAppIcon({
+    manifest,
+    appConfig,
+    release: true,
+  });
+  assert.ok(
+    releaseErrors.includes(
+      "release mode requires the exact App Store icon approved for submission",
+    ),
+  );
+
+  const temporaryRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), "cut-icon-symlink-"),
+  );
+  t.after(() => fs.rmSync(temporaryRoot, { recursive: true, force: true }));
+  const controlledDirectory = path.join(
+    temporaryRoot,
+    "artifacts/cut-os/assets/images",
+  );
+  fs.mkdirSync(controlledDirectory, { recursive: true });
+  const outsideImage = path.join(temporaryRoot, "outside.png");
+  fs.writeFileSync(outsideImage, makePng(1024, 1024));
+  fs.symlinkSync(outsideImage, path.join(controlledDirectory, "icon-v2.png"));
+  const symlinkErrors = validateAppIcon({
+    manifest,
+    appConfig,
+    repoRoot: temporaryRoot,
+  });
+  assert.ok(
+    symlinkErrors.includes(
+      "App Store icon must be a regular non-symlink file in the controlled image directory",
+    ),
+  );
+  assert.equal(
+    symlinkErrors.includes(
+      "App Store icon sha256 does not match the configured image bytes",
+    ),
+    false,
   );
 });
 

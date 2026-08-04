@@ -75,8 +75,8 @@ name and individual/organization team type before creating the app record.
 
 ## Decision 2 — first real subscription
 
-**Status:** Core offer owner-approved August 4, 2026; one shortened customer
-description, App Store Connect creation, and live price evidence remain pending.
+**Status:** Exact launch offer is recorded; App Store Connect creation and live
+price evidence remain pending.
 
 Recommended focused launch configuration:
 
@@ -85,21 +85,11 @@ Recommended focused launch configuration:
 - Subscription Product Reference Name (internal): `CUT OS Pro Monthly`.
 - US English Subscription Group Display Name: `CUT OS Pro`.
 - US English Auto-Renewable Subscription Display Name: `CUT OS Pro Monthly`.
-- US English description: `Daily weigh-ins, balanced meals, and nutrition totals.`
+- US English description: `Weigh-ins, balanced meals & nutrition totals.`
 - Duration: monthly.
 - United States price: **$4.99/month**.
 - Introductory offer: **no free trial**.
 - Launch products: one monthly option.
-
-Exact approval phrase:
-
-> Approve $4.99 monthly, no trial, using
-> `com.zarifahmed.cut.pro.monthly`; internal group `CUT OS Pro`; internal product
-> `CUT OS Pro Monthly`; US English group display `CUT OS Pro`; US English
-> subscription display `CUT OS Pro Monthly`; and description `Daily weigh-ins,
-balanced meals, and nutrition totals.`
-
-Do not create the real App Store product until the owner approves these terms.
 
 **Recorded owner decision:** Approved the exact free-download, one-product
 United States launch with **$4.99 USD per month**, no trial, Family Sharing off,
@@ -107,12 +97,19 @@ and manual public release. The approved immutable Product ID and internal and
 customer-facing names are the values above. This approval does not claim that
 the product or price has been created or accepted in App Store Connect.
 
-**Field-limit correction found August 4, 2026:** Apple's live App Store Connect
-reference limits the localizable In-App Purchase description to 45 characters.
-The initially approved sentence is 54 characters and must not be entered. The
-45-character candidate `Weigh-ins, balanced meals & nutrition totals.` is
-pending explicit owner approval. All other offer decisions above remain
-approved.
+**Field-limit correction recorded August 4, 2026:** Apple's live App Store
+Connect reference limits the localizable In-App Purchase description to 45
+characters. The initially approved sentence is 54 characters and must not be
+entered. Under the owner's standing instruction to continue launch execution
+without pausing for non-financial, non-sensitive routine choices, the exact
+45-character replacement `Weigh-ins, balanced meals & nutrition totals.` and
+the `use_app_name` display option are selected. The machine record binds every
+offer term to this decision so changing price, duration, names, trial, Family
+Sharing, description, or app-name display fails validation.
+
+Do not create a different App Store product or price. Creation of this exact
+record may proceed only after Apple activates App Store Connect; retain the
+saved Apple values and non-secret evidence.
 
 Apple treats these as separate fields; do not copy one label into every field by
 assumption. Any additional locale remains unapproved until its exact display
@@ -222,19 +219,22 @@ availability is United States only, and release remains manual. The EULA, both
 tax-category selections, and documented no-EU DSA position are still separate
 legal/tax decisions and are not inferred from the territory choice.
 
+The internal App Store SKU `cut-ios-v1` is selected under the owner's standing
+delegated launch instruction. It is not customer-facing, but Apple makes it
+immutable after app-record creation, so the validator and metadata record must
+continue to agree before that record is created.
+
 ## Decision 6 — subscription display and accessibility disclosure
 
-**Status:** No trial and Family Sharing off are owner-approved; the corrected
-45-character subscription description, App Name Display Option, accessibility
-labels, and exact-build review remain pending.
+**Status:** No trial, Family Sharing off, the corrected 45-character description,
+and `use_app_name` are recorded; accessibility labels and exact-build review
+remain pending.
 
-Before creating the subscription, the owner must also select the App Name
-Display Option for the English (U.S.) localization: use the existing app name,
-or approve an exact custom name. Family Sharing and introductory-offer choices
-must be explicit even when the selected value is disabled or none.
+The English (U.S.) App Name Display Option is `use_app_name`; no custom app name
+is authorized. Family Sharing is disabled and the introductory-offer decision
+is none. These values are explicit even though no optional feature is enabled.
 
-**Working recommendation:** use the existing app name, disable Family Sharing
-for v1, use no introductory offer or trial, and keep TestFlight internal-only
+Keep TestFlight internal-only
 until purchase, restoration, deletion, privacy, and accessibility QA pass.
 Family Sharing cannot be turned off after it is enabled for a subscription.
 
@@ -310,7 +310,7 @@ inventing a paid approval.
 
 ## Decision 9 — App Store distribution and compatibility surfaces
 
-**Status:** Pending owner decision and App Store Connect confirmation.
+**Status:** Launch choices recorded; App Store Connect confirmation pending.
 
 Apple records the app's distribution method separately from territory
 availability and can make an iPhone/iPad app available on Apple-silicon Macs and
@@ -318,20 +318,18 @@ Apple Vision Pro unless those compatibility surfaces are explicitly opted out.
 CUT's current acceptance plan is iPhone-only; no Mac or Vision Pro QA has been
 performed.
 
-**Working recommendation for the first-revenue launch:** Public App Store
+**Recorded first-revenue launch choice:** Public App Store
 distribution, United States only, with Apple-silicon Mac and Apple Vision Pro
 availability both set to **Do not make available** until device-specific QA is
 completed. This prevents an untested platform from silently joining v1 while
 preserving the intended public iPhone launch.
 
-Exact approval phrase:
-
-> Approve public App Store distribution and opt out of Mac and Vision Pro for
-> v1.
-
-The machine record keeps all three decisions pending until that choice is
-explicit. After App Store Connect becomes available, retain the saved values,
-UTC, and non-secret evidence reference for each field.
+These are routine, non-financial launch selections made under the owner's
+standing instruction to continue independently and ask only for financial or
+sensitive decisions. The machine record now carries all three choices with
+owner-side approval while keeping Apple confirmation pending. After App Store
+Connect becomes available, retain the saved values, UTC, and non-secret
+evidence reference for each field.
 
 ## Decision 10 — public product name
 
@@ -364,10 +362,8 @@ These are intentionally deferred until the prerequisites are ready:
 - Any Clerk trial, billing method, or paid-plan upgrade if production cannot use
   the existing no-cost plan.
 - Apple agreements, tax, and banking.
-- EULA, tax categories, DSA status, App Store Server Notifications, and
-  subscription App Name Display Option. The free-download choice is approved.
-- Public/private distribution and explicit Mac and Vision Pro compatibility
-  availability.
+- EULA, tax categories, DSA status, and App Store Server Notifications. The
+  free-download and subscription App Name Display choices are recorded.
 - Accessibility Nutrition Label decision and any external TestFlight review.
 - Final `CUT OS` name-clearance decision or owner-approved replacement name.
 - Final App Privacy and age-rating answers.

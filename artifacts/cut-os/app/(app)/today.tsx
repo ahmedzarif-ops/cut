@@ -277,6 +277,8 @@ export default function TodayScreen() {
       </Pressable>
       {today?.weightEntry ? (
         <Pressable
+          accessibilityLabel="Cancel editing weigh-in"
+          accessibilityRole="button"
           style={s.cancelButton}
           onPress={() => {
             setEditingWeight(false);
@@ -305,7 +307,12 @@ export default function TodayScreen() {
         <View style={s.card}>
           <Text style={s.cardTitle}>Couldn&apos;t load your account</Text>
           <Text style={s.cardBody}>Check your connection and try again.</Text>
-          <Pressable style={s.button} onPress={() => meQuery.refetch()}>
+          <Pressable
+            accessibilityLabel="Retry loading account"
+            accessibilityRole="button"
+            style={s.button}
+            onPress={() => meQuery.refetch()}
+          >
             <Text style={s.buttonText}>Retry</Text>
           </Pressable>
         </View>
@@ -322,6 +329,8 @@ export default function TodayScreen() {
             check-in.
           </Text>
           <Pressable
+            accessibilityLabel="Start onboarding"
+            accessibilityRole="button"
             style={s.button}
             onPress={() => router.push("/onboarding")}
           >
@@ -347,6 +356,8 @@ export default function TodayScreen() {
             Your data is safe. Retry the connection.
           </Text>
           <Pressable
+            accessibilityLabel="Retry loading Today"
+            accessibilityRole="button"
             style={s.button}
             onPress={() => {
               profileQuery.refetch();
@@ -407,6 +418,8 @@ export default function TodayScreen() {
               weightEditor
             ) : (
               <Pressable
+                accessibilityLabel="Update today's weigh-in"
+                accessibilityRole="button"
                 style={s.secondaryButton}
                 onPress={() => {
                   setWeightText(
@@ -486,6 +499,8 @@ export default function TodayScreen() {
             </Text>
           </View>
           <Pressable
+            accessibilityLabel="Edit profile"
+            accessibilityRole="button"
             style={s.secondaryButton}
             onPress={() => router.push("/onboarding")}
           >
@@ -676,7 +691,12 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontFamily: "Inter_600SemiBold",
       fontSize: 16,
     },
-    cancelButton: { alignItems: "center", paddingVertical: 12 },
+    cancelButton: {
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 44,
+      paddingVertical: 12,
+    },
     successLabel: {
       color: c.success,
       fontFamily: "Inter_700Bold",
@@ -747,6 +767,8 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     secondaryButton: {
       alignItems: "center",
+      justifyContent: "center",
+      minHeight: 44,
       paddingVertical: 14,
       marginTop: 8,
     },

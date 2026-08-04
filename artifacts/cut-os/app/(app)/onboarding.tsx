@@ -131,6 +131,8 @@ function LoadErrorView({ onRetry }: { onRetry: () => void }) {
         Check your connection and try again before editing.
       </Text>
       <Pressable
+        accessibilityLabel="Retry loading profile"
+        accessibilityRole="button"
         style={({ pressed }) => [s.button, pressed && s.buttonPressed]}
         onPress={onRetry}
       >
@@ -399,7 +401,14 @@ function OnboardingForm({
         </Pressable>
 
         <Pressable
-          style={s.secondaryButton}
+          accessibilityLabel="Cancel profile changes"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: busy }}
+          style={({ pressed }) => [
+            s.secondaryButton,
+            busy && s.buttonDisabled,
+            pressed && !busy && s.buttonPressed,
+          ]}
           onPress={() => router.back()}
           disabled={busy}
         >
@@ -501,6 +510,8 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     secondaryButton: {
       alignItems: "center",
+      justifyContent: "center",
+      minHeight: 44,
       paddingVertical: 14,
       marginTop: 8,
     },

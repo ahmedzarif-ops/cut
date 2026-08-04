@@ -14,6 +14,8 @@ owner, legal, nutrition, privacy, or native QA review.
   scope, internal-only versus external-review state, exact build evidence, and
   attributable approvals. Internal testing does not silently satisfy external
   TestFlight App Review requirements.
+- `icon-manifest.json` binds the configured 1024px opaque PNG and its SHA-256;
+  brand and exact-build approval remain separate release gates.
 - `app-store-connect-territories.json` is the current 175-storefront public
   snapshot used to validate the repository's two-letter territory translation
   codes. Those codes (for example, `GB`) are App Store URL/storefront codes, not

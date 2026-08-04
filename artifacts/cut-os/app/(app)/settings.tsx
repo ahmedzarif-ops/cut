@@ -461,6 +461,7 @@ export default function SettingsScreen() {
                 ? "Back to age requirement"
                 : "Back to Today"
             }
+            accessibilityState={{ disabled: busy }}
             disabled={busy}
             hitSlop={8}
             style={({ pressed }) => [
@@ -557,7 +558,9 @@ export default function SettingsScreen() {
         </View>
         {meQuery.isError ? (
           <Pressable
+            accessibilityLabel="Retry loading weight unit settings"
             accessibilityRole="button"
+            accessibilityState={{ disabled: busy }}
             disabled={busy}
             style={({ pressed }) => [
               s.secondaryAction,

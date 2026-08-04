@@ -13,6 +13,8 @@ const {
 const directory = dirname(fileURLToPath(import.meta.url));
 const pages = ["index.html", "privacy.html", "terms.html", "support.html"];
 const assets = ["styles.css", "README.md"];
+const EXPECTED_PUBLIC_OPERATOR = "Zarif Ahmed";
+const EXPECTED_PUBLIC_CONTACT = "ahmed.zarif@gmail.com";
 const args = new Set(process.argv.slice(2));
 const mode = args.has("--release") ? "release" : "draft";
 
@@ -62,6 +64,20 @@ for (const [name, html] of htmlDocuments) {
       errors.push(`${name}: broken local link ${localTarget[1]}`);
     }
   }
+
+  if (!html.includes(EXPECTED_PUBLIC_OPERATOR)) {
+    errors.push(`${name}: authorized public legal operator is missing`);
+  }
+  if (!html.includes(EXPECTED_PUBLIC_CONTACT)) {
+    errors.push(`${name}: authorized public support contact is missing`);
+  }
+  for (const resolvedMarker of ["{{LEGAL_OPERATOR}}", "{{SUPPORT_CONTACT}}"]) {
+    if (html.includes(resolvedMarker)) {
+      errors.push(
+        `${name}: resolved identity marker returned: ${resolvedMarker}`,
+      );
+    }
+  }
 }
 
 const combinedHtml = htmlDocuments.map(([, html]) => html).join("\n");
@@ -70,9 +86,7 @@ const placeholders = [...new Set(combinedHtml.match(placeholderPattern) ?? [])];
 
 if (mode === "draft") {
   const requiredDraftMarkers = [
-    "{{LEGAL_OPERATOR}}",
     "{{PUBLIC_DOMAIN}}",
-    "{{SUPPORT_CONTACT}}",
     "{{RETENTION_SCHEDULE}}",
     "{{POLICY_EFFECTIVE_DATE}}",
     "{{GOVERNING_LAW_AND_VENUE}}",

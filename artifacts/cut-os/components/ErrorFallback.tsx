@@ -80,6 +80,8 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
         </Text>
 
         <Pressable
+          accessibilityLabel="Restart CUT OS"
+          accessibilityRole="button"
           onPress={handleRestart}
           style={({ pressed }) => [
             styles.button,

@@ -159,8 +159,8 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 1,232 tests** (release operations 247, App Store
-  artifacts 48, domain 33, database 4, mobile 404, API 496).
+- `pnpm run test`: **PASS — 1,241 tests** (release operations 247, App Store
+  artifacts 50, domain 33, database 4, mobile 411, API 496).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
@@ -174,10 +174,10 @@ native/App Store acceptance.
   provider or database calls. The public-site build remains zero-JavaScript and
   does not generate or require the development-only `static-build` preview.
 - App Store records: **PASS** in working mode; target-aware strict validation
-  intentionally rejects **288** unresolved requirements for `app_review` and
-  **287** for `public_release`, covering owner, provider, legal, screenshot,
+  intentionally rejects **281** unresolved requirements for `app_review` and
+  **280** for `public_release`, covering owner, provider, legal, screenshot,
   exact-build, and App Store Connect evidence.
-- Secret boundaries: **PASS** — 10 scanner tests, 729 tracked files with zero
+- Secret boundaries: **PASS** — 10 scanner tests, 731 tracked files with zero
   findings, and 62 production-export files with zero findings.
 - Production release-environment preflight: **PASS** with representative
   non-secret values; missing, malformed, private, reserved, cross-origin, and
@@ -231,11 +231,11 @@ launch gate.
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
-1. Obtain owner approval for the corrected 45-character subscription
-   description and the Public/iPhone-only v1 distribution choices. Once Apple
-   activates App Store Connect, create the approved free app and one U.S.-only
-   $4.99 monthly/no-trial subscription, then map the exact Apple product in
-   RevenueCat. Family Sharing remains off and release manual.
+1. Once Apple activates App Store Connect, create the recorded free Public
+   iPhone-only app with SKU `cut-ios-v1`, Mac/Vision compatibility opted out,
+   and one U.S.-only $4.99 monthly/no-trial subscription using the exact
+   45-character description and `use_app_name`; then map the exact Apple product
+   in RevenueCat. Family Sharing remains off and release manual.
 2. Verify Apple's activated personal seller name and have qualified counsel
    review the owner's selected individual-seller path and intended Texas sole
    proprietorship under the sensitive-data/legal-entity guidance before
@@ -275,8 +275,9 @@ more sensitive preference data:
 The local paid-v1 engineering checkpoint is complete. The owner selected an
 individual Apple seller, authorized `Zarif Ahmed` as the public legal operator,
 and approved the free-download, U.S.-only $4.99 monthly/no-trial,
-Family-Sharing-off, manual-release offer. Apple's 45-character limit requires
-owner approval of a shortened subscription description before creation. The
+Family-Sharing-off, manual-release offer. The corrected 45-character
+description, `use_app_name`, Public distribution, and iPhone-only Mac/Vision
+opt-outs are recorded under the standing delegated launch instruction. The
 seller path and intended Texas sole proprietorship require Apple seller-name
 verification and counsel review because Guideline 5.1.1(ix) directs
 sensitive-data apps toward legal-entity submission. Preliminary name screening

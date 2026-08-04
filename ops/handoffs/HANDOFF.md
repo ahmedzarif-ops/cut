@@ -9,8 +9,8 @@
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
 - The agent must not self-merge the pull request; the owner merges or explicitly
   overrides that repository rule.
-- The current repository checkpoint passes **1,077 automated tests** (158 release
-  operations, 43 App Store, 33 domain, 4 database, 386 mobile, and 453 API), all
+- The current repository checkpoint passes **1,241 automated tests** (247 release
+  operations, 50 App Store, 33 domain, 4 database, 411 mobile, and 496 API), all
   TypeScript checks, generated-code drift, working App Store validation,
   changed-file formatting, `.replit`/migration parsing and drift checks, Expo
   dependency health, and the clean zero-JavaScript Replit production-build
@@ -25,8 +25,8 @@
   exact-build restore QA remain evidence gates. Database/migration and shutdown
   timeout relationships are cross-tested, and Metro gets only reviewed public
   values with dotenv loading forced off.
-- Target-aware strict validation currently rejects **286** unresolved gates for
-  `app_review` and **285** for `public_release`, covering external, owner, legal,
+- Target-aware strict validation currently rejects **281** unresolved gates for
+  `app_review` and **280** for `public_release`, covering external, owner, legal,
   exact-build, screenshot, and App Store Connect evidence.
 - Clean Expo iOS prebuild and CocoaPods installation pass with fail-closed scene-
   lifecycle and iOS 17 pod-target plugins. An unsigned Xcode 27 Release app also

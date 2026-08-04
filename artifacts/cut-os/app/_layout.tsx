@@ -37,6 +37,7 @@ import {
   createClerkLaunchState,
   reduceClerkLaunchState,
   resolveClerkLaunchFallback,
+  resolveClerkLaunchStatusBarStyle,
 } from "@/lib/clerk-launch-state";
 import {
   resolveRuntimeLaunchDecision,
@@ -160,7 +161,6 @@ function ClerkLoadedApp({
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <StatusBar style="light" />
               <RootLayoutNav />
             </KeyboardProvider>
           </GestureHandlerRootView>
@@ -172,14 +172,17 @@ function ClerkLoadedApp({
 
 function LaunchErrorScreen(_props: ErrorFallbackProps) {
   return (
-    <View accessibilityRole="alert" style={launchStyles.container}>
-      <Text style={launchStyles.eyebrow}>CUT OS</Text>
-      <Text style={launchStyles.title}>We couldn't open the app</Text>
-      <Text style={launchStyles.message}>
-        Please close CUT OS and try again. If this continues, contact CUT OS
-        support.
-      </Text>
-    </View>
+    <React.Fragment>
+      <StatusBar style="light" />
+      <View accessibilityRole="alert" style={launchStyles.container}>
+        <Text style={launchStyles.eyebrow}>CUT OS</Text>
+        <Text style={launchStyles.title}>We couldn't open the app</Text>
+        <Text style={launchStyles.message}>
+          Please close CUT OS and try again. If this continues, contact CUT OS
+          support.
+        </Text>
+      </View>
+    </React.Fragment>
   );
 }
 
@@ -235,46 +238,56 @@ export default function RootLayout() {
     failed: Boolean(fontError),
   });
   if (launchDecision.surface === "configuration_error") {
-    return <ConfigurationErrorScreen issues={launchDecision.issues} />;
+    return (
+      <React.Fragment>
+        <StatusBar style="light" />
+        <ConfigurationErrorScreen issues={launchDecision.issues} />
+      </React.Fragment>
+    );
   }
 
-  if (launchDecision.surface === "asset_loading") return null;
+  if (launchDecision.surface === "asset_loading") {
+    return <StatusBar style="light" />;
+  }
 
   const launchFallback = resolveClerkLaunchFallback(clerkLaunch);
 
   return (
-    <ErrorBoundary FallbackComponent={LaunchErrorScreen}>
-      <View style={launchStyles.root}>
-        {launchFallback === "loading" ? <LaunchLoadingScreen /> : null}
-        {launchFallback === "retry" ? (
-          <ClerkLaunchRetry
-            onRetry={() => dispatchClerkLaunch({ type: "retry" })}
-          />
-        ) : null}
-
-        <ClerkProvider
-          key={clerkLaunch.attempt}
-          publishableKey={launchDecision.config.clerkPublishableKey}
-          tokenCache={tokenCache}
-          proxyUrl={launchDecision.config.clerkProxyUrl}
-        >
-          {/*
-            Keep using Clerk's exported loading/loaded controls, but never put
-            CUT OS's only launch UI inside ClerkLoading. A rejected Clerk load
-            is caught internally and can cause that branch to render nothing.
-          */}
-          <ClerkLoading>
-            <React.Fragment />
-          </ClerkLoading>
-          <ClerkLoaded>
-            <ClerkLoadedApp
-              attempt={clerkLaunch.attempt}
-              onLoaded={handleClerkLoaded}
+    <React.Fragment>
+      <StatusBar style={resolveClerkLaunchStatusBarStyle(launchFallback)} />
+      <ErrorBoundary FallbackComponent={LaunchErrorScreen}>
+        <View style={launchStyles.root}>
+          {launchFallback === "loading" ? <LaunchLoadingScreen /> : null}
+          {launchFallback === "retry" ? (
+            <ClerkLaunchRetry
+              onRetry={() => dispatchClerkLaunch({ type: "retry" })}
             />
-          </ClerkLoaded>
-        </ClerkProvider>
-      </View>
-    </ErrorBoundary>
+          ) : null}
+
+          <ClerkProvider
+            key={clerkLaunch.attempt}
+            publishableKey={launchDecision.config.clerkPublishableKey}
+            tokenCache={tokenCache}
+            proxyUrl={launchDecision.config.clerkProxyUrl}
+          >
+            {/*
+              Keep using Clerk's exported loading/loaded controls, but never put
+              CUT OS's only launch UI inside ClerkLoading. A rejected Clerk load
+              is caught internally and can cause that branch to render nothing.
+            */}
+            <ClerkLoading>
+              <React.Fragment />
+            </ClerkLoading>
+            <ClerkLoaded>
+              <ClerkLoadedApp
+                attempt={clerkLaunch.attempt}
+                onLoaded={handleClerkLoaded}
+              />
+            </ClerkLoaded>
+          </ClerkProvider>
+        </View>
+      </ErrorBoundary>
+    </React.Fragment>
   );
 }
 

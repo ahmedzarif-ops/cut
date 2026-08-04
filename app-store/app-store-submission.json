@@ -44,7 +44,7 @@
     },
     "ageSuitabilityUrl": null,
     "sellerLegalOperator": "Zarif Ahmed",
-    "sku": null,
+    "sku": "cut-ios-v1",
     "copyright": null,
     "contentRightsDeclaration": null,
     "initialTerritories": ["US"],
@@ -98,30 +98,45 @@
     "listing.initialTerritories",
     "availability.distributionMethod.decision",
     "availability.appleSiliconMacAvailability.decision",
-    "availability.appleVisionProAvailability.decision"
+    "availability.appleVisionProAvailability.decision",
+    "subscription.entitlementId",
+    "subscription.subscriptionGroupReferenceName",
+    "subscription.productReferenceName",
+    "subscription.productId",
+    "subscription.duration",
+    "subscription.usPricing.storefront",
+    "subscription.usPricing.currency",
+    "subscription.usPricing.amount",
+    "subscription.introductoryOfferDecision",
+    "subscription.familySharingDecision",
+    "subscription.localizations.en-US.groupDisplayName",
+    "subscription.localizations.en-US.productDisplayName",
+    "subscription.localizations.en-US.description",
+    "subscription.localizations.en-US.appNameDisplayOption",
+    "subscription.localizations.en-US.customAppName"
   ],
   "availability": {
-    "status": "pending_owner_and_app_store_connect",
+    "status": "pending_app_store_connect_confirmation",
     "distributionMethod": {
-      "decision": null,
-      "status": "pending_owner_decision",
+      "decision": "public",
+      "status": "pending_app_store_connect_confirmation",
       "savedAtUtc": null,
       "evidenceReference": null
     },
     "appleSiliconMacAvailability": {
-      "decision": null,
-      "status": "pending_owner_decision",
+      "decision": "do_not_make_available",
+      "status": "pending_app_store_connect_confirmation",
       "savedAtUtc": null,
       "evidenceReference": null
     },
     "appleVisionProAvailability": {
-      "decision": null,
-      "status": "pending_owner_decision",
+      "decision": "do_not_make_available",
+      "status": "pending_app_store_connect_confirmation",
       "savedAtUtc": null,
       "evidenceReference": null
     },
     "approval": {
-      "owner": false,
+      "owner": true,
       "appStoreConnectConfirmed": false
     }
   },
@@ -281,7 +296,29 @@
     }
   },
   "subscription": {
-    "status": "pending_owner_app_store_connect_and_exact_build_evidence",
+    "status": "pending_app_store_connect_and_exact_build_evidence",
+    "ownerDecision": {
+      "revision": "owner-offer-2026-08-04-v2",
+      "authority": "owner_approved_core_offer_and_standing_delegated_launch_execution",
+      "evidenceReference": "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription",
+      "binding": {
+        "entitlementId": "CUT_OS_PRO",
+        "subscriptionGroupReferenceName": "CUT OS Pro",
+        "productReferenceName": "CUT OS Pro Monthly",
+        "productId": "com.zarifahmed.cut.pro.monthly",
+        "duration": "1_month",
+        "storefront": "US",
+        "currency": "USD",
+        "amount": "4.99",
+        "introductoryOfferDecision": "none",
+        "familySharingDecision": "disabled",
+        "groupDisplayName": "CUT OS Pro",
+        "productDisplayName": "CUT OS Pro Monthly",
+        "description": "Weigh-ins, balanced meals & nutrition totals.",
+        "appNameDisplayOption": "use_app_name",
+        "customAppName": null
+      }
+    },
     "entitlementId": "CUT_OS_PRO",
     "subscriptionGroupReferenceName": "CUT OS Pro",
     "productReferenceName": "CUT OS Pro Monthly",
@@ -295,7 +332,7 @@
       "effectiveStatus": "pending",
       "effectiveAtUtc": null,
       "evidenceReference": null,
-      "ownerDecisionRevision": "owner-offer-2026-08-04-v1",
+      "ownerDecisionRevision": "owner-offer-2026-08-04-v2",
       "ownerDecisionEvidenceReference": "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription"
     },
     "availabilityEvidenceReference": null,
@@ -313,8 +350,8 @@
       "en-US": {
         "groupDisplayName": "CUT OS Pro",
         "productDisplayName": "CUT OS Pro Monthly",
-        "description": null,
-        "appNameDisplayOption": null,
+        "description": "Weigh-ins, balanced meals & nutrition totals.",
+        "appNameDisplayOption": "use_app_name",
         "customAppName": null
       }
     },
@@ -363,7 +400,7 @@
       "evidenceReference": null
     },
     "approval": {
-      "owner": false,
+      "owner": true,
       "appStoreConnectConfirmed": false,
       "revenueCatVerified": false,
       "nativeQaVerified": false

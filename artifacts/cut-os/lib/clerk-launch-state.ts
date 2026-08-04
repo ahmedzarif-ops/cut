@@ -13,6 +13,7 @@ export type ClerkLaunchEvent =
   | { type: "retry" };
 
 export type ClerkLaunchFallback = "loading" | "retry" | null;
+export type ClerkLaunchStatusBarStyle = "auto" | "light";
 
 export function createClerkLaunchState(): ClerkLaunchState {
   return { attempt: 0, phase: "loading" };
@@ -46,4 +47,12 @@ export function resolveClerkLaunchFallback(
 ): ClerkLaunchFallback {
   if (state.phase === "loaded") return null;
   return state.phase;
+}
+
+export function resolveClerkLaunchStatusBarStyle(
+  fallback: ClerkLaunchFallback,
+): ClerkLaunchStatusBarStyle {
+  // App-owned launch surfaces use a fixed dark background. Once Clerk has
+  // loaded, the app palette follows the device's light or dark appearance.
+  return fallback === null ? "auto" : "light";
 }

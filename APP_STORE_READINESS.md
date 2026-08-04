@@ -101,11 +101,12 @@ social features. Those are backlog, not submission truth.
       updates before a signed build.
 - [x] Owner approved a free app download and Family Sharing disabled.
 - [ ] Approve the standard-versus-custom EULA, app and subscription tax
-      categories, DSA position, and subscription App Name Display Option.
-- [ ] Owner approved the Subscription Group Reference Name, Subscription Product
-      Reference Name, and English (U.S.) group and product display names. The
-      initially approved description is 54 characters, exceeding Apple's live
-      45-character limit; approve a compliant replacement before creation.
+      categories, and DSA position.
+- [x] The Subscription Group Reference Name, Subscription Product Reference
+      Name, English (U.S.) group/product display names, exact 45-character
+      replacement description, and `use_app_name` option are recorded. The
+      owner-approved core offer and routine delegated launch choices are bound
+      by the machine validator so they cannot drift silently.
 - [x] Apple's live reference now verifies Product Reference Name at 64
       characters, Product ID at 100, product Display Name at 2–30, localizable
       description at 45, and Review Notes at 4,000; at-limit/one-over validator
@@ -117,10 +118,9 @@ social features. Those are backlog, not submission truth.
 - [ ] Approve App Review submission and later public release.
 - [x] Owner approved United States-only initial availability. Live App Store
       Connect availability confirmation remains pending.
-- [ ] Approve Public or Private distribution and separately choose Apple-silicon
-      Mac and Apple Vision Pro compatibility availability. Current QA is
-      iPhone-only; the fastest safe proposal is Public distribution with both
-      untested compatibility surfaces opted out for v1.
+- [x] Public distribution is selected for the iPhone-only v1, with Apple-silicon
+      Mac and Apple Vision Pro availability both set to Do Not Make Available.
+      Live App Store Connect confirmation remains pending.
 
 ### External services
 

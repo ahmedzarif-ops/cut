@@ -6,8 +6,8 @@
 
 ## Current launch addendum — August 4, 2026
 
-- **1,077/1,077 automated tests pass:** 158 release operations, 43 App Store, 33
-  domain, 4 database, 386 mobile, and 453 API.
+- **1,241/1,241 automated tests pass:** 247 release operations, 50 App Store, 33
+  domain, 4 database, 411 mobile, and 496 API.
 - Root TypeScript, generated-code drift, working App Store validation,
   changed-file formatting, `.replit` parsing, migration drift, Expo dependency
   health, and a non-secret production-profile Expo bundle rehearsal pass. The
@@ -25,8 +25,8 @@
 - Database statements, startup migrations, API/public-server shutdown, and
   readiness recovery now have cross-tested timeout boundaries. Metro receives
   an allowlist with dotenv loading disabled instead of the server environment.
-- Target-aware strict validation intentionally fails with **286** diagnostics
-  for `app_review` and **285** for `public_release` until owner, legal,
+- Target-aware strict validation intentionally fails with **281** diagnostics
+  for `app_review` and **280** for `public_release` until owner, legal,
   production-service, exact-build, screenshot, and App Store Connect evidence
   is complete.
 - The evidence verifier now accepts only the immutable
@@ -50,6 +50,17 @@
   disabled. The development tenant has Strict enumeration protection enabled.
 - Authentication remains pending signed physical-iPhone evidence and equivalent
   Strict/Native API configuration in the future production tenant.
+- The exact $4.99 monthly/no-trial/Family-Sharing-off offer is now bound to the
+  recorded names, identifiers, U.S. price, 45-character description, and
+  `use_app_name` choice. Working validation rejects changes even if a matching
+  decision object is edited in the same patch.
+- Public iPhone-only distribution is recorded with Mac and Vision Pro opted out;
+  App Store Connect confirmation remains pending. The configured 1024px opaque
+  icon is now SHA-256-bound and technically inspected by the release validator.
+- Light/dark status-bar contrast now follows the active surface from launch
+  through the loaded app. The audited onboarding, Today, Settings,
+  subscription-management, and recovery controls now expose explicit roles,
+  labels, disabled states, and minimum target sizes where applicable.
 - Sign-up has separate 18+ and provisional Terms/Privacy controls. Durable
   counsel-approved assent evidence remains an open legal gate.
 - The Settings source contract protects the visible warning that deleting CUT
