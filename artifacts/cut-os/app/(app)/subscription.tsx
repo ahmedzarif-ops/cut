@@ -341,6 +341,14 @@ export default function SubscriptionScreen() {
       ) : null}
 
       <Pressable
+        accessibilityLabel={
+          selectedPlan
+            ? `Continue — ${formatPlanBilling(
+                selectedPlan.priceString,
+                selectedPlan.subscriptionPeriod,
+              )}`
+            : "Choose a subscription"
+        }
         accessibilityRole="button"
         accessibilityState={{
           disabled: !selectedPlan || actionBusy,
@@ -370,6 +378,9 @@ export default function SubscriptionScreen() {
 
       <View style={s.secondaryActions}>
         <Pressable
+          accessibilityLabel={
+            pendingAccess ? "Check access again" : "Check purchase access"
+          }
           accessibilityRole="button"
           accessibilityHint="Securely asks CUT OS to verify your App Store purchase again"
           accessibilityState={{
@@ -393,6 +404,7 @@ export default function SubscriptionScreen() {
           )}
         </Pressable>
         <Pressable
+          accessibilityLabel="Restore purchases"
           accessibilityRole="button"
           accessibilityState={{
             disabled:
@@ -440,6 +452,7 @@ export default function SubscriptionScreen() {
       </Text>
       <LegalSupportLinks variant="compact" />
       <Pressable
+        accessibilityLabel="Sign out"
         accessibilityRole="button"
         accessibilityState={{
           disabled: actionBusy,
@@ -577,7 +590,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       width: 21,
       height: 21,
       borderRadius: 11,
-      borderColor: c.border,
+      borderColor: c.inputBorder,
       borderWidth: 2,
     },
     radioSelected: { borderColor: c.primary, borderWidth: 6 },

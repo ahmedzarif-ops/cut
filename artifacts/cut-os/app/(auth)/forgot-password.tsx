@@ -359,7 +359,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     input: {
       backgroundColor: c.input,
-      borderColor: c.border,
+      borderColor: c.inputBorder,
       borderWidth: 1,
       borderRadius: c.radius,
       color: c.foreground,

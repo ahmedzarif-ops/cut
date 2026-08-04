@@ -524,7 +524,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     input: {
       backgroundColor: c.input,
-      borderColor: c.border,
+      borderColor: c.inputBorder,
       borderWidth: 1,
       borderRadius: c.radius,
       color: c.foreground,
@@ -564,7 +564,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       height: 26,
       borderRadius: 7,
       borderWidth: 2,
-      borderColor: c.border,
+      borderColor: c.inputBorder,
       alignItems: "center",
       justifyContent: "center",
     },

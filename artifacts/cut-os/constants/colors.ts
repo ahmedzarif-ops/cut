@@ -52,6 +52,7 @@ const dark = {
   // Borders and input outlines
   border: "#24314A",
   input: "#1B2740",
+  inputBorder: "#64748B",
 };
 
 const light: typeof dark = {
@@ -71,7 +72,7 @@ const light: typeof dark = {
   secondaryForeground: "#0B1120",
 
   muted: "#EEF2F7",
-  mutedForeground: "#5B6B85",
+  mutedForeground: "#526179",
 
   accent: "#DBEAFE",
   accentForeground: "#1E3A8A",
@@ -88,6 +89,7 @@ const light: typeof dark = {
 
   border: "#E2E8F0",
   input: "#E2E8F0",
+  inputBorder: "#64748B",
 };
 
 const colors = {

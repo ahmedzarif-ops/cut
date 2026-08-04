@@ -1256,7 +1256,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       height: 24,
       borderRadius: 12,
       borderWidth: 2,
-      borderColor: c.border,
+      borderColor: c.inputBorder,
       alignItems: "center",
       justifyContent: "center",
     },

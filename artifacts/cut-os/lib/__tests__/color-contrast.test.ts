@@ -29,6 +29,26 @@ describe("CUT OS semantic color contrast", () => {
     }
   });
 
+  it("keeps form boundaries and placeholder text distinguishable", () => {
+    for (const palette of [colors.dark, colors.light]) {
+      expect(
+        contrastRatio(palette.inputBorder, palette.input),
+      ).toBeGreaterThanOrEqual(3);
+      expect(
+        contrastRatio(palette.inputBorder, palette.secondary),
+      ).toBeGreaterThanOrEqual(3);
+      expect(
+        contrastRatio(palette.inputBorder, palette.card),
+      ).toBeGreaterThanOrEqual(3);
+      expect(
+        contrastRatio(palette.inputBorder, palette.background),
+      ).toBeGreaterThanOrEqual(3);
+      expect(
+        contrastRatio(palette.mutedForeground, palette.input),
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   it("calculates the known black-on-white ratio", () => {
     expect(contrastRatio("#000000", "#FFFFFF")).toBeCloseTo(21, 5);
   });

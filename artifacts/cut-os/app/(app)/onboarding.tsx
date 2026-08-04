@@ -307,11 +307,14 @@ function OnboardingForm({
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={s.title}>Set up your profile</Text>
+        <Text accessibilityRole="header" style={s.title}>
+          Set up your profile
+        </Text>
         <Text style={s.subtitle}>Save the basics for your CUT OS profile.</Text>
 
         <Text style={s.label}>Display name</Text>
         <TextInput
+          accessibilityLabel="Display name"
           style={s.input}
           placeholder="How should we greet you?"
           placeholderTextColor={c.mutedForeground}
@@ -332,6 +335,9 @@ function OnboardingForm({
               Start weight ({units === "imperial" ? "lb" : "kg"})
             </Text>
             <TextInput
+              accessibilityLabel={`Start weight in ${
+                units === "imperial" ? "pounds" : "kilograms"
+              }`}
               style={s.input}
               keyboardType="decimal-pad"
               placeholder={units === "imperial" ? "187" : "85"}
@@ -346,6 +352,9 @@ function OnboardingForm({
               Goal weight ({units === "imperial" ? "lb" : "kg"})
             </Text>
             <TextInput
+              accessibilityLabel={`Goal weight in ${
+                units === "imperial" ? "pounds" : "kilograms"
+              }`}
               style={s.input}
               keyboardType="decimal-pad"
               placeholder={units === "imperial" ? "172" : "78"}
@@ -357,9 +366,20 @@ function OnboardingForm({
           </View>
         </View>
 
-        {submitError && <Text style={s.error}>{submitError}</Text>}
+        {submitError && (
+          <Text
+            accessibilityRole="alert"
+            accessibilityLiveRegion="assertive"
+            style={s.error}
+          >
+            {submitError}
+          </Text>
+        )}
 
         <Pressable
+          accessibilityLabel="Save profile"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: busy, busy: saving }}
           style={({ pressed }) => [
             s.button,
             busy && s.buttonDisabled,
@@ -424,7 +444,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     input: {
       backgroundColor: c.input,
-      borderColor: c.border,
+      borderColor: c.inputBorder,
       borderWidth: 1,
       borderRadius: c.radius,
       color: c.foreground,
@@ -438,7 +458,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     chip: {
       backgroundColor: c.secondary,
-      borderColor: c.border,
+      borderColor: c.inputBorder,
       borderWidth: 1,
       borderRadius: 999,
       paddingHorizontal: 16,

@@ -241,9 +241,24 @@ export default function TodayScreen() {
         />
         <Text style={s.unitLabel}>{unitLabel}</Text>
       </View>
-      {weightError ? <Text style={s.error}>{weightError}</Text> : null}
+      {weightError ? (
+        <Text
+          accessibilityRole="alert"
+          accessibilityLiveRegion="assertive"
+          style={s.error}
+        >
+          {weightError}
+        </Text>
+      ) : null}
       <Pressable
+        accessibilityLabel={
+          today?.weightEntry ? "Update weigh-in" : "Log weigh-in"
+        }
         accessibilityRole="button"
+        accessibilityState={{
+          disabled: saveWeightMutation.isPending,
+          busy: saveWeightMutation.isPending,
+        }}
         style={({ pressed }) => [
           s.button,
           saveWeightMutation.isPending && s.buttonDisabled,
@@ -625,7 +640,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     weightInput: {
       flex: 1,
       backgroundColor: c.input,
-      borderColor: c.border,
+      borderColor: c.inputBorder,
       borderWidth: 1,
       borderRadius: c.radius,
       color: c.foreground,

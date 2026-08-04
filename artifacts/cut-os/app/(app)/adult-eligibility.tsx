@@ -706,7 +706,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     input: {
       minHeight: 54,
       backgroundColor: c.input,
-      borderColor: c.border,
+      borderColor: c.inputBorder,
       borderWidth: 1,
       borderRadius: c.radius,
       color: c.foreground,
