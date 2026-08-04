@@ -11,10 +11,16 @@ export interface PoolConfig {
   max: number;
   idleTimeoutMillis: number;
   connectionTimeoutMillis: number;
+  query_timeout: number;
+  statement_timeout: number;
 }
 
 const DEFAULT_POOL_MAX = 5;
 export const PG_POOL_MAXIMUM = 20;
+// This client-side guard remains above the accepted 60-second startup migration
+// statement ceiling while keeping transport stalls bounded for normal traffic.
+export const PG_QUERY_TIMEOUT_MS = 65_000;
+export const PG_STATEMENT_TIMEOUT_MS = 5_000;
 
 /**
  * Connection-pool budget. `max` is env-tunable (PG_POOL_MAX, default 5) —
@@ -38,6 +44,13 @@ export function poolConfig(env: NodeJS.ProcessEnv = process.env): PoolConfig {
     max,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
+    // Normal application statements must not occupy a scarce production pool
+    // slot indefinitely. Startup migrations temporarily raise PostgreSQL's
+    // statement timeout to their separately bounded 60-second policy. This
+    // longer client guard still bounds the caller if the transport never
+    // delivers PostgreSQL's timeout response.
+    query_timeout: PG_QUERY_TIMEOUT_MS,
+    statement_timeout: PG_STATEMENT_TIMEOUT_MS,
   };
 }
 

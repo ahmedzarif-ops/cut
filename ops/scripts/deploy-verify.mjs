@@ -30,6 +30,7 @@ const SURFACE_TYPES = new Set([
   "json-readiness",
   "auth-guard",
   "clerk-proxy-health",
+  "cut-public-root",
 ]);
 
 export class DeployVerificationError extends Error {
@@ -320,6 +321,31 @@ function hasJsonContentType(headers) {
   return /^application\/json(?:\s*;|$)/iu.test(header(headers, "content-type"));
 }
 
+function hasHtmlContentType(headers) {
+  return /^text\/html(?:\s*;|$)/iu.test(header(headers, "content-type"));
+}
+
+function hasExecutableJavaScript(body) {
+  return (
+    /<script(?:\s|>)/iu.test(body || "") ||
+    /\s(?:on\w+)\s*=/iu.test(body || "") ||
+    /javascript:/iu.test(body || "")
+  );
+}
+
+function hasNoScriptContentSecurityPolicy(headers) {
+  return header(headers, "content-security-policy")
+    .split(";")
+    .some((directive) => {
+      const tokens = directive.trim().split(/\s+/u);
+      return (
+        tokens.length === 2 &&
+        tokens[0].toLowerCase() === "script-src" &&
+        tokens[1].toLowerCase() === "'none'"
+      );
+    });
+}
+
 function hasOkJsonBody(body) {
   try {
     const parsed = JSON.parse(body);
@@ -487,6 +513,23 @@ export function evaluateSurface(input) {
       );
       break;
     }
+    case "cut-public-root":
+      add("HTTP 200", status === 200, `status=${status}`);
+      add("HTML content type", hasHtmlContentType(headers));
+      add(
+        "self-canonical present",
+        selfCanonical(body, expect.url || ""),
+        redactUrlForOutput(expect.url || ""),
+      );
+      add(
+        "CUT production surface",
+        /<body\b[^>]*\bdata-app-surface=["']production["']/iu.test(body),
+      );
+      add("zero JavaScript", !hasExecutableJavaScript(body));
+      add("CSP blocks JavaScript", hasNoScriptContentSecurityPolicy(headers));
+      add("no Expo Go copy", !/\bExpo Go\b/iu.test(body));
+      add("no Expo deep link", !/exps?:\/\//iu.test(body));
+      break;
     default:
       throw new DeployVerificationError("unknown_surface_type");
   }
@@ -545,6 +588,38 @@ export async function verifyUrl(url, surfaceType, expect = {}, options = {}) {
     sitemapXml,
     expect: { url: target.href, path: target.pathname, ...expect },
   });
+
+  if (surfaceType === "cut-public-root") {
+    const mountedRoot = target.pathname.endsWith("/")
+      ? target.pathname
+      : `${target.pathname}/`;
+    const artifactPaths = new Set([
+      "/manifest",
+      "/ios/manifest.json",
+      "/android/manifest.json",
+      `${mountedRoot}manifest`,
+      `${mountedRoot}ios/manifest.json`,
+      `${mountedRoot}android/manifest.json`,
+    ]);
+    for (const artifactPath of artifactPaths) {
+      let artifactStatus = 0;
+      try {
+        artifactStatus = (
+          await fetchManual(new URL(artifactPath, target.origin).href, {
+            ...options,
+            readBody: false,
+          })
+        ).status;
+      } catch {
+        // A stable status=0 fails the check without exposing a response body.
+      }
+      result.checks.push({
+        name: `preview artifact blocked ${sanitizeText(artifactPath, 80)}`,
+        pass: artifactStatus === 404,
+        detail: `status=${artifactStatus}`,
+      });
+    }
+  }
 
   for (const imagePath of expect.images || []) {
     let imageStatus = 0;
@@ -635,7 +710,7 @@ function parseArgv(argv) {
 function usage() {
   return [
     "usage: node deploy-verify.mjs <url> <surfaceType> [options]",
-    "surfaceType: public-indexed | internal | go | redirect | json-health | json-readiness | auth-guard | clerk-proxy-health",
+    "surfaceType: public-indexed | internal | go | redirect | json-health | json-readiness | auth-guard | clerk-proxy-health | cut-public-root",
     "options: --anchor id --image path --redirect-to path --redirect-status N --robots-prefix path --clerk-domain-id id --timeout-ms N --max-response-bytes N --allow-local-http",
     "--allow-local-http permits HTTP only for localhost/loopback development tests; staging and production remain HTTPS-only",
   ].join("\n");

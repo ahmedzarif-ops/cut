@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { PG_QUERY_TIMEOUT_MS } from "@workspace/db";
 import {
   ensureProductionMigrations,
+  MAX_MIGRATION_STATEMENT_TIMEOUT_MS,
   prepareProductionDatabase,
   runStartupMigrations,
   StartupMigrationError,
@@ -58,6 +60,12 @@ function dependencies(
 }
 
 describe("production startup migrations", () => {
+  it("keeps every accepted migration statement below the client query guard", () => {
+    expect(PG_QUERY_TIMEOUT_MS).toBeGreaterThan(
+      MAX_MIGRATION_STATEMENT_TIMEOUT_MS,
+    );
+  });
+
   it("holds the advisory lock for migration and releases the client", async () => {
     const database = fakeDatabase();
     const runMigrations = vi.fn(async () => {

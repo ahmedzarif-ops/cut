@@ -28,6 +28,9 @@ afterEach(async () => {
   delete process.env.NODE_ENV;
   delete process.env.CLERK_SECRET_KEY;
   delete process.env.CORS_ALLOWED_ORIGINS;
+  delete process.env.REPLIT_DEV_DOMAIN;
+  delete process.env.REPLIT_EXPO_DEV_DOMAIN;
+  delete process.env.REPLIT_DOMAINS;
   await Promise.all(
     upstreamServers
       .splice(0)
@@ -305,6 +308,29 @@ describe("clerkProxyMiddleware transport hardening", () => {
         host: "attacker.invalid",
         "clerk-proxy-url": "https://attacker.invalid/api/__clerk",
       });
+
+    expect(response.status).toBe(200);
+    expect(receivedClerkProxyUrl).toBeUndefined();
+  });
+
+  it("does not derive a production Clerk proxy URL from an injected Replit host", async () => {
+    let receivedClerkProxyUrl: string | string[] | undefined;
+    const target = await listenUpstream((upstreamReq, upstreamRes) => {
+      receivedClerkProxyUrl = upstreamReq.headers["clerk-proxy-url"];
+      upstreamRes.end("ok");
+    });
+    process.env.NODE_ENV = "production";
+    process.env.CLERK_SECRET_KEY = "sk_test_proxy-hardening";
+    process.env.REPLIT_DEV_DOMAIN = "injected.replit.dev";
+    process.env.REPLIT_DOMAINS = "injected.replit.app";
+
+    const app = express();
+    app.set("trust proxy", 1);
+    app.use(CLERK_PROXY_PATH, clerkProxyMiddleware({ target }));
+
+    const response = await request(app)
+      .get(`${CLERK_PROXY_PATH}/v1/environment`)
+      .set({ host: "injected.replit.dev" });
 
     expect(response.status).toBe(200);
     expect(receivedClerkProxyUrl).toBeUndefined();

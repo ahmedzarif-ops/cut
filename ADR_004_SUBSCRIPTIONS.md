@@ -19,10 +19,13 @@ daily nutrition totals, cloud persistence, and account controls. Adaptive
 targets, trends, workouts, reminders, progress, closeout, and weekly review are
 not launch claims until they ship.
 
-Pricing, subscription duration options, and any introductory offer are owner
-decisions made in App Store Connect. The app reads localized price, duration,
-and introductory-offer data from StoreKit through RevenueCat. It never embeds
-a dollar amount, currency, or assumed trial in source code.
+Price and final offer approval are owner decisions made in App Store Connect.
+As a fail-closed engineering allowlist—not commercial approval—the current
+runtime accepts only the proposed product ID, `P1M`, and no introductory offer.
+Any approved change requires coordinated source, release-record, configuration,
+and test updates before a signed build. The app reads localized price, duration,
+and introductory-offer data from StoreKit through RevenueCat; it never embeds a
+dollar amount or currency in source code.
 
 ## Authorization order
 
@@ -93,6 +96,10 @@ ID while continuing to expose the stable product-facing lookup key
 - A least-privilege v2 key with customer read/write access, the `proj...`
   project resource ID, and the `entl...` entitlement resource ID remain
   server-only and are never logged or returned.
+- Production startup proves customer-read access with one bounded
+  `GET /projects/{project_id}/customers?limit=1`. It neither follows customer
+  pagination nor probes a write/delete endpoint; dashboard evidence is required
+  to verify the destructive customer read/write permission before release.
 - A customer or active-entitlements `404` is treated as absence only after a
   project-scoped read proves that the configured key can access the exact
   project. Ambiguous configuration and provider failures remain fail-closed.
@@ -133,7 +140,7 @@ and actual production SDK configuration remain the final evidence.
 - RevenueCat iOS app, Apple credentials, `CUT_OS_PRO` entitlement, current
   offering/packages, and Apple Server Notifications v2.
 - Production EAS public RevenueCat SDK key and server-only RevenueCat v2 key,
-  project resource ID, and entitlement resource ID.
+  plus project, entitlement, iOS app, and current-offering resource IDs.
 - First subscription submitted together with the app version.
 
 ## References

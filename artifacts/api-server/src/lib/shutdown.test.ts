@@ -1,7 +1,57 @@
 import { describe, it, expect, vi } from "vitest";
-import { createShutdownHandler } from "./shutdown";
+import {
+  createShutdownHandler,
+  DEFAULT_SHUTDOWN_TIMEOUT_MS,
+  MAX_SHUTDOWN_TIMEOUT_MS,
+  MIN_SHUTDOWN_TIMEOUT_MS,
+  parseShutdownTimeout,
+} from "./shutdown";
 
 const makeLogger = () => ({ info: vi.fn(), error: vi.fn() });
+
+describe("parseShutdownTimeout", () => {
+  it("uses the bounded default when the override is absent", () => {
+    expect(parseShutdownTimeout(undefined)).toBe(DEFAULT_SHUTDOWN_TIMEOUT_MS);
+  });
+
+  it.each([
+    [String(MIN_SHUTDOWN_TIMEOUT_MS), MIN_SHUTDOWN_TIMEOUT_MS],
+    ["10000", 10_000],
+    [String(MAX_SHUTDOWN_TIMEOUT_MS), MAX_SHUTDOWN_TIMEOUT_MS],
+  ])("accepts a canonical bounded integer: %s", (raw, expected) => {
+    expect(parseShutdownTimeout(raw)).toBe(expected);
+  });
+
+  it.each([
+    "",
+    "0",
+    "01",
+    "-1",
+    "1.5",
+    "NaN",
+    " 10000",
+    "10000 ",
+    String(MAX_SHUTDOWN_TIMEOUT_MS + 1),
+    "9007199254740992",
+  ])("fails closed for an unsafe override: %s", (value) => {
+    expect(() => parseShutdownTimeout(value)).toThrow(
+      `SHUTDOWN_TIMEOUT_MS must be an integer from ${MIN_SHUTDOWN_TIMEOUT_MS} through ${MAX_SHUTDOWN_TIMEOUT_MS}.`,
+    );
+  });
+
+  it("does not echo an invalid value in the startup error", () => {
+    const privateValue = "private-timeout-value";
+
+    expect(() => parseShutdownTimeout(privateValue)).toThrow(
+      /SHUTDOWN_TIMEOUT_MS/u,
+    );
+    try {
+      parseShutdownTimeout(privateValue);
+    } catch (error) {
+      expect((error as Error).message).not.toContain(privateValue);
+    }
+  });
+});
 
 describe("createShutdownHandler", () => {
   it("drains the server, closes the pool, then exits 0", async () => {

@@ -118,6 +118,41 @@ describe("API liveness and readiness routes", () => {
     expect(check).toHaveBeenCalledOnce();
   });
 
+  it("re-probes after the database driver aborts an overlong readiness query", async () => {
+    let now = 20_000;
+    let abortProbe: ((error: Error) => void) | undefined;
+    const check = vi
+      .fn<() => Promise<void>>()
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((_resolve, reject) => {
+            abortProbe = reject;
+          }),
+      )
+      .mockResolvedValue(undefined);
+    setReadinessCheckForTesting(check, {
+      responseTimeoutMs: 5,
+      failureTtlMs: 10,
+      now: () => now,
+    });
+    const app = testApp();
+
+    expect((await request(app).get("/api/readyz")).status).toBe(503);
+    expect(check).toHaveBeenCalledOnce();
+
+    expect(abortProbe).toBeTypeOf("function");
+    abortProbe?.(new Error("query timeout"));
+    await new Promise<void>((resolve) => {
+      setImmediate(resolve);
+    });
+    now += 11;
+
+    await vi.waitFor(async () => {
+      expect((await request(app).get("/api/readyz")).status).toBe(200);
+    });
+    expect(check).toHaveBeenCalledTimes(2);
+  });
+
   it("returns a sanitized 503 without leaking readiness errors", async () => {
     const sensitiveError =
       "postgresql://private-user:private-password@db.example.com/cut";

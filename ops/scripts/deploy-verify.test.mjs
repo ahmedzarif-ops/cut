@@ -195,6 +195,156 @@ test("verifies a live JSON readiness endpoint", async () => {
   );
 });
 
+test("verifies the CUT production root and blocked Expo preview artifacts", async () => {
+  await withServer(
+    (request, response) => {
+      if (request.url === "/cut/") {
+        response.writeHead(200, {
+          "content-type": "text/html; charset=utf-8",
+          "content-security-policy": "default-src 'none'; script-src 'none'",
+        });
+        response.end(`<!doctype html><html><head>
+          <link rel="canonical" href="PUBLIC_ORIGIN/cut/" />
+        </head><body data-app-surface="production"><h1>CUT</h1></body></html>`);
+        return;
+      }
+      response.writeHead(404, { "content-type": "text/plain" });
+      response.end("Not Found");
+    },
+    async (origin) => {
+      const result = await verifyUrl(
+        `${origin}/cut/`,
+        "cut-public-root",
+        {},
+        {
+          allowLocalHttp: true,
+          fetchImpl: async (target, options) => {
+            const response = await fetch(target, options);
+            if (new URL(target).pathname !== "/cut/") return response;
+            const body = (await response.text()).replace(
+              "PUBLIC_ORIGIN",
+              origin,
+            );
+            return new Response(body, {
+              status: response.status,
+              headers: response.headers,
+            });
+          },
+        },
+      );
+      assert.equal(result.allPass, true);
+      assert.equal(result.checks.length, 14);
+    },
+  );
+});
+
+test("CUT production-root verification checks origin and mounted preview artifacts", async () => {
+  await withServer(
+    (request, response) => {
+      if (request.url === "/cut/") {
+        response.writeHead(200, {
+          "content-type": "text/html; charset=utf-8",
+          "content-security-policy": "default-src 'none'; script-src 'none'",
+        });
+        response.end(`<!doctype html><html><head>
+          <link rel="canonical" href="PUBLIC_ORIGIN/cut/" />
+        </head><body data-app-surface="production"><h1>CUT</h1></body></html>`);
+        return;
+      }
+      if (request.url === "/manifest") {
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end("{}");
+        return;
+      }
+      response.writeHead(404, { "content-type": "text/plain" });
+      response.end("Not Found");
+    },
+    async (origin) => {
+      const result = await verifyUrl(
+        `${origin}/cut/`,
+        "cut-public-root",
+        {},
+        {
+          allowLocalHttp: true,
+          fetchImpl: async (target, options) => {
+            const response = await fetch(target, options);
+            if (new URL(target).pathname !== "/cut/") return response;
+            const body = (await response.text()).replace(
+              "PUBLIC_ORIGIN",
+              origin,
+            );
+            return new Response(body, {
+              status: response.status,
+              headers: response.headers,
+            });
+          },
+        },
+      );
+      assert.equal(result.allPass, false);
+      assert.equal(
+        result.checks.find(
+          ({ name }) => name === "preview artifact blocked /manifest",
+        ).pass,
+        false,
+      );
+      assert.equal(
+        result.checks.find(
+          ({ name }) => name === "preview artifact blocked /cut/manifest",
+        ).pass,
+        true,
+      );
+    },
+  );
+});
+
+test("CUT production-root verification rejects preview content", () => {
+  const result = evaluateSurface({
+    surfaceType: "cut-public-root",
+    status: 200,
+    headers: new Headers({
+      "content-type": "text/html",
+      "content-security-policy": "default-src 'none'; script-src 'none'",
+    }),
+    body: `<html><head><link rel="canonical" href="https://cut.example.com/" /></head>
+      <body data-app-surface="production"><script>open("exps://cut.example.com")</script>
+      Open in Expo Go</body></html>`,
+    expect: { url: "https://cut.example.com/" },
+  });
+  assert.equal(result.allPass, false);
+  assert.equal(
+    result.checks.find(({ name }) => name === "zero JavaScript").pass,
+    false,
+  );
+  assert.equal(
+    result.checks.find(({ name }) => name === "no Expo Go copy").pass,
+    false,
+  );
+  assert.equal(
+    result.checks.find(({ name }) => name === "no Expo deep link").pass,
+    false,
+  );
+});
+
+test("CUT production-root verification rejects event handlers and JavaScript URLs", () => {
+  const result = evaluateSurface({
+    surfaceType: "cut-public-root",
+    status: 200,
+    headers: new Headers({
+      "content-type": "text/html",
+      "content-security-policy": "default-src 'none'; script-src 'none'",
+    }),
+    body: `<html><head><link rel="canonical" href="https://cut.example.com/" /></head>
+      <body data-app-surface="production" onload="start()">
+      <a href="javascript:start()">Start</a></body></html>`,
+    expect: { url: "https://cut.example.com/" },
+  });
+  assert.equal(result.allPass, false);
+  assert.equal(
+    result.checks.find(({ name }) => name === "zero JavaScript").pass,
+    false,
+  );
+});
+
 test("builds only the canonical CUT Clerk proxy-health target", () => {
   assert.equal(
     clerkProxyHealthUrl("https://api.example.com/api/__clerk", "dmn_live_123")

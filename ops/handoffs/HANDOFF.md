@@ -9,9 +9,23 @@
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
 - The agent must not self-merge the pull request; the owner merges or explicitly
   overrides that repository rule.
-- The current repository checkpoint passes **861 automated tests**, all
+- The current repository checkpoint passes **982 automated tests** (86 release
+  operations, 39 App Store, 33 domain, 4 database, 367 mobile, and 453 API), all
   TypeScript checks, generated-code drift, working App Store validation,
-  formatting, `.replit` parsing, and an iOS production export.
+  changed-file formatting, `.replit`/migration parsing and drift checks, Expo
+  dependency health, and a non-secret production-profile Expo bundle rehearsal.
+  That rehearsal is not signing, TestFlight, live-service, or App Store evidence.
+- Production ingress is pinned to one explicit canonical HTTPS origin and
+  excludes Replit development-domain injection. The production public process
+  serves a CSP-locked zero-JavaScript CUT page, blocks Expo preview artifacts at
+  origin and mounted paths, and has a bounded live verifier.
+- RevenueCat startup now proves bounded customer-read access; customer
+  write/delete permission, both Apple keys, restore behavior, and post-upload
+  exact-build restore QA remain evidence gates. Database/migration and shutdown
+  timeout relationships are cross-tested, and Metro gets only reviewed public
+  values with dotenv loading forced off.
+- Strict release validation currently rejects **285** unresolved external,
+  owner, legal, exact-build, screenshot, and App Store Connect evidence gates.
 - CUT password recovery now uses Clerk's prebuilt sign-in-only native and web
   flows. The Clerk development tenant has Strict enumeration protection,
   Client Trust, bot protection, and lockout protection enabled. Production
@@ -20,10 +34,15 @@
 - Sign-up has separate 18+ and provisional Terms/Privacy controls. Legal launch
   gate 3A remains open until counsel approves the exact language and durable
   policy-version/timestamp evidence design.
+- Account deletion visibly warns that Apple billing continues and keeps the
+  App Store subscription-management action available; a source contract now
+  protects that review-critical behavior until exact-build native QA.
 - Replit development is imported, database-migrated, secret-configured, and
   preview-verified. The repository no longer overrides Replit's provider-owned
-  deployment type. The live Publishing draft must remain a one-machine
-  Reserved VM and be re-verified after every sync.
+  deployment type. It is fast-forwarded to the latest pushed branch commit with
+  a clean tree; the superseded Replit-only workflow change remains in a named
+  stash. The live Publishing draft must remain a one-machine Reserved VM and be
+  re-verified after every sync.
 - No Replit production deployment or recurring charge has started. The owner
   must explicitly approve up to **$20/month before tax**: $15 Reserved VM plus
   a $5 usage-based service-shutdown limit, then privately complete Replit phone
@@ -33,14 +52,18 @@
 - RevenueCat is Test Store only. The proposed real offer is a free download with
   `com.zarifahmed.cut.pro.monthly` at $4.99/month, no trial, Family Sharing off,
   United States only initially, and manual release. It is not approved yet.
+  Read-only inspection at `2026-08-04T09:06:49Z` showed Project Settings using
+  **Transfer to new App User ID** with no separate sandbox override, but
+  controlled production evidence and exact-build restore-after-deletion QA
+  remain open.
 
 ## RUNNING QUEUE
 
-1. Require exact GitHub CI success for the latest branch commit; never rely on
-   a green run from an older revision.
-2. Fast-forward the Replit project to the exact pushed commit, keep the tree
-   clean, and verify the Publishing draft still says Reserved VM. Do not publish
-   or start a charge without the owner cost approval.
+1. Keep PR #9 draft and require exact GitHub CI success after every new commit;
+   never rely on a green run from an older revision and never self-merge.
+2. Keep Replit on the exact pushed commit with a clean tree and verify the
+   Publishing draft still says Reserved VM after every sync. Do not publish or
+   start a charge without the owner cost approval.
 3. Continue read-only Apple activation checks. After activation, verify the
    actual team/seller type before creating any App Store record.
 4. Obtain the owner's exact hosting-cap, paid-offer, seller/legal-identity, and

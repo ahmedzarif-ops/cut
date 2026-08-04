@@ -1,3 +1,30 @@
+import { parseBoundedInteger } from "./boundedInteger";
+
+export const DEFAULT_SHUTDOWN_TIMEOUT_MS = 10_000;
+export const MAX_SHUTDOWN_TIMEOUT_MS = 60_000;
+export const MIN_SHUTDOWN_TIMEOUT_MS = 1;
+
+/**
+ * Resolve the shutdown grace period without accepting ambiguous or unbounded
+ * timer values. The error names only the setting and its safe range, never the
+ * supplied value.
+ */
+export function parseShutdownTimeout(value: string | undefined): number {
+  const parsed = parseBoundedInteger(value, {
+    minimum: MIN_SHUTDOWN_TIMEOUT_MS,
+    maximum: MAX_SHUTDOWN_TIMEOUT_MS,
+    defaultValue: DEFAULT_SHUTDOWN_TIMEOUT_MS,
+  });
+
+  if (parsed === null) {
+    throw new Error(
+      `SHUTDOWN_TIMEOUT_MS must be an integer from ${MIN_SHUTDOWN_TIMEOUT_MS} through ${MAX_SHUTDOWN_TIMEOUT_MS}.`,
+    );
+  }
+
+  return parsed;
+}
+
 export interface ShutdownDeps {
   server: { close(cb: (err?: Error) => void): unknown };
   closePool: () => Promise<void>;

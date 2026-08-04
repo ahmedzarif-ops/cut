@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { poolConfig } from "./index";
+import {
+  PG_QUERY_TIMEOUT_MS,
+  PG_STATEMENT_TIMEOUT_MS,
+  poolConfig,
+} from "./index";
 
 describe("poolConfig", () => {
   it("defaults max to 5 and sets conservative timeouts", () => {
@@ -7,6 +11,8 @@ describe("poolConfig", () => {
     expect(config.max).toBe(5);
     expect(config.idleTimeoutMillis).toBe(30_000);
     expect(config.connectionTimeoutMillis).toBe(10_000);
+    expect(config.query_timeout).toBe(PG_QUERY_TIMEOUT_MS);
+    expect(config.statement_timeout).toBe(PG_STATEMENT_TIMEOUT_MS);
   });
 
   it("reads PG_POOL_MAX from the environment", () => {

@@ -1,6 +1,6 @@
 # CUT OS — release operations runbook
 
-**Updated:** August 3, 2026
+**Updated:** August 4, 2026
 **Scope:** Staging, production, database recovery, monitoring, TestFlight, and
 App Review handoff for the paid adults-only v1 release.
 
@@ -66,6 +66,11 @@ connection values. If any identity is ambiguous, stop.
 | API process topology | Recorded actual provider minimum and maximum         | Always-on minimum one; maximum one; `API_MAX_INSTANCES=1` |
 | Mobile distribution  | Internal development/preview build only              | Production EAS build, then internal TestFlight first      |
 | Monitoring           | Same signal names and probes as production           | Approved alert destinations and escalation owner          |
+
+`CORS_ALLOWED_ORIGINS` must be one canonical public `https://host` origin in
+production: no list, port, path, credentials, query, fragment, or surrounding
+whitespace. Provider-injected Replit development domains are ignored at that
+boundary. Development may retain its documented multi-origin convenience.
 
 Do not call an environment production-like until its service map, migration
 revision, health probes, auth guard, legal resources, and monitoring signals are
@@ -199,7 +204,15 @@ pnpm run verify:deploy -- <STAGING_API_ORIGIN>/api/healthz json-health
 pnpm run verify:deploy -- <STAGING_API_ORIGIN>/api/readyz json-readiness
 pnpm run verify:deploy -- <STAGING_API_ORIGIN>/api/me auth-guard
 pnpm run verify:deploy -- <STAGING_PUBLIC_ORIGIN>/status json-readiness
+pnpm run verify:deploy -- <STAGING_PUBLIC_ORIGIN>/ cut-public-root
 ```
+
+The `cut-public-root` check requires the CUT production marker, exact canonical
+URL, no executable JavaScript, a `script-src 'none'` CSP, no Expo Go copy or
+deep link, and `404` responses from origin-absolute and mounted
+`/manifest`, `/ios/manifest.json`, and `/android/manifest.json` paths. The
+automated server contract protects this boundary; the live check proves the
+deployed process is actually using production mode.
 
 6. With the approved staging legal URLs supplied through the normal environment
    mechanism, run:
@@ -244,11 +257,19 @@ applicable with a reason:
 - exact-commit CI and staging evidence;
 - owner/counsel/privacy/health-nutrition/security gates applicable to the scope;
 - public legal/support identity and exact approved publication hashes;
+- the parent listing approval plus all six evidence-backed listing confirmations:
+  name clearance, exact-name acceptance, owner, legal, nutrition, and
+  exact-build claims identity;
+- the parent Apple commerce readiness decision plus confirmed Developer Program
+  membership, Account Holder access, Paid Apps Agreement, tax forms, and
+  banking evidence;
 - production API, database, Clerk, RevenueCat, EAS, and Apple service aliases;
 - direct, sanitized RevenueCat-dashboard evidence that the exact iOS app has
-  both its App Store Connect API key and Apple in-app purchase/subscription key
-  configured, paired with StoreKit and purchase QA on the exact submitted build
-  as defined in `EAS_RELEASE_RUNBOOK.md`;
+  its production mapping, App Store Connect API key, Apple in-app
+  purchase/subscription key, server-key customer read/write permission, and
+  transfer-to-new-App-User-ID restore behavior configured, paired after upload
+  with restore-after-deletion, StoreKit, and purchase QA on the exact submitted
+  build as defined in `EAS_RELEASE_RUNBOOK.md`;
 - the Clerk production instance/domain aliases, non-secret domain ID, exact
   canonical proxy URL, candidate API deployment/Git SHA, audited edge trust
   topology, provider proof that no direct or shorter origin path bypasses the
@@ -315,8 +336,13 @@ does not guess a hosting command.
    the bounded live limiter isolation check recorded in the manifest. Never use
    a client-supplied forwarding header as evidence of a distinct client.
 9. Publish the exact counsel-approved legal/static candidate only after the
-   publication approval is recorded. Run the live legal verifier and the public
-   `/status` readiness check.
+   publication approval is recorded. Run the live legal verifier, the public
+   `/status` readiness check, and the production-surface check:
+
+   ```sh
+   pnpm run verify:deploy -- <PRODUCTION_PUBLIC_ORIGIN>/ cut-public-root
+   ```
+
 10. Exercise one authorized production review account without recording its
     credentials or health/nutrition response data.
 11. Execute the approved password-recovery enumeration battery against the exact
@@ -386,7 +412,8 @@ Decide the path from evidence, not pressure. Stop promotion immediately on:
 
 After any rollback or roll-forward:
 
-1. Rerun liveness, readiness, auth-guard, static status, and live legal checks.
+1. Rerun liveness, readiness, auth-guard, static status, `cut-public-root`, and
+   live legal checks.
 2. Verify database revision and critical write/read behavior with non-sensitive
    evidence.
 3. Continue monitoring for the incident observation window chosen by the owner.
@@ -443,7 +470,8 @@ The owner authorizes all Apple actions. Engineering may prepare the evidence:
    and has all four attributable approvals. A generic client message alone does
    not satisfy this gate.
 9. After the exact-build screenshots are captured, selected, SHA-256 bound,
-   reviewed for personal data, and every owner-controlled commercial/legal,
+   reviewed for personal data, the listing exact-build claims review is bound to
+   the same TestFlight identity, and every owner-controlled commercial/legal,
    metadata, privacy, full age-questionnaire, App Review account, subscription,
    accessibility, and security field is evidenced and approved, remeasure the
    resolved App Review Notes below 4,000 UTF-8 bytes. Complete the manifest's

@@ -14,6 +14,7 @@ const ENTITLEMENT_REST_ID = "entlProduction1234";
 const APP_REST_ID = "appProduction1234";
 const OFFERING_REST_ID = "ofrngProduction1234";
 const PRODUCT_REST_ID = "prodProduction1234";
+const CUSTOMER_REST_ID = "cut-internal-user-uuid";
 
 function response(payload: unknown, status = 200): Response {
   return { status, json: async () => payload } as Response;
@@ -146,6 +147,25 @@ function productsPayload(
   };
 }
 
+function customersPayload(
+  items: unknown[] = [
+    {
+      object: "customer",
+      id: CUSTOMER_REST_ID,
+      project_id: PROJECT_ID,
+    },
+  ],
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    object: "list",
+    items,
+    next_page: null,
+    url: `/v2/projects/${PROJECT_ID}/customers`,
+    ...overrides,
+  };
+}
+
 function configuredFetch(
   input: {
     entitlement?: unknown;
@@ -153,6 +173,8 @@ function configuredFetch(
     products?: unknown;
     offering?: unknown;
     offeringStatus?: number;
+    customers?: unknown;
+    customerStatus?: number;
   } = {},
 ) {
   return vi
@@ -162,6 +184,9 @@ function configuredFetch(
     .mockResolvedValueOnce(response(input.products ?? productsPayload()))
     .mockResolvedValueOnce(
       response(input.offering ?? offeringPayload(), input.offeringStatus),
+    )
+    .mockResolvedValueOnce(
+      response(input.customers ?? customersPayload(), input.customerStatus),
     );
 }
 
@@ -188,19 +213,20 @@ function verificationOptions(fetchImpl: typeof globalThis.fetch) {
 }
 
 describe("RevenueCat production configuration preflight", () => {
-  it("verifies the documented app, entitlement, and active current offering with one monthly no-trial package", async () => {
+  it("verifies the documented subscription mapping and bounded customer-read permission", async () => {
     const fetchImpl = configuredFetch();
 
     await expect(
       verifyRevenueCatConfiguration(verificationOptions(fetchImpl)),
     ).resolves.toBeUndefined();
 
-    expect(fetchImpl).toHaveBeenCalledTimes(4);
+    expect(fetchImpl).toHaveBeenCalledTimes(5);
     expect(fetchImpl.mock.calls.map(([url]) => String(url))).toEqual([
       `https://api.revenuecat.com/v2/projects/${PROJECT_ID}/entitlements/${ENTITLEMENT_REST_ID}`,
       `https://api.revenuecat.com/v2/projects/${PROJECT_ID}/apps/${APP_REST_ID}`,
       `https://api.revenuecat.com/v2/projects/${PROJECT_ID}/entitlements/${ENTITLEMENT_REST_ID}/products?limit=100`,
       `https://api.revenuecat.com/v2/projects/${PROJECT_ID}/offerings/${OFFERING_REST_ID}?expand=package.product`,
+      `https://api.revenuecat.com/v2/projects/${PROJECT_ID}/customers?limit=1`,
     ]);
     for (const [, init] of fetchImpl.mock.calls) {
       expect(init).toMatchObject({
@@ -487,6 +513,27 @@ describe("RevenueCat production configuration preflight", () => {
     ).resolves.toBeUndefined();
   });
 
+  it("does not follow a customer-list cursor after the bounded permission read", async () => {
+    const fetchImpl = configuredFetch({
+      customers: customersPayload(undefined, {
+        next_page: `/v2/projects/${PROJECT_ID}/customers?starting_after=${CUSTOMER_REST_ID}`,
+      }),
+    });
+
+    await expect(
+      verifyRevenueCatConfiguration(verificationOptions(fetchImpl)),
+    ).resolves.toBeUndefined();
+    expect(fetchImpl).toHaveBeenCalledTimes(5);
+  });
+
+  it("accepts an empty customer list as proof of project-scoped read access", async () => {
+    const fetchImpl = configuredFetch({ customers: customersPayload([]) });
+
+    await expect(
+      verifyRevenueCatConfiguration(verificationOptions(fetchImpl)),
+    ).resolves.toBeUndefined();
+  });
+
   it("rejects an unexpanded offering response with a sanitized reason", async () => {
     const fetchImpl = configuredFetch({
       offering: {
@@ -514,6 +561,39 @@ describe("RevenueCat production configuration preflight", () => {
 
     expect(error).toMatchObject({ reason: "invalid_response" });
     expect(JSON.stringify(error)).not.toContain("provider secret");
+  });
+
+  it("keeps a customer-read authorization failure fatal without probing deletion", async () => {
+    const fetchImpl = configuredFetch({ customerStatus: 403 });
+
+    await expect(
+      assertRevenueCatProductionConfiguration(configuredEnvironment(), {
+        fetchImpl,
+      }),
+    ).rejects.toMatchObject({ reason: "auth_error" });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(5);
+    for (const [, init] of fetchImpl.mock.calls) {
+      expect((init as RequestInit).method).toBe("GET");
+    }
+  });
+
+  it("rejects a malformed customer-list response with a sanitized reason", async () => {
+    const fetchImpl = configuredFetch({
+      customers: {
+        object: "list",
+        items: "provider customer secret",
+        next_page: null,
+        url: `/v2/projects/${PROJECT_ID}/customers`,
+      },
+    });
+
+    const error = await verifyRevenueCatConfiguration(
+      verificationOptions(fetchImpl),
+    ).catch((failure: unknown) => failure);
+
+    expect(error).toMatchObject({ reason: "invalid_response" });
+    expect(JSON.stringify(error)).not.toContain("provider customer secret");
   });
 
   it.each([

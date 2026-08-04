@@ -90,12 +90,13 @@ app.use(express.urlencoded({ extended: true }));
 // limiter is IP-keyed and independent of auth status.
 app.use("/api", createApiLimiter());
 
-// Resolve the publishable key from the incoming request host so the same
-// server can serve multiple Clerk custom domains. Only ALLOWLISTED hosts
-// participate (x-forwarded-host is client-writable); an unknown or missing
-// host falls back to the env key — never to a header-derived one. The
-// fallback also bypasses publishableKeyFromHost, which throws on an empty
-// host when the fallback key is a live (pk_live_) key.
+// Resolve the publishable key from the incoming request host. Production has
+// one explicit canonical host; development may aggregate its injected preview
+// hosts. Only ALLOWLISTED hosts participate (x-forwarded-host is
+// client-writable); an unknown or missing host falls back to the env key —
+// never to a header-derived one. The fallback also bypasses
+// publishableKeyFromHost, which throws on an empty host when the fallback key
+// is a live (pk_live_) key.
 app.use(
   clerkMiddleware((req) => {
     const host = getClerkProxyHost(req, allowedHosts);

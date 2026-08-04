@@ -77,6 +77,9 @@ jobs:
           const record = JSON.parse(readFileSync(path, "utf8"));
           record.subscription.productId = "com.zarifahmed.cut.pro.monthly";
           record.subscription.introductoryOfferDecision = "none";
+          record.listing.privacyPolicyUrl = "https://example.com/privacy";
+          record.listing.termsUrl = "https://example.com/terms";
+          record.listing.supportUrl = "https://example.com/support";
           writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, "utf8");
           NODE
           pnpm --filter @workspace/cut-os run validate:release-config

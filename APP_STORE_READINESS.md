@@ -2,7 +2,7 @@
 
 **Status:** Automated paid-v1 checkpoint complete; not ready to submit
 
-**Updated:** August 3, 2026
+**Updated:** August 4, 2026
 
 ## Honest v1 scope
 
@@ -61,21 +61,26 @@ social features. Those are backlog, not submission truth.
       revision before binding, and exposes a single-flight guarded readiness
       probe while keeping liveness dependency-free.
 - [x] Full repository typecheck/tests, pinned frozen install, Expo dependency
-      check, Expo Doctor, migration drift check, and production-style iOS
-      export pass after subscription integration. The complete dependency
-      graph has no known high/critical advisories, and CI enforces that gate.
-      The clean-commit gate is completed by the release checkpoint commit.
+      check, Expo Doctor, migration drift check, and a non-secret
+      production-profile Expo bundle rehearsal pass after subscription
+      integration. This is not signing, TestFlight, live-service, or App Store
+      evidence. The complete dependency graph has no known high/critical
+      advisories, and CI enforces that gate. The clean-commit gate is completed
+      by the release checkpoint commit.
 - [x] Machine-readable App Store records, screenshot manifest, release-evidence
       template, TestFlight record, full age-questionnaire inventory,
       required-reason API binding, App Review/subscription/accessibility/
-      commercial gates, and fail-closed submission validator are wired into CI
-      and the release runbooks.
+      commercial gates, closed listing schema, public-URL/binary binding,
+      listing-review evidence, Apple commerce readiness, and fail-closed
+      submission validator are wired into CI and the release runbooks.
 
 ## Submission blockers
 
 ### Owner financial/store decisions
 
-- [ ] Confirm Apple Developer Program membership and Account Holder access.
+- [ ] Confirm Apple Developer Program membership and Account Holder access, then
+      record each confirmation UTC and a non-secret controlled evidence reference
+      under `commercialAndLegal.appleCommerceReadiness`.
 - [ ] Resolve the Apple seller type with qualified counsel before enrollment or
       submission. CUT OS requires linked weight, body, fitness, and nutrition
       information, and App Review Guideline 5.1.1(ix) says apps requiring
@@ -83,9 +88,15 @@ social features. Those are backlog, not submission truth.
       than an individual developer. An individual submission is not documented
       here as prohibited, but it is a material review risk.
 - [ ] Accept the Paid Apps Agreement and complete tax/banking. These are
-      sensitive financial actions and remain owner-only.
+      sensitive financial actions and remain owner-only; record only each
+      confirmation status, UTC, and non-secret evidence reference. Never record
+      tax, bank, agreement, or account credentials or values in the repository.
 - [ ] Approve the first product's immutable Product ID, duration, price, and
-      trial decision. Source code does not assume any of them.
+      trial decision. Price and final offer approval remain owner decisions. As
+      a fail-closed engineering allowlist—not commercial approval—the current
+      runtime accepts only the proposed product ID, `P1M`, and no introductory
+      offer. Any approved change requires coordinated source, release-record,
+      configuration, and test updates before a signed build.
 - [ ] Approve the app download price, standard-versus-custom EULA, app and
       subscription tax categories, DSA trader position, Family Sharing, and
       subscription App Name Display Option. All remain machine-recorded as
@@ -94,6 +105,13 @@ social features. Those are backlog, not submission truth.
       Product Reference Name, and each localized group display name,
       subscription display name, and description. No-trial is the shortest
       path to the first paid transaction, but it is still an owner decision.
+- [ ] Before populating those subscription names/descriptions or the immutable
+      Product ID, recheck every current field limit in Apple's official App Store
+      Connect reference and add at-limit/one-over validator tests. The repository
+      deliberately does not guess limits that were not verified in this pass.
+- [ ] Complete `listing.approval` only after controlled evidence exists for name
+      clearance, App Store Connect exact-name acceptance, owner approval, legal
+      review, qualified nutrition review, and exact-build claims review.
 - [ ] Approve App Review submission and later public release.
 - [ ] Approve the initial storefront territories. Do not infer worldwide
       availability from the subscription price decision.
@@ -206,9 +224,9 @@ social features. Those are backlog, not submission truth.
       including version, Apple build number, full Git commit, EAS build ID, and
       App Store Connect build ID, plus internal group, feedback email, QA
       references, and approvals. Bind that same identity to App Review,
-      screenshots, subscription, and accessibility. If external testers are
-      added, complete TestFlight App Review contact, demo access, and notes
-      first.
+      screenshots, subscription, accessibility, and listing exact-build claims
+      review. If external testers are added, complete TestFlight App Review
+      contact, demo access, and notes first.
 - [ ] Final `.xcarchive` privacy report, embedded SDK inventory, `Info.plist`,
       export-compliance answer, and required-reason APIs are reconciled.
 - [ ] Every selected screenshot is an opaque accepted-size PNG whose SHA-256,

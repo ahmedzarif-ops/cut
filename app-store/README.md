@@ -8,7 +8,8 @@ owner, legal, nutrition, privacy, or native QA review.
   full age-questionnaire answer set, exact current privacy-manifest and
   required-reason API mappings, unresolved commercial/legal fields, structured
   App Review accounts, subscription, accessibility, initial-territory,
-  regulated-medical-device, authentication-security, and approval gates.
+  regulated-medical-device, authentication-security, closed listing schema,
+  listing-review evidence, Apple commerce readiness, and approval gates.
 - `testflight-submission.json` records the copy-ready beta description and test
   scope, internal-only versus external-review state, exact build evidence, and
   attributable approvals. Internal testing does not silently satisfy external
@@ -67,11 +68,25 @@ rewrite requires a new signed candidate.
 The exact submitted build is one canonical identity: app version, Apple build
 number, full Git commit, EAS build ID, and App Store Connect build ID. Copy that
 same identity into the TestFlight record, App Review record, screenshot capture
-defaults, subscription evidence, and accessibility evidence. Release validation
-rejects any missing field or mismatch.
+defaults, listing exact-build claims review, subscription evidence, and
+accessibility evidence. Release validation rejects any missing field or
+mismatch.
 
 Other fail-closed bindings are deliberate:
 
+- listing metadata accepts only its exact reviewed key set. Public metadata URLs
+  reject normalization, credentials, IP literals, single-label names, and the
+  validator's reserved/non-public suffixes. Production Privacy, Terms, and
+  Support values must
+  exactly match the URLs compiled into the app, and validation errors never
+  print either URL;
+- public submission requires evidence-backed name clearance, exact-name
+  acceptance in App Store Connect, owner/legal/nutrition review, and exact-build
+  listing-claims review;
+- Apple Developer Program membership, Account Holder access, Paid Apps
+  Agreement, tax forms, and banking must each be confirmed with UTC and a
+  controlled non-secret evidence reference. Do not store financial values or
+  credentials;
 - each review account must have a successful production sign-in within the
   preceding 24 hours, be non-expiring for the review window, and have no MFA or
   out-of-band challenge;
@@ -86,7 +101,10 @@ Other fail-closed bindings are deliberate:
   revision/reference, any introductory-offer terms, and exact App Store Connect
   upload evidence. It separately requires direct RevenueCat-dashboard evidence
   that both the App Store Connect API key and Apple in-app purchase/subscription
-  key are configured; the public v2 `GET app` response is not treated as proof.
+  key are configured, and that the server key has customer read/write permission
+  required for account deletion. The public v2 `GET app` response is not treated
+  as credential proof; the bounded customer-list `GET` proves read access only
+  and the release process never issues a test deletion.
   Dashboard evidence must be paired with purchase, StoreKit-offer, and TestFlight
   QA bound to the exact submitted build; and
 - a supported accessibility feature must list every canonical common task in
@@ -96,9 +114,10 @@ Other fail-closed bindings are deliberate:
   with UTC, evidence reference, and approval.
 
 The release check is expected to fail today. It rejects unresolved fields,
-unconfirmed commercial/legal, App Review, subscription, TestFlight,
-accessibility, age, or privacy state; missing or hash-mismatched screenshots;
-unapproved personal-data reviews; non-PNG files; unsupported dimensions; PNG
-alpha; an unreconciled territory catalog; pending authentication recovery or
-production-tenant evidence; stale app-config mappings; or App Review Notes over
-4,000 UTF-8 bytes. Never weaken it just to make a submission pass.
+unconfirmed listing review or Apple commerce readiness, commercial/legal, App
+Review, subscription, TestFlight, accessibility, age, or privacy state; missing
+or hash-mismatched screenshots; unapproved personal-data reviews; non-PNG files;
+unsupported dimensions; PNG alpha; an unreconciled territory catalog; pending
+authentication recovery or production-tenant evidence; stale app-config
+mappings; or App Review Notes over 4,000 UTF-8 bytes. Never weaken it just to
+make a submission pass.

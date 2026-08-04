@@ -1,21 +1,25 @@
 # CUT OS public server and legal-page gate
 
-The existing zero-dependency server continues to serve the Expo landing page,
-manifests, and static build. It also owns three zero-JavaScript routes:
+The zero-dependency server owns the production CUT launch surface and three
+zero-JavaScript routes:
 
 - `/privacy`
 - `/terms`
 - `/support`
 
-The landing page requires an owner-configured `PUBLIC_APP_ORIGIN`, for example
+The server requires an owner-configured `PUBLIC_APP_ORIGIN`, for example
 `https://preview.cutos.app`. It must be an HTTPS origin on a public DNS name
 with no path, port, credentials, query, or fragment. The server never builds
-the Expo deep link from `Host`, `X-Forwarded-Host`, or
-`X-Forwarded-Proto`; missing or invalid configuration fails startup. Landing
-HTML uses separate HTML-attribute and inline-JSON rendering, and its inline
-style and scripts are authorized by a per-response CSP nonce.
-The exact versioned QR dependency is additionally pinned with SHA-384
-subresource integrity and anonymous CORS, so a changed CDN payload will not run.
+canonical URLs or preview deep links from `Host`, `X-Forwarded-Host`, or
+`X-Forwarded-Proto`; missing or invalid configuration fails startup.
+
+The executable deployment entry point always starts in production mode: `/` is
+a no-JavaScript CUT launch page. Expo Go manifests, bundles, and static preview
+assets return `404`, including requests that try to select an Expo platform
+through headers. Tests and local tooling must opt into the legacy Expo preview
+explicitly. In explicit preview mode only, that legacy page uses a
+nonce-authorized inline script and the pinned QR dependency. The production
+launch page has no script or QR dependency.
 
 The longer review packet in the repository's `legal-site/` folder is a working
 source for owner and counsel review. The templates here are the deployable
@@ -32,9 +36,10 @@ templates**, not only the longer packet or an earlier draft.
 - responses use `no-store` caching; and
 - the templates retain explicit placeholders and blocker markers.
 
-The landing page, Expo manifests, and static files preserve their normal route
-behavior. `BASE_PATH` is applied to the legal routes and links in the same way
-as the Expo routes.
+The CUT launch page remains available but carries a response-level `noindex`
+directive while legal publication is still draft. `BASE_PATH` is applied to
+the launch-page links and legal routes. Expo manifests and static files retain
+their normal behavior only in the non-production development preview.
 
 ## Validation
 

@@ -9,11 +9,20 @@ const APP_STORE_RELEASE_RECORD_PATH = resolve(
   "../../../app-store/app-store-submission.json",
 );
 
-const REQUIRED_PUBLIC_URLS = [
-  "EXPO_PUBLIC_PRIVACY_POLICY_URL",
-  "EXPO_PUBLIC_TERMS_URL",
-  "EXPO_PUBLIC_SUPPORT_URL",
-];
+const PUBLIC_LISTING_URL_BINDINGS = Object.freeze([
+  Object.freeze({
+    environmentName: "EXPO_PUBLIC_PRIVACY_POLICY_URL",
+    listingField: "privacyPolicyUrl",
+  }),
+  Object.freeze({
+    environmentName: "EXPO_PUBLIC_TERMS_URL",
+    listingField: "termsUrl",
+  }),
+  Object.freeze({
+    environmentName: "EXPO_PUBLIC_SUPPORT_URL",
+    listingField: "supportUrl",
+  }),
+]);
 
 const NON_PUBLIC_DNS_SUFFIXES = [
   ".example",
@@ -208,7 +217,7 @@ function parseAppStoreProductIdentifier(value) {
   return value;
 }
 
-function readAppStoreSubscriptionReleaseRecord() {
+function readAppStoreReleaseRecord() {
   try {
     const parsed = JSON.parse(
       readFileSync(APP_STORE_RELEASE_RECORD_PATH, "utf8"),
@@ -216,18 +225,22 @@ function readAppStoreSubscriptionReleaseRecord() {
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
       return null;
     }
-    const subscription = parsed.subscription;
-    return subscription &&
-      typeof subscription === "object" &&
-      !Array.isArray(subscription)
-      ? subscription
-      : null;
+    return parsed;
   } catch {
     return null;
   }
 }
 
+function isLiteralUrlValue(value) {
+  return Boolean(
+    typeof value === "string" &&
+    value === value.trim() &&
+    !/[\u0000-\u001f\u007f-\u009f]/.test(value),
+  );
+}
+
 function isSafeHttpsUrl(value, { allowQueryAndFragment }) {
+  if (!isLiteralUrlValue(value)) return false;
   try {
     const parsed = new URL(value);
     return Boolean(
@@ -342,30 +355,52 @@ export function validateReleaseEnvironment(environment) {
   }
 
   if (production) {
-    const subscriptionReleaseRecord = readAppStoreSubscriptionReleaseRecord();
-    if (!subscriptionReleaseRecord) {
-      errors.push("App Store subscription release record must be readable");
+    const appStoreReleaseRecord = readAppStoreReleaseRecord();
+    if (!appStoreReleaseRecord) {
+      errors.push("App Store release record must be readable");
     } else {
+      const subscriptionReleaseRecord = appStoreReleaseRecord.subscription;
+      if (
+        !subscriptionReleaseRecord ||
+        typeof subscriptionReleaseRecord !== "object" ||
+        Array.isArray(subscriptionReleaseRecord)
+      ) {
+        errors.push("App Store subscription release record must be readable");
+      }
       if (
         !parsedProductIdentifier ||
-        subscriptionReleaseRecord.productId !== parsedProductIdentifier
+        subscriptionReleaseRecord?.productId !== parsedProductIdentifier
       ) {
         errors.push(
           "EXPO_PUBLIC_REVENUECAT_PRODUCT_ID must match the App Store subscription release record",
         );
       }
-      if (subscriptionReleaseRecord.introductoryOfferDecision !== "none") {
+      if (subscriptionReleaseRecord?.introductoryOfferDecision !== "none") {
         errors.push(
           "App Store subscription release record must disable introductory offers",
         );
       }
-    }
-  }
 
-  if (production) {
-    for (const name of REQUIRED_PUBLIC_URLS) {
-      const value = requiredValue(environment, name, errors);
-      if (value) {
+      const listingReleaseRecord = appStoreReleaseRecord.listing;
+      if (
+        !listingReleaseRecord ||
+        typeof listingReleaseRecord !== "object" ||
+        Array.isArray(listingReleaseRecord)
+      ) {
+        errors.push("App Store listing release record must be readable");
+      }
+      for (const {
+        environmentName,
+        listingField,
+      } of PUBLIC_LISTING_URL_BINDINGS) {
+        const rawValue = environment[environmentName];
+        const value = requiredValue(environment, environmentName, errors);
+        if (!value) continue;
+        if (!isLiteralUrlValue(rawValue)) {
+          errors.push(
+            `${environmentName} must not contain surrounding whitespace or control characters`,
+          );
+        }
         const safeHttps = isSafeHttpsUrl(value, {
           allowQueryAndFragment: true,
         });
@@ -373,7 +408,14 @@ export function validateReleaseEnvironment(environment) {
           ? isPublicHostname(new URL(value).hostname)
           : false;
         if (!safeHttps || !publicHostname) {
-          errors.push(`${name} must be a public HTTPS URL without credentials`);
+          errors.push(
+            `${environmentName} must be a public HTTPS URL without credentials`,
+          );
+        }
+        if (listingReleaseRecord?.[listingField] !== value) {
+          errors.push(
+            `${environmentName} must match the App Store listing release record`,
+          );
         }
       }
     }

@@ -6,10 +6,28 @@
 
 ## Current launch addendum — August 4, 2026
 
-- **861/861 automated tests pass:** 82 release operations, 35 App Store, 33
-  domain, 4 database, 332 mobile, and 375 API.
+- **982/982 automated tests pass:** 86 release operations, 39 App Store, 33
+  domain, 4 database, 367 mobile, and 453 API.
 - Root TypeScript, generated-code drift, working App Store validation,
-  formatting, `.replit` parsing, and an iOS production export pass.
+  changed-file formatting, `.replit` parsing, migration drift, Expo dependency
+  health, and a non-secret production-profile Expo bundle rehearsal pass. The
+  rehearsal is not a signed EAS build, live-legal preflight, TestFlight build,
+  or App Store acceptance.
+- Production now accepts one explicit canonical HTTPS browser/Clerk ingress;
+  provider-injected Replit development domains cannot widen it.
+- The production public server exposes a zero-JavaScript, CSP-locked CUT launch
+  page and blocks both origin and mounted Expo preview artifacts; the bounded
+  live verifier checks the same contract.
+- Production startup performs a bounded RevenueCat customer-read permission
+  check. Customer write/delete permission, both Apple credential settings, and
+  restore behavior remain direct dashboard evidence gates, with exact-build
+  restore-after-deletion QA required after internal TestFlight upload.
+- Database statements, startup migrations, API/public-server shutdown, and
+  readiness recovery now have cross-tested timeout boundaries. Metro receives
+  an allowlist with dotenv loading disabled instead of the server environment.
+- Strict release validation intentionally fails with **285** diagnostics until
+  owner, legal, production-service, exact-build, screenshot, and App Store
+  Connect evidence is complete.
 - App Store password recovery now uses Clerk's prebuilt sign-in-only native
   `AuthView`; public web uses Clerk's prebuilt `SignIn` with sign-up and transfer
   disabled. The development tenant has Strict enumeration protection enabled.
@@ -17,13 +35,16 @@
   Strict/Native API configuration in the future production tenant.
 - Sign-up has separate 18+ and provisional Terms/Privacy controls. Durable
   counsel-approved assent evidence remains an open legal gate.
+- The Settings source contract protects the visible warning that deleting CUT
+  does not cancel Apple billing, the App Store subscription-management route,
+  and the explicit destructive confirmation action.
 - Replit native/simulator wording in the historical table below is not the
   launch acceptance boundary. The authoritative native gate is the exact signed
   TestFlight build on a physical iPhone.
 
 ## Historical automated checkpoint — August 3, 2026
 
-This is the current local automated checkpoint for the balanced-meal,
+This was the August 3 local automated checkpoint for the balanced-meal,
 durable-account-deletion, `adult-18-v1` eligibility, and iOS release-configuration
 foundations. It is not native/App Store acceptance. The post-commit
 generated-code drift check and commit SHA are recorded separately.

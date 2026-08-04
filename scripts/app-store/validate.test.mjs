@@ -198,11 +198,26 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
     ),
   );
   assert.ok(
+    errors.includes(
+      "release mode requires commercialAndLegal.appleCommerceReadiness.paidAppsAgreement.status confirmed",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "release mode requires listing.approval.nameClearance.status confirmed",
+    ),
+  );
+  assert.ok(
     errors.includes("release mode requires appReview.status ready_for_review"),
   );
   assert.ok(
     errors.includes(
       "release mode requires subscription.status ready_for_submission",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "release mode requires verified RevenueCat production mapping, customer read/write permission, and Apple credential dashboard evidence",
     ),
   );
   assert.ok(
@@ -298,7 +313,181 @@ test("working validation allows verified owner fields to be populated incrementa
   submission.listing.privacyPolicyUrl = "http://example.com/privacy";
   assert.ok(
     validateMetadata({ ...inputs, submission }).includes(
-      "listing.privacyPolicyUrl must be null or HTTPS",
+      "listing.privacyPolicyUrl must be null or public HTTPS without credentials",
+    ),
+  );
+});
+
+test("listing schema and public metadata URLs fail closed", () => {
+  const inputs = validationInputs();
+
+  const missingKey = clone(inputs.submission);
+  delete missingKey.listing.ageSuitabilityUrl;
+  assert.ok(
+    validateMetadata({ ...inputs, submission: missingKey }).includes(
+      "listing must contain exactly the required keys",
+    ),
+  );
+
+  const unknownKey = clone(inputs.submission);
+  unknownKey.listing.unreviewedListingField = true;
+  assert.ok(
+    validateMetadata({ ...inputs, submission: unknownKey }).includes(
+      "listing must contain exactly the required keys",
+    ),
+  );
+
+  for (const [select, expectedError] of [
+    [
+      (submission) => {
+        submission.listing.marketingUrl = "https://localhost/marketing";
+      },
+      "listing.marketingUrl must be null or a public HTTPS URL without credentials",
+    ],
+    [
+      (submission) => {
+        submission.listing.supportUrl = "https://internal/support";
+      },
+      "listing.supportUrl must be null or public HTTPS without credentials",
+    ],
+    [
+      (submission) => {
+        submission.listing.privacyPolicyUrl = "https://127.0.0.1/privacy";
+      },
+      "listing.privacyPolicyUrl must be null or public HTTPS without credentials",
+    ],
+    [
+      (submission) => {
+        submission.listing.termsUrl = "https://terms.local/terms";
+      },
+      "listing.termsUrl must be null or public HTTPS without credentials",
+    ],
+    [
+      (submission) => {
+        submission.listing.ageSuitabilityUrl = "javascript:alert(1)";
+      },
+      "listing.ageSuitabilityUrl must be null or public HTTPS without credentials",
+    ],
+    [
+      (submission) => {
+        submission.listing.supportUrl = " https://example.com/support";
+      },
+      "listing.supportUrl must be null or public HTTPS without credentials",
+    ],
+    [
+      (submission) => {
+        submission.listing.ageSuitabilityUrl =
+          "https://exa\nmple.com/age-suitability";
+      },
+      "listing.ageSuitabilityUrl must be null or public HTTPS without credentials",
+    ],
+    [
+      (submission) => {
+        submission.accessibility.accessibilityUrl =
+          "https://accessibility.invalid/label";
+      },
+      "accessibility.accessibilityUrl must be null or public HTTPS without credentials",
+    ],
+  ]) {
+    const submission = clone(inputs.submission);
+    select(submission);
+    assert.ok(
+      validateMetadata({ ...inputs, submission }).includes(expectedError),
+    );
+  }
+});
+
+test("Apple commerce readiness is structured and evidence-gated", () => {
+  const inputs = validationInputs();
+  const submission = clone(inputs.submission);
+  const readiness = submission.commercialAndLegal.appleCommerceReadiness;
+
+  readiness.developerProgramMembership.status = "confirmed";
+  let errors = validateMetadata({ ...inputs, submission });
+  assert.ok(
+    errors.includes(
+      "commercialAndLegal.appleCommerceReadiness.developerProgramMembership confirmed status requires verifiedAtUtc",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "commercialAndLegal.appleCommerceReadiness.developerProgramMembership confirmed status requires evidenceReference",
+    ),
+  );
+
+  readiness.status = "confirmed";
+  for (const field of [
+    "developerProgramMembership",
+    "accountHolderAccess",
+    "paidAppsAgreement",
+    "taxForms",
+    "banking",
+  ]) {
+    Object.assign(readiness[field], {
+      status: "confirmed",
+      verifiedAtUtc: "2026-08-03T23:59:00Z",
+      evidenceReference: `evidence/apple-commerce-${field}`,
+    });
+  }
+  errors = validateMetadata({ ...inputs, submission });
+  assert.equal(
+    errors.some((error) => error.includes("appleCommerceReadiness")),
+    false,
+  );
+
+  readiness.banking.evidenceReference = null;
+  assert.ok(
+    validateMetadata({ ...inputs, submission }).includes(
+      "commercialAndLegal.appleCommerceReadiness.banking confirmed status requires evidenceReference",
+    ),
+  );
+});
+
+test("listing approvals require name, owner, legal, nutrition, and exact-build evidence", () => {
+  const inputs = validationInputs();
+  const submission = clone(inputs.submission);
+  const approval = submission.listing.approval;
+
+  approval.nameClearance.status = "confirmed";
+  assert.ok(
+    validateMetadata({ ...inputs, submission }).includes(
+      "listing.approval.nameClearance confirmed status requires verifiedAtUtc",
+    ),
+  );
+
+  approval.status = "confirmed";
+  for (const field of [
+    "nameClearance",
+    "appStoreConnectNameAcceptance",
+    "ownerApproval",
+    "legalReview",
+    "nutritionReview",
+  ]) {
+    Object.assign(approval[field], {
+      status: "confirmed",
+      verifiedAtUtc: "2026-08-03T23:59:00Z",
+      evidenceReference: `evidence/listing-${field}`,
+    });
+  }
+  Object.assign(approval.exactBuildClaimsReview, {
+    status: "confirmed",
+    buildNumber: "1",
+    gitCommit: "0123456789abcdef0123456789abcdef01234567",
+    easBuildId: "eas-build-01234567",
+    appStoreConnectBuildId: "asc-build-01234567",
+    verifiedAtUtc: "2026-08-03T23:59:00Z",
+    evidenceReference: "evidence/listing-exact-build-claims",
+  });
+  const errors = validateMetadata({ ...inputs, submission });
+  assert.equal(
+    errors.some((error) => error.includes("listing.approval")),
+    false,
+  );
+
+  approval.legalReview.evidenceReference = null;
+  assert.ok(
+    validateMetadata({ ...inputs, submission }).includes(
+      "listing.approval.legalReview confirmed status requires evidenceReference",
     ),
   );
 });
@@ -336,6 +525,7 @@ test("approval records must retain the exact required key sets", () => {
   missingApprovals.ageRating.approval = {};
   missingApprovals.privacy.approval = {};
   missingApprovals.authenticationSecurity.approval = {};
+  missingApprovals.listing.approval = {};
   missingApprovals.commercialAndLegal.approval = {};
   missingApprovals.appReview.approval = {};
   missingApprovals.subscription.approval = {};
@@ -358,6 +548,11 @@ test("approval records must retain the exact required key sets", () => {
   assert.ok(
     missingErrors.includes(
       "authenticationSecurity.approval must contain exactly the required approval keys",
+    ),
+  );
+  assert.ok(
+    missingErrors.includes(
+      "listing.approval must contain exactly the required keys",
     ),
   );
   for (const label of [
@@ -387,6 +582,7 @@ test("new release records reject unknown keys and incomplete age answers", () =>
   const submission = clone(inputs.submission);
   submission.unreviewedShortcut = true;
   submission.references.unreviewedShortcut = "nowhere";
+  submission.commercialAndLegal.appleCommerceReadiness.unreviewedShortcut = true;
   submission.commercialAndLegal.unreviewedShortcut = true;
   submission.appReview.unreviewedShortcut = true;
   submission.subscription.unreviewedShortcut = true;
@@ -405,6 +601,11 @@ test("new release records reject unknown keys and incomplete age answers", () =>
   assert.ok(
     errors.includes(
       "submission.references must contain exactly the required keys",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "commercialAndLegal.appleCommerceReadiness must contain exactly the required keys",
     ),
   );
   for (const [record, message] of [
@@ -446,6 +647,8 @@ test("verified or ready states cannot omit their supporting evidence", () => {
   submission.subscription.revenueCat.productionMappingStatus = "verified";
   submission.subscription.revenueCat.appStoreConnectApiKeyStatus = "verified";
   submission.subscription.revenueCat.subscriptionKeyStatus = "verified";
+  submission.subscription.revenueCat.customerReadWritePermissionStatus =
+    "verified";
   submission.subscription.exactBuildEvidence.storeKitOfferStatus = "verified";
   submission.accessibility.status = "evaluated_for_release";
   submission.accessibility.appStoreConnectDecision.decision =
@@ -468,6 +671,11 @@ test("verified or ready states cannot omit their supporting evidence", () => {
   assert.ok(
     errors.includes(
       "verified RevenueCat Apple credentials require dashboard UTC evidence",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "verified RevenueCat customer read/write permission requires dashboard UTC evidence",
     ),
   );
   assert.ok(
@@ -846,12 +1054,47 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
     appStoreConnectBuildId: "asc-build-01234567",
   };
 
+  const listingApproval = submission.listing.approval;
+  listingApproval.status = "confirmed";
+  for (const field of [
+    "nameClearance",
+    "appStoreConnectNameAcceptance",
+    "ownerApproval",
+    "legalReview",
+    "nutritionReview",
+  ]) {
+    Object.assign(listingApproval[field], {
+      status: "confirmed",
+      verifiedAtUtc: evidenceTime,
+      evidenceReference: `evidence/listing-${field}`,
+    });
+  }
+  Object.assign(listingApproval.exactBuildClaimsReview, exactBuildIdentity, {
+    status: "confirmed",
+    verifiedAtUtc: evidenceTime,
+    evidenceReference: "evidence/listing-exact-build-claims",
+  });
+
   const commercial = submission.commercialAndLegal;
   commercial.status = "confirmed_in_app_store_connect";
   commercial.appDownloadPrice = "free_download";
   commercial.licenseAgreement = "standard_apple_eula";
   commercial.appTaxCategory = "Health and Fitness";
   commercial.dsaStatus = "trader";
+  commercial.appleCommerceReadiness.status = "confirmed";
+  for (const field of [
+    "developerProgramMembership",
+    "accountHolderAccess",
+    "paidAppsAgreement",
+    "taxForms",
+    "banking",
+  ]) {
+    Object.assign(commercial.appleCommerceReadiness[field], {
+      status: "confirmed",
+      verifiedAtUtc: evidenceTime,
+      evidenceReference: `evidence/apple-commerce-${field}`,
+    });
+  }
   commercial.appStoreServerNotifications = {
     deliveryArchitecture: "revenuecat_direct",
     status: "confirmed_in_app_store_connect",
@@ -933,6 +1176,7 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
   subscription.revenueCat.productionMappingStatus = "verified";
   subscription.revenueCat.appStoreConnectApiKeyStatus = "verified";
   subscription.revenueCat.subscriptionKeyStatus = "verified";
+  subscription.revenueCat.customerReadWritePermissionStatus = "verified";
   subscription.revenueCat.verifiedAtUtc = evidenceTime;
   subscription.revenueCat.evidenceReference =
     "evidence/revenuecat-production-mapping";
@@ -991,6 +1235,13 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
     ),
   );
   assert.deepEqual(gateErrors, []);
+
+  subscription.revenueCat.customerReadWritePermissionStatus = "pending";
+  assert.ok(
+    validateMetadata({ ...inputs, submission, release: true }).includes(
+      "release mode requires verified RevenueCat production mapping, customer read/write permission, and Apple credential dashboard evidence",
+    ),
+  );
 });
 
 test("every exact-build surface is cross-bound to canonical TestFlight identity", () => {
@@ -1007,6 +1258,10 @@ test("every exact-build surface is cross-bound to canonical TestFlight identity"
   );
 
   const cases = [
+    [
+      "listing.approval.exactBuildClaimsReview",
+      (submission) => submission.listing.approval.exactBuildClaimsReview,
+    ],
     ["appReview.exactBuild", (submission) => submission.appReview.exactBuild],
     [
       "screenshots.captureDefaults",

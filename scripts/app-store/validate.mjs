@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs";
+import { isIP } from "node:net";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -133,6 +134,54 @@ const EXPECTED_SUBMISSION_REFERENCE_KEYS = Object.freeze([
   "reviewRunbook",
   "testFlightRecord",
   "screenshotManifest",
+]);
+const EXPECTED_LISTING_KEYS = Object.freeze([
+  "appName",
+  "bundleId",
+  "appVersion",
+  "initialRelease",
+  "primaryLanguage",
+  "subtitle",
+  "description",
+  "keywords",
+  "primaryCategory",
+  "secondaryCategory",
+  "madeForKids",
+  "promotionalText",
+  "marketingUrl",
+  "whatsNew",
+  "whatsNewPosition",
+  "releaseMethod",
+  "supportUrl",
+  "privacyPolicyUrl",
+  "termsUrl",
+  "ageSuitabilityUrl",
+  "sellerLegalOperator",
+  "sku",
+  "copyright",
+  "contentRightsDeclaration",
+  "initialTerritories",
+  "approval",
+]);
+const EXPECTED_LISTING_APPROVAL_KEYS = Object.freeze([
+  "status",
+  "nameClearance",
+  "appStoreConnectNameAcceptance",
+  "ownerApproval",
+  "legalReview",
+  "nutritionReview",
+  "exactBuildClaimsReview",
+]);
+const EXPECTED_CONFIRMATION_EVIDENCE_KEYS = Object.freeze([
+  "status",
+  "verifiedAtUtc",
+  "evidenceReference",
+]);
+const EXPECTED_LISTING_EXACT_BUILD_REVIEW_KEYS = Object.freeze([
+  "status",
+  ...EXACT_BUILD_IDENTITY_FIELDS,
+  "verifiedAtUtc",
+  "evidenceReference",
 ]);
 const EXPECTED_AGE_RATING_KEYS = Object.freeze([
   "targetAudience",
@@ -349,8 +398,24 @@ const EXPECTED_COMMERCIAL_LEGAL_KEYS = Object.freeze([
   "licenseAgreement",
   "appTaxCategory",
   "dsaStatus",
+  "appleCommerceReadiness",
   "appStoreServerNotifications",
   "approval",
+]);
+const EXPECTED_APPLE_COMMERCE_READINESS_KEYS = Object.freeze([
+  "status",
+  "developerProgramMembership",
+  "accountHolderAccess",
+  "paidAppsAgreement",
+  "taxForms",
+  "banking",
+]);
+const EXPECTED_APPLE_COMMERCE_EVIDENCE_KEYS = Object.freeze([
+  "developerProgramMembership",
+  "accountHolderAccess",
+  "paidAppsAgreement",
+  "taxForms",
+  "banking",
 ]);
 const EXPECTED_COMMERCIAL_LEGAL_APPROVAL_KEYS = Object.freeze([
   "owner",
@@ -618,6 +683,56 @@ function validateApprovalRecord({
     if (release) {
       check(approval?.[key] === true, `release mode requires ${label}.${key}`);
     }
+  }
+}
+
+function validateConfirmationEvidenceRecord({
+  value,
+  label,
+  required,
+  requirementLabel,
+  check,
+}) {
+  check(
+    hasExactKeys(value, EXPECTED_CONFIRMATION_EVIDENCE_KEYS),
+    `${label} must contain exactly status, verifiedAtUtc, and evidenceReference`,
+  );
+  check(
+    ["pending", "confirmed"].includes(value?.status),
+    `${label}.status must be pending or confirmed`,
+  );
+  check(
+    value?.verifiedAtUtc === null || validIsoTimestamp(value?.verifiedAtUtc),
+    `${label}.verifiedAtUtc must be null or a UTC ISO timestamp`,
+  );
+  check(
+    nullableNonEmptyString(value?.evidenceReference),
+    `${label}.evidenceReference must be null or non-empty`,
+  );
+
+  if (value?.status === "pending") {
+    check(
+      value?.verifiedAtUtc === null && value?.evidenceReference === null,
+      `${label} pending status requires null verification evidence`,
+    );
+  }
+
+  if (required) {
+    check(
+      value?.status === "confirmed",
+      `${requirementLabel} requires ${label}.status confirmed`,
+    );
+  }
+  if (required || value?.status === "confirmed") {
+    check(
+      validIsoTimestamp(value?.verifiedAtUtc),
+      `${label} confirmed status requires verifiedAtUtc`,
+    );
+    check(
+      typeof value?.evidenceReference === "string" &&
+        value.evidenceReference.trim().length > 0,
+      `${label} confirmed status requires evidenceReference`,
+    );
   }
 }
 
@@ -984,6 +1099,141 @@ function validateAuthenticationSecurity({ value, release, check }) {
   }
 }
 
+function validateListingApproval({ value, listing, release, check }) {
+  check(isObject(value), "listing.approval must be an object");
+  if (!isObject(value)) return;
+
+  check(
+    hasExactKeys(value, EXPECTED_LISTING_APPROVAL_KEYS),
+    "listing.approval must contain exactly the required keys",
+  );
+  check(
+    ["pending", "confirmed"].includes(value.status),
+    "listing.approval.status must be pending or confirmed",
+  );
+
+  const approvalRequired = release || value.status === "confirmed";
+  const requirementLabel = release
+    ? "release mode"
+    : "confirmed listing.approval";
+  if (approvalRequired) {
+    check(
+      value.status === "confirmed",
+      `${requirementLabel} requires listing.approval.status confirmed`,
+    );
+  }
+
+  for (const field of [
+    "nameClearance",
+    "appStoreConnectNameAcceptance",
+    "ownerApproval",
+    "legalReview",
+    "nutritionReview",
+  ]) {
+    validateConfirmationEvidenceRecord({
+      value: value[field],
+      label: `listing.approval.${field}`,
+      required: approvalRequired,
+      requirementLabel,
+      check,
+    });
+  }
+
+  const exactBuild = value.exactBuildClaimsReview;
+  const exactBuildLabel = "listing.approval.exactBuildClaimsReview";
+  check(
+    hasExactKeys(exactBuild, EXPECTED_LISTING_EXACT_BUILD_REVIEW_KEYS),
+    `${exactBuildLabel} must contain exactly the required keys`,
+  );
+  check(
+    ["pending", "confirmed"].includes(exactBuild?.status),
+    `${exactBuildLabel}.status must be pending or confirmed`,
+  );
+  validateExactBuildIdentity({
+    value: exactBuild,
+    label: exactBuildLabel,
+    expectedAppVersion: listing.appVersion,
+    required: approvalRequired || exactBuild?.status === "confirmed",
+    check,
+  });
+  check(
+    exactBuild?.verifiedAtUtc === null ||
+      validIsoTimestamp(exactBuild?.verifiedAtUtc),
+    `${exactBuildLabel}.verifiedAtUtc must be null or a UTC ISO timestamp`,
+  );
+  check(
+    nullableNonEmptyString(exactBuild?.evidenceReference),
+    `${exactBuildLabel}.evidenceReference must be null or non-empty`,
+  );
+  if (exactBuild?.status === "pending") {
+    check(
+      exactBuild?.verifiedAtUtc === null &&
+        exactBuild?.evidenceReference === null,
+      `${exactBuildLabel} pending status requires null verification evidence`,
+    );
+  }
+  if (approvalRequired) {
+    check(
+      exactBuild?.status === "confirmed",
+      `${requirementLabel} requires ${exactBuildLabel}.status confirmed`,
+    );
+  }
+  if (approvalRequired || exactBuild?.status === "confirmed") {
+    check(
+      validIsoTimestamp(exactBuild?.verifiedAtUtc),
+      `${exactBuildLabel} confirmed status requires verifiedAtUtc`,
+    );
+    check(
+      typeof exactBuild?.evidenceReference === "string" &&
+        exactBuild.evidenceReference.trim().length > 0,
+      `${exactBuildLabel} confirmed status requires evidenceReference`,
+    );
+  }
+}
+
+function validateAppleCommerceReadiness({
+  value,
+  release,
+  commercialConfirmed,
+  check,
+}) {
+  const label = "commercialAndLegal.appleCommerceReadiness";
+  check(isObject(value), `${label} must be an object`);
+  if (!isObject(value)) return;
+
+  check(
+    hasExactKeys(value, EXPECTED_APPLE_COMMERCE_READINESS_KEYS),
+    `${label} must contain exactly the required keys`,
+  );
+  check(
+    ["pending", "confirmed"].includes(value.status),
+    `${label}.status must be pending or confirmed`,
+  );
+  const confirmationRequired =
+    release || commercialConfirmed || value.status === "confirmed";
+  const requirementLabel = release
+    ? "release mode"
+    : commercialConfirmed
+      ? "confirmed commercialAndLegal"
+      : `confirmed ${label}`;
+  if (confirmationRequired) {
+    check(
+      value.status === "confirmed",
+      `${requirementLabel} requires ${label}.status confirmed`,
+    );
+  }
+
+  for (const field of EXPECTED_APPLE_COMMERCE_EVIDENCE_KEYS) {
+    validateConfirmationEvidenceRecord({
+      value: value[field],
+      label: `${label}.${field}`,
+      required: confirmationRequired,
+      requirementLabel,
+      check,
+    });
+  }
+}
+
 function validateCommercialAndLegal({ value, release, check }) {
   check(isObject(value), "submission.commercialAndLegal must be an object");
   if (!isObject(value)) return;
@@ -1020,6 +1270,13 @@ function validateCommercialAndLegal({ value, release, check }) {
       ),
     "commercialAndLegal.dsaStatus must be null or an approved DSA position",
   );
+
+  validateAppleCommerceReadiness({
+    value: value.appleCommerceReadiness,
+    release,
+    commercialConfirmed: value.status === "confirmed_in_app_store_connect",
+    check,
+  });
 
   const notifications = value.appStoreServerNotifications;
   check(
@@ -1721,6 +1978,7 @@ function validateSubscription({ value, listing, release, check }) {
       "productionMappingStatus",
       "appStoreConnectApiKeyStatus",
       "subscriptionKeyStatus",
+      "customerReadWritePermissionStatus",
       "restoreAfterAccountDeletion",
       "verifiedAtUtc",
       "evidenceReference",
@@ -1731,6 +1989,7 @@ function validateSubscription({ value, listing, release, check }) {
     "productionMappingStatus",
     "appStoreConnectApiKeyStatus",
     "subscriptionKeyStatus",
+    "customerReadWritePermissionStatus",
   ]) {
     check(
       ["pending", "verified"].includes(revenueCat?.[field]),
@@ -1763,6 +2022,14 @@ function validateSubscription({ value, listing, release, check }) {
         typeof revenueCat?.evidenceReference === "string" &&
         revenueCat.evidenceReference.trim().length > 0,
       "verified RevenueCat Apple credentials require dashboard UTC evidence",
+    );
+  }
+  if (revenueCat?.customerReadWritePermissionStatus === "verified") {
+    check(
+      validIsoTimestamp(revenueCat?.verifiedAtUtc) &&
+        typeof revenueCat?.evidenceReference === "string" &&
+        revenueCat.evidenceReference.trim().length > 0,
+      "verified RevenueCat customer read/write permission requires dashboard UTC evidence",
     );
   }
 
@@ -1967,10 +2234,11 @@ function validateSubscription({ value, listing, release, check }) {
     revenueCat?.productionMappingStatus === "verified" &&
       revenueCat?.appStoreConnectApiKeyStatus === "verified" &&
       revenueCat?.subscriptionKeyStatus === "verified" &&
+      revenueCat?.customerReadWritePermissionStatus === "verified" &&
       validIsoTimestamp(revenueCat?.verifiedAtUtc) &&
       typeof revenueCat?.evidenceReference === "string" &&
       revenueCat.evidenceReference.trim().length > 0,
-    `${prefix} requires verified RevenueCat production mapping and Apple credential dashboard evidence`,
+    `${prefix} requires verified RevenueCat production mapping, customer read/write permission, and Apple credential dashboard evidence`,
   );
   check(
     restoreAfterAccountDeletion?.dashboardBehavior ===
@@ -2028,8 +2296,9 @@ function validateAccessibility({ value, listing, release, check }) {
     "accessibility must retain Apple's Accessibility Nutrition Label source",
   );
   check(
-    value.accessibilityUrl === null || validHttpsUrl(value.accessibilityUrl),
-    "accessibility.accessibilityUrl must be null or HTTPS",
+    value.accessibilityUrl === null ||
+      validPublicHttpsUrl(value.accessibilityUrl),
+    "accessibility.accessibilityUrl must be null or public HTTPS without credentials",
   );
   const appStoreConnectDecision = value.appStoreConnectDecision;
   const appStoreConnectDecisionConfirmed =
@@ -2225,7 +2494,14 @@ function getPath(object, dottedPath) {
 }
 
 function validHttpsUrl(value) {
-  if (typeof value !== "string" || value.length === 0) return false;
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value !== value.trim() ||
+    /[\u0000-\u001f\u007f-\u009f]/u.test(value)
+  ) {
+    return false;
+  }
   try {
     const parsed = new URL(value);
     return (
@@ -2233,6 +2509,53 @@ function validHttpsUrl(value) {
       parsed.username === "" &&
       parsed.password === ""
     );
+  } catch {
+    return false;
+  }
+}
+
+const NON_PUBLIC_DNS_SUFFIXES = Object.freeze([
+  ".example",
+  ".home",
+  ".home.arpa",
+  ".internal",
+  ".invalid",
+  ".lan",
+  ".local",
+  ".localhost",
+  ".onion",
+  ".test",
+]);
+
+function validDnsHostname(hostname) {
+  if (!hostname || hostname.length > 253 || hostname.includes(":")) {
+    return false;
+  }
+  return hostname
+    .toLowerCase()
+    .split(".")
+    .every(
+      (label) =>
+        label.length > 0 &&
+        label.length <= 63 &&
+        /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/u.test(label),
+    );
+}
+
+function publicHostname(hostname) {
+  if (typeof hostname !== "string" || hostname.endsWith(".")) return false;
+  const normalized = hostname.toLowerCase().replace(/^\[|\]$/gu, "");
+  if (isIP(normalized) !== 0 || !validDnsHostname(normalized)) return false;
+  if (!normalized.includes(".")) return false;
+  return !NON_PUBLIC_DNS_SUFFIXES.some(
+    (suffix) => normalized === suffix.slice(1) || normalized.endsWith(suffix),
+  );
+}
+
+function validPublicHttpsUrl(value) {
+  if (!validHttpsUrl(value)) return false;
+  try {
+    return publicHostname(new URL(value).hostname);
   } catch {
     return false;
   }
@@ -2488,6 +2811,10 @@ export function validateMetadata({
   const listing = submission?.listing;
   check(isObject(listing), "submission.listing must be an object");
   if (!isObject(listing)) return errors;
+  check(
+    hasExactKeys(listing, EXPECTED_LISTING_KEYS),
+    "listing must contain exactly the required keys",
+  );
   const allowedTerritoryCodes = validateTerritoryCatalog({
     catalog: territoryCatalog,
     release,
@@ -2560,8 +2887,8 @@ export function validateMetadata({
   );
   check(listing.madeForKids === false, "listing.madeForKids must be false");
   check(
-    listing.marketingUrl === null || validHttpsUrl(listing.marketingUrl),
-    "listing.marketingUrl must be null or a credential-free HTTPS URL",
+    listing.marketingUrl === null || validPublicHttpsUrl(listing.marketingUrl),
+    "listing.marketingUrl must be null or a public HTTPS URL without credentials",
   );
   check(
     listing.whatsNewPosition === "not_applicable_initial_release" &&
@@ -2657,13 +2984,21 @@ export function validateMetadata({
     "listing.supportUrl",
     "listing.privacyPolicyUrl",
     "listing.termsUrl",
+    "listing.ageSuitabilityUrl",
   ]) {
     const value = getPath(submission, field);
     check(
-      value === null || validHttpsUrl(value),
-      `${field} must be null or HTTPS`,
+      value === null || validPublicHttpsUrl(value),
+      `${field} must be null or public HTTPS without credentials`,
     );
   }
+
+  validateListingApproval({
+    value: listing.approval,
+    listing,
+    release,
+    check,
+  });
   const initialTerritories = listing.initialTerritories;
   check(
     initialTerritories === null ||
@@ -2742,8 +3077,8 @@ export function validateMetadata({
       "listing.termsUrl",
     ]) {
       check(
-        validHttpsUrl(getPath(submission, field)),
-        `${field} must be HTTPS`,
+        validPublicHttpsUrl(getPath(submission, field)),
+        `${field} must be public HTTPS without credentials`,
       );
     }
     check(
@@ -3419,6 +3754,10 @@ export function validateExactBuildBindings({
   const errors = [];
   const canonical = testFlightSubmission?.exactBuildEvidence;
   const consumers = [
+    [
+      "listing.approval.exactBuildClaimsReview",
+      submission?.listing?.approval?.exactBuildClaimsReview,
+    ],
     ["appReview.exactBuild", submission?.appReview?.exactBuild],
     ["screenshots.captureDefaults", screenshotManifest?.captureDefaults],
     [

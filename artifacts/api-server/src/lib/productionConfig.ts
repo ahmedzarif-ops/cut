@@ -1,5 +1,5 @@
 import { isPublishableKey, parsePublishableKey } from "@clerk/shared/keys";
-import { buildAllowedOrigins } from "./allowedHosts";
+import { parseProductionCanonicalOrigin } from "./allowedHosts";
 import { parseAccountDeletionRetryInterval } from "./accountDeletionRetryInterval";
 import {
   API_RATE_LIMIT_MAXIMUM,
@@ -24,18 +24,6 @@ export type ProductionConfigurationIssue =
   | "CLERK_RATE_LIMIT"
   | "PG_POOL_MAX";
 
-const NON_PUBLIC_DNS_SUFFIXES = [
-  ".example",
-  ".home",
-  ".home.arpa",
-  ".internal",
-  ".invalid",
-  ".lan",
-  ".local",
-  ".localhost",
-  ".onion",
-  ".test",
-];
 const PLACEHOLDER_CLERK_FRONTEND_APIS = new Set([
   "example.accounts.dev",
   "example.clerk.accounts.dev",
@@ -45,23 +33,6 @@ const PG_POOL_MAXIMUM = 20;
 
 function isClerkDevelopmentFrontendApi(frontendApi: string): boolean {
   return frontendApi.endsWith(".accounts.dev");
-}
-
-function isValidPublicHostname(hostname: string): boolean {
-  const normalized = hostname.toLowerCase();
-  const labels = normalized.split(".");
-  return Boolean(
-    normalized.length <= 253 &&
-    labels.length >= 2 &&
-    labels.every(
-      (label) =>
-        label.length > 0 &&
-        label.length <= 63 &&
-        /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label),
-    ) &&
-    !/^\d{1,3}(?:\.\d{1,3}){3}$/.test(normalized) &&
-    !NON_PUBLIC_DNS_SUFFIXES.some((suffix) => normalized.endsWith(suffix)),
-  );
 }
 
 function hasVerifiedTlsDatabaseUrl(value: string | undefined): boolean {
@@ -145,24 +116,8 @@ function isRevenueCatResourceId(
   );
 }
 
-function hasUsableHttpsAllowedOrigin(env: NodeJS.ProcessEnv): boolean {
-  return [...buildAllowedOrigins(env)].some((candidate) => {
-    try {
-      const parsed = new URL(candidate);
-      return Boolean(
-        parsed.protocol === "https:" &&
-        parsed.origin === candidate &&
-        !parsed.username &&
-        !parsed.password &&
-        parsed.pathname === "/" &&
-        !parsed.search &&
-        !parsed.hash &&
-        isValidPublicHostname(parsed.hostname),
-      );
-    } catch {
-      return false;
-    }
-  });
+function hasCanonicalHttpsAllowedOrigin(env: NodeJS.ProcessEnv): boolean {
+  return parseProductionCanonicalOrigin(env.CORS_ALLOWED_ORIGINS) !== undefined;
 }
 
 function parseMaximumInstanceCount(value: string | undefined): number | null {
@@ -204,7 +159,7 @@ export function validateProductionConfiguration(
   if (!isRevenueCatResourceId(env.REVENUECAT_OFFERING_REST_ID, "ofrng")) {
     issues.push("REVENUECAT_OFFERING_REST_ID");
   }
-  if (!hasUsableHttpsAllowedOrigin(env)) {
+  if (!hasCanonicalHttpsAllowedOrigin(env)) {
     issues.push("HTTPS_ALLOWED_ORIGIN");
   }
   if (

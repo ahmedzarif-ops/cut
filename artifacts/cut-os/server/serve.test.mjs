@@ -7,7 +7,12 @@ import { createRequire } from "node:module";
 import { afterEach, describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
-const { createAppServer, parsePublicAppOrigin } = require("./serve.js");
+const {
+  createAppServer,
+  parsePublicAppOrigin,
+  parseServerPort,
+  parseShutdownTimeoutMs,
+} = require("./serve.js");
 const {
   APPROVAL_SCOPE,
   buildResourceHashes,
@@ -97,6 +102,7 @@ async function createApprovedTemplateRoot(options = {}) {
 async function listen(options = {}) {
   const server = createAppServer({
     publicAppOrigin: "https://preview.cutos.app",
+    previewMode: true,
     ...options,
   });
   servers.push(server);
@@ -200,6 +206,85 @@ describe("CUT OS public server", () => {
     expect(response.body).not.toContain("javascript:");
   });
 
+  it("serves the CUT launch surface and no Expo preview artifacts in production", async () => {
+    const staticRoot = await createStaticRoot();
+    const { port } = await listen({
+      staticRoot,
+      appName: "CUT OS",
+      previewMode: false,
+    });
+
+    const landing = await request(port, "/", {
+      headers: { "expo-platform": "ios" },
+    });
+    expect(landing.status).toBe(200);
+    expect(landing.body).toContain('data-app-surface="production"');
+    expect(landing.body).toContain("For adults age 18 and over");
+    expect(landing.body).toContain(
+      '<link rel="canonical" href="https://preview.cutos.app/"',
+    );
+    expect(landing.body).toContain('href="/privacy"');
+    expect(landing.body).not.toContain("Expo Go");
+    expect(landing.body).not.toContain("exps://");
+    expect(landing.body).not.toMatch(/<script(?:\s|>)/iu);
+    expect(landing.headers["content-security-policy"]).toContain(
+      "script-src 'none'",
+    );
+    expect(landing.headers["x-robots-tag"]).toContain("noindex");
+
+    const manifest = await request(port, "/manifest", {
+      headers: { "expo-platform": "ios" },
+    });
+    const directManifest = await request(port, "/ios/manifest.json");
+    const asset = await request(port, "/asset.txt");
+    expect(manifest.status).toBe(404);
+    expect(directManifest.status).toBe(404);
+    expect(asset.status).toBe(404);
+  });
+
+  it("renders production links beneath the configured base path", async () => {
+    const staticRoot = await createStaticRoot();
+    const { port } = await listen({
+      staticRoot,
+      appName: "CUT OS",
+      basePath: "/cut/",
+      previewMode: false,
+    });
+
+    const landing = await request(port, "/cut/");
+    expect(landing.status).toBe(200);
+    expect(landing.body).toContain(
+      '<link rel="canonical" href="https://preview.cutos.app/cut/"',
+    );
+    expect(landing.body).toContain('href="/cut/privacy"');
+  });
+
+  it("rejects every unprefixed public route when a base path is configured", async () => {
+    const staticRoot = await createStaticRoot();
+    const { port } = await listen({
+      staticRoot,
+      appName: "CUT OS",
+      basePath: "/cut/",
+      previewMode: false,
+    });
+
+    for (const route of [
+      "/",
+      "/privacy",
+      "/status",
+      "/legal.css",
+      "/manifest",
+      "/ios/manifest.json",
+    ]) {
+      const response = await request(port, route);
+      expect(response.status).toBe(404);
+      expect(response.headers["cache-control"]).toBe("no-store");
+    }
+
+    expect((await request(port, "/cut/")).status).toBe(200);
+    expect((await request(port, "/cut/status")).status).toBe(200);
+  });
+
   it("does not reflect script-shaped Host input and context-escapes the app name", async () => {
     const staticRoot = await createStaticRoot();
     const { port } = await listen({
@@ -264,6 +349,27 @@ describe("CUT OS public server", () => {
     expect(() =>
       createAppServer({ staticRoot, publicAppOrigin: origin }),
     ).toThrow(/PUBLIC_APP_ORIGIN/u);
+  });
+
+  it.each(["", "0", "65536", "3000.5", " 3000", "3000 ", "abc"])(
+    "rejects an invalid public-server port: %s",
+    (port) => {
+      expect(() => parseServerPort(port)).toThrow(/PORT/u);
+    },
+  );
+
+  it("accepts only bounded server ports and shutdown timeouts", () => {
+    expect(parseServerPort(undefined)).toBe(3000);
+    expect(parseServerPort("1")).toBe(1);
+    expect(parseServerPort("65535")).toBe(65_535);
+    expect(parseShutdownTimeoutMs(undefined)).toBe(10_000);
+    expect(parseShutdownTimeoutMs("1")).toBe(1);
+    expect(parseShutdownTimeoutMs("60000")).toBe(60_000);
+    for (const value of ["", "0", "60001", "1.5", " 1000", "1000 ", "nope"]) {
+      expect(() => parseShutdownTimeoutMs(value)).toThrow(
+        /SHUTDOWN_TIMEOUT_MS/u,
+      );
+    }
   });
 
   it("rejects a missing public origin instead of deriving one from the request", async () => {

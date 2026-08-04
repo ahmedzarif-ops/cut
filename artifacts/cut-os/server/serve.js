@@ -1,7 +1,9 @@
 /**
- * Standalone production server for Expo static builds.
+ * Standalone public-site server for CUT.
  *
- * Preserves Expo manifest/static routes and adds zero-JavaScript legal pages.
+ * Production serves the CUT launch surface and zero-JavaScript legal pages.
+ * Expo Go manifests and static preview assets are available only when the
+ * server is explicitly running outside production.
  * Draft legal pages intentionally return 503 and noindex. Setting
  * LEGAL_SITE_PUBLICATION_STATUS=approved fails startup unless every template
  * has passed the explicit publication gates in validate-legal-site.mjs.
@@ -23,6 +25,9 @@ const {
 
 const DEFAULT_STATIC_ROOT = path.resolve(__dirname, "..", "static-build");
 const DEFAULT_TEMPLATE_ROOT = path.resolve(__dirname, "templates");
+const DEFAULT_PORT = 3000;
+const DEFAULT_SHUTDOWN_TIMEOUT_MS = 10_000;
+const MAX_SHUTDOWN_TIMEOUT_MS = 60_000;
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -219,9 +224,18 @@ function assertApprovedTemplates(templates, appName, basePath) {
   }
 }
 
-function loadTemplates(templateRoot, publicationStatus, appName, basePath) {
+function loadTemplates(
+  templateRoot,
+  publicationStatus,
+  appName,
+  basePath,
+  previewMode,
+) {
   const templates = {
-    landing: readTemplate(templateRoot, "landing-page.html"),
+    landing: readTemplate(
+      templateRoot,
+      previewMode ? "landing-page.html" : "production-landing-page.html",
+    ),
     legalCss: readTemplate(templateRoot, "legal.css"),
     legal: Object.fromEntries(
       Object.entries(LEGAL_ROUTES).map(([route, filename]) => [
@@ -282,10 +296,24 @@ function serveManifest(platform, res, staticRoot, requestMethod) {
   res.end(requestMethod === "HEAD" ? undefined : manifest);
 }
 
-function serveLandingPage(req, res, landingPageTemplate, appName, publicApp) {
+function serveLandingPage(
+  req,
+  res,
+  landingPageTemplate,
+  appName,
+  publicApp,
+  basePath,
+  previewMode,
+  publicationStatus,
+) {
   const nonce = crypto.randomBytes(18).toString("base64");
+  const canonicalUrl = `${publicApp.origin}${basePath || ""}/`;
   const html = landingPageTemplate
     .replace(/BASE_URL_PLACEHOLDER/gu, () => escapeHtml(publicApp.origin))
+    .replace(/PUBLIC_CANONICAL_URL_PLACEHOLDER/gu, () =>
+      escapeHtml(canonicalUrl),
+    )
+    .replace(/PUBLIC_BASE_PATH_PLACEHOLDER/gu, () => escapeHtml(basePath))
     .replace(/DEEP_LINK_ATTRIBUTE_PLACEHOLDER/gu, () =>
       escapeHtml(publicApp.deepLink),
     )
@@ -298,7 +326,7 @@ function serveLandingPage(req, res, landingPageTemplate, appName, publicApp) {
   res.writeHead(200, {
     "cache-control": "no-store",
     "content-security-policy":
-      `default-src 'none'; script-src 'nonce-${nonce}'; ` +
+      `default-src 'none'; script-src ${previewMode ? `'nonce-${nonce}'` : "'none'"}; ` +
       `style-src 'nonce-${nonce}'; img-src data:; base-uri 'none'; ` +
       "frame-ancestors 'none'; form-action 'none'; object-src 'none'",
     "content-type": "text/html; charset=utf-8",
@@ -306,6 +334,9 @@ function serveLandingPage(req, res, landingPageTemplate, appName, publicApp) {
       "accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), usb=(), xr-spatial-tracking=()",
     "referrer-policy": "no-referrer",
     "x-content-type-options": "nosniff",
+    ...(publicationStatus === "approved"
+      ? {}
+      : { "x-robots-tag": "noindex, nofollow, noarchive" }),
   });
   res.end(req.method === "HEAD" ? undefined : html);
 }
@@ -388,12 +419,18 @@ function createRequestHandler(options = {}) {
     process.env.LEGAL_SITE_PUBLICATION_STATUS ??
     "draft";
   validatePublicationStatus(publicationStatus);
+  const previewMode =
+    options.previewMode ?? process.env.NODE_ENV !== "production";
+  if (typeof previewMode !== "boolean") {
+    throw new Error("previewMode must be a boolean when supplied.");
+  }
   assertStaticRoot(staticRoot);
   const templates = loadTemplates(
     templateRoot,
     publicationStatus,
     appName,
     basePath,
+    previewMode,
   );
   const publicApp = parsePublicAppOrigin(
     options.publicAppOrigin ?? process.env.PUBLIC_APP_ORIGIN,
@@ -418,10 +455,12 @@ function createRequestHandler(options = {}) {
     }
 
     let pathname = url.pathname;
-    if (
-      basePath &&
-      (pathname === basePath || pathname.startsWith(`${basePath}/`))
-    ) {
+    if (basePath) {
+      if (pathname !== basePath && !pathname.startsWith(`${basePath}/`)) {
+        res.writeHead(404, { "cache-control": "no-store" });
+        res.end(req.method === "HEAD" ? undefined : "Not Found");
+        return;
+      }
       pathname = pathname.slice(basePath.length) || "/";
     }
     const routePath =
@@ -431,7 +470,7 @@ function createRequestHandler(options = {}) {
       return serveStatus(req, res);
     }
 
-    if (routePath === "/" || routePath === "/manifest") {
+    if (previewMode && (routePath === "/" || routePath === "/manifest")) {
       const platform = req.headers["expo-platform"];
       if (platform === "ios" || platform === "android") {
         return serveManifest(platform, res, staticRoot, req.method);
@@ -444,8 +483,24 @@ function createRequestHandler(options = {}) {
           templates.landing,
           appName,
           publicApp,
+          basePath,
+          previewMode,
+          publicationStatus,
         );
       }
+    }
+
+    if (routePath === "/") {
+      return serveLandingPage(
+        req,
+        res,
+        templates.landing,
+        appName,
+        publicApp,
+        basePath,
+        previewMode,
+        publicationStatus,
+      );
     }
 
     if (Object.hasOwn(templates.legal, routePath)) {
@@ -463,6 +518,12 @@ function createRequestHandler(options = {}) {
       return serveLegalCss(req, res, templates.legalCss);
     }
 
+    if (!previewMode) {
+      res.writeHead(404, { "cache-control": "no-store" });
+      res.end(req.method === "HEAD" ? undefined : "Not Found");
+      return;
+    }
+
     serveStaticFile(req, pathname, res, staticRoot);
   };
 }
@@ -471,11 +532,87 @@ function createAppServer(options = {}) {
   return http.createServer(createRequestHandler(options));
 }
 
+function parseServerPort(value = String(DEFAULT_PORT)) {
+  if (
+    typeof value !== "string" ||
+    value.trim() !== value ||
+    !/^[1-9]\d*$/u.test(value)
+  ) {
+    throw new Error("PORT must be an integer from 1 through 65535.");
+  }
+  const port = Number(value);
+  if (!Number.isSafeInteger(port) || port > 65_535) {
+    throw new Error("PORT must be an integer from 1 through 65535.");
+  }
+  return port;
+}
+
+function parseShutdownTimeoutMs(value) {
+  if (value === undefined) return DEFAULT_SHUTDOWN_TIMEOUT_MS;
+  if (
+    typeof value !== "string" ||
+    value.trim() !== value ||
+    !/^[1-9]\d*$/u.test(value)
+  ) {
+    throw new Error(
+      `SHUTDOWN_TIMEOUT_MS must be an integer from 1 through ${MAX_SHUTDOWN_TIMEOUT_MS}.`,
+    );
+  }
+  const timeoutMs = Number(value);
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs > MAX_SHUTDOWN_TIMEOUT_MS) {
+    throw new Error(
+      `SHUTDOWN_TIMEOUT_MS must be an integer from 1 through ${MAX_SHUTDOWN_TIMEOUT_MS}.`,
+    );
+  }
+  return timeoutMs;
+}
+
 if (require.main === module) {
-  const port = Number.parseInt(process.env.PORT || "3000", 10);
-  const server = createAppServer();
+  const port = parseServerPort(process.env.PORT);
+  const shutdownTimeoutMs = parseShutdownTimeoutMs(
+    process.env.SHUTDOWN_TIMEOUT_MS,
+  );
+  // The executable server is the deployment entry point and is always the
+  // production public surface. Tests and local tooling may opt into the Expo
+  // preview only through createAppServer({ previewMode: true }).
+  const server = createAppServer({ previewMode: false });
+  let shuttingDown = false;
+
+  const shutdown = (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`Stopping CUT public site after ${signal}`);
+    const forcedExit = setTimeout(() => {
+      console.error("CUT public site shutdown timed out", {
+        errorCode: "public_site_shutdown_timeout",
+      });
+      process.exit(1);
+    }, shutdownTimeoutMs);
+    forcedExit.unref();
+    server.close((error) => {
+      clearTimeout(forcedExit);
+      if (error) {
+        console.error("CUT public site shutdown failed", {
+          errorCode: "public_site_shutdown_failed",
+        });
+        process.exit(1);
+      }
+      process.exit(0);
+    });
+    server.closeIdleConnections?.();
+  };
+
+  process.once("SIGINT", () => shutdown("SIGINT"));
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGHUP", () => shutdown("SIGHUP"));
+  server.once("error", () => {
+    console.error("CUT public site failed to start", {
+      errorCode: "public_site_start_failed",
+    });
+    process.exit(1);
+  });
   server.listen(port, "0.0.0.0", () => {
-    console.log(`Serving static Expo build on port ${port}`);
+    console.log(`Serving CUT public site on port ${port}`);
   });
 }
 
@@ -484,4 +621,6 @@ module.exports = {
   createRequestHandler,
   normalizeBasePath,
   parsePublicAppOrigin,
+  parseServerPort,
+  parseShutdownTimeoutMs,
 };

@@ -211,6 +211,43 @@ function verifyAppPayload(
   }
 }
 
+function verifyCustomerReadPayload(
+  payload: unknown,
+  expected: { projectId: string },
+): void {
+  if (
+    !isRecord(payload) ||
+    payload.object !== "list" ||
+    !Array.isArray(payload.items) ||
+    payload.items.length > 1 ||
+    !(
+      payload.next_page === undefined ||
+      payload.next_page === null ||
+      typeof payload.next_page === "string"
+    ) ||
+    typeof payload.url !== "string"
+  ) {
+    throw new RevenueCatConfigurationPreflightError("invalid_response");
+  }
+
+  for (const customer of payload.items) {
+    if (
+      !isRecord(customer) ||
+      typeof customer.object !== "string" ||
+      typeof customer.id !== "string" ||
+      typeof customer.project_id !== "string"
+    ) {
+      throw new RevenueCatConfigurationPreflightError("invalid_response");
+    }
+    if (
+      customer.object !== "customer" ||
+      customer.project_id !== expected.projectId
+    ) {
+      throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
+    }
+  }
+}
+
 function verifyProductPayload(
   product: unknown,
   expected: { appRestId: string; productIdentifier: string },
@@ -357,13 +394,16 @@ function verifyOfferingPayload(
 }
 
 /**
- * Performs four read-only RevenueCat v2 requests. No customer is created and
- * no entitlement is granted; a verified result requires the exact app
- * identity, entitlement, and sole active monthly/no-trial product
- * association for this binary, plus the exact active current offering and its
- * sole package mapping that same product. RevenueCat's documented read response
- * does not expose Apple credential-configuration state; release evidence
- * verifies that separately in the dashboard and on the exact build.
+ * Performs five bounded, read-only RevenueCat v2 requests, including a
+ * project-scoped customer list with limit=1 that proves customer-read access.
+ * It never follows customer pagination and never calls a write or delete
+ * endpoint. No customer is created and no entitlement is granted; a verified
+ * result requires the exact app identity, entitlement, and sole active
+ * monthly/no-trial product association for this binary, plus the exact active
+ * current offering and its sole package mapping that same product. RevenueCat's
+ * documented read responses do not expose Apple credential configuration or
+ * prove customer write/delete access; release evidence verifies those settings
+ * separately in the dashboard and on the exact build.
  */
 export async function verifyRevenueCatConfiguration({
   apiKey: rawApiKey,
@@ -397,7 +437,7 @@ export async function verifyRevenueCatConfiguration({
   }
 
   const root = baseUrl.replace(/\/$/u, "");
-  const [entitlement, app, products, offering] = await Promise.all([
+  const [entitlement, app, products, offering, customers] = await Promise.all([
     getProviderJson({
       url: `${root}/projects/${encodeURIComponent(projectId)}/entitlements/${encodeURIComponent(entitlementRestId)}`,
       apiKey,
@@ -422,6 +462,12 @@ export async function verifyRevenueCatConfiguration({
       fetchImpl,
       timeoutMs,
     }),
+    getProviderJson({
+      url: `${root}/projects/${encodeURIComponent(projectId)}/customers?limit=1`,
+      apiKey,
+      fetchImpl,
+      timeoutMs,
+    }),
   ]);
 
   verifyEntitlementPayload(entitlement, {
@@ -441,6 +487,7 @@ export async function verifyRevenueCatConfiguration({
     productIdentifier: expectedProductIdentifier,
     productRestId,
   });
+  verifyCustomerReadPayload(customers, { projectId });
 }
 
 /**

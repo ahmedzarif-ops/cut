@@ -2,7 +2,7 @@
 
 **Status:** Working submission record; not approved for submission
 
-**Updated:** August 3, 2026
+**Updated:** August 4, 2026
 
 This file records the intended App Store answers and the evidence still needed.
 `app-store/app-store-submission.json` is its machine-checkable companion; the
@@ -105,6 +105,29 @@ invent a value.
 | DSA trader status          | Unresolved                                   | Owner/counsel confirms trader, non-trader, or a documented no-EU-distribution position.                                                                                                                                                                                                                  |
 | Server Notifications       | RevenueCat direct; URLs pending              | Use the full dashboard-issued RevenueCat URL in both production and sandbox App Store Connect fields, then retain non-secret evidence.                                                                                                                                                                   |
 | Release method             | Manual release                               | Keep manual until the owner explicitly approves both submission and public release in App Store Connect.                                                                                                                                                                                                 |
+
+Across the machine records, these URL fields use closed schemas. Support,
+Privacy, Terms, Marketing, Accessibility, and Age Suitability URLs must be
+public credential-free HTTPS when present; single-label names, IP literals, and
+the validator's reserved/non-public suffixes are rejected. Production builds
+additionally require the compiled
+Privacy, Terms, and Support URLs to exactly match the corresponding committed
+listing values. This prevents the reviewed App Store record and the links in the
+submitted binary from drifting without printing either value in validation
+output.
+
+`listing.approval` remains pending until name clearance, exact-name acceptance
+in App Store Connect, owner approval, legal review, qualified nutrition review,
+and exact-build claims review are each confirmed with UTC and a controlled,
+non-secret evidence reference. The exact-build claims review also carries the
+canonical version/build/Git/EAS/App Store Connect identity and must match the
+TestFlight record.
+
+`commercialAndLegal.appleCommerceReadiness` separately keeps Apple Developer
+Program membership, Account Holder access, the Paid Apps Agreement, tax forms,
+and banking pending until each has a confirmation UTC and controlled non-secret
+evidence reference. All five must be confirmed for release. Never store account,
+agreement, tax, or banking credentials or values in this record.
 
 ## Age rating and questionnaire
 
@@ -285,6 +308,13 @@ evidence, and attributable owner/App Store Connect/RevenueCat/native-QA
 approvals. The U.S. price record also binds the owner decision revision and its
 controlled evidence reference.
 
+Before any subscription reference name, product ID, localized display name,
+description, or custom app-name value is entered, recheck its current limit in
+Apple's official App Store Connect field reference and add field-specific
+boundary tests to `scripts/app-store/validate.test.mjs`. This record deliberately
+does not guess unverified limits; non-empty validation alone is not evidence
+that App Store Connect will accept an oversized value.
+
 App Review requires five purpose-built synthetic account states: full access,
 purchase, first adult-gate decision, restricted, and deletion. Each account
 must pass a production sign-in within 24 hours of submission and be attested as
@@ -299,7 +329,8 @@ hash or copy of the resolved credential-bearing text.
 `app-store/testflight-submission.json` separately records beta copy, internal
 group configuration, exact version/build/full Git commit/EAS build ID/App Store
 Connect build ID, QA references, and approvals. That five-field identity must
-match App Review, screenshot, subscription, and accessibility evidence exactly.
+match listing claims review, App Review, screenshot, subscription, and
+accessibility evidence exactly.
 Internal-only testing is not external TestFlight App Review approval. If the
 owner selects external testing, review contact, demo access, notes, and the
 selected exact build become mandatory.

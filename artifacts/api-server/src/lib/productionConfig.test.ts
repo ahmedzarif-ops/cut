@@ -155,12 +155,19 @@ describe("production configuration", () => {
 
   it.each([
     "http://api.cut.example.com",
+    "api.cut.example.com",
     "https://localhost",
     "https://127.0.0.1",
     "https://api.example",
     "https://user:password@api.cut.example.com",
+    "https://api.cut.example.com:8443",
     "https://api.cut.example.com/path",
     "https://api.cut.example.com/",
+    " https://api.cut.example.com",
+    "https://api.cut.example.com ",
+    "https://api.cut.example.com,https://other.cut.example.com",
+    "https://api.cut.example.com,not-an-origin",
+    "https://api.cut.example.com,",
   ])("rejects an absent or unusable HTTPS origin: %s", (origin) => {
     expect(
       validateProductionConfiguration({
@@ -170,11 +177,28 @@ describe("production configuration", () => {
     ).toContain("HTTPS_ALLOWED_ORIGIN");
   });
 
-  it("accepts a usable Replit-injected domain as an HTTPS origin", () => {
-    const environment = { ...validProductionEnvironment };
-    delete environment.CORS_ALLOWED_ORIGINS;
-    environment.REPLIT_DEV_DOMAIN = "cut-api.replit.app";
-    expect(validateProductionConfiguration(environment)).toEqual([]);
+  it.each(["REPLIT_DEV_DOMAIN", "REPLIT_EXPO_DEV_DOMAIN", "REPLIT_DOMAINS"])(
+    "does not accept %s in place of the explicit canonical origin",
+    (name) => {
+      const environment = { ...validProductionEnvironment };
+      delete environment.CORS_ALLOWED_ORIGINS;
+      environment[name] = "cut-api.replit.app";
+
+      expect(validateProductionConfiguration(environment)).toContain(
+        "HTTPS_ALLOWED_ORIGIN",
+      );
+    },
+  );
+
+  it("ignores provider-injected domains when one canonical origin is explicit", () => {
+    expect(
+      validateProductionConfiguration({
+        ...validProductionEnvironment,
+        REPLIT_DEV_DOMAIN: "dev-injection.replit.dev",
+        REPLIT_EXPO_DEV_DOMAIN: "expo-injection.replit.dev",
+        REPLIT_DOMAINS: "deployment-injection.replit.app,other.replit.app",
+      }),
+    ).toEqual([]);
   });
 
   it.each([undefined, "", "0", "01", "1.5", "two", " 1", "1 "])(

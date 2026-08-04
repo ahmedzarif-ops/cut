@@ -60,11 +60,11 @@ real App Store purchases.
 | `EXPO_PUBLIC_CLERK_PROXY_URL`        | cut-os EAS release            | Exact same-origin `https://<domain>/api/__clerk` route          |
 | `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` | cut-os EAS release            | RevenueCat public Apple SDK key embedded in the app             |
 | `EXPO_PUBLIC_REVENUECAT_PRODUCT_ID`  | cut-os EAS release            | Exact approved App Store subscription product ID                |
-| `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | cut-os EAS release            | Public Privacy Policy opened from sign-up and Settings          |
-| `EXPO_PUBLIC_TERMS_URL`              | cut-os EAS release            | Public Terms of Use opened from sign-up and Settings            |
-| `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Public support page opened from Settings                        |
-| `PUBLIC_APP_ORIGIN`                  | cut-os public server          | Canonical public HTTPS origin used for Expo preview deep links  |
-| `CORS_ALLOWED_ORIGINS`               | api-server                    | Explicit comma-separated HTTPS browser origins                  |
+| `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | cut-os EAS release            | Public policy; must exactly match the App Store listing record  |
+| `EXPO_PUBLIC_TERMS_URL`              | cut-os EAS release            | Public terms; must exactly match the App Store listing record   |
+| `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Public support; must exactly match the App Store listing record |
+| `PUBLIC_APP_ORIGIN`                  | cut-os public server          | Canonical launch/legal origin; preview also derives deep links  |
+| `CORS_ALLOWED_ORIGINS`               | api-server                    | One canonical HTTPS origin in production; lists allowed in dev  |
 | `CLERK_PROXY_URL`                    | cut-os Replit build           | Relative API proxy path; production value is `/api/__clerk`     |
 | `LEGAL_SITE_PUBLICATION_STATUS`      | cut-os public server          | `draft` until approved legal sources and hashes are recorded    |
 | `PORT`                               | api-server                    | Listen port (Replit-provided)                                   |
@@ -111,15 +111,19 @@ runtime assertion and is not proof of either provider control-plane setting.
 Production rejects retry intervals outside 1 second through 5 minutes rather
 than passing unsafe values to the Node timer.
 
-Production startup reads RevenueCat's official v2 app, entitlement, and
-entitlement-product list shapes. A semantic/auth/not-found mismatch remains
+Production startup reads RevenueCat's official v2 app, entitlement,
+entitlement-product list, offering, and bounded customer-list shapes. The
+customer permission check is a single `GET` with `limit=1`; it never follows
+customer pagination or probes a write/delete endpoint. A
+semantic/auth/not-found mismatch remains
 fatal unless the sole active subscription is
 `com.zarifahmed.cut.pro.monthly`, belongs to the exact iOS app, has duration
 `P1M`, and reports no trial. RevenueCat's documented app response does not
 expose whether the App Store Connect API key or Apple subscription key is
-configured, so the server does not invent those fields. Release instead
-requires controlled RevenueCat-dashboard evidence for both keys plus StoreKit
-and purchase QA on the exact submitted build. Transient timeouts, network
+configured, and a customer read cannot prove destructive customer write/delete
+permission. Release instead requires controlled RevenueCat-dashboard evidence
+for both Apple keys and the server key's customer read/write permission, plus
+StoreKit and purchase QA on the exact submitted build. Transient timeouts, network
 failures, rate limits, and provider 5xx responses emit only a sanitized degraded
 warning so account and deletion APIs can start; subscription checks still fail
 closed.

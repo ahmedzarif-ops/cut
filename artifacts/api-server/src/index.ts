@@ -1,7 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { getPool } from "@workspace/db";
-import { createShutdownHandler } from "./lib/shutdown";
+import { createShutdownHandler, parseShutdownTimeout } from "./lib/shutdown";
 import { startAccountDeletionWorker } from "./services/accountDeletionWorker";
 import { assertProductionConfiguration } from "./lib/productionConfig";
 import {
@@ -35,6 +35,10 @@ const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
+
+const shutdownTimeoutMs = parseShutdownTimeout(
+  process.env["SHUTDOWN_TIMEOUT_MS"],
+);
 
 async function start(): Promise<void> {
   // Semantic/auth/configuration mismatches remain fatal. A sanitized transient
@@ -74,7 +78,7 @@ async function start(): Promise<void> {
       await getPool()?.end();
     },
     logger,
-    timeoutMs: Number(process.env["SHUTDOWN_TIMEOUT_MS"] ?? 10_000),
+    timeoutMs: shutdownTimeoutMs,
     exit: (code) => process.exit(code),
   });
 

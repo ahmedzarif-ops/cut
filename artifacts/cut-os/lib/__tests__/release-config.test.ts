@@ -3,6 +3,7 @@ import {
   copyFileSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   realpathSync,
   rmSync,
   writeFileSync,
@@ -35,9 +36,20 @@ const validatorPath = resolve(
   "scripts/validate-release-config.mjs",
 );
 const PRODUCT_ID = "com.zarifahmed.cut.pro.monthly";
+const PRIVACY_POLICY_URL = "https://example.com/privacy";
+const TERMS_URL = "https://example.com/terms";
+const SUPPORT_URL = "https://example.com/support";
 const approvedSubscriptionReleaseRecord = {
   productId: PRODUCT_ID,
   introductoryOfferDecision: "none",
+};
+const approvedAppStoreReleaseRecord = {
+  listing: {
+    privacyPolicyUrl: PRIVACY_POLICY_URL,
+    termsUrl: TERMS_URL,
+    supportUrl: SUPPORT_URL,
+  },
+  subscription: approvedSubscriptionReleaseRecord,
 };
 
 const productionEnvironment = {
@@ -47,17 +59,17 @@ const productionEnvironment = {
   EXPO_PUBLIC_CLERK_PROXY_URL: "https://api.example.com/api/__clerk",
   EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: "appl_PublicIosKey1234",
   EXPO_PUBLIC_REVENUECAT_PRODUCT_ID: PRODUCT_ID,
-  EXPO_PUBLIC_PRIVACY_POLICY_URL: "https://example.com/privacy",
-  EXPO_PUBLIC_TERMS_URL: "https://example.com/terms",
-  EXPO_PUBLIC_SUPPORT_URL: "https://example.com/support",
+  EXPO_PUBLIC_PRIVACY_POLICY_URL: PRIVACY_POLICY_URL,
+  EXPO_PUBLIC_TERMS_URL: TERMS_URL,
+  EXPO_PUBLIC_SUPPORT_URL: SUPPORT_URL,
 };
 
 function runValidator(
   environment: Record<string, string>,
-  subscriptionReleaseRecord: Record<
+  appStoreReleaseRecord: Record<
     string,
     unknown
-  > = approvedSubscriptionReleaseRecord,
+  > = approvedAppStoreReleaseRecord,
 ) {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "cut-release-config-test-"));
   const copiedValidatorPath = join(
@@ -73,7 +85,7 @@ function runValidator(
   copyFileSync(validatorPath, copiedValidatorPath);
   writeFileSync(
     copiedReleaseRecordPath,
-    JSON.stringify({ subscription: subscriptionReleaseRecord }),
+    JSON.stringify(appStoreReleaseRecord),
     "utf8",
   );
 
@@ -89,6 +101,21 @@ function runValidator(
 }
 
 describe("release configuration validator", () => {
+  it("keeps the CI production fixture bound to the compiled listing URLs", () => {
+    const workflow = readFileSync(
+      resolve(process.cwd(), "../../.github/workflows/ci.yml"),
+      "utf8",
+    );
+
+    for (const [field, value] of [
+      ["privacyPolicyUrl", PRIVACY_POLICY_URL],
+      ["termsUrl", TERMS_URL],
+      ["supportUrl", SUPPORT_URL],
+    ]) {
+      expect(workflow).toContain(`record.listing.${field} = "${value}";`);
+    }
+  });
+
   it("accepts a complete production configuration without logging values", () => {
     const result = runValidator(productionEnvironment);
 
@@ -101,6 +128,9 @@ describe("release configuration validator", () => {
       productionEnvironment.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
     );
     expect(`${result.stdout}${result.stderr}`).not.toContain(PRODUCT_ID);
+    for (const url of [PRIVACY_POLICY_URL, TERMS_URL, SUPPORT_URL]) {
+      expect(`${result.stdout}${result.stderr}`).not.toContain(url);
+    }
   });
 
   it("reports all missing production variable names", () => {
@@ -247,8 +277,11 @@ describe("release configuration validator", () => {
   it("rejects a compiled product that does not match the release record", () => {
     const recordProductId = "com.zarifahmed.cut.pro.annual";
     const result = runValidator(productionEnvironment, {
-      ...approvedSubscriptionReleaseRecord,
-      productId: recordProductId,
+      ...approvedAppStoreReleaseRecord,
+      subscription: {
+        ...approvedSubscriptionReleaseRecord,
+        productId: recordProductId,
+      },
     });
 
     expect(result.status).toBe(1);
@@ -261,12 +294,56 @@ describe("release configuration validator", () => {
 
   it("rejects a production release record with an introductory offer", () => {
     const result = runValidator(productionEnvironment, {
-      ...approvedSubscriptionReleaseRecord,
-      introductoryOfferDecision: "free_trial",
+      ...approvedAppStoreReleaseRecord,
+      subscription: {
+        ...approvedSubscriptionReleaseRecord,
+        introductoryOfferDecision: "free_trial",
+      },
     });
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("must disable introductory offers");
+  });
+
+  it("binds every compiled public resource URL to the App Store listing record", () => {
+    const differentPrivacyUrl = "https://example.com/different-privacy";
+    const result = runValidator(productionEnvironment, {
+      ...approvedAppStoreReleaseRecord,
+      listing: {
+        ...approvedAppStoreReleaseRecord.listing,
+        privacyPolicyUrl: differentPrivacyUrl,
+      },
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "EXPO_PUBLIC_PRIVACY_POLICY_URL must match the App Store listing release record",
+    );
+    expect(result.stderr).not.toContain(PRIVACY_POLICY_URL);
+    expect(result.stderr).not.toContain(differentPrivacyUrl);
+  });
+
+  it("fails closed when the full App Store release record omits listing metadata", () => {
+    const result = runValidator(productionEnvironment, {
+      subscription: approvedSubscriptionReleaseRecord,
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "App Store listing release record must be readable",
+    );
+    for (const name of [
+      "EXPO_PUBLIC_PRIVACY_POLICY_URL",
+      "EXPO_PUBLIC_TERMS_URL",
+      "EXPO_PUBLIC_SUPPORT_URL",
+    ]) {
+      expect(result.stderr).toContain(
+        `${name} must match the App Store listing release record`,
+      );
+    }
+    for (const url of [PRIVACY_POLICY_URL, TERMS_URL, SUPPORT_URL]) {
+      expect(result.stderr).not.toContain(url);
+    }
   });
 
   it("rejects a malformed compiled App Store product identifier", () => {
@@ -304,6 +381,27 @@ describe("release configuration validator", () => {
     expect(result.stderr).toContain("EXPO_PUBLIC_CLERK_PROXY_URL");
     expect(result.stderr).not.toContain("user:password");
     expect(result.stderr).not.toContain("token=value");
+  });
+
+  it("rejects public URL normalization and never prints the URL values", () => {
+    const spacedPrivacyUrl = ` ${PRIVACY_POLICY_URL}`;
+    const controlCharacterSupportUrl =
+      "https://exa\nmple.com/support-with-control";
+    const result = runValidator({
+      ...productionEnvironment,
+      EXPO_PUBLIC_PRIVACY_POLICY_URL: spacedPrivacyUrl,
+      EXPO_PUBLIC_SUPPORT_URL: controlCharacterSupportUrl,
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "EXPO_PUBLIC_PRIVACY_POLICY_URL must not contain surrounding whitespace or control characters",
+    );
+    expect(result.stderr).toContain(
+      "EXPO_PUBLIC_SUPPORT_URL must not contain surrounding whitespace or control characters",
+    );
+    expect(result.stderr).not.toContain(spacedPrivacyUrl);
+    expect(result.stderr).not.toContain(controlCharacterSupportUrl);
   });
 
   it("rejects a cross-origin Clerk proxy and a local support page", () => {

@@ -10,7 +10,8 @@ const MIGRATION_ADVISORY_LOCK_KEY = "485018309019";
 const DEFAULT_LOCK_TIMEOUT_MS = 30_000;
 const DEFAULT_STATEMENT_TIMEOUT_MS = 60_000;
 const LOCK_POLL_INTERVAL_MS = 250;
-const MAX_TIMEOUT_MS = 300_000;
+export const MAX_MIGRATION_LOCK_TIMEOUT_MS = 300_000;
+export const MAX_MIGRATION_STATEMENT_TIMEOUT_MS = 60_000;
 
 type QueryResult<Row extends Record<string, unknown>> = { rows: Row[] };
 
@@ -63,9 +64,10 @@ function sleep(milliseconds: number): Promise<void> {
 function boundedMilliseconds(
   rawValue: string | undefined,
   fallback: number,
+  maximum: number,
 ): number {
   const value = Number(rawValue);
-  return Number.isInteger(value) && value > 0 && value <= MAX_TIMEOUT_MS
+  return Number.isInteger(value) && value > 0 && value <= maximum
     ? value
     : fallback;
 }
@@ -183,10 +185,12 @@ export async function ensureProductionMigrations(
     lockTimeoutMs: boundedMilliseconds(
       env.MIGRATION_LOCK_TIMEOUT_MS,
       DEFAULT_LOCK_TIMEOUT_MS,
+      MAX_MIGRATION_LOCK_TIMEOUT_MS,
     ),
     statementTimeoutMs: boundedMilliseconds(
       env.MIGRATION_STATEMENT_TIMEOUT_MS,
       DEFAULT_STATEMENT_TIMEOUT_MS,
+      MAX_MIGRATION_STATEMENT_TIMEOUT_MS,
     ),
   });
 }
