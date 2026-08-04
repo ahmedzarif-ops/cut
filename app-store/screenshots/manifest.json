@@ -39,7 +39,13 @@
     "capturedBy": null,
     "capturedAtUtc": null
   },
-  "listingSelection": [],
+  "listingSelection": [
+    "01-today-next-action",
+    "03-balanced-options",
+    "04-meal-preview",
+    "05-today-nutrition-logged",
+    "06-logged-meal-controls"
+  ],
   "reviewEvidenceSelection": [],
   "shots": [
     {

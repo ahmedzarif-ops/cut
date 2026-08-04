@@ -40,6 +40,24 @@ Reference:
 
 - [Apple Search API query used for the check](https://itunes.apple.com/search?term=CUT%20OS&country=us&entity=software&limit=200)
 
+### Similar same-category title found outside the exact-name result
+
+The exact-name result above does not remove market or naming risk. A separate
+same-category review found Apple's United States listing for **Body Recomp
+Tracker - Cut**, subtitle **Fat Loss + Muscle, Tracked**, in Health & Fitness.
+Its listing describes weight trends, protein and macro logging, and strength
+tracking for people cutting or recomping, and shows an in-app purchase named
+**Cut Pro** at **$4.99** at the time of this check.
+
+Reference:
+
+- [Body Recomp Tracker - Cut on the U.S. App Store](https://apps.apple.com/us/app/body-recomp-tracker-cut/id6772375243)
+
+This is factual market context, not a legal conclusion about similarity,
+priority, availability, or infringement. It increases the importance of the
+existing counsel-clearance and owner naming gates before an app record is
+created.
+
 ## What this does not prove
 
 This screen does not cover every confusingly similar spelling, sound, design,

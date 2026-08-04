@@ -1,6 +1,13 @@
+import { readFileSync } from "node:fs";
 import { isIP } from "node:net";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+const DIRECTORY = dirname(fileURLToPath(import.meta.url));
+const APP_STORE_RELEASE_RECORD_PATH = resolve(
+  DIRECTORY,
+  "../../../app-store/app-store-submission.json",
+);
 
 const REQUIRED_PUBLIC_URLS = [
   "EXPO_PUBLIC_PRIVACY_POLICY_URL",
@@ -175,6 +182,36 @@ function parseRevenueCatIosApiKey(value) {
   return { type: candidate.startsWith("appl_") ? "production" : "test" };
 }
 
+function parseAppStoreProductIdentifier(value) {
+  if (
+    typeof value !== "string" ||
+    value !== value.trim() ||
+    !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value)
+  ) {
+    return null;
+  }
+  return value;
+}
+
+function readAppStoreSubscriptionReleaseRecord() {
+  try {
+    const parsed = JSON.parse(
+      readFileSync(APP_STORE_RELEASE_RECORD_PATH, "utf8"),
+    );
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null;
+    }
+    const subscription = parsed.subscription;
+    return subscription &&
+      typeof subscription === "object" &&
+      !Array.isArray(subscription)
+      ? subscription
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function isSafeHttpsUrl(value, { allowQueryAndFragment }) {
   try {
     const parsed = new URL(value);
@@ -265,6 +302,41 @@ export function validateReleaseEnvironment(environment) {
     errors.push(
       "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY must be an appl_ key for production",
     );
+  }
+
+  const rawProductIdentifier = environment.EXPO_PUBLIC_REVENUECAT_PRODUCT_ID;
+  const productIdentifierRequired = production || Boolean(revenueCatKey);
+  const productIdentifier = productIdentifierRequired
+    ? requiredValue(environment, "EXPO_PUBLIC_REVENUECAT_PRODUCT_ID", errors)
+    : rawProductIdentifier?.trim();
+  const parsedProductIdentifier = productIdentifier
+    ? parseAppStoreProductIdentifier(rawProductIdentifier)
+    : null;
+  if (productIdentifier && !parsedProductIdentifier) {
+    errors.push(
+      "EXPO_PUBLIC_REVENUECAT_PRODUCT_ID must be an App Store product identifier",
+    );
+  }
+
+  if (production) {
+    const subscriptionReleaseRecord = readAppStoreSubscriptionReleaseRecord();
+    if (!subscriptionReleaseRecord) {
+      errors.push("App Store subscription release record must be readable");
+    } else {
+      if (
+        !parsedProductIdentifier ||
+        subscriptionReleaseRecord.productId !== parsedProductIdentifier
+      ) {
+        errors.push(
+          "EXPO_PUBLIC_REVENUECAT_PRODUCT_ID must match the App Store subscription release record",
+        );
+      }
+      if (subscriptionReleaseRecord.introductoryOfferDecision !== "none") {
+        errors.push(
+          "App Store subscription release record must disable introductory offers",
+        );
+      }
+    }
   }
 
   if (production) {

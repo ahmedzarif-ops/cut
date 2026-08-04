@@ -12,6 +12,10 @@ import {
   DEFAULT_ACCOUNT_DELETION_RETRY_INTERVAL_MS,
   parseAccountDeletionRetryInterval,
 } from "./lib/accountDeletionRetryInterval";
+import {
+  assertRevenueCatProductionConfiguration,
+  RevenueCatConfigurationPreflightError,
+} from "./lib/revenueCatConfigurationPreflight";
 
 // Development and test remain easy to run, but a production process must not
 // bind a port with placeholder credentials, an insecure database transport,
@@ -33,6 +37,18 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 async function start(): Promise<void> {
+  // Semantic/auth/configuration mismatches remain fatal. A sanitized transient
+  // provider outage is degraded instead of taking down unrelated account and
+  // deletion APIs; subscription endpoints continue to fail closed themselves.
+  const revenueCatConfiguration =
+    await assertRevenueCatProductionConfiguration();
+  if (revenueCatConfiguration.status === "degraded") {
+    logger.warn(
+      { errorCode: `revenuecat_${revenueCatConfiguration.reason}` },
+      "RevenueCat configuration could not be reverified during startup",
+    );
+  }
+
   // Autoscaled replicas coordinate through a bounded PostgreSQL advisory lock;
   // no HTTP traffic is accepted until committed migrations have completed.
   await prepareProductionDatabase();
@@ -68,7 +84,11 @@ async function start(): Promise<void> {
 
 void start().catch(async (error: unknown) => {
   const errorCode =
-    error instanceof StartupMigrationError ? error.code : "startup_failed";
+    error instanceof StartupMigrationError
+      ? error.code
+      : error instanceof RevenueCatConfigurationPreflightError
+        ? `revenuecat_${error.reason}`
+        : "startup_failed";
   // Never log the underlying migration/connection error; drivers may include
   // the production DSN or SQL data in messages and nested fields.
   logger.fatal({ errorCode }, "Server startup failed");

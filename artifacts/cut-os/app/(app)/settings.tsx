@@ -3,6 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   deleteMe as deleteMeRequest,
   getGetAccountDeletionStatusQueryKey,
+  getGetMeQueryKey,
+  updateMe as updateMeRequest,
+  useGetMe,
 } from "@workspace/api-client-react";
 import * as Crypto from "expo-crypto";
 import * as Haptics from "expo-haptics";
@@ -51,8 +54,14 @@ export default function SettingsScreen() {
   const { marker, serverStatus, setMarker } = useAccountDeletionGate();
   const adultEligibility = useAdultEligibilityGate();
   const subscription = useOptionalSubscriptionGate();
+  const meQuery = useGetMe();
 
   const [actionError, setActionError] = React.useState<string | null>(null);
+  const [unitError, setUnitError] = React.useState<string | null>(null);
+  const [unitMessage, setUnitMessage] = React.useState<string | null>(null);
+  const [unitBusy, setUnitBusy] = React.useState<"metric" | "imperial" | null>(
+    null,
+  );
   const [subscriptionError, setSubscriptionError] = React.useState<
     string | null
   >(null);
@@ -66,6 +75,7 @@ export default function SettingsScreen() {
   const [locallyCompletedOwnerUserId, setLocallyCompletedOwnerUserId] =
     React.useState<string | null>(null);
   const operationLock = React.useRef(false);
+  const unitOperationLock = React.useRef(false);
   const mounted = React.useRef(true);
   const currentPrincipal = React.useRef({ userId, sessionId });
   currentPrincipal.current = { userId, sessionId };
@@ -86,7 +96,7 @@ export default function SettingsScreen() {
     marker !== null || serverStatus !== "none" || terminalServerCompleted;
   const ageRequirementRequired =
     !recoveryRequired && adultEligibility.isRequired;
-  const busy = operationBusy || subscriptionBusy !== null;
+  const busy = operationBusy || subscriptionBusy !== null || unitBusy !== null;
 
   const leaveSettings = () => {
     if (ageRequirementRequired) {
@@ -151,6 +161,70 @@ export default function SettingsScreen() {
   ) => {
     if (!mounted.current || !isCurrentPrincipal(ownerUserId, ownerSessionId)) {
       throw new PrincipalChangedError();
+    }
+  };
+
+  const changeUnits = async (units: "metric" | "imperial") => {
+    if (
+      busy ||
+      meQuery.data?.units === units ||
+      !userId ||
+      !sessionId ||
+      !session ||
+      session.id !== sessionId ||
+      session.user?.id !== userId ||
+      unitOperationLock.current
+    ) {
+      return;
+    }
+
+    const ownerUserId = userId;
+    const ownerSessionId = sessionId;
+    const ownerSession = session;
+    unitOperationLock.current = true;
+    setUnitBusy(units);
+    setUnitError(null);
+    setUnitMessage(null);
+
+    try {
+      const token = await tokenWithinTimeout(() =>
+        ownerSession.getToken({ skipCache: true }),
+      );
+      assertCurrentPrincipal(ownerUserId, ownerSessionId);
+      if (!token) throw new Error("A unit-setting token is unavailable.");
+
+      const updatedAccount = await updateMeRequest(
+        { units },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      assertCurrentPrincipal(ownerUserId, ownerSessionId);
+
+      // Publish the authoritative PATCH response to both query shapes. This
+      // cannot report success while an old cached unit remains selected, and
+      // it never overwrites another principal's retained cache entry.
+      qc.setQueryData(getGetMeQueryKey(), updatedAccount);
+      qc.setQueryData([...getGetMeQueryKey(), ownerUserId], updatedAccount);
+      setUnitMessage(
+        units === "imperial"
+          ? "Weights now appear in pounds."
+          : "Weights now appear in kilograms.",
+      );
+    } catch (error) {
+      if (
+        error instanceof PrincipalChangedError ||
+        !mounted.current ||
+        !isCurrentPrincipal(ownerUserId, ownerSessionId)
+      ) {
+        return;
+      }
+      setUnitError(
+        "Couldn't change weight units. Check your connection and try again.",
+      );
+    } finally {
+      unitOperationLock.current = false;
+      if (mounted.current && isCurrentPrincipal(ownerUserId, ownerSessionId)) {
+        setUnitBusy(null);
+      }
     }
   };
 
@@ -418,6 +492,82 @@ export default function SettingsScreen() {
           ? "Manage your CUT OS account while health and nutrition features remain locked."
           : "Manage your subscription and CUT OS account."}
       </Text>
+
+      <View style={s.card}>
+        <Text style={s.cardOverline}>DISPLAY UNITS</Text>
+        <Text style={s.cardTitle}>Weight units</Text>
+        <Text style={s.cardBody}>
+          Choose how weights appear. CUT OS keeps saved measurements consistent
+          when you switch.
+        </Text>
+        {meQuery.isError ? (
+          <Text accessibilityRole="alert" style={s.errorText}>
+            CUT OS couldn&apos;t load your saved weight units. Retry before
+            changing them.
+          </Text>
+        ) : null}
+        {unitMessage ? (
+          <Text accessibilityLiveRegion="polite" style={s.statusText}>
+            {unitMessage}
+          </Text>
+        ) : null}
+        {unitError ? (
+          <Text accessibilityRole="alert" style={s.errorText}>
+            {unitError}
+          </Text>
+        ) : null}
+        <View style={s.unitRow}>
+          {(["metric", "imperial"] as const).map((units) => {
+            const active = meQuery.data?.units === units;
+            const label = units === "metric" ? "Kilograms (kg)" : "Pounds (lb)";
+            return (
+              <Pressable
+                key={units}
+                accessibilityRole="button"
+                accessibilityState={{
+                  selected: active,
+                  disabled: busy || !meQuery.isSuccess,
+                  busy: unitBusy !== null,
+                }}
+                disabled={busy || !meQuery.isSuccess}
+                style={({ pressed }) => [
+                  s.unitButton,
+                  active && s.unitButtonActive,
+                  (busy || !meQuery.isSuccess) && s.disabled,
+                  pressed && !busy && s.pressed,
+                ]}
+                onPress={() => void changeUnits(units)}
+              >
+                {unitBusy === units ? (
+                  <ActivityIndicator
+                    color={active ? c.primaryForeground : c.primary}
+                  />
+                ) : (
+                  <Text
+                    style={[s.unitButtonText, active && s.unitButtonTextActive]}
+                  >
+                    {label}
+                  </Text>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+        {meQuery.isError ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            style={({ pressed }) => [
+              s.secondaryAction,
+              busy && s.disabled,
+              pressed && !busy && s.pressed,
+            ]}
+            onPress={() => void meQuery.refetch()}
+          >
+            <Text style={s.secondaryActionText}>Retry unit settings</Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       <View style={s.card}>
         <Text style={s.cardOverline}>SUBSCRIPTION</Text>
@@ -695,6 +845,33 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       lineHeight: 21,
       marginTop: 8,
     },
+    unitRow: {
+      flexDirection: "row",
+      gap: 10,
+      marginTop: 18,
+    },
+    unitButton: {
+      flex: 1,
+      minHeight: 48,
+      borderRadius: c.radius,
+      borderColor: c.border,
+      borderWidth: 1,
+      backgroundColor: c.secondary,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 10,
+    },
+    unitButtonActive: {
+      borderColor: c.primary,
+      backgroundColor: c.primary,
+    },
+    unitButtonText: {
+      color: c.foreground,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 14,
+      textAlign: "center",
+    },
+    unitButtonTextActive: { color: c.primaryForeground },
     secondaryAction: {
       minHeight: 48,
       borderRadius: c.radius,

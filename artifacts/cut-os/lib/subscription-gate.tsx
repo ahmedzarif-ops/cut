@@ -25,6 +25,7 @@ import {
   type SubscriptionAdapter,
 } from "./subscription-adapter";
 import {
+  confirmSubscriptionAfterStoreAction,
   confirmServerSubscriptionRefresh,
   ProviderPrincipalGuard,
   resolveAccessRecheck,
@@ -305,20 +306,13 @@ export function SubscriptionGateProvider({
       }
 
       setStoreCustomer(result.customer);
-      try {
-        const verified = await confirmWithServer(owner);
-        return resolvePurchaseVerification(verified.entitled);
-      } catch (error) {
-        if (
-          error instanceof SubscriptionAdapterError &&
-          error.code === "principal_changed"
-        ) {
-          throw error;
-        }
-        // Apple completed the transaction. A temporarily unavailable server
-        // verification must never be reported as a failed purchase.
-        return resolvePurchaseVerification(null);
-      }
+      const verified = await confirmSubscriptionAfterStoreAction({
+        localHasProEntitlement: result.customer.hasProEntitlement,
+        confirm: () => confirmWithServer(owner),
+      });
+      // Apple completed the transaction. A temporarily unavailable or delayed
+      // server verification must never be reported as a failed purchase.
+      return resolvePurchaseVerification(verified?.entitled ?? null);
     },
     [
       adapter,
@@ -355,24 +349,14 @@ export function SubscriptionGateProvider({
         throw new SubscriptionActionError("restore");
       }
       setStoreCustomer(customer);
-      try {
-        const verified = await confirmWithServer(owner);
-        return resolveRestoreVerification({
-          localHasProEntitlement: customer.hasProEntitlement,
-          serverEntitled: verified.entitled,
-        });
-      } catch (error) {
-        if (
-          error instanceof SubscriptionAdapterError &&
-          error.code === "principal_changed"
-        ) {
-          throw error;
-        }
-        return resolveRestoreVerification({
-          localHasProEntitlement: customer.hasProEntitlement,
-          serverEntitled: null,
-        });
-      }
+      const verified = await confirmSubscriptionAfterStoreAction({
+        localHasProEntitlement: customer.hasProEntitlement,
+        confirm: () => confirmWithServer(owner),
+      });
+      return resolveRestoreVerification({
+        localHasProEntitlement: customer.hasProEntitlement,
+        serverEntitled: verified?.entitled ?? null,
+      });
     }, [
       adapter,
       capability.available,

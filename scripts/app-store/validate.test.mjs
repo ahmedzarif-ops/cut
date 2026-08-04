@@ -7,6 +7,7 @@ import test from "node:test";
 import { deflateSync } from "node:zlib";
 
 import {
+  APP_STORE_RELEASE_EVIDENCE_TARGETS,
   appReviewNotesTemplateSha256,
   DEFAULT_REPO_ROOT,
   inspectImage,
@@ -16,6 +17,7 @@ import {
   validateMetadata,
   validateScreenshotManifest,
   validateTestFlightSubmission,
+  verifyAppStoreReleaseEvidenceBoundary,
 } from "./validate.mjs";
 
 function readJson(relativePath) {
@@ -110,6 +112,47 @@ test("committed working App Store records validate", () => {
   assert.deepEqual(validateBundle(), []);
 });
 
+test("App Store release evidence requires an App Review or public-release target", () => {
+  assert.deepEqual(APP_STORE_RELEASE_EVIDENCE_TARGETS, [
+    "app_review",
+    "public_release",
+  ]);
+
+  for (const releaseTarget of APP_STORE_RELEASE_EVIDENCE_TARGETS) {
+    const evidence = { releaseTarget };
+    assert.equal(
+      verifyAppStoreReleaseEvidenceBoundary({
+        repoRoot: "/not-used",
+        verifyBoundary: () => evidence,
+      }),
+      evidence,
+    );
+  }
+
+  for (const releaseTarget of ["staging", "internal_testflight", undefined]) {
+    assert.throws(
+      () =>
+        verifyAppStoreReleaseEvidenceBoundary({
+          repoRoot: "/not-used",
+          verifyBoundary: () => ({ releaseTarget }),
+        }),
+      (error) =>
+        error?.code === "release_manifest_target_not_app_store_release",
+    );
+  }
+});
+
+test("the initial listing screenshot story is validator-bound", () => {
+  const manifest = readJson("app-store/screenshots/manifest.json");
+  manifest.listingSelection = ["09-settings-controls"];
+
+  assert.ok(
+    validateScreenshotManifest({ manifest }).includes(
+      "listingSelection must match the approved initial screenshot story",
+    ),
+  );
+});
+
 test("release mode stays fail closed while owner, privacy, and screenshot gates are open", () => {
   const errors = validateBundle({ release: true });
   assert.ok(errors.length > 20);
@@ -188,6 +231,7 @@ test("metadata validation catches listing and privacy-manifest drift", () => {
   const inputs = validationInputs();
   const submission = clone(inputs.submission);
   submission.listing.subtitle = "x".repeat(31);
+  submission.listing.promotionalText = "metadata drift";
   submission.privacy.dataTypes[0].tracking = true;
   submission.privacy.requiredReasonApis[0].reasons = ["invented.1"];
 
@@ -196,6 +240,11 @@ test("metadata validation catches listing and privacy-manifest drift", () => {
   assert.ok(
     errors.includes(
       "machine-readable subtitle must match APP_STORE_METADATA.md",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "machine-readable promotional text must match APP_STORE_METADATA.md",
     ),
   );
   assert.ok(
@@ -209,6 +258,21 @@ test("metadata validation catches listing and privacy-manifest drift", () => {
       "privacy.requiredReasonApis[0] reasons must match app.json",
     ),
   );
+});
+
+test("every public listing copy surface rejects unshipped feature claims", () => {
+  const inputs = validationInputs();
+  for (const field of ["description", "subtitle", "promotionalText"]) {
+    const submission = clone(inputs.submission);
+    submission.listing[field] = `${submission.listing[field] ?? ""} AI chat`;
+    assert.ok(
+      validateMetadata({ ...inputs, submission }).some((error) =>
+        error.startsWith(
+          `listing.${field} advertises an unshipped feature matching`,
+        ),
+      ),
+    );
+  }
 });
 
 test("working validation allows verified owner fields to be populated incrementally", () => {
@@ -370,6 +434,8 @@ test("verified or ready states cannot omit their supporting evidence", () => {
   submission.commercialAndLegal.appStoreServerNotifications.status =
     "confirmed_in_app_store_connect";
   submission.subscription.revenueCat.productionMappingStatus = "verified";
+  submission.subscription.revenueCat.appStoreConnectApiKeyStatus = "verified";
+  submission.subscription.revenueCat.subscriptionKeyStatus = "verified";
   submission.subscription.exactBuildEvidence.storeKitOfferStatus = "verified";
   submission.accessibility.status = "evaluated_for_release";
   submission.accessibility.appStoreConnectDecision.decision =
@@ -391,6 +457,11 @@ test("verified or ready states cannot omit their supporting evidence", () => {
   );
   assert.ok(
     errors.includes(
+      "verified RevenueCat Apple credentials require dashboard UTC evidence",
+    ),
+  );
+  assert.ok(
+    errors.includes(
       "verified subscription exact-build status requires UTC evidence",
     ),
   );
@@ -408,6 +479,68 @@ test("verified or ready states cannot omit their supporting evidence", () => {
     errors.includes(
       "evaluated accessibility requires accessibility App Store Connect saved UTC evidence",
     ),
+  );
+});
+
+test("v1 server notifications are bound directly to one RevenueCat URL", () => {
+  const inputs = validationInputs();
+
+  const unsupported = clone(inputs.submission);
+  unsupported.commercialAndLegal.appStoreServerNotifications.deliveryArchitecture =
+    "api_forwarding";
+  assert.ok(
+    validateMetadata({ ...inputs, submission: unsupported }).includes(
+      "commercialAndLegal.appStoreServerNotifications.deliveryArchitecture must remain revenuecat_direct for v1",
+    ),
+  );
+
+  const arbitrary = clone(inputs.submission);
+  arbitrary.commercialAndLegal.appStoreServerNotifications.productionUrl =
+    "https://api.example.com/apple/notifications";
+  assert.ok(
+    validateMetadata({ ...inputs, submission: arbitrary }).includes(
+      "revenuecat_direct App Store Server Notifications URLs must use the full RevenueCat incoming-webhooks URL without query or fragment",
+    ),
+  );
+
+  for (const badUrl of [
+    "https://api.revenuecat.com/garbage",
+    "https://api.revenuecat.com/v1/incoming-webhooks/apple-server-notifications/appProduction1234?token=wrong",
+    "https://api.revenuecat.com/v1/incoming-webhooks/apple-server-notifications/appProduction1234#fragment",
+  ]) {
+    const malformed = clone(inputs.submission);
+    malformed.commercialAndLegal.appStoreServerNotifications.productionUrl =
+      badUrl;
+    assert.ok(
+      validateMetadata({ ...inputs, submission: malformed }).includes(
+        "revenuecat_direct App Store Server Notifications URLs must use the full RevenueCat incoming-webhooks URL without query or fragment",
+      ),
+    );
+  }
+
+  const unequal = clone(inputs.submission);
+  unequal.commercialAndLegal.appStoreServerNotifications.productionUrl =
+    "https://api.revenuecat.com/v1/incoming-webhooks/apple-server-notifications/one";
+  unequal.commercialAndLegal.appStoreServerNotifications.sandboxUrl =
+    "https://api.revenuecat.com/v1/incoming-webhooks/apple-server-notifications/two";
+  assert.ok(
+    validateMetadata({ ...inputs, submission: unequal }).includes(
+      "revenuecat_direct production and sandbox notification URLs must be identical",
+    ),
+  );
+
+  const matching = clone(inputs.submission);
+  const revenueCatUrl =
+    "https://api.revenuecat.com/v1/incoming-webhooks/apple-server-notifications/appProduction1234";
+  matching.commercialAndLegal.appStoreServerNotifications.productionUrl =
+    revenueCatUrl;
+  matching.commercialAndLegal.appStoreServerNotifications.sandboxUrl =
+    revenueCatUrl;
+  assert.equal(
+    validateMetadata({ ...inputs, submission: matching }).some((error) =>
+      error.includes("notification URL"),
+    ),
+    false,
   );
 });
 
@@ -668,9 +801,12 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
   commercial.appTaxCategory = "Health and Fitness";
   commercial.dsaStatus = "trader";
   commercial.appStoreServerNotifications = {
+    deliveryArchitecture: "revenuecat_direct",
     status: "confirmed_in_app_store_connect",
-    productionUrl: "https://api.example.com/apple/notifications",
-    sandboxUrl: "https://api.example.com/apple/notifications/sandbox",
+    productionUrl:
+      "https://api.revenuecat.com/v1/incoming-webhooks/apple-server-notifications/appProduction1234",
+    sandboxUrl:
+      "https://api.revenuecat.com/v1/incoming-webhooks/apple-server-notifications/appProduction1234",
     evidenceReference: "evidence/app-store-server-notifications",
   };
   for (const key of Object.keys(commercial.approval)) {
@@ -743,6 +879,9 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
     evidenceReference: "evidence/subscription-review-screenshot-upload",
   });
   subscription.revenueCat.productionMappingStatus = "verified";
+  subscription.revenueCat.appStoreConnectApiKeyStatus = "verified";
+  subscription.revenueCat.subscriptionKeyStatus = "verified";
+  subscription.revenueCat.verifiedAtUtc = evidenceTime;
   subscription.revenueCat.evidenceReference =
     "evidence/revenuecat-production-mapping";
   subscription.exactBuildEvidence.storeKitOfferStatus = "verified";

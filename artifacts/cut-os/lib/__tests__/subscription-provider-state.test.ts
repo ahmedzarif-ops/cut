@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  confirmSubscriptionAfterStoreAction,
   confirmServerSubscriptionRefresh,
   ProviderPrincipalGuard,
   resolveAccessRecheck,
@@ -168,6 +169,123 @@ describe("subscription provider state", () => {
     expect(resolvePurchaseVerification(false)).toBe("pending");
     expect(resolvePurchaseVerification(null)).toBe("pending");
     expect(resolvePurchaseVerification(true)).toBe("entitled");
+  });
+
+  it("stops store reconciliation after immediate server-confirmed access", async () => {
+    const entitled = subscriptionStatus(true);
+    const confirm = vi.fn(async () => entitled);
+    const wait = vi.fn(async () => undefined);
+
+    await expect(
+      confirmSubscriptionAfterStoreAction({
+        localHasProEntitlement: true,
+        confirm,
+        wait,
+        retryDelaysMs: [1, 2, 4],
+      }),
+    ).resolves.toBe(entitled);
+
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(wait).not.toHaveBeenCalled();
+  });
+
+  it("automatically confirms access after bounded propagation delay", async () => {
+    const inactive = subscriptionStatus(false);
+    const entitled = subscriptionStatus(true);
+    const confirm = vi
+      .fn<() => Promise<ReturnType<typeof subscriptionStatus>>>()
+      .mockResolvedValueOnce(inactive)
+      .mockResolvedValueOnce(inactive)
+      .mockResolvedValueOnce(entitled);
+    const wait = vi.fn(async () => undefined);
+
+    await expect(
+      confirmSubscriptionAfterStoreAction({
+        localHasProEntitlement: true,
+        confirm,
+        wait,
+        retryDelaysMs: [1_000, 2_000, 4_000],
+      }),
+    ).resolves.toBe(entitled);
+
+    expect(confirm).toHaveBeenCalledTimes(3);
+    expect(wait.mock.calls).toEqual([[1_000], [2_000]]);
+  });
+
+  it("returns the last inactive server status after the retry cap", async () => {
+    const inactive = subscriptionStatus(false);
+    const confirm = vi.fn(async () => inactive);
+    const wait = vi.fn(async () => undefined);
+
+    await expect(
+      confirmSubscriptionAfterStoreAction({
+        localHasProEntitlement: true,
+        confirm,
+        wait,
+        retryDelaysMs: [1, 2, 4],
+      }),
+    ).resolves.toBe(inactive);
+
+    expect(confirm).toHaveBeenCalledTimes(4);
+    expect(wait.mock.calls).toEqual([[1], [2], [4]]);
+  });
+
+  it("recovers from a transient server confirmation failure", async () => {
+    const entitled = subscriptionStatus(true);
+    const confirm = vi
+      .fn<() => Promise<ReturnType<typeof subscriptionStatus>>>()
+      .mockRejectedValueOnce(new SubscriptionAdapterError("unavailable"))
+      .mockResolvedValueOnce(entitled);
+    const wait = vi.fn(async () => undefined);
+
+    await expect(
+      confirmSubscriptionAfterStoreAction({
+        localHasProEntitlement: true,
+        confirm,
+        wait,
+        retryDelaysMs: [1, 2],
+      }),
+    ).resolves.toBe(entitled);
+
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(wait).toHaveBeenCalledOnce();
+  });
+
+  it("stops reconciliation immediately after a principal change", async () => {
+    const confirm = vi
+      .fn<() => Promise<ReturnType<typeof subscriptionStatus>>>()
+      .mockRejectedValue(new SubscriptionAdapterError("principal_changed"));
+    const wait = vi.fn(async () => undefined);
+
+    await expect(
+      confirmSubscriptionAfterStoreAction({
+        localHasProEntitlement: true,
+        confirm,
+        wait,
+        retryDelaysMs: [1, 2],
+      }),
+    ).rejects.toMatchObject({ code: "principal_changed" });
+
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(wait).not.toHaveBeenCalled();
+  });
+
+  it("does not delay a restore when local and server checks find no access", async () => {
+    const inactive = subscriptionStatus(false);
+    const confirm = vi.fn(async () => inactive);
+    const wait = vi.fn(async () => undefined);
+
+    await expect(
+      confirmSubscriptionAfterStoreAction({
+        localHasProEntitlement: false,
+        confirm,
+        wait,
+        retryDelaysMs: [1, 2, 4],
+      }),
+    ).resolves.toBe(inactive);
+
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(wait).not.toHaveBeenCalled();
   });
 
   it("routes the visible Sign out interaction through one shared callback", async () => {

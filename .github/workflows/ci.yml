@@ -63,13 +63,25 @@ jobs:
             echo "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_${clerk_frontend}"
             echo "EXPO_PUBLIC_CLERK_PROXY_URL=https://api.example.com/api/__clerk"
             echo "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=appl_PublicIosKey1234"
+            echo "EXPO_PUBLIC_REVENUECAT_PRODUCT_ID=com.zarifahmed.cut.pro.monthly"
             echo "EXPO_PUBLIC_PRIVACY_POLICY_URL=https://example.com/privacy"
             echo "EXPO_PUBLIC_TERMS_URL=https://example.com/terms"
             echo "EXPO_PUBLIC_SUPPORT_URL=https://example.com/support"
           } >> "$GITHUB_ENV"
       - name: Validate and bundle the production iOS app
         run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+
+          const path = "app-store/app-store-submission.json";
+          const record = JSON.parse(readFileSync(path, "utf8"));
+          record.subscription.productId = "com.zarifahmed.cut.pro.monthly";
+          record.subscription.introductoryOfferDecision = "none";
+          writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, "utf8");
+          NODE
           pnpm --filter @workspace/cut-os run validate:release-config
+          git restore --source=HEAD -- app-store/app-store-submission.json
+          test -z "$(git status --porcelain --untracked-files=all)"
           pnpm --filter @workspace/cut-os exec expo config --type introspect > /dev/null
           pnpm --filter @workspace/cut-os exec expo export --platform ios --output-dir "$RUNNER_TEMP/cut-ios-export"
 

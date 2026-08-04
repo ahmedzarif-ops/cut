@@ -1,6 +1,6 @@
-#!/bin/bash
-set -e
+#!/bin/sh
+set -eu
+
+# Post-merge is dependency sync only. Production schema changes are applied by
+# the API startup gate, which holds the advisory lock and verifies readiness.
 pnpm install --frozen-lockfile
-# Apply committed migrations (production schema path). `push` is dev-only;
-# see lib/db/migrations and ARCHITECTURE.md.
-pnpm --filter @workspace/db run migrate

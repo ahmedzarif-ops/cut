@@ -18,6 +18,7 @@ The production EAS environment must contain all of these client-visible values:
 | `EXPO_PUBLIC_DOMAIN`                 | Public API hostname only, such as `api.example.com`; no scheme, path, credentials, query, or fragment |
 | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`  | Production Clerk publishable key beginning with `pk_live_`                                            |
 | `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` | RevenueCat public Apple-platform SDK key; never a secret or Test Store production key                 |
+| `EXPO_PUBLIC_REVENUECAT_PRODUCT_ID`  | Exact owner-approved App Store product ID; must match the committed subscription release record       |
 | `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | Owner/counsel-approved public HTTPS Privacy Policy                                                    |
 | `EXPO_PUBLIC_TERMS_URL`              | Owner/counsel-approved public HTTPS Terms of Use                                                      |
 | `EXPO_PUBLIC_SUPPORT_URL`            | Functional public HTTPS support page with real contact information                                    |
@@ -26,12 +27,25 @@ The production EAS environment must contain all of these client-visible values:
 Every `EXPO_PUBLIC_*` value is embedded in the app and must be treated as
 public. Never place `CLERK_SECRET_KEY`, `DATABASE_URL`, Apple credentials, or
 any other server secret in an `EXPO_PUBLIC_*` variable. The API deployment
-separately requires `REVENUECAT_SECRET_API_KEY`, `REVENUECAT_PROJECT_ID`, and
-`REVENUECAT_ENTITLEMENT_REST_ID`. The secret is a least-privilege RevenueCat
-REST API v2 key with customer read/write access. All three are server-only and
+separately requires `REVENUECAT_SECRET_API_KEY`, `REVENUECAT_PROJECT_ID`,
+`REVENUECAT_ENTITLEMENT_REST_ID`, and `REVENUECAT_APP_REST_ID`. The secret is a
+least-privilege RevenueCat REST API v2 key with customer read/write plus
+entitlement and app read access. All four are server-only and
 must not be placed in EAS public variables, client source, logs, or support
-material. The two resource IDs must be copied from RevenueCat rather than
+material. The three resource IDs must be copied from RevenueCat rather than
 derived from dashboard URLs or the public `CUT_OS_PRO` lookup key.
+
+Any preview or Test Store build that sets a RevenueCat iOS SDK key must also
+set the exact product ID for that offering. Production API startup verifies the
+official v2 app, entitlement, and attached-product shapes: the only active
+attached subscription must be `com.zarifahmed.cut.pro.monthly` for the exact
+iOS app, with RevenueCat duration `P1M` and no trial duration. The documented
+read response does not expose App Store Connect API-key or Apple subscription-
+key configuration, so those two settings remain a separate dashboard-evidence
+gate below. Semantic, authentication, and missing-resource failures stop startup.
+Transient provider timeouts, network failures, rate limits, and 5xx responses
+produce a sanitized degraded warning so account/deletion APIs remain
+available; subscription authorization continues to fail closed.
 
 The app fails closed when its API hostname or Clerk publishable key is missing
 or malformed. Production EAS builds also stop before dependency installation if
@@ -52,16 +66,44 @@ those two approved-publication checks.
 4. In App Store Connect, complete the Paid Apps Agreement/tax/banking, create
    the owner-approved subscription group/product, and keep the first
    subscription attached to the app-version submission.
-5. Create the RevenueCat project/iOS app for the exact bundle ID, connect Apple
-   credentials, map products to `CUT_OS_PRO`, create the current offering, and
-   configure Apple Server Notifications v2 for sandbox and production.
-6. Create all seven production EAS variables above and the three server-only
+5. Create the RevenueCat project/iOS app for the exact bundle ID, connect both
+   the App Store Connect API key and Apple in-app purchase/subscription key, map
+   products to `CUT_OS_PRO`, create the current offering, and
+   configure Apple Server Notifications v2 with the full dashboard-issued
+   RevenueCat URL in both the sandbox and production App Store Connect fields.
+6. Create all eight production EAS variables above and the four server-only
    RevenueCat v2 values (`REVENUECAT_SECRET_API_KEY`,
-   `REVENUECAT_PROJECT_ID`, and `REVENUECAT_ENTITLEMENT_REST_ID`) in the API
-   deployment.
+   `REVENUECAT_PROJECT_ID`, `REVENUECAT_ENTITLEMENT_REST_ID`, and
+   `REVENUECAT_APP_REST_ID`) in the API deployment.
 7. Publish and manually open the Privacy, Terms, and Support pages on a device.
 8. Verify the production API, Clerk tenant, and RevenueCat project are the exact
    service set intended for App Review.
+
+## RevenueCat Apple credential and exact-build gate
+
+The production API preflight proves the documented app/bundle, entitlement,
+product, monthly duration, no-trial state, and exact associations. It cannot
+prove Apple credential configuration because RevenueCat's documented `GET app`
+response does not return those flags. Before the production build, an authorized
+operator must inspect the exact RevenueCat iOS app and update
+`app-store/app-store-submission.json` with all of the following non-secret
+evidence:
+
+| Evidence field                                        | Required release value                                                                   |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `subscription.revenueCat.productionMappingStatus`     | `verified` for the exact production app, `CUT_OS_PRO`, and monthly product               |
+| `subscription.revenueCat.appStoreConnectApiKeyStatus` | `verified` by direct RevenueCat-dashboard inspection                                     |
+| `subscription.revenueCat.subscriptionKeyStatus`       | `verified` for the Apple in-app purchase/subscription key by direct dashboard inspection |
+| `subscription.revenueCat.verifiedAtUtc`               | UTC time of that dashboard inspection                                                    |
+| `subscription.revenueCat.evidenceReference`           | Controlled reference to the sanitized dashboard evidence; never key material             |
+
+Dashboard evidence alone does not prove the binary. The same release record must
+also bind `storeKitOfferStatus`, `purchaseQaStatus`, and `testFlightStatus` as
+verified to the exact submitted app version, build number, Git commit, EAS build
+ID, and App Store Connect build ID. Missing dashboard evidence, a changed key,
+or any exact-build purchase/restore failure blocks promotion. Never save a key
+ID, issuer, private-key contents, API-key contents, screenshot containing key
+material, or raw provider response in the repository.
 
 ## Clerk production proxy activation gate
 
@@ -161,8 +203,11 @@ pnpm run codegen:check
 pnpm run typecheck
 pnpm run test
 pnpm run validate:app-store
-pnpm exec eas env:exec --environment production \
-  'pnpm --filter @workspace/cut-os run eas-build-pre-install'
+(
+  cd artifacts/cut-os
+  pnpm exec eas env:exec production \
+    'pnpm run eas-build-pre-install'
+)
 ```
 
 The validator reports variable names and reasons only; it never prints values.
@@ -177,7 +222,10 @@ profile can compile the native iOS project in EAS without an Apple signing
 credential:
 
 ```sh
-pnpm exec eas build --platform ios --profile ios-simulator
+(
+  cd artifacts/cut-os
+  pnpm exec eas build --platform ios --profile ios-simulator
+)
 ```
 
 This profile extends the production-like preview build, sets
@@ -339,6 +387,12 @@ integrated release command from that exact checkout:
 ```sh
 pnpm run validate:app-store:release
 ```
+
+This App Store release gate accepts only manifest target `app_review` or
+`public_release`. It rejects `staging` and `internal_testflight`, even if the
+rest of the evidence is complete, so a staging-only upload N/A decision cannot
+satisfy an App Store release. Use `pnpm run verify:post-build-evidence` for a
+non-App-Store boundary check.
 
 GitHub's dedicated **Release evidence boundary** job checks the exact pull
 request head commit rather than GitHub's synthetic pull-request merge commit.

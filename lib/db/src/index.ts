@@ -14,20 +14,25 @@ export interface PoolConfig {
 }
 
 const DEFAULT_POOL_MAX = 5;
+export const PG_POOL_MAXIMUM = 20;
 
 /**
  * Connection-pool budget. `max` is env-tunable (PG_POOL_MAX, default 5) —
  * conservative for a single autoscale instance against a pooled Postgres
  * endpoint. Pure, so it can be unit-tested without a live database.
  *
- * Garbage PG_POOL_MAX (non-numeric, empty, zero/negative, fractional) clamps
+ * Garbage or excessive PG_POOL_MAX (non-numeric, empty, zero/negative,
+ * fractional, or above 20) clamps
  * to the intended default — otherwise pg would receive NaN/0 and silently
  * substitute ITS default (10), doubling the budget we meant to set.
  */
 export function poolConfig(env: NodeJS.ProcessEnv = process.env): PoolConfig {
-  const parsed = Number(env.PG_POOL_MAX);
+  const raw = env.PG_POOL_MAX;
+  const parsed = raw && /^(?:0|[1-9]\d*)$/u.test(raw) ? Number(raw) : NaN;
   const max =
-    Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_POOL_MAX;
+    Number.isSafeInteger(parsed) && parsed > 0 && parsed <= PG_POOL_MAXIMUM
+      ? parsed
+      : DEFAULT_POOL_MAX;
   return {
     connectionString: env.DATABASE_URL,
     max,

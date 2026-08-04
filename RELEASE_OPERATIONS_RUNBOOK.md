@@ -20,6 +20,10 @@ App Review, or release publicly without the recorded approval for that action.
   shared environment. One manifest represents one `BUILD_SHA`, its evidence-only
   descendant, API deployment, database revision, EAS build, and Apple build
   number.
+- Treat the manifest's canonical `CUT_OS_RELEASE_CONTROL_V1` JSON as the sole
+  editable release record. Do not duplicate identities, results, approvals,
+  timestamps, or evidence references in the navigation prose below it. Detailed
+  operational output belongs in the controlled references named by the JSON.
 - Record only non-secret service aliases and evidence links. Never record a DSN,
   token, private key, session cookie, tester password, device identifier, health
   data, or response body.
@@ -150,7 +154,8 @@ record:
 
 - backup or point-in-time recovery mechanism and non-secret evidence reference;
 - backup/PITR coverage timestamp later than the final pre-deploy write cutoff;
-- last successful restore-drill timestamp and result;
+- a successful restore drill no more than 90 days before manifest finalization,
+  with its UTC timestamp and result;
 - owner-approved recovery point and recovery time objectives;
 - whether the previous API is compatible with the new schema;
 - a roll-forward candidate or a coordinated application-and-database restore
@@ -231,6 +236,10 @@ applicable with a reason:
 - owner/counsel/privacy/health-nutrition/security gates applicable to the scope;
 - public legal/support identity and exact approved publication hashes;
 - production API, database, Clerk, RevenueCat, EAS, and Apple service aliases;
+- direct, sanitized RevenueCat-dashboard evidence that the exact iOS app has
+  both its App Store Connect API key and Apple in-app purchase/subscription key
+  configured, paired with StoreKit and purchase QA on the exact submitted build
+  as defined in `EAS_RELEASE_RUNBOOK.md`;
 - the Clerk production instance/domain aliases, non-secret domain ID, exact
   canonical proxy URL, candidate API deployment/Git SHA, audited edge trust
   topology, provider proof that no direct or shorter origin path bypasses the
@@ -257,6 +266,10 @@ applicable with a reason:
 - explicit authorization for any paid build/upload and production deployment.
 
 If a required field is `TBD`, stop. `N/A` requires a written reason and approver.
+The EAS-upload approval may be not applicable only for a staging target where no
+upload occurs. Internal TestFlight, App Review, and public-release targets must
+carry an attributable `APPROVED` upload decision even when the upload uses free
+quota.
 
 ## 6. Production deployment and smoke
 
@@ -422,9 +435,16 @@ The owner authorizes all Apple actions. Engineering may prepare the evidence:
    reviewed for personal data, and every owner-controlled commercial/legal,
    metadata, privacy, full age-questionnaire, App Review account, subscription,
    accessibility, and security field is evidenced and approved, remeasure the
-   resolved App Review Notes below 4,000 UTF-8 bytes. Finalize the one existing
-   per-release manifest and generate its adjacent checksum, then commit those
-   with only the existing App Store evidence JSON updates and newly added,
+   resolved App Review Notes below 4,000 UTF-8 bytes. Complete the manifest's
+   canonical `CUT_OS_RELEASE_CONTROL_V1` JSON block without changing its keys or
+   fixed control IDs. This JSON is the sole editable release record; do not add
+   parallel human-readable outcome or approval tables. It must bind the
+   TestFlight build identities and contain
+   passing automated, safety, recovery, smoke, monitoring/alert-test, and
+   post-action evidence plus attributable approvals. Resolve every Markdown
+   placeholder and required checkbox. Finalize the one existing per-release
+   manifest and generate its adjacent checksum, then commit those with only the
+   existing App Store evidence JSON updates and newly added,
    manifest-referenced `100644` PNGs. This single direct child of `BUILD_SHA` is
    `POST_BUILD_EVIDENCE_SHA`; captured files must never be symlinks. From its
    clean checkout run:
@@ -433,15 +453,28 @@ The owner authorizes all Apple actions. Engineering may prepare the evidence:
    pnpm run validate:app-store:release
    ```
 
+   The App Store release command accepts only canonical manifest target
+   `app_review` or `public_release`; it rejects `staging` and
+   `internal_testflight`. The general `pnpm run verify:post-build-evidence`
+   command remains available for non-App-Store evidence boundaries. Never use a
+   staging target to carry an upload N/A decision into the App Store gate.
+
    The gate derives `BUILD_SHA` from the committed TestFlight record and accepts
    no command-line Git ref. Record `POST_BUILD_EVIDENCE_SHA` and the result
    outside the finalized manifest. The integrated boundary proves
    the exact direct-parent relationship, a clean tree, operation/mode-constrained
-   evidence files, manifest-bound regular PNGs, the release-manifest checksum,
+   evidence files, manifest-bound regular PNGs, the release-manifest checksum
+   and canonical content, required sections and checked controls, complete
+   passing release evidence, exact TestFlight/deployment identity bindings,
    byte-identical `eas.json`, `cli.requireCommit: true`, TestFlight `BUILD_SHA`,
    and pinned `ascAppId`. Any runtime, config, dependency, lockfile, migration,
    workflow, script, or shared-procedure change requires a new `BUILD_SHA`,
    repeated preflights, signed build, and upload.
+
+   UTC evidence timestamps may use whole or fractional seconds with `Z`. Except
+   for the restore-drill timestamp, each must fall between record creation and
+   finalization. Finalization may not be future-dated, and the restore drill must
+   be no more than 90 days old at finalization.
 
    CI validates a pull request's exact head in the dedicated **Release evidence
    boundary** job because GitHub's synthetic pull-request merge commit is not

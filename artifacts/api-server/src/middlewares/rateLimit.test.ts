@@ -51,6 +51,20 @@ describe("createApiLimiter", () => {
       200,
     );
   });
+
+  it.each(["NaN", "0", "-1", "1.5", "10001", " 3"])(
+    "uses the safe default instead of malformed or excessive API_RATE_LIMIT %s",
+    async (value) => {
+      process.env.API_RATE_LIMIT = value;
+      const app = express();
+      app.use(createApiLimiter());
+      app.get("/ping", (_req, res) => res.json({ ok: true }));
+      for (let requestNumber = 0; requestNumber < 100; requestNumber += 1) {
+        expect((await request(app).get("/ping")).status).toBe(200);
+      }
+      expect((await request(app).get("/ping")).status).toBe(429);
+    },
+  );
 });
 
 function clerkProxyApp(limit?: number): Express {
@@ -95,4 +109,17 @@ describe("createClerkLimiter", () => {
     // A different client IP still has its own allowance.
     expect((await request(app).get(path).set(ip2)).status).toBe(200);
   });
+
+  it.each(["NaN", "0", "-1", "1.5", "1001", " 2"])(
+    "uses the safe default instead of malformed or excessive CLERK_RATE_LIMIT %s",
+    async (value) => {
+      process.env.CLERK_RATE_LIMIT = value;
+      const app = clerkProxyApp();
+      const path = "/api/__clerk/v1/environment";
+      for (let requestNumber = 0; requestNumber < 30; requestNumber += 1) {
+        expect((await request(app).get(path)).status).toBe(200);
+      }
+      expect((await request(app).get(path)).status).toBe(429);
+    },
+  );
 });

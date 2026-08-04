@@ -16,13 +16,13 @@
     "appVersion": "1.0.0",
     "initialRelease": true,
     "primaryLanguage": "en-US",
-    "subtitle": "Your daily cut check-in",
-    "description": "CUT OS gives adults who lift a simple daily sequence for the fundamentals of a\ncut.\n\n- See one clear next action for today.\n- Log or update one daily weigh-in.\n- Choose from six curated balanced-meal options.\n- Review ingredients, common allergens, portions, and estimated nutrition.\n- Log, edit, or delete meals and see today's estimated nutrition totals.\n- Keep account data synced and delete the account in-app.\n\nCUT OS provides general fitness and nutrition information, not medical advice.\nMeal nutrition is estimated. Ingredient and common-allergen lists must be\nreviewed against the exact products you use and are not an allergen-safety\nguarantee.\n\nCUT OS is for adults age 18 and older. Paid access uses an auto-renewable Apple\nsubscription. The exact localized price and billing period appear before you\nconfirm purchase. You can restore purchases in the app and manage or cancel the\nsubscription through Apple.",
-    "keywords": "cut,weight,meal,protein,macros,lifting,nutrition,weigh-in,fitness",
+    "subtitle": "Daily weigh-ins & meal logging",
+    "description": "CUT OS brings daily weigh-ins, balanced meals, and estimated nutrition totals\ninto one focused check-in for adults who lift.\n\n- See one clear next action for today.\n- Log or update one daily weigh-in.\n- Choose from six curated balanced-meal options.\n- Review ingredients, common allergens, portions, and estimated nutrition.\n- Log, edit, or delete meals and see today's estimated nutrition totals.\n- Keep account data synced and delete the account in-app.\n\nCUT OS provides general fitness and nutrition information, not medical advice.\nMeal nutrition is estimated. Ingredient and common-allergen lists must be\nreviewed against the exact products you use and are not an allergen-safety\nguarantee.\n\nCUT OS is for adults age 18 and older. Paid access uses an auto-renewable Apple\nsubscription. The exact localized price and billing period appear before you\nconfirm purchase. You can restore purchases in the app and manage or cancel the\nsubscription through Apple.",
+    "keywords": "weight,meal,protein,macros,lifting,nutrition,weigh-in,tracker,calorie,food,diet,bodybuilding,fiber",
     "primaryCategory": "Health & Fitness",
     "secondaryCategory": null,
     "madeForKids": false,
-    "promotionalText": null,
+    "promotionalText": "One focused daily check-in for lifters: log a weigh-in, choose a balanced meal, and review today's estimated nutrition totals.",
     "marketingUrl": null,
     "whatsNew": null,
     "whatsNewPosition": "not_applicable_initial_release",
@@ -61,6 +61,7 @@
     "appTaxCategory": null,
     "dsaStatus": null,
     "appStoreServerNotifications": {
+      "deliveryArchitecture": "revenuecat_direct",
       "status": "pending_configuration",
       "productionUrl": null,
       "sandboxUrl": null,
@@ -197,6 +198,9 @@
     },
     "revenueCat": {
       "productionMappingStatus": "pending",
+      "appStoreConnectApiKeyStatus": "pending",
+      "subscriptionKeyStatus": "pending",
+      "verifiedAtUtc": null,
       "evidenceReference": null
     },
     "exactBuildEvidence": {

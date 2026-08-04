@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { clerkOperationSucceeded } from "@/lib/auth-flow";
 
 export default function SignInScreen() {
   const { signIn, errors, fetchStatus } = useSignIn();
@@ -32,13 +33,22 @@ export default function SignInScreen() {
 
   const handleSubmit = async () => {
     setSubmitError(null);
-    const { error } = await signIn.password({ emailAddress, password });
-    if (error) {
+    const passwordAccepted = await clerkOperationSucceeded(() =>
+      signIn.password({ emailAddress, password }),
+    );
+    if (!passwordAccepted) {
       setSubmitError("Couldn't sign in. Double-check your email and password.");
       return;
     }
     if (signIn.status === "complete") {
-      await signIn.finalize({ navigate: () => router.replace("/today") });
+      const finalized = await clerkOperationSucceeded(() =>
+        signIn.finalize({ navigate: () => router.replace("/today") }),
+      );
+      if (!finalized) {
+        setSubmitError(
+          "Couldn't finish signing in. Check your connection and try again.",
+        );
+      }
     } else {
       setSubmitError("Additional verification is required to sign in.");
     }

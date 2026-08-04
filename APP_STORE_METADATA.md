@@ -35,12 +35,12 @@ coaching, personalized targets, trends, workouts, reminders, progress,
 closeout, or weekly review to the listing or screenshots until those features
 ship and are verified.
 
-**Subtitle draft:** Your daily cut check-in
+**Subtitle draft:** Daily weigh-ins & meal logging
 
 **Description draft:**
 
-CUT OS gives adults who lift a simple daily sequence for the fundamentals of a
-cut.
+CUT OS brings daily weigh-ins, balanced meals, and estimated nutrition totals
+into one focused check-in for adults who lift.
 
 - See one clear next action for today.
 - Log or update one daily weigh-in.
@@ -59,7 +59,9 @@ subscription. The exact localized price and billing period appear before you
 confirm purchase. You can restore purchases in the app and manage or cancel the
 subscription through Apple.
 
-**Keywords draft:** cut,weight,meal,protein,macros,lifting,nutrition,weigh-in,fitness
+**Keywords draft:** weight,meal,protein,macros,lifting,nutrition,weigh-in,tracker,calorie,food,diet,bodybuilding,fiber
+
+**Promotional text draft:** One focused daily check-in for lifters: log a weigh-in, choose a balanced meal, and review today's estimated nutrition totals.
 
 The owner, counsel, and qualified nutrition reviewer must approve this copy
 after the final binary and catalog review. StoreKit-localized price and period
@@ -79,13 +81,13 @@ invent a value.
 | Bundle ID                  | `com.zarifahmed.cut`                         | Must match the signed archive and existing App Store Connect record.                                                                                                                                                                                                                                     |
 | App version                | `1.0.0`                                      | Must match the submitted build.                                                                                                                                                                                                                                                                          |
 | Primary language           | English (U.S.) / `en-US`                     | Confirm in App Store Connect.                                                                                                                                                                                                                                                                            |
-| Subtitle                   | Your daily cut check-in                      | Owner/reviewer approval remains open.                                                                                                                                                                                                                                                                    |
+| Subtitle                   | Daily weigh-ins & meal logging               | Owner/reviewer approval remains open.                                                                                                                                                                                                                                                                    |
 | Description                | Focused v1 listing copy above                | Owner, legal, nutrition, and final-binary review remain open.                                                                                                                                                                                                                                            |
 | Keywords                   | Draft above                                  | Recheck byte limit and owner approval before submission.                                                                                                                                                                                                                                                 |
 | Primary category           | Health & Fitness                             | Owner must confirm against the final feature set.                                                                                                                                                                                                                                                        |
 | Secondary category         | None                                         | Safe v1 omission unless the owner selects a supported second category.                                                                                                                                                                                                                                   |
 | Made for Kids              | No                                           | Do not select the Kids category.                                                                                                                                                                                                                                                                         |
-| Promotional text           | Omit for initial v1                          | Optional; any later copy must describe only shipped behavior.                                                                                                                                                                                                                                            |
+| Promotional text           | Focused v1 promotional copy above            | Owner/reviewer approval remains open; keep it aligned with verified shipped behavior.                                                                                                                                                                                                                    |
 | Marketing URL              | Omit for initial v1                          | Optional; do not add until a public, accurate marketing page exists.                                                                                                                                                                                                                                     |
 | What's New                 | Not applicable to the initial 1.0 submission | Supply truthful release notes for later versions.                                                                                                                                                                                                                                                        |
 | Support URL                | Unresolved                                   | Owner must supply and verify a public, functional HTTPS page.                                                                                                                                                                                                                                            |
@@ -101,7 +103,7 @@ invent a value.
 | License agreement          | Unresolved                                   | Owner/counsel chooses Apple's standard EULA or an approved custom EULA.                                                                                                                                                                                                                                  |
 | App tax category           | Unresolved                                   | Owner/counsel/finance confirms the live App Store Connect value; do not copy the subscription tax category by assumption.                                                                                                                                                                                |
 | DSA trader status          | Unresolved                                   | Owner/counsel confirms trader, non-trader, or a documented no-EU-distribution position.                                                                                                                                                                                                                  |
-| Server Notifications       | Pending                                      | Verify production and sandbox HTTPS endpoints in App Store Connect and retain non-secret evidence.                                                                                                                                                                                                       |
+| Server Notifications       | RevenueCat direct; URLs pending              | Use the full dashboard-issued RevenueCat URL in both production and sandbox App Store Connect fields, then retain non-secret evidence.                                                                                                                                                                   |
 | Release method             | Manual release                               | Keep manual until the owner explicitly approves both submission and public release in App Store Connect.                                                                                                                                                                                                 |
 
 ## Age rating and questionnaire

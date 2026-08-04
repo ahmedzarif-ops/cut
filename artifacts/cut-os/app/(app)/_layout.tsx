@@ -13,7 +13,7 @@ import {
   useUpdateMe,
 } from "@workspace/api-client-react";
 import * as SecureStore from "expo-secure-store";
-import { Redirect, Stack, usePathname } from "expo-router";
+import { Redirect, Stack, usePathname, useRouter } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
@@ -777,6 +777,7 @@ function SubscriptionRouteBoundary({
   onSignOut: () => void | Promise<void>;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const qc = useQueryClient();
   const subscription = useSubscriptionGate();
   const onSettings = pathname === "/settings" || pathname.endsWith("/settings");
@@ -822,6 +823,7 @@ function SubscriptionRouteBoundary({
         title="Access check needed"
         message="CUT OS couldn't verify CUT OS Pro access. Paid health and nutrition screens remain locked until the check succeeds."
         onRetry={subscription.retryServer}
+        onManageAccount={() => router.push("/settings")}
         onSignOut={onSignOut}
       />
     );
@@ -864,11 +866,13 @@ function GateError({
   title = "Account check needed",
   message,
   onRetry,
+  onManageAccount,
   onSignOut,
 }: {
   title?: string;
   message: string;
   onRetry: () => void;
+  onManageAccount?: () => void;
   onSignOut: () => void | Promise<void>;
 }) {
   const c = useColors();
@@ -921,6 +925,19 @@ function GateError({
           Retry
         </Text>
       </Pressable>
+      {onManageAccount ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: signOutBusy }}
+          disabled={signOutBusy}
+          style={[styles.secondaryButton, signOutBusy && styles.buttonDisabled]}
+          onPress={onManageAccount}
+        >
+          <Text style={[styles.secondaryText, { color: c.primary }]}>
+            Manage account &amp; billing
+          </Text>
+        </Pressable>
+      ) : null}
       {signOutError ? (
         <Text
           accessibilityRole="alert"

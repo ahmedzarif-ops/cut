@@ -1,10 +1,13 @@
+import { useAuth, useSession } from "@clerk/expo";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  getMe as getMeRequest,
   getGetMeQueryKey,
   getGetMyProfileQueryKey,
+  updateMe as updateMeRequest,
+  upsertMyProfile as upsertMyProfileRequest,
   useGetMe,
   useGetMyProfile,
-  useUpsertMyProfile,
 } from "@workspace/api-client-react";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -24,9 +27,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import {
   GOALS,
+  ProfileSavePrincipalChangedError,
+  convertProfileDraftUnits,
+  executeOwnedProfileSave,
   formStateToProfileInput,
   profileToFormState,
   type ProfileFormState,
+  type WeightUnits,
 } from "@/lib/profile-form";
 
 const LABELS: Record<string, string> = {
@@ -34,6 +41,8 @@ const LABELS: Record<string, string> = {
   maintain: "Maintain",
   recomp: "Recomp",
   gain: "Gain",
+  metric: "Kilograms (kg)",
+  imperial: "Pounds (lb)",
 };
 
 /**
@@ -92,7 +101,13 @@ export default function OnboardingScreen() {
   }
 
   const profile = profileQuery.data ?? null;
-  return <OnboardingForm initial={profileToFormState(profile)} />;
+  const initialUnits = meQuery.data?.units ?? "metric";
+  return (
+    <OnboardingForm
+      initial={profileToFormState(profile, initialUnits)}
+      initialUnits={initialUnits}
+    />
+  );
 }
 
 function LoadErrorView({ onRetry }: { onRetry: () => void }) {
@@ -125,38 +140,127 @@ function LoadErrorView({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-function OnboardingForm({ initial }: { initial: ProfileFormState }) {
+function OnboardingForm({
+  initial,
+  initialUnits,
+}: {
+  initial: ProfileFormState;
+  initialUnits: WeightUnits;
+}) {
   const c = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const s = makeStyles(c);
+  const { userId, sessionId } = useAuth();
+  const { session } = useSession();
 
-  const upsertProfile = useUpsertMyProfile();
-
-  const [form, setForm] = React.useState<ProfileFormState>(initial);
+  const [draft, setDraft] = React.useState(() => ({
+    form: initial,
+    units: initialUnits,
+  }));
+  const { form, units } = draft;
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState(false);
+  const saveLock = React.useRef(false);
+  const mounted = React.useRef(true);
+  const currentPrincipal = React.useRef({
+    userId: userId ?? null,
+    sessionId: sessionId ?? null,
+  });
+  currentPrincipal.current = {
+    userId: userId ?? null,
+    sessionId: sessionId ?? null,
+  };
+
+  React.useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
+
+  const busy = saving;
 
   const set = <K extends keyof ProfileFormState>(
     key: K,
     value: ProfileFormState[K],
-  ) => setForm((prev) => ({ ...prev, [key]: value }));
+  ) => {
+    if (!busy) {
+      setDraft((current) => ({
+        ...current,
+        form: { ...current.form, [key]: value },
+      }));
+    }
+  };
 
-  const busy = upsertProfile.isPending;
+  const selectUnits = (nextUnits: WeightUnits) => {
+    if (!busy) {
+      setDraft((current) => convertProfileDraftUnits(current, nextUnits));
+    }
+  };
 
   const handleSave = async () => {
+    if (
+      !userId ||
+      !sessionId ||
+      !session ||
+      session.id !== sessionId ||
+      session.user?.id !== userId ||
+      saveLock.current
+    ) {
+      return;
+    }
+
+    const ownerUserId = userId;
+    const ownerSessionId = sessionId;
+    const ownerSession = session;
+    const isCurrentPrincipal = () =>
+      mounted.current &&
+      currentPrincipal.current.userId === ownerUserId &&
+      currentPrincipal.current.sessionId === ownerSessionId;
+
+    saveLock.current = true;
+    setSaving(true);
     setSubmitError(null);
     try {
-      await upsertProfile.mutateAsync({
-        data: formStateToProfileInput(form),
+      const saved = await executeOwnedProfileSave({
+        ownerUserId,
+        ownerSessionId,
+        currentPrincipal: () => currentPrincipal.current,
+        getToken: () =>
+          tokenWithinTimeout(() => ownerSession.getToken({ skipCache: true })),
+        updateAccount: (token) =>
+          updateMeRequest(
+            { units },
+            { headers: { Authorization: `Bearer ${token}` } },
+          ),
+        upsertProfile: (token) =>
+          upsertMyProfileRequest(formStateToProfileInput(form, units), {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        readAccount: (token) =>
+          getMeRequest({ headers: { Authorization: `Bearer ${token}` } }),
       });
-      await qc.invalidateQueries({ queryKey: getGetMyProfileQueryKey() });
-      await qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      if (!isCurrentPrincipal()) return;
+
+      qc.setQueryData(getGetMyProfileQueryKey(), saved.profile);
+      qc.setQueryData(getGetMeQueryKey(), saved.account);
+      qc.setQueryData([...getGetMeQueryKey(), ownerUserId], saved.account);
       router.replace("/today");
-    } catch {
+    } catch (error) {
+      if (
+        error instanceof ProfileSavePrincipalChangedError ||
+        !isCurrentPrincipal()
+      ) {
+        return;
+      }
       setSubmitError(
         "Couldn't save your profile. Check your entries and retry.",
       );
+    } finally {
+      saveLock.current = false;
+      if (isCurrentPrincipal()) setSaving(false);
     }
   };
 
@@ -171,7 +275,15 @@ function OnboardingForm({ initial }: { initial: ProfileFormState }) {
         return (
           <Pressable
             key={option}
-            style={[s.chip, active && s.chipActive]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active, disabled: busy }}
+            disabled={busy}
+            style={({ pressed }) => [
+              s.chip,
+              active && s.chipActive,
+              busy && s.buttonDisabled,
+              pressed && !busy && s.buttonPressed,
+            ]}
             onPress={() => onSelect(option)}
           >
             <Text style={[s.chipText, active && s.chipTextActive]}>
@@ -205,32 +317,42 @@ function OnboardingForm({ initial }: { initial: ProfileFormState }) {
           placeholderTextColor={c.mutedForeground}
           value={form.displayName}
           onChangeText={(v) => set("displayName", v)}
+          editable={!busy}
         />
 
         <Text style={s.label}>Goal</Text>
         {renderChips(GOALS, form.goal, (v) => set("goal", v))}
 
+        <Text style={s.label}>Weight units</Text>
+        {renderChips(["metric", "imperial"] as const, units, selectUnits)}
+
         <View style={s.twoCol}>
           <View style={s.col}>
-            <Text style={s.label}>Start weight (kg)</Text>
+            <Text style={s.label}>
+              Start weight ({units === "imperial" ? "lb" : "kg"})
+            </Text>
             <TextInput
               style={s.input}
               keyboardType="decimal-pad"
-              placeholder="85"
+              placeholder={units === "imperial" ? "187" : "85"}
               placeholderTextColor={c.mutedForeground}
               value={form.startWeightKg}
               onChangeText={(v) => set("startWeightKg", v)}
+              editable={!busy}
             />
           </View>
           <View style={s.col}>
-            <Text style={s.label}>Goal weight (kg)</Text>
+            <Text style={s.label}>
+              Goal weight ({units === "imperial" ? "lb" : "kg"})
+            </Text>
             <TextInput
               style={s.input}
               keyboardType="decimal-pad"
-              placeholder="78"
+              placeholder={units === "imperial" ? "172" : "78"}
               placeholderTextColor={c.mutedForeground}
               value={form.goalWeightKg}
               onChangeText={(v) => set("goalWeightKg", v)}
+              editable={!busy}
             />
           </View>
         </View>
@@ -263,6 +385,22 @@ function OnboardingForm({ initial }: { initial: ProfileFormState }) {
       </ScrollView>
     </KeyboardAvoidingView>
   );
+}
+
+async function tokenWithinTimeout(
+  getToken: () => Promise<string | null>,
+): Promise<string | null> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      getToken(),
+      new Promise<null>((resolve) => {
+        timeout = setTimeout(() => resolve(null), 5000);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
 }
 
 function makeStyles(c: ReturnType<typeof useColors>) {

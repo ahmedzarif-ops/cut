@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 
 import { describe, expect, it, vi } from "vitest";
 
-import { verifyLiveLegalSite } from "./verify-live-legal-site.mjs";
+import {
+  MAX_LIVE_LEGAL_RESOURCE_BYTES,
+  verifyLiveLegalSite,
+} from "./verify-live-legal-site.mjs";
 
 const origin = "https://legal.cutos.app";
 const environment = {
@@ -59,18 +62,51 @@ function fixture() {
   };
 }
 
+function responseBody(chunks, options = {}) {
+  let index = 0;
+  return new ReadableStream(
+    {
+      pull(controller) {
+        options.onPull?.();
+        if (index >= chunks.length) {
+          controller.close();
+          return;
+        }
+        controller.enqueue(chunks[index]);
+        index += 1;
+      },
+      cancel(reason) {
+        options.onCancel?.(reason);
+      },
+    },
+    { highWaterMark: 0 },
+  );
+}
+
 function response(url, content, options = {}) {
   const contentType =
     options.contentType ??
     (url.endsWith(".css")
       ? "text/css; charset=utf-8"
       : "text/html; charset=utf-8");
+  const encoder = new TextEncoder();
+  const contentBytes = encoder.encode(content);
+  const chunks = (options.chunks ?? [contentBytes]).map((chunk) =>
+    typeof chunk === "string" ? encoder.encode(chunk) : chunk,
+  );
+  const headers = new Headers({ "content-type": contentType });
+  if (options.contentLength !== null) {
+    headers.set(
+      "content-length",
+      String(options.contentLength ?? contentBytes.byteLength),
+    );
+  }
   return {
     status: options.status ?? 200,
     redirected: options.redirected ?? false,
     url: options.url ?? url,
-    headers: { get: (name) => (name === "content-type" ? contentType : null) },
-    text: async () => content,
+    headers,
+    body: responseBody(chunks, options),
   };
 }
 
@@ -94,6 +130,79 @@ describe("live legal-site verifier", () => {
       expect(options.redirect).toBe("manual");
       expect(options.signal).toBeInstanceOf(AbortSignal);
     }
+  });
+
+  it("rejects an oversized declared body before streaming and aborts it", async () => {
+    const { contents, approvalRecord } = fixture();
+    let privacySignal;
+    let pullCount = 0;
+    let cancelled = false;
+    const fetchImpl = vi.fn(async (url, options) => {
+      const resource = new URL(url).pathname;
+      if (resource !== "/privacy") {
+        return response(url, contents[resource]);
+      }
+      privacySignal = options.signal;
+      return response(url, contents[resource], {
+        contentLength: MAX_LIVE_LEGAL_RESOURCE_BYTES + 1,
+        onPull: () => {
+          pullCount += 1;
+        },
+        onCancel: () => {
+          cancelled = true;
+        },
+      });
+    });
+
+    const issues = await verifyLiveLegalSite({
+      environment,
+      approvalRecord,
+      fetchImpl,
+    });
+
+    expect(issues).toContainEqual({
+      resource: "/privacy",
+      reason: "response body exceeds safety limit",
+    });
+    expect(pullCount).toBe(0);
+    expect(cancelled).toBe(true);
+    expect(privacySignal?.aborted).toBe(true);
+  });
+
+  it("rejects an oversized chunked body while streaming and aborts it", async () => {
+    const { contents, approvalRecord } = fixture();
+    let privacySignal;
+    let cancelled = false;
+    const fetchImpl = vi.fn(async (url, options) => {
+      const resource = new URL(url).pathname;
+      if (resource !== "/privacy") {
+        return response(url, contents[resource]);
+      }
+      privacySignal = options.signal;
+      return response(url, contents[resource], {
+        contentLength: null,
+        chunks: [
+          new Uint8Array(MAX_LIVE_LEGAL_RESOURCE_BYTES),
+          new Uint8Array(1),
+        ],
+        onCancel: () => {
+          cancelled = true;
+        },
+      });
+    });
+
+    const issues = await verifyLiveLegalSite({
+      environment,
+      approvalRecord,
+      fetchImpl,
+    });
+
+    expect(issues).toContainEqual({
+      resource: "/privacy",
+      reason: "response body exceeds safety limit",
+    });
+    expect(cancelled).toBe(true);
+    expect(privacySignal?.aborted).toBe(true);
   });
 
   it("rejects changed bytes and draft, counsel, noindex, and canonical tampering", async () => {

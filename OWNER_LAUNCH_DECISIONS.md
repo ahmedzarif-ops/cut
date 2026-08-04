@@ -54,7 +54,7 @@ Recommended focused launch configuration:
 - Subscription Product Reference Name (internal): `CUT OS Pro Monthly`.
 - US English Subscription Group Display Name: `CUT OS Pro`.
 - US English Auto-Renewable Subscription Display Name: `CUT OS Pro Monthly`.
-- US English description: `Daily check-ins, weigh-ins, and meal logging.`
+- US English description: `Daily weigh-ins, balanced meals, and nutrition totals.`
 - Duration: monthly.
 - United States price: **$4.99/month**.
 - Introductory offer: **no free trial**.
@@ -65,8 +65,8 @@ Exact approval phrase:
 > Approve $4.99 monthly, no trial, using
 > `com.zarifahmed.cut.pro.monthly`; internal group `CUT OS Pro`; internal product
 > `CUT OS Pro Monthly`; US English group display `CUT OS Pro`; US English
-> subscription display `CUT OS Pro Monthly`; and description `Daily check-ins,
-weigh-ins, and meal logging.`
+> subscription display `CUT OS Pro Monthly`; and description `Daily weigh-ins,
+balanced meals, and nutrition totals.`
 
 Do not create the real App Store product until the owner approves these terms.
 
@@ -124,19 +124,25 @@ The owner must explicitly choose and record:
 - the app tax category and the auto-renewable subscription tax category;
 - the Digital Services Act trader/non-trader position, or a documented
   not-applicable position if EU distribution is excluded;
-- production and sandbox App Store Server Notifications URLs, after the live
-  endpoints are deployed and verified; and
+- the full dashboard-issued RevenueCat Apple Server Notification URL after the
+  live iOS app is configured, saved identically in Apple's production and
+  sandbox fields; and
 - evidence that each choice was saved in App Store Connect.
 
-The working records keep every item `null` or pending. Do not infer a free app,
-EULA, tax category, DSA status, or notification endpoint from the source code
-or the proposed monthly subscription.
+The working records keep every owner/legal item `null` or pending. Engineering
+has fixed the v1 delivery architecture to RevenueCat direct because the API
+does not implement an Apple notification receiver; the exact dashboard URL and
+saved App Store Connect evidence remain pending. Do not infer a free app, EULA,
+tax category, DSA status, or live notification endpoint from the source code or
+the proposed monthly subscription.
 
 **Working recommendation for the fastest narrow U.S. launch, pending owner,
 counsel, and tax review:** free app download; Apple's standard EULA; app tax
 category `App Store software`; subscription tax category `Match to parent app`;
 United States distribution only; no EU distribution and the corresponding
 documented DSA not-applicable position; and manual release after approval.
+Use RevenueCat's full Apple Server Notification URL identically for production
+and sandbox rather than inventing API endpoints that CUT does not serve.
 
 ## Decision 6 — subscription display and accessibility disclosure
 

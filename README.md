@@ -42,32 +42,42 @@ real App Store purchases.
 
 ### Environment variables
 
-| Var                                  | Used by                       | Purpose                                                        |
-| ------------------------------------ | ----------------------------- | -------------------------------------------------------------- |
-| `DATABASE_URL`                       | api-server, lib/db            | Postgres connection; production requires `sslmode=verify-full` |
-| `CLERK_PUBLISHABLE_KEY`              | api-server, cut-os dev script | Clerk client key for local/Replit development                  |
-| `CLERK_SECRET_KEY`                   | api-server                    | Clerk server key, FAPI proxy, and backend account deletion     |
-| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`  | cut-os EAS release            | Clerk publishable key embedded in the submitted app            |
-| `EXPO_PUBLIC_DOMAIN`                 | cut-os EAS release            | HTTPS API hostname embedded in the submitted app               |
-| `EXPO_PUBLIC_CLERK_PROXY_URL`        | cut-os EAS release            | Exact same-origin `https://<domain>/api/__clerk` route         |
-| `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` | cut-os EAS release            | RevenueCat public Apple SDK key embedded in the app            |
-| `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | cut-os EAS release            | Public Privacy Policy opened from sign-up and Settings         |
-| `EXPO_PUBLIC_TERMS_URL`              | cut-os EAS release            | Public Terms of Use opened from sign-up and Settings           |
-| `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Public support page opened from Settings                       |
-| `PUBLIC_APP_ORIGIN`                  | cut-os public server          | Canonical public HTTPS origin used for Expo preview deep links |
-| `PORT`                               | api-server                    | Listen port (Replit-provided)                                  |
-| `API_MAX_INSTANCES`                  | api-server production         | Actual platform max; only `1` is supported until shared limits |
-| `ACCOUNT_DELETION_RETRY_INTERVAL_MS` | api-server production         | Optional integer `1000`-`300000`; defaults to `60000`          |
-| `REVENUECAT_SECRET_API_KEY`          | api-server                    | Server-only RevenueCat REST API v2 secret                      |
-| `REVENUECAT_PROJECT_ID`              | api-server                    | RevenueCat REST API v2 project resource ID (`proj...`)         |
-| `REVENUECAT_ENTITLEMENT_REST_ID`     | api-server                    | RevenueCat v2 entitlement resource ID (`entl...`)              |
+| Var                                  | Used by                       | Purpose                                                         |
+| ------------------------------------ | ----------------------------- | --------------------------------------------------------------- |
+| `DATABASE_URL`                       | api-server, lib/db            | Postgres connection; production requires `sslmode=verify-full`  |
+| `CLERK_PUBLISHABLE_KEY`              | api-server, cut-os dev script | Clerk client key for local/Replit development                   |
+| `CLERK_SECRET_KEY`                   | api-server                    | Clerk server key, FAPI proxy, and backend account deletion      |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`  | cut-os EAS release            | Clerk publishable key embedded in the submitted app             |
+| `EXPO_PUBLIC_DOMAIN`                 | cut-os EAS release            | HTTPS API hostname embedded in the submitted app                |
+| `EXPO_PUBLIC_CLERK_PROXY_URL`        | cut-os EAS release            | Exact same-origin `https://<domain>/api/__clerk` route          |
+| `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` | cut-os EAS release            | RevenueCat public Apple SDK key embedded in the app             |
+| `EXPO_PUBLIC_REVENUECAT_PRODUCT_ID`  | cut-os EAS release            | Exact approved App Store subscription product ID                |
+| `EXPO_PUBLIC_PRIVACY_POLICY_URL`     | cut-os EAS release            | Public Privacy Policy opened from sign-up and Settings          |
+| `EXPO_PUBLIC_TERMS_URL`              | cut-os EAS release            | Public Terms of Use opened from sign-up and Settings            |
+| `EXPO_PUBLIC_SUPPORT_URL`            | cut-os EAS release            | Public support page opened from Settings                        |
+| `PUBLIC_APP_ORIGIN`                  | cut-os public server          | Canonical public HTTPS origin used for Expo preview deep links  |
+| `PORT`                               | api-server                    | Listen port (Replit-provided)                                   |
+| `API_MAX_INSTANCES`                  | api-server production         | Actual platform max; only `1` is supported until shared limits  |
+| `API_RATE_LIMIT`                     | api-server production         | Optional requests/minute integer `1`-`10000`; default `100`     |
+| `CLERK_RATE_LIMIT`                   | api-server production         | Optional proxy requests/minute integer `1`-`1000`; default `30` |
+| `PG_POOL_MAX`                        | api-server production         | Optional database pool integer `1`-`20`; default `5`            |
+| `ACCOUNT_DELETION_RETRY_INTERVAL_MS` | api-server production         | Optional integer `1000`-`300000`; defaults to `60000`           |
+| `REVENUECAT_SECRET_API_KEY`          | api-server                    | Server-only RevenueCat REST API v2 secret                       |
+| `REVENUECAT_PROJECT_ID`              | api-server                    | RevenueCat REST API v2 project resource ID (`proj...`)          |
+| `REVENUECAT_ENTITLEMENT_REST_ID`     | api-server                    | RevenueCat v2 entitlement resource ID (`entl...`)               |
+| `REVENUECAT_APP_REST_ID`             | api-server                    | RevenueCat v2 iOS app resource ID (`app...`)                    |
 
-All seven `EXPO_PUBLIC_*` release values must be configured and verified in the
+All eight `EXPO_PUBLIC_*` release values must be configured and verified in the
 production EAS environment before TestFlight. They are public app
-configuration, never secret storage. The three RevenueCat server values belong
+configuration, never secret storage. The four RevenueCat server values belong
 only in the API deployment. The development script derives the API and Clerk
 values automatically, but an EAS build does not inherit that shell mapping.
 See `EAS_RELEASE_RUNBOOK.md`.
+
+Any build profile that configures `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` must
+also configure the exact `EXPO_PUBLIC_REVENUECAT_PRODUCT_ID`; a preview or Test
+Store build with an unbound catalog fails validation instead of reaching a
+paywall that can never load a purchasable plan.
 
 `PUBLIC_APP_ORIGIN` is required by the production public server and is never
 derived from request headers. API production startup also fails closed unless
@@ -78,6 +88,19 @@ The account-deletion worker runs once immediately at startup, then waits for
 each non-overlapping run to settle before scheduling the next bounded retry.
 Production rejects retry intervals outside 1 second through 5 minutes rather
 than passing unsafe values to the Node timer.
+
+Production startup reads RevenueCat's official v2 app, entitlement, and
+entitlement-product list shapes. A semantic/auth/not-found mismatch remains
+fatal unless the sole active subscription is
+`com.zarifahmed.cut.pro.monthly`, belongs to the exact iOS app, has duration
+`P1M`, and reports no trial. RevenueCat's documented app response does not
+expose whether the App Store Connect API key or Apple subscription key is
+configured, so the server does not invent those fields. Release instead
+requires controlled RevenueCat-dashboard evidence for both keys plus StoreKit
+and purchase QA on the exact submitted build. Transient timeouts, network
+failures, rate limits, and provider 5xx responses emit only a sanitized degraded
+warning so account and deletion APIs can start; subscription checks still fail
+closed.
 
 ## Tests & checks
 

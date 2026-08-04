@@ -20,6 +20,9 @@ const approvalRecordPath = join(
   "legal-publication-approval.json",
 );
 const DEFAULT_TIMEOUT_MS = 10_000;
+export const MAX_LIVE_LEGAL_RESOURCE_BYTES = 1_000_000;
+const RESPONSE_BODY_UNREADABLE = Symbol("response-body-unreadable");
+const RESPONSE_TOO_LARGE = Symbol("response-too-large");
 
 const PAGE_RESOURCES = [
   {
@@ -199,6 +202,71 @@ function parseConfiguredPageUrls(environment, basePath) {
   };
 }
 
+function contentLength(response) {
+  const rawValue = response.headers?.get?.("content-length");
+  if (typeof rawValue !== "string" || !/^\d+$/u.test(rawValue.trim())) {
+    return null;
+  }
+  const value = Number(rawValue);
+  return Number.isFinite(value) ? value : Number.POSITIVE_INFINITY;
+}
+
+async function abortResponseBody(response, controller, reason) {
+  if (!controller.signal.aborted) controller.abort(reason);
+  try {
+    await response.body?.cancel?.(reason);
+  } catch {
+    // Aborting the fetch may close the body before explicit cancellation.
+  }
+}
+
+async function readBoundedBody(response, controller) {
+  const declaredLength = contentLength(response);
+  if (
+    declaredLength !== null &&
+    declaredLength > MAX_LIVE_LEGAL_RESOURCE_BYTES
+  ) {
+    await abortResponseBody(response, controller, RESPONSE_TOO_LARGE);
+    throw RESPONSE_TOO_LARGE;
+  }
+
+  if (response.body === null) return "";
+  if (!response.body || typeof response.body.getReader !== "function") {
+    throw RESPONSE_BODY_UNREADABLE;
+  }
+
+  const reader = response.body.getReader();
+  const chunks = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!(value instanceof Uint8Array)) {
+        await reader.cancel(RESPONSE_BODY_UNREADABLE).catch(() => undefined);
+        throw RESPONSE_BODY_UNREADABLE;
+      }
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_LIVE_LEGAL_RESOURCE_BYTES) {
+        if (!controller.signal.aborted) controller.abort(RESPONSE_TOO_LARGE);
+        await reader.cancel(RESPONSE_TOO_LARGE).catch(() => undefined);
+        throw RESPONSE_TOO_LARGE;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
 async function fetchResource(
   fetchImpl,
   { resource, expectedUrl, expectedContentType },
@@ -243,17 +311,19 @@ async function fetchResource(
         issue(resource, `content type must be ${expectedContentType}`),
       );
     }
-    if (issues.length > 0) return { issues };
-
-    if (typeof response.text !== "function") {
-      return { issues: [issue(resource, "response body could not be read")] };
+    if (issues.length > 0) {
+      await abortResponseBody(response, controller, issues);
+      return { issues };
     }
-    return { issues: [], content: await response.text() };
+    return {
+      issues: [],
+      content: await readBoundedBody(response, controller),
+    };
   })();
 
   const timeout = new Promise((_, reject) => {
     timeoutId = setTimeout(() => {
-      controller.abort();
+      controller.abort(timeoutToken);
       reject(timeoutToken);
     }, timeoutMs);
   });
@@ -261,13 +331,18 @@ async function fetchResource(
   try {
     return await Promise.race([operation, timeout]);
   } catch (error) {
+    const abortReason = controller.signal.reason;
     return {
       issues: [
         issue(
           resource,
-          error === timeoutToken || controller.signal.aborted
-            ? "request timed out"
-            : "request failed",
+          error === RESPONSE_TOO_LARGE || abortReason === RESPONSE_TOO_LARGE
+            ? "response body exceeds safety limit"
+            : error === RESPONSE_BODY_UNREADABLE
+              ? "response body could not be read"
+              : error === timeoutToken || abortReason === timeoutToken
+                ? "request timed out"
+                : "request failed",
         ),
       ],
     };

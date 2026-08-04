@@ -16,6 +16,23 @@ import {
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
+export const APP_STORE_RELEASE_EVIDENCE_TARGETS = Object.freeze([
+  "app_review",
+  "public_release",
+]);
+
+export function verifyAppStoreReleaseEvidenceBoundary({
+  repoRoot = DEFAULT_REPO_ROOT,
+  verifyBoundary = verifyPostBuildEvidenceBoundary,
+} = {}) {
+  const evidence = verifyBoundary({ repoRoot });
+  if (!APP_STORE_RELEASE_EVIDENCE_TARGETS.includes(evidence?.releaseTarget)) {
+    throw new PostBuildEvidenceError(
+      "release_manifest_target_not_app_store_release",
+    );
+  }
+  return evidence;
+}
 
 export const ACCEPTED_SCREENSHOT_DIMENSIONS = Object.freeze([
   Object.freeze({ width: 1260, height: 2736 }),
@@ -34,6 +51,14 @@ export const EXPECTED_SHOT_IDS = Object.freeze([
   "08-adult-eligibility",
   "09-settings-controls",
   "10-sign-up-18plus",
+]);
+
+export const EXPECTED_LISTING_SHOT_IDS = Object.freeze([
+  "01-today-next-action",
+  "03-balanced-options",
+  "04-meal-preview",
+  "05-today-nutrition-logged",
+  "06-logged-meal-controls",
 ]);
 
 export const MAX_REVIEW_ACCOUNT_EVIDENCE_AGE_MS = 24 * 60 * 60 * 1000;
@@ -990,12 +1015,17 @@ function validateCommercialAndLegal({ value, release, check }) {
   const notifications = value.appStoreServerNotifications;
   check(
     hasExactKeys(notifications, [
+      "deliveryArchitecture",
       "status",
       "productionUrl",
       "sandboxUrl",
       "evidenceReference",
     ]),
     "commercialAndLegal.appStoreServerNotifications must contain exactly the required keys",
+  );
+  check(
+    notifications?.deliveryArchitecture === "revenuecat_direct",
+    "commercialAndLegal.appStoreServerNotifications.deliveryArchitecture must remain revenuecat_direct for v1",
   );
   check(
     ["pending_configuration", "confirmed_in_app_store_connect"].includes(
@@ -1005,8 +1035,28 @@ function validateCommercialAndLegal({ value, release, check }) {
   );
   for (const field of ["productionUrl", "sandboxUrl"]) {
     check(
-      notifications?.[field] === null || validHttpsUrl(notifications[field]),
-      `commercialAndLegal.appStoreServerNotifications.${field} must be null or HTTPS`,
+      notifications?.[field] === null ||
+        validRevenueCatNotificationUrl(notifications[field]),
+      `commercialAndLegal.appStoreServerNotifications.${field} must be null or the full RevenueCat incoming-webhooks URL`,
+    );
+  }
+  const notificationUrls = [
+    notifications?.productionUrl,
+    notifications?.sandboxUrl,
+  ].filter((value) => value !== null && value !== undefined);
+  for (const url of notificationUrls) {
+    check(
+      validRevenueCatNotificationUrl(url),
+      "revenuecat_direct App Store Server Notifications URLs must use the full RevenueCat incoming-webhooks URL without query or fragment",
+    );
+  }
+  if (
+    notifications?.productionUrl !== null &&
+    notifications?.sandboxUrl !== null
+  ) {
+    check(
+      notifications.productionUrl === notifications.sandboxUrl,
+      "revenuecat_direct production and sandbox notification URLs must be identical",
     );
   }
   check(
@@ -1656,26 +1706,53 @@ function validateSubscription({ value, listing, release, check }) {
     );
   }
 
+  const revenueCat = value.revenueCat;
   check(
-    hasExactKeys(value.revenueCat, [
+    hasExactKeys(revenueCat, [
       "productionMappingStatus",
+      "appStoreConnectApiKeyStatus",
+      "subscriptionKeyStatus",
+      "verifiedAtUtc",
       "evidenceReference",
     ]),
     "subscription.revenueCat must contain exactly the required keys",
   );
+  for (const field of [
+    "productionMappingStatus",
+    "appStoreConnectApiKeyStatus",
+    "subscriptionKeyStatus",
+  ]) {
+    check(
+      ["pending", "verified"].includes(revenueCat?.[field]),
+      `subscription.revenueCat.${field} must be pending or verified`,
+    );
+  }
   check(
-    ["pending", "verified"].includes(value.revenueCat?.productionMappingStatus),
-    "subscription.revenueCat.productionMappingStatus must be pending or verified",
+    revenueCat?.verifiedAtUtc === null ||
+      validIsoTimestamp(revenueCat?.verifiedAtUtc),
+    "subscription.revenueCat.verifiedAtUtc must be null or a UTC ISO timestamp",
   );
   check(
-    nullableNonEmptyString(value.revenueCat?.evidenceReference),
+    nullableNonEmptyString(revenueCat?.evidenceReference),
     "subscription.revenueCat.evidenceReference must be null or non-empty",
   );
-  if (value.revenueCat?.productionMappingStatus === "verified") {
+  if (revenueCat?.productionMappingStatus === "verified") {
     check(
-      typeof value.revenueCat?.evidenceReference === "string" &&
-        value.revenueCat.evidenceReference.trim().length > 0,
+      typeof revenueCat?.evidenceReference === "string" &&
+        revenueCat.evidenceReference.trim().length > 0,
       "verified subscription RevenueCat mapping requires evidence",
+    );
+  }
+  if (
+    ["appStoreConnectApiKeyStatus", "subscriptionKeyStatus"].some(
+      (field) => revenueCat?.[field] === "verified",
+    )
+  ) {
+    check(
+      validIsoTimestamp(revenueCat?.verifiedAtUtc) &&
+        typeof revenueCat?.evidenceReference === "string" &&
+        revenueCat.evidenceReference.trim().length > 0,
+      "verified RevenueCat Apple credentials require dashboard UTC evidence",
     );
   }
 
@@ -1800,10 +1877,13 @@ function validateSubscription({ value, listing, release, check }) {
     `${prefix} requires subscription review screenshot uploaded in App Store Connect`,
   );
   check(
-    value.revenueCat?.productionMappingStatus === "verified" &&
-      typeof value.revenueCat?.evidenceReference === "string" &&
-      value.revenueCat.evidenceReference.trim().length > 0,
-    `${prefix} requires verified RevenueCat production mapping evidence`,
+    revenueCat?.productionMappingStatus === "verified" &&
+      revenueCat?.appStoreConnectApiKeyStatus === "verified" &&
+      revenueCat?.subscriptionKeyStatus === "verified" &&
+      validIsoTimestamp(revenueCat?.verifiedAtUtc) &&
+      typeof revenueCat?.evidenceReference === "string" &&
+      revenueCat.evidenceReference.trim().length > 0,
+    `${prefix} requires verified RevenueCat production mapping and Apple credential dashboard evidence`,
   );
   for (const field of [
     "storeKitOfferStatus",
@@ -2054,6 +2134,23 @@ function validHttpsUrl(value) {
   }
 }
 
+function validRevenueCatNotificationUrl(value) {
+  if (!validHttpsUrl(value)) return false;
+  try {
+    const parsed = new URL(value);
+    return Boolean(
+      parsed.origin === "https://api.revenuecat.com" &&
+      parsed.search === "" &&
+      parsed.hash === "" &&
+      /^\/v1\/incoming-webhooks\/apple-server-notifications\/[A-Za-z0-9_-]{8,255}$/u.test(
+        parsed.pathname,
+      ),
+    );
+  } catch {
+    return false;
+  }
+}
+
 function validIsoTimestamp(value) {
   return (
     typeof value === "string" &&
@@ -2072,10 +2169,14 @@ function listingFromMarkdown(markdown) {
     /^\*\*Description draft:\*\*[ \t]*\n([\s\S]*?)\n\*\*Keywords draft:\*\*/m,
   )?.[1];
   const keywords = markdown.match(/^\*\*Keywords draft:\*\*[ \t]*(.+)$/m)?.[1];
+  const promotionalText = markdown.match(
+    /^\*\*Promotional text draft:\*\*[ \t]*(.+)$/m,
+  )?.[1];
   return {
     subtitle: subtitle?.trim(),
     description: description?.trim(),
     keywords: keywords?.trim(),
+    promotionalText: promotionalText?.trim(),
   };
 }
 
@@ -2396,11 +2497,18 @@ export function validateMetadata({
     /AI chat/i,
     /social community/i,
   ];
-  for (const claim of prohibitedUnshippedClaims) {
-    check(
-      !claim.test(listing.description ?? ""),
-      `listing.description advertises an unshipped feature matching ${claim}`,
-    );
+  const publicClaimSurfaces = [
+    ["description", listing.description],
+    ["subtitle", listing.subtitle],
+    ["promotionalText", listing.promotionalText],
+  ];
+  for (const [field, value] of publicClaimSurfaces) {
+    for (const claim of prohibitedUnshippedClaims) {
+      check(
+        !claim.test(typeof value === "string" ? value : ""),
+        `listing.${field} advertises an unshipped feature matching ${claim}`,
+      );
+    }
   }
 
   const documentedListing = listingFromMarkdown(metadataMarkdown ?? "");
@@ -2415,6 +2523,10 @@ export function validateMetadata({
   check(
     documentedListing.keywords === listing.keywords,
     "machine-readable keywords must match APP_STORE_METADATA.md",
+  );
+  check(
+    documentedListing.promotionalText === listing.promotionalText,
+    "machine-readable promotional text must match APP_STORE_METADATA.md",
   );
 
   check(
@@ -3690,6 +3802,11 @@ export function validateScreenshotManifest({
     }
   }
 
+  check(
+    arraysEqual(manifest?.listingSelection, EXPECTED_LISTING_SHOT_IDS),
+    "listingSelection must match the approved initial screenshot story",
+  );
+
   if (release) {
     const listingSelection = manifest.listingSelection ?? [];
     check(
@@ -3810,7 +3927,7 @@ function main() {
 
   if (errors.length === 0 && release) {
     try {
-      verifyPostBuildEvidenceBoundary({ repoRoot: DEFAULT_REPO_ROOT });
+      verifyAppStoreReleaseEvidenceBoundary({ repoRoot: DEFAULT_REPO_ROOT });
     } catch (error) {
       const code =
         error instanceof PostBuildEvidenceError

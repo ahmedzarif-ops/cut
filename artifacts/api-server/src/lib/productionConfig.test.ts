@@ -21,6 +21,7 @@ const validProductionEnvironment: NodeJS.ProcessEnv = {
   REVENUECAT_SECRET_API_KEY: "sk_RevenueCatSecret1234",
   REVENUECAT_PROJECT_ID: "projProduction1234",
   REVENUECAT_ENTITLEMENT_REST_ID: "entlProduction1234",
+  REVENUECAT_APP_REST_ID: "appProduction1234",
   CORS_ALLOWED_ORIGINS: "https://api.cut.example.com",
   API_MAX_INSTANCES: "1",
   ACCOUNT_DELETION_RETRY_INTERVAL_MS: "60000",
@@ -45,6 +46,7 @@ describe("production configuration", () => {
         "REVENUECAT_SECRET_API_KEY",
         "REVENUECAT_PROJECT_ID",
         "REVENUECAT_ENTITLEMENT_REST_ID",
+        "REVENUECAT_APP_REST_ID",
         "HTTPS_ALLOWED_ORIGIN",
         "API_MAX_INSTANCES",
       ],
@@ -107,6 +109,9 @@ describe("production configuration", () => {
     ["REVENUECAT_ENTITLEMENT_REST_ID", "entitlement_12345678"],
     ["REVENUECAT_ENTITLEMENT_REST_ID", "entl/bad-value"],
     ["REVENUECAT_ENTITLEMENT_REST_ID", "entl_________"],
+    ["REVENUECAT_APP_REST_ID", "iosapp_12345678"],
+    ["REVENUECAT_APP_REST_ID", "app/bad-value"],
+    ["REVENUECAT_APP_REST_ID", "app_________"],
   ] as const)("rejects malformed %s", (name, value) => {
     expect(
       validateProductionConfiguration({
@@ -187,6 +192,39 @@ describe("production configuration", () => {
       expect(validateProductionConfiguration(environment)).toEqual([]);
     },
   );
+
+  it.each([
+    ["API_RATE_LIMIT", "0"],
+    ["API_RATE_LIMIT", "1.5"],
+    ["API_RATE_LIMIT", "10001"],
+    ["CLERK_RATE_LIMIT", "NaN"],
+    ["CLERK_RATE_LIMIT", "01"],
+    ["CLERK_RATE_LIMIT", "1001"],
+    ["PG_POOL_MAX", "0"],
+    ["PG_POOL_MAX", "2.5"],
+    ["PG_POOL_MAX", "21"],
+  ] as const)("rejects unsafe production tuning %s=%s", (name, value) => {
+    expect(
+      validateProductionConfiguration({
+        ...validProductionEnvironment,
+        [name]: value,
+      }),
+    ).toContain(name);
+  });
+
+  it("accepts absent defaults and exact tuning boundaries", () => {
+    expect(validateProductionConfiguration(validProductionEnvironment)).toEqual(
+      [],
+    );
+    expect(
+      validateProductionConfiguration({
+        ...validProductionEnvironment,
+        API_RATE_LIMIT: "10000",
+        CLERK_RATE_LIMIT: "1000",
+        PG_POOL_MAX: "20",
+      }),
+    ).toEqual([]);
+  });
 
   it("never includes a DSN or secret value in a production startup error", () => {
     const environment = {

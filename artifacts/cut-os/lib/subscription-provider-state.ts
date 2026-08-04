@@ -7,6 +7,10 @@ import {
 export type SubscriptionActionResult =
   "cancelled" | "entitled" | "pending" | "not_entitled";
 
+export const POST_PURCHASE_CONFIRMATION_DELAYS_MS = [
+  1_000, 2_000, 4_000, 8_000,
+] as const;
+
 export interface ProviderPrincipalToken {
   readonly owner: string;
   readonly generation: number;
@@ -70,6 +74,57 @@ export async function confirmServerSubscriptionRefresh<
 
   commit(owner, status);
   return status;
+}
+
+function waitFor(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+/**
+ * Reconciles a completed StoreKit action with the server-authoritative
+ * RevenueCat entitlement. RevenueCat webhooks can arrive shortly after the
+ * device receives an active entitlement, so that specific state gets a small,
+ * bounded retry window. Local store state never grants access by itself.
+ *
+ * A restore with no local Pro entitlement performs exactly one server check:
+ * this still recovers a server-confirmed entitlement without making a user who
+ * owns nothing wait through the propagation window.
+ */
+export async function confirmSubscriptionAfterStoreAction<
+  TStatus extends ServerSubscriptionSnapshot,
+>({
+  localHasProEntitlement,
+  confirm,
+  wait = waitFor,
+  retryDelaysMs = POST_PURCHASE_CONFIRMATION_DELAYS_MS,
+}: {
+  localHasProEntitlement: boolean;
+  confirm: () => Promise<TStatus>;
+  wait?: (milliseconds: number) => Promise<void>;
+  retryDelaysMs?: readonly number[];
+}): Promise<TStatus | null> {
+  let lastStatus: TStatus | null = null;
+  const delays = localHasProEntitlement ? [0, ...retryDelaysMs] : [0];
+
+  for (const delay of delays) {
+    if (delay > 0) await wait(delay);
+
+    try {
+      const status = await confirm();
+      lastStatus = status;
+      if (status.entitled || !localHasProEntitlement) return status;
+    } catch (error) {
+      if (
+        error instanceof SubscriptionAdapterError &&
+        error.code === "principal_changed"
+      ) {
+        throw error;
+      }
+      if (!localHasProEntitlement) return null;
+    }
+  }
+
+  return lastStatus;
 }
 
 export function resolveAccessRecheck(

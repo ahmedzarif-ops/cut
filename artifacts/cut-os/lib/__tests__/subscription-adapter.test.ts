@@ -11,6 +11,7 @@ import {
 const USER_A = "d9428888-122b-4a5f-a4e8-0a0f874235a8";
 const USER_B = "7d444840-9dc0-11d1-b245-5ffdce74fad2";
 const PUBLIC_KEY = "appl_PublicIosKey1234";
+const PRODUCT_ID = "com.zarifahmed.cut.pro.monthly";
 
 function customer(
   entitled = false,
@@ -139,42 +140,25 @@ function packageItem(input: {
   };
 }
 
+function adapterFor(bridge: RevenueCatBridge) {
+  return createSubscriptionAdapter(bridge, PRODUCT_ID);
+}
+
 describe("RevenueCat subscription adapter", () => {
-  it("configures with only the internal UUID and preserves remote package order", async () => {
+  it("configures with only the internal UUID and exposes the bound production product", async () => {
     const bridge = new FakeBridge();
     bridge.offering = {
       availablePackages: [
         packageItem({
-          packageIdentifier: "quarterly_remote_first",
-          productIdentifier: "cut.quarterly",
-          title: "Quarterly",
-          priceString: "€24,99",
-          period: "P3M",
-          intro: {
-            price: 0,
-            priceString: "€0,00",
-            period: "P1W",
-            cycles: 2,
-          },
-        }),
-        packageItem({
-          packageIdentifier: "annual_remote_second",
-          productIdentifier: "cut.annual",
-          title: "Annual",
-          priceString: "€79,99",
-          period: "P1Y",
-        }),
-        packageItem({
-          packageIdentifier: "lifetime_not_a_subscription",
-          productIdentifier: "cut.lifetime",
-          title: "Lifetime",
-          priceString: "€199,99",
-          period: null,
+          packageIdentifier: "monthly",
+          productIdentifier: PRODUCT_ID,
+          title: "CUT OS Pro Monthly",
+          priceString: "€4,99",
+          period: "P1M",
         }),
       ],
     };
-    bridge.eligibility = { "cut.quarterly": true, "cut.annual": false };
-    const adapter = createSubscriptionAdapter(bridge);
+    const adapter = adapterFor(bridge);
 
     const connection = await adapter.connect(PUBLIC_KEY, USER_A, () => {});
     const plans = await adapter.loadPlans(USER_A);
@@ -185,21 +169,155 @@ describe("RevenueCat subscription adapter", () => {
     });
     expect(JSON.stringify(bridge.calls)).not.toContain("email");
     expect(connection.customer.hasProEntitlement).toBe(false);
-    expect(plans.map((plan) => plan.packageIdentifier)).toEqual([
-      "quarterly_remote_first",
-      "annual_remote_second",
-    ]);
+    expect(plans).toHaveLength(1);
     expect(plans[0]).toMatchObject({
-      priceString: "€24,99",
-      periodLabel: "3 months",
-      introductoryText: "Free for 2 weeks, then €24,99 per 3 months",
+      packageIdentifier: "monthly",
+      productIdentifier: PRODUCT_ID,
+      priceString: "€4,99",
+      periodLabel: "month",
+      introductoryText: null,
     });
-    expect(plans[1]?.introductoryText).toBeNull();
+    expect(bridge.calls.some((call) => call.name === "checkIntro")).toBe(false);
+  });
+
+  it("fails closed when the offering contains a rogue product", async () => {
+    const bridge = new FakeBridge();
+    bridge.offering = {
+      availablePackages: [
+        packageItem({
+          packageIdentifier: "monthly",
+          productIdentifier: PRODUCT_ID,
+          title: "CUT OS Pro Monthly",
+          priceString: "$4.99",
+          period: "P1M",
+        }),
+        packageItem({
+          packageIdentifier: "rogue_annual",
+          productIdentifier: "com.zarifahmed.cut.pro.annual",
+          title: "Rogue Annual",
+          priceString: "$49.99",
+          period: "P1Y",
+        }),
+      ],
+    };
+    const adapter = adapterFor(bridge);
+    await adapter.connect(PUBLIC_KEY, USER_A, () => {});
+
+    await expect(adapter.loadPlans(USER_A)).rejects.toEqual(
+      new SubscriptionAdapterError("unavailable"),
+    );
+    await expect(adapter.purchase(USER_A, "monthly")).rejects.toEqual(
+      new SubscriptionAdapterError("plan_unavailable"),
+    );
+    expect(bridge.calls.some((call) => call.name === "purchase")).toBe(false);
+  });
+
+  it("fails closed when the production product appears in duplicate packages", async () => {
+    const bridge = new FakeBridge();
+    bridge.offering = {
+      availablePackages: [
+        packageItem({
+          packageIdentifier: "monthly",
+          productIdentifier: PRODUCT_ID,
+          title: "CUT OS Pro Monthly",
+          priceString: "$4.99",
+          period: "P1M",
+        }),
+        packageItem({
+          packageIdentifier: "monthly_duplicate",
+          productIdentifier: PRODUCT_ID,
+          title: "CUT OS Pro Monthly",
+          priceString: "$4.99",
+          period: "P1M",
+        }),
+      ],
+    };
+    const adapter = adapterFor(bridge);
+    await adapter.connect(PUBLIC_KEY, USER_A, () => {});
+
+    await expect(adapter.loadPlans(USER_A)).rejects.toEqual(
+      new SubscriptionAdapterError("unavailable"),
+    );
+  });
+
+  it("fails closed when the production product has an introductory offer", async () => {
+    const bridge = new FakeBridge();
+    bridge.offering = {
+      availablePackages: [
+        packageItem({
+          packageIdentifier: "monthly",
+          productIdentifier: PRODUCT_ID,
+          title: "CUT OS Pro Monthly",
+          priceString: "$4.99",
+          period: "P1M",
+          intro: {
+            price: 0,
+            priceString: "$0.00",
+            period: "P1W",
+            cycles: 1,
+          },
+        }),
+      ],
+    };
+    bridge.eligibility = { [PRODUCT_ID]: false };
+    const adapter = adapterFor(bridge);
+    await adapter.connect(PUBLIC_KEY, USER_A, () => {});
+
+    await expect(adapter.loadPlans(USER_A)).rejects.toEqual(
+      new SubscriptionAdapterError("unavailable"),
+    );
+    expect(bridge.calls.some((call) => call.name === "checkIntro")).toBe(false);
+  });
+
+  it("fails closed when the bound monthly product has another duration", async () => {
+    const bridge = new FakeBridge();
+    bridge.offering = {
+      availablePackages: [
+        packageItem({
+          packageIdentifier: "monthly",
+          productIdentifier: PRODUCT_ID,
+          title: "CUT OS Pro Monthly",
+          priceString: "$49.99",
+          period: "P1Y",
+        }),
+      ],
+    };
+    const adapter = adapterFor(bridge);
+    await adapter.connect(PUBLIC_KEY, USER_A, () => {});
+
+    await expect(adapter.loadPlans(USER_A)).rejects.toEqual(
+      new SubscriptionAdapterError("unavailable"),
+    );
+    await expect(adapter.purchase(USER_A, "monthly")).rejects.toEqual(
+      new SubscriptionAdapterError("plan_unavailable"),
+    );
+    expect(bridge.calls.some((call) => call.name === "purchase")).toBe(false);
+  });
+
+  it("fails closed when no production product is compiled into the app", async () => {
+    const bridge = new FakeBridge();
+    bridge.offering = {
+      availablePackages: [
+        packageItem({
+          packageIdentifier: "monthly",
+          productIdentifier: PRODUCT_ID,
+          title: "CUT OS Pro Monthly",
+          priceString: "$4.99",
+          period: "P1M",
+        }),
+      ],
+    };
+    const adapter = createSubscriptionAdapter(bridge, "");
+    await adapter.connect(PUBLIC_KEY, USER_A, () => {});
+
+    await expect(adapter.loadPlans(USER_A)).rejects.toEqual(
+      new SubscriptionAdapterError("unavailable"),
+    );
   });
 
   it("switches custom UUIDs directly and never creates an anonymous user", async () => {
     const bridge = new FakeBridge();
-    const adapter = createSubscriptionAdapter(bridge);
+    const adapter = adapterFor(bridge);
     await adapter.connect(PUBLIC_KEY, USER_A, () => {});
 
     await adapter.connect(PUBLIC_KEY, USER_B, () => {});
@@ -220,14 +338,14 @@ describe("RevenueCat subscription adapter", () => {
       availablePackages: [
         packageItem({
           packageIdentifier: "monthly",
-          productIdentifier: "cut.monthly",
+          productIdentifier: PRODUCT_ID,
           title: "Monthly",
           priceString: "$9.99",
           period: "P1M",
         }),
       ],
     };
-    const adapter = createSubscriptionAdapter(bridge);
+    const adapter = adapterFor(bridge);
     const updatesA: boolean[] = [];
     const updatesB: boolean[] = [];
     await adapter.connect(PUBLIC_KEY, USER_A, (snapshot) =>
@@ -265,7 +383,7 @@ describe("RevenueCat subscription adapter", () => {
       availablePackages: [
         packageItem({
           packageIdentifier: "monthly",
-          productIdentifier: "cut.monthly",
+          productIdentifier: PRODUCT_ID,
           title: "Monthly",
           priceString: "$9.99",
           period: "P1M",
@@ -273,7 +391,7 @@ describe("RevenueCat subscription adapter", () => {
       ],
     };
     bridge.purchaseError = { code: "cancelled", privateMessage: "do not show" };
-    const adapter = createSubscriptionAdapter(bridge);
+    const adapter = adapterFor(bridge);
     await adapter.connect(PUBLIC_KEY, USER_A, () => {});
     await adapter.loadPlans(USER_A);
 
@@ -284,7 +402,7 @@ describe("RevenueCat subscription adapter", () => {
 
   it("rejects packages that were not in the active remote offering", async () => {
     const bridge = new FakeBridge();
-    const adapter = createSubscriptionAdapter(bridge);
+    const adapter = adapterFor(bridge);
     await adapter.connect(PUBLIC_KEY, USER_A, () => {});
 
     await expect(adapter.purchase(USER_A, "invented_annual")).rejects.toEqual(
@@ -297,7 +415,7 @@ describe("RevenueCat subscription adapter", () => {
     const bridge = new FakeBridge();
     bridge.currentCustomer = customer(true);
     bridge.offeringError = new Error("catalog unavailable");
-    const adapter = createSubscriptionAdapter(bridge);
+    const adapter = adapterFor(bridge);
     await adapter.connect(PUBLIC_KEY, USER_A, () => {});
 
     await expect(adapter.loadPlans(USER_A)).rejects.toMatchObject({
@@ -313,7 +431,7 @@ describe("RevenueCat subscription adapter", () => {
 
   it("disconnect removes local listeners without calling RevenueCat logout", async () => {
     const bridge = new FakeBridge();
-    const adapter = createSubscriptionAdapter(bridge);
+    const adapter = adapterFor(bridge);
     await adapter.connect(PUBLIC_KEY, USER_A, () => {});
 
     await adapter.disconnect(USER_A);

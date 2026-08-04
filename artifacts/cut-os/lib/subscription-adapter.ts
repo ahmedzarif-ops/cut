@@ -1,12 +1,13 @@
 import {
   CUT_OS_PRO_ENTITLEMENT_ID,
-  formatIntroductoryOffer,
   formatSubscriptionPeriod,
   safeHttpsUrl,
   type StoreCustomerSnapshot,
   type StoreIntroductoryOffer,
   type StorePlan,
 } from "./subscription";
+
+export const CUT_OS_MONTHLY_SUBSCRIPTION_PERIOD = "P1M" as const;
 
 export interface RawCustomerInfo {
   entitlements: { active: Record<string, unknown> };
@@ -85,8 +86,12 @@ export interface SubscriptionAdapter {
 
 export function createSubscriptionAdapter(
   bridge: RevenueCatBridge,
+  productionProductIdentifier = process.env.EXPO_PUBLIC_REVENUECAT_PRODUCT_ID,
 ): SubscriptionAdapter {
-  return new PrincipalIsolatedSubscriptionAdapter(bridge);
+  return new PrincipalIsolatedSubscriptionAdapter(
+    bridge,
+    productionProductIdentifier,
+  );
 }
 
 class PrincipalIsolatedSubscriptionAdapter implements SubscriptionAdapter {
@@ -97,7 +102,10 @@ class PrincipalIsolatedSubscriptionAdapter implements SubscriptionAdapter {
   private listener: ((info: RawCustomerInfo) => void) | null = null;
   private packages = new Map<string, RawStorePackage>();
 
-  constructor(private readonly bridge: RevenueCatBridge) {}
+  constructor(
+    private readonly bridge: RevenueCatBridge,
+    private readonly productionProductIdentifier: string | undefined,
+  ) {}
 
   connect(
     apiKey: string,
@@ -257,25 +265,38 @@ class PrincipalIsolatedSubscriptionAdapter implements SubscriptionAdapter {
     generation: number,
   ): Promise<StorePlan[]> {
     if (!offering) return [];
-    const subscriptionPackages = offering.availablePackages.filter(
-      (item) =>
-        formatSubscriptionPeriod(item.product.subscriptionPeriod) !== null,
-    );
-    const productIds = subscriptionPackages.map(
-      (item) => item.product.identifier,
-    );
-    const eligibility = await this.bridge
-      .checkIntroEligibility(productIds)
-      .catch(() => ({}) as Record<string, boolean>);
     this.assertPrincipal(internalUserId, generation);
 
-    const uniquePackageIds = new Set<string>();
-    const plans: StorePlan[] = [];
-    for (const item of subscriptionPackages) {
-      if (uniquePackageIds.has(item.identifier)) continue;
-      uniquePackageIds.add(item.identifier);
-      this.packages.set(item.identifier, item);
-      plans.push({
+    const productIdentifier = this.requireProductionProductIdentifier();
+    const availablePackages = offering.availablePackages;
+    if (availablePackages.length === 0) return [];
+
+    const packageIdentifiers = new Set<string>();
+    const productIdentifiers = new Set<string>();
+    for (const item of availablePackages) {
+      const periodLabel = formatSubscriptionPeriod(
+        item.product.subscriptionPeriod,
+      );
+      if (
+        !item.identifier ||
+        packageIdentifiers.has(item.identifier) ||
+        productIdentifiers.has(item.product.identifier) ||
+        item.product.identifier !== productIdentifier ||
+        item.product.subscriptionPeriod !==
+          CUT_OS_MONTHLY_SUBSCRIPTION_PERIOD ||
+        periodLabel !== "month" ||
+        item.product.introPrice !== null
+      ) {
+        throw new SubscriptionAdapterError("unavailable");
+      }
+      packageIdentifiers.add(item.identifier);
+      productIdentifiers.add(item.product.identifier);
+    }
+
+    const item = availablePackages[0]!;
+    this.packages.set(item.identifier, item);
+    return [
+      {
         packageIdentifier: item.identifier,
         productIdentifier: item.product.identifier,
         title: item.product.title,
@@ -283,15 +304,21 @@ class PrincipalIsolatedSubscriptionAdapter implements SubscriptionAdapter {
         priceString: item.product.priceString,
         subscriptionPeriod: item.product.subscriptionPeriod,
         periodLabel: formatSubscriptionPeriod(item.product.subscriptionPeriod),
-        introductoryText: formatIntroductoryOffer(
-          item.product.introPrice,
-          eligibility[item.product.identifier] === true,
-          item.product.priceString,
-          item.product.subscriptionPeriod,
-        ),
-      });
+        introductoryText: null,
+      },
+    ];
+  }
+
+  private requireProductionProductIdentifier(): string {
+    const productIdentifier = this.productionProductIdentifier;
+    if (
+      !productIdentifier ||
+      productIdentifier !== productIdentifier.trim() ||
+      !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(productIdentifier)
+    ) {
+      throw new SubscriptionAdapterError("unavailable");
     }
-    return plans;
+    return productIdentifier;
   }
 
   private capturePrincipal(internalUserId: string): number {

@@ -11,6 +11,7 @@ describe("poolConfig", () => {
 
   it("reads PG_POOL_MAX from the environment", () => {
     expect(poolConfig({ PG_POOL_MAX: "12" }).max).toBe(12);
+    expect(poolConfig({ PG_POOL_MAX: "20" }).max).toBe(20);
     expect(poolConfig({ PG_POOL_MAX: "1" }).max).toBe(1);
   });
 
@@ -23,6 +24,9 @@ describe("poolConfig", () => {
     expect(poolConfig({ PG_POOL_MAX: "-3" }).max).toBe(5);
     expect(poolConfig({ PG_POOL_MAX: "2.5" }).max).toBe(5);
     expect(poolConfig({ PG_POOL_MAX: "Infinity" }).max).toBe(5);
+    expect(poolConfig({ PG_POOL_MAX: "01" }).max).toBe(5);
+    expect(poolConfig({ PG_POOL_MAX: "21" }).max).toBe(5);
+    expect(poolConfig({ PG_POOL_MAX: "100000" }).max).toBe(5);
   });
 
   it("passes DATABASE_URL through as the connection string", () => {

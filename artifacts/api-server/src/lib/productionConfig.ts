@@ -1,6 +1,11 @@
 import { isPublishableKey, parsePublishableKey } from "@clerk/shared/keys";
 import { buildAllowedOrigins } from "./allowedHosts";
 import { parseAccountDeletionRetryInterval } from "./accountDeletionRetryInterval";
+import {
+  API_RATE_LIMIT_MAXIMUM,
+  CLERK_RATE_LIMIT_MAXIMUM,
+  parseBoundedInteger,
+} from "./boundedInteger";
 
 export type ProductionConfigurationIssue =
   | "DATABASE_URL"
@@ -9,10 +14,14 @@ export type ProductionConfigurationIssue =
   | "REVENUECAT_SECRET_API_KEY"
   | "REVENUECAT_PROJECT_ID"
   | "REVENUECAT_ENTITLEMENT_REST_ID"
+  | "REVENUECAT_APP_REST_ID"
   | "HTTPS_ALLOWED_ORIGIN"
   | "API_MAX_INSTANCES"
   | "SHARED_RATE_LIMIT_STORE"
-  | "ACCOUNT_DELETION_RETRY_INTERVAL_MS";
+  | "ACCOUNT_DELETION_RETRY_INTERVAL_MS"
+  | "API_RATE_LIMIT"
+  | "CLERK_RATE_LIMIT"
+  | "PG_POOL_MAX";
 
 const NON_PUBLIC_DNS_SUFFIXES = [
   ".example",
@@ -26,6 +35,7 @@ const NON_PUBLIC_DNS_SUFFIXES = [
   ".onion",
   ".test",
 ];
+const PG_POOL_MAXIMUM = 20;
 
 function isValidPublicHostname(hostname: string): boolean {
   const normalized = hostname.toLowerCase();
@@ -102,7 +112,7 @@ function isRevenueCatSecretKey(value: string | undefined): boolean {
 
 function isRevenueCatResourceId(
   value: string | undefined,
-  prefix: "proj" | "entl",
+  prefix: "proj" | "entl" | "app",
 ): boolean {
   const candidate = value?.trim();
   const suffix = candidate?.slice(prefix.length);
@@ -169,6 +179,9 @@ export function validateProductionConfiguration(
   if (!isRevenueCatResourceId(env.REVENUECAT_ENTITLEMENT_REST_ID, "entl")) {
     issues.push("REVENUECAT_ENTITLEMENT_REST_ID");
   }
+  if (!isRevenueCatResourceId(env.REVENUECAT_APP_REST_ID, "app")) {
+    issues.push("REVENUECAT_APP_REST_ID");
+  }
   if (!hasUsableHttpsAllowedOrigin(env)) {
     issues.push("HTTPS_ALLOWED_ORIGIN");
   }
@@ -178,6 +191,33 @@ export function validateProductionConfiguration(
     ) === null
   ) {
     issues.push("ACCOUNT_DELETION_RETRY_INTERVAL_MS");
+  }
+  if (
+    parseBoundedInteger(env.API_RATE_LIMIT, {
+      minimum: 1,
+      maximum: API_RATE_LIMIT_MAXIMUM,
+      defaultValue: 100,
+    }) === null
+  ) {
+    issues.push("API_RATE_LIMIT");
+  }
+  if (
+    parseBoundedInteger(env.CLERK_RATE_LIMIT, {
+      minimum: 1,
+      maximum: CLERK_RATE_LIMIT_MAXIMUM,
+      defaultValue: 30,
+    }) === null
+  ) {
+    issues.push("CLERK_RATE_LIMIT");
+  }
+  if (
+    parseBoundedInteger(env.PG_POOL_MAX, {
+      minimum: 1,
+      maximum: PG_POOL_MAXIMUM,
+      defaultValue: 5,
+    }) === null
+  ) {
+    issues.push("PG_POOL_MAX");
   }
 
   const maximumInstances = parseMaximumInstanceCount(env.API_MAX_INSTANCES);

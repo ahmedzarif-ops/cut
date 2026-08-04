@@ -1,0 +1,115 @@
+import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, relative, resolve } from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+
+function readRepoFile(path) {
+  return readFileSync(resolve(repoRoot, path), "utf8");
+}
+
+function sourceFilesUnder(path) {
+  const absolutePath = resolve(repoRoot, path);
+  return readdirSync(absolutePath, { withFileTypes: true }).flatMap((entry) => {
+    const childPath = resolve(absolutePath, entry.name);
+    if (entry.isDirectory()) {
+      return sourceFilesUnder(relative(repoRoot, childPath));
+    }
+    return /\.[cm]?[jt]sx?$/u.test(entry.name)
+      ? [relative(repoRoot, childPath)]
+      : [];
+  });
+}
+
+test("the Replit post-merge hook is dependency-install-only", () => {
+  const replitConfiguration = readRepoFile(".replit");
+  const postMergeHeader = replitConfiguration.match(/^\[postMerge\]\s*$/mu);
+  assert.ok(postMergeHeader, ".replit must keep an explicit postMerge section");
+  const sectionRemainder = replitConfiguration.slice(
+    (postMergeHeader.index ?? 0) + postMergeHeader[0].length,
+  );
+  const nextSectionOffset = sectionRemainder.search(/^\[/mu);
+  const postMergeSection =
+    nextSectionOffset === -1
+      ? sectionRemainder
+      : sectionRemainder.slice(0, nextSectionOffset);
+
+  const hookPath = postMergeSection.match(/^path\s*=\s*"([^"]+)"\s*$/mu)?.[1];
+  assert.equal(
+    hookPath,
+    "scripts/post-merge.sh",
+    "postMerge must remain bound to the audited hook",
+  );
+
+  const hookSource = readRepoFile(hookPath);
+  assert.equal(hookSource.split(/\r?\n/u)[0], "#!/bin/sh");
+
+  const executableLines = hookSource
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("#"));
+  assert.deepEqual(
+    executableLines,
+    ["set -eu", "pnpm install --frozen-lockfile"],
+    "postMerge may synchronize locked dependencies but may not delegate to or run database commands",
+  );
+});
+
+test("the API startup gate remains the only production migration implementation", () => {
+  const productionSourceFiles = [
+    ...sourceFilesUnder("artifacts/api-server/src"),
+    ...sourceFilesUnder("lib/db/src"),
+  ];
+  const migratorImplementations = productionSourceFiles.filter((path) =>
+    readRepoFile(path).includes("drizzle-orm/node-postgres/migrator"),
+  );
+  assert.deepEqual(migratorImplementations, [
+    "artifacts/api-server/src/lib/startupMigrations.ts",
+  ]);
+
+  const entrypoint = readRepoFile("artifacts/api-server/src/index.ts");
+  const prepareDatabase = entrypoint.indexOf(
+    "await prepareProductionDatabase();",
+  );
+  const bindListener = entrypoint.indexOf("app.listen(");
+  assert.ok(
+    prepareDatabase >= 0,
+    "the API must await its database startup gate",
+  );
+  assert.ok(
+    bindListener > prepareDatabase,
+    "the migration/readiness gate must finish before the API listener binds",
+  );
+
+  const startupMigrations = readRepoFile(
+    "artifacts/api-server/src/lib/startupMigrations.ts",
+  );
+  const productionOnlyGuard = startupMigrations.indexOf(
+    'if (env.NODE_ENV !== "production") return;',
+  );
+  const lockedMigration = startupMigrations.indexOf(
+    "await runStartupMigrations({",
+  );
+  const migrationStep = startupMigrations.indexOf(
+    "await (dependencies.migrate ?? ensureProductionMigrations)(env);",
+  );
+  const readinessStep = startupMigrations.indexOf(
+    "await (dependencies.checkReadiness ?? checkDatabaseReadiness)();",
+  );
+
+  assert.ok(
+    productionOnlyGuard >= 0,
+    "the startup migrator must be production-only",
+  );
+  assert.ok(
+    lockedMigration > productionOnlyGuard,
+    "production migrations must flow through the advisory-lock implementation",
+  );
+  assert.ok(migrationStep >= 0, "database preparation must apply migrations");
+  assert.ok(
+    readinessStep > migrationStep,
+    "exact migration readiness must be checked after migrations complete",
+  );
+});

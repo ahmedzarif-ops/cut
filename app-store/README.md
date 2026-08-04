@@ -84,7 +84,11 @@ Other fail-closed bindings are deliberate:
   bytes for shot `07-subscription-offer`;
 - subscription evidence records the effective U.S. USD price, owner-decision
   revision/reference, any introductory-offer terms, and exact App Store Connect
-  upload evidence; and
+  upload evidence. It separately requires direct RevenueCat-dashboard evidence
+  that both the App Store Connect API key and Apple in-app purchase/subscription
+  key are configured; the public v2 `GET app` response is not treated as proof.
+  Dashboard evidence must be paired with purchase, StoreKit-offer, and TestFlight
+  QA bound to the exact submitted build; and
 - a supported accessibility feature must list every canonical common task in
   order on the exact build. Captions and Audio Descriptions are the only
   features that may be marked not applicable when the app contains no media;

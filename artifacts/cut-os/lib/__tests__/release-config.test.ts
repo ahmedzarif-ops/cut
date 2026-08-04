@@ -1,5 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -14,6 +23,11 @@ const validatorPath = resolve(
   process.cwd(),
   "scripts/validate-release-config.mjs",
 );
+const PRODUCT_ID = "com.zarifahmed.cut.pro.monthly";
+const approvedSubscriptionReleaseRecord = {
+  productId: PRODUCT_ID,
+  introductoryOfferDecision: "none",
+};
 
 const productionEnvironment = {
   EAS_BUILD_PROFILE: "production",
@@ -21,17 +35,46 @@ const productionEnvironment = {
   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey("live"),
   EXPO_PUBLIC_CLERK_PROXY_URL: "https://api.example.com/api/__clerk",
   EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: "appl_PublicIosKey1234",
+  EXPO_PUBLIC_REVENUECAT_PRODUCT_ID: PRODUCT_ID,
   EXPO_PUBLIC_PRIVACY_POLICY_URL: "https://example.com/privacy",
   EXPO_PUBLIC_TERMS_URL: "https://example.com/terms",
   EXPO_PUBLIC_SUPPORT_URL: "https://example.com/support",
 };
 
-function runValidator(environment: Record<string, string>) {
-  return spawnSync(process.execPath, [validatorPath], {
-    cwd: process.cwd(),
-    encoding: "utf8",
-    env: { ...environment, NODE_ENV: "test" },
-  });
+function runValidator(
+  environment: Record<string, string>,
+  subscriptionReleaseRecord: Record<
+    string,
+    unknown
+  > = approvedSubscriptionReleaseRecord,
+) {
+  const temporaryRoot = mkdtempSync(join(tmpdir(), "cut-release-config-test-"));
+  const copiedValidatorPath = join(
+    temporaryRoot,
+    "artifacts/cut-os/scripts/validate-release-config.mjs",
+  );
+  const copiedReleaseRecordPath = join(
+    temporaryRoot,
+    "app-store/app-store-submission.json",
+  );
+  mkdirSync(dirname(copiedValidatorPath), { recursive: true });
+  mkdirSync(dirname(copiedReleaseRecordPath), { recursive: true });
+  copyFileSync(validatorPath, copiedValidatorPath);
+  writeFileSync(
+    copiedReleaseRecordPath,
+    JSON.stringify({ subscription: subscriptionReleaseRecord }),
+    "utf8",
+  );
+
+  try {
+    return spawnSync(process.execPath, [realpathSync(copiedValidatorPath)], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      env: { ...environment, NODE_ENV: "test" },
+    });
+  } finally {
+    rmSync(temporaryRoot, { recursive: true, force: true });
+  }
 }
 
 describe("release configuration validator", () => {
@@ -46,6 +89,7 @@ describe("release configuration validator", () => {
     expect(`${result.stdout}${result.stderr}`).not.toContain(
       productionEnvironment.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
     );
+    expect(`${result.stdout}${result.stderr}`).not.toContain(PRODUCT_ID);
   });
 
   it("reports all missing production variable names", () => {
@@ -57,6 +101,7 @@ describe("release configuration validator", () => {
       "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
       "EXPO_PUBLIC_CLERK_PROXY_URL",
       "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY",
+      "EXPO_PUBLIC_REVENUECAT_PRODUCT_ID",
       "EXPO_PUBLIC_PRIVACY_POLICY_URL",
       "EXPO_PUBLIC_TERMS_URL",
       "EXPO_PUBLIC_SUPPORT_URL",
@@ -83,6 +128,7 @@ describe("release configuration validator", () => {
       EXPO_PUBLIC_DOMAIN: "preview.example.com",
       EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey("test"),
       EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: "test_PublicTestKey1234",
+      EXPO_PUBLIC_REVENUECAT_PRODUCT_ID: PRODUCT_ID,
     });
 
     expect(result.status).toBe(0);
@@ -95,12 +141,26 @@ describe("release configuration validator", () => {
       EXPO_PUBLIC_DOMAIN: "preview.example.com",
       EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey("test"),
       EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: "test_PublicTestKey1234",
+      EXPO_PUBLIC_REVENUECAT_PRODUCT_ID: PRODUCT_ID,
     });
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain(
       "valid for the ios-simulator build profile",
     );
+  });
+
+  it("requires a bound product whenever preview configures RevenueCat", () => {
+    const result = runValidator({
+      EAS_BUILD_PROFILE: "preview",
+      EXPO_PUBLIC_DOMAIN: "preview.example.com",
+      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey("test"),
+      EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: "test_PublicTestKey1234",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("EXPO_PUBLIC_REVENUECAT_PRODUCT_ID");
+    expect(result.stderr).not.toContain("test_PublicTestKey1234");
   });
 
   it("fails closed for an unrecognized build profile", () => {
@@ -125,6 +185,42 @@ describe("release configuration validator", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("appl_ key for production");
     expect(result.stderr).not.toContain("test_PublicTestKey1234");
+  });
+
+  it("rejects a compiled product that does not match the release record", () => {
+    const recordProductId = "com.zarifahmed.cut.pro.annual";
+    const result = runValidator(productionEnvironment, {
+      ...approvedSubscriptionReleaseRecord,
+      productId: recordProductId,
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "must match the App Store subscription release record",
+    );
+    expect(`${result.stdout}${result.stderr}`).not.toContain(PRODUCT_ID);
+    expect(`${result.stdout}${result.stderr}`).not.toContain(recordProductId);
+  });
+
+  it("rejects a production release record with an introductory offer", () => {
+    const result = runValidator(productionEnvironment, {
+      ...approvedSubscriptionReleaseRecord,
+      introductoryOfferDecision: "free_trial",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("must disable introductory offers");
+  });
+
+  it("rejects a malformed compiled App Store product identifier", () => {
+    const result = runValidator({
+      ...productionEnvironment,
+      EXPO_PUBLIC_REVENUECAT_PRODUCT_ID: "invalid product identifier",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("must be an App Store product identifier");
+    expect(result.stderr).not.toContain("invalid product identifier");
   });
 
   it("requires the canonical proxy when preview embeds a live key", () => {
