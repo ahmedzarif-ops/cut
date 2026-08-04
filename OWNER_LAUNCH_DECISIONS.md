@@ -1,6 +1,6 @@
 # CUT OS — owner launch decisions
 
-**Updated:** August 3, 2026
+**Updated:** August 4, 2026
 **Purpose:** Record only the business, financial, identity, and legal decisions
 that engineering must not make for the owner.
 
@@ -14,12 +14,14 @@ that engineering must not make for the owner.
 
 ## Decision 1 — Apple seller and legal operator
 
-**Status:** Awaiting owner and qualified counsel.
+**Status:** Apple payment submitted; activation, seller verification, and
+qualified-counsel review remain pending.
 
-**Verified August 3, 2026:** The Apple Account currently open on this Mac is
-not enrolled in the Apple Developer Program. Apple's current enrollment price
-is **$99 USD per membership year**. No enrollment, payment, or agreement has
-been started.
+**Verified August 4, 2026:** The owner reports completing Apple's **$99 USD per
+membership year** payment. Apple's live account page recognizes the enrollment
+but still says purchase processing may take up to 48 hours. App Store Connect
+does not yet expose My Apps, and its business area currently redirects to an
+invalid-user state. Do not repeat the purchase while activation is pending.
 
 Apple App Review Guideline 5.1.1(ix) says apps requiring sensitive user
 information should be submitted by a legal entity rather than an individual
@@ -41,7 +43,9 @@ owner's personal legal name as the seller. The organization path instead needs
 a legal entity, D-U-N-S Number, organization-domain email and website, and a
 person with authority to bind the organization.
 
-Do not form an entity, enroll, pay Apple, or accept agreements automatically.
+Do not form an entity, repeat the Apple payment, or accept agreements
+automatically. When Apple activates the membership, record the actual seller
+name and individual/organization team type before creating the app record.
 
 ## Decision 2 — first real subscription
 

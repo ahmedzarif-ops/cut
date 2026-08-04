@@ -1,5 +1,20 @@
 # Authentication security prelaunch requirement
 
+## New-device and email second-factor continuation
+
+The Clerk development tenant has Client Trust enabled, so a valid password can
+still require an email code when the user signs in from a new device. CUT now
+handles both Clerk's `needs_client_trust` and `needs_second_factor` statuses when
+the tenant offers an email-code second factor. The flow sends and verifies the
+code through Clerk's MFA namespace, supports resend and restart, and fails
+closed for every unsupported factor or unknown status.
+
+No privileged Clerk key is embedded in the mobile app. Production release still
+requires exact-build evidence that password sign-in, a new-device email code,
+resend, an invalid or expired code, restart, and final session activation work
+against the production tenant. Do not disable Client Trust merely to bypass
+that verification.
+
 ## Password-reset account-enumeration timing
 
 **Release gate:** Public launch must remain blocked until a supported recovery
