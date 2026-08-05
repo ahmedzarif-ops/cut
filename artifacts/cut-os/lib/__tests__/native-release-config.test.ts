@@ -304,7 +304,7 @@ describe("native release configuration", () => {
     expect(workspaceConfig.packageManager).toBe("pnpm@10.34.5");
     expect(workspaceConfig.engines).toEqual({
       node: "24.x",
-      pnpm: "10.34.5",
+      pnpm: "10.26.1 || 10.34.5",
     });
     expect(workspaceConfig.devDependencies["eas-cli"]).toBe("21.4.0");
   });

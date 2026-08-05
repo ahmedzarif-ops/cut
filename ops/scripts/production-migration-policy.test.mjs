@@ -66,6 +66,11 @@ test("Replit runtime commands use the repository-pinned pnpm version", () => {
     "pnpm@10.34.5",
     "Corepack must resolve the repository's exact audited pnpm version",
   );
+  assert.equal(
+    workspacePackage.engines?.pnpm,
+    "10.26.1 || 10.34.5",
+    "only the observed provider bootstrap and exact project pnpm may pass the engine guard",
+  );
   assert.doesNotMatch(
     replitConfiguration,
     /^\s*deploymentTarget\s*=/mu,
@@ -107,7 +112,7 @@ test("Replit runtime commands use the repository-pinned pnpm version", () => {
     assert.doesNotMatch(
       source,
       /pnpm@/u,
-      `${path} must let Corepack read packageManager instead of asking Replit to install pnpm`,
+      `${path} must let Corepack read packageManager instead of embedding a second version selector`,
     );
     assert.doesNotMatch(
       source,

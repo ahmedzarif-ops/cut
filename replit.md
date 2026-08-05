@@ -7,8 +7,14 @@ PostgreSQL as the source of truth.
 ## Run & Operate
 
 - Replit service, deployment, and post-merge commands invoke `corepack pnpm`,
-  which resolves the exact `pnpm@10.34.5` version pinned by the repository
-  without asking Replit's build-package resolver to install pnpm itself.
+  so build and runtime commands resolve the exact `pnpm@10.34.5` version pinned
+  by the repository without embedding a second version selector in Replit's
+  command metadata.
+- The root `engines.pnpm` guard admits only Replit's observed provider
+  bootstrap (`10.26.1`) and the selected project version (`10.34.5`). Replit
+  uses that bootstrapper to install the exact `packageManager` pin before the
+  source-controlled build runs; the exception does not change the package
+  manager selected by Corepack.
 - `pnpm run build:production` — build the one production HTTP artifact (API +
   Clerk proxy + public launch/legal/support/status routes)
 - `pnpm run start:production` — start that sole production process on the
