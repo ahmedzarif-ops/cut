@@ -27,8 +27,9 @@
   `930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`,
   verifying the exact CUT iOS mapping and bounded customer-read access.
   Dashboard evidence verifies customer read/write permission without issuing a
-  test write or deletion. Production write/delete behavior, the separate App
-  Store Connect API credential, and exact-build restore-after-deletion QA
+  test write or deletion. The optional App Store Connect API sync credential is
+  intentionally omitted after Apple's live internal-use-only attestation.
+  Production write/delete behavior and exact-build restore-after-deletion QA
   remain open gates.
 - Replit now has the exact RevenueCat project, Apple app, entitlement, and
   offering REST IDs as non-secret configurations and the replacement server
@@ -38,9 +39,8 @@
   SDK key is provisioned without recording its value. Decision 3 owner
   authorization is confirmed; the old unconfigured RevenueCat key remains and
   has not been revoked. The production-shaped cross-app association and nullable
-  duration verifier mismatch is resolved. The separate App Store Connect API
-  credential and exact-build native QA remain pending, so production continues
-  to fail closed.
+  duration verifier mismatch is resolved. Exact-build native purchase and
+  restore QA remain pending, so production continues to fail closed.
 - Replit provisioned a production database during a first publish attempt while
   the development-data-copy control was off. The attempt was canceled before
   application bundling or promotion, so no production app is promoted or

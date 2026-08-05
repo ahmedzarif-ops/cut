@@ -37,8 +37,13 @@ describe("selectNextAction", () => {
         onboardingComplete: true,
         hasWeightToday: true,
         hasMealToday: false,
-      }).kind,
-    ).toBe("first_meal");
+      }),
+    ).toEqual({
+      kind: "first_meal",
+      title: "Build your first balanced meal",
+      detail:
+        "Choose a fixed recipe and review its ingredients, portions, and estimates before logging.",
+    });
   });
 
   it("keeps onboarding and weigh-in ahead of an existing meal", () => {
@@ -69,7 +74,7 @@ describe("selectNextAction", () => {
       kind: "review_meals",
       title: "Review today’s meals",
       detail:
-        "See what you’ve logged. Add another meal only when it fits your needs.",
+        "See what you’ve logged, add another meal, or review today’s totals.",
     });
     expect(`${action.title} ${action.detail}`.toLowerCase()).not.toContain(
       "next meal",

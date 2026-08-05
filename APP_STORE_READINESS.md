@@ -147,14 +147,25 @@ social features. Those are backlog, not submission truth.
       `930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`. Customer read/write permission
       is verified from the exact dashboard setting; the preflight proves
       bounded read access without issuing a test write or deletion.
-- [ ] Connect and directly verify the separate RevenueCat App Store Connect API
-      key. Exact-build native purchase/restore QA remains a separate gate.
+- [x] Record that the optional RevenueCat App Store Connect API sync credential
+      was intentionally not created or uploaded after Apple's live key-creation
+      flow displayed an internal-use-only attestation that does not permit
+      sharing that credential with a third-party service. Do not claim automatic
+      product import, price synchronization, or store-status checking. The
+      required Apple in-app purchase/subscription key remains valid, and exact
+      mapping, customer-deletion permission, restore behavior, and exact-build
+      native purchase/restore QA remain mandatory independent gates.
 - [x] Record the initial-release omission of optional App Store Server
       Notifications. If configured later, use RevenueCat's production URL and
       retain non-secret evidence; Apple permits the sandbox URL to remain empty
       and route sandbox notifications to the production URL.
 - [x] Link the app config to the existing `@zee-digipit/cut` Expo/EAS project.
-- [ ] Authenticate the local EAS CLI and verify Apple signing credentials.
+- [x] Authenticate the local EAS CLI through the owner-approved one-time browser
+      flow and verify the linked project and empty iOS build list without
+      exposing a token.
+- [ ] Create or reuse Apple signing credentials. The read-only production
+      credentials view reported **No credentials set up yet**; no Apple login or
+      credential mutation was performed.
 - [x] Replit provisioned the production database schema during a first publish
       attempt with development-data copying off. The attempt was canceled
       before application bundling or promotion, no production app is running,
@@ -316,9 +327,12 @@ social features. Those are backlog, not submission truth.
 3. Retain the active Apple membership, Paid Apps Agreement, banking, and W-9
    evidence; complete the remaining provider credentials and technical checks.
 4. Publish approved legal/support pages and deploy the production backend.
-5. Complete the separate RevenueCat App Store Connect API-key connection and
-   remaining server/EAS production values. Optional Apple notifications may be
-   added later without blocking the first submission.
+5. Preserve the intentional omission of RevenueCat's optional App Store Connect
+   API sync credential, retain the valid Apple in-app purchase/subscription key,
+   and complete the remaining server/EAS production values. Reverify the exact
+   product-entitlement-offering mapping, customer-deletion permission, restore
+   behavior, and exact-build native purchase/restore path. Optional Apple
+   notifications may be added later without blocking the first submission.
 6. Build a native development client; pass Apple Sandbox purchase QA.
 7. Upload internal TestFlight; pass the critical matrix on real devices.
 8. Finish privacy, nutrition, legal, icon, screenshots, metadata, initial

@@ -385,11 +385,13 @@ applicable with a reason:
 - production application, database, Clerk, RevenueCat, EAS, and Apple service
   aliases;
 - direct, sanitized RevenueCat-dashboard evidence that the exact iOS app has
-  its production mapping, App Store Connect API key, Apple in-app
-  purchase/subscription key, server-key customer read/write permission, and
-  transfer-to-new-App-User-ID restore behavior configured, paired after upload
-  with restore-after-deletion, StoreKit, and purchase QA on the exact submitted
-  build as defined in `EAS_RELEASE_RUNBOOK.md`;
+  its production mapping, valid Apple in-app purchase/subscription key,
+  server-key customer read/write permission, and transfer-to-new-App-User-ID
+  restore behavior configured; plus a controlled record that the optional App
+  Store Connect API sync credential was intentionally omitted under Apple's
+  internal-use-only attestation. Pair this after upload with
+  restore-after-deletion, StoreKit, and purchase QA on the exact submitted build
+  as defined in `EAS_RELEASE_RUNBOOK.md`;
 - the Clerk production instance/domain aliases, non-secret domain ID, exact
   canonical proxy URL, candidate application deployment/Git SHA, audited edge
   trust topology, provider proof that no direct or shorter origin path bypasses the

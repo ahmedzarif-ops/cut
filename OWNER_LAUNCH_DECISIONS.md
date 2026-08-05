@@ -124,8 +124,9 @@ name and description are reviewed.
 
 **Status:** Owner ratification, the least-privilege replacement server key, and
 the exact production Apple mapping and restore behavior are complete. The
-separate App Store Connect API credential and exact-build native purchase and
-restore evidence remain pending.
+optional App Store Connect API sync credential was intentionally not created or
+uploaded after Apple's live internal-use-only attestation; exact-build native
+purchase and restore evidence remains pending.
 
 **Verified August 5, 2026 UTC:** The owner explicitly approved RevenueCat
 server-key replacement and Decision 3. A replacement secret RevenueCat API v2
@@ -149,8 +150,26 @@ The RevenueCat Apple app is bound to `com.zarifahmed.cut`; the exact
 `com.zarifahmed.cut.pro.monthly` product is attached to `CUT_OS_PRO` and the
 default `$rc_monthly` package. RevenueCat reports the uploaded In-App Purchase
 subscription key as valid and provisioned the public iOS SDK key. The separate
-App Store Connect API credential remains pending and must not be conflated with
-that subscription key.
+App Store Connect API sync credential is optional and must not be conflated with
+that required subscription key.
+
+**Recorded safety decision August 5, 2026 UTC:** Apple's live App Store Connect
+API-key creation flow displayed an attestation limiting the credential to
+internal development, testing, and reporting within the Apple team and not
+permitting it to be shared with or used by a third-party service. RevenueCat
+requires uploading that credential to its service. The optional sync credential
+was therefore not created, downloaded, or uploaded, and no automatic product
+import, price synchronization, or RevenueCat store-status capability is claimed.
+This records the observed attestation and action taken; it does not provide a
+legal interpretation or authorize a later credential-sharing path. Any future
+reconsideration requires qualified review and explicit owner authorization.
+
+The intentional omission does not weaken or satisfy the mandatory controls: the
+valid Apple In-App Purchase subscription key, exact Apple product-entitlement-
+offering mapping, RevenueCat customer-delete permission, **Transfer to new App
+User ID** restore behavior, and exact-build Apple Sandbox/TestFlight purchase,
+delete, replacement-account, restore, and server-unlock evidence all remain
+required.
 
 The production project must also use RevenueCat's **Transfer to new App User
 ID** restore behavior. That setting has controlled non-secret dashboard

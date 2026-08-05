@@ -522,10 +522,15 @@ Submit for Review**.
       merge-queue action; push-to-`main` CI passes; remote `main` equals that
       SHA; and current-clock validation plus production probes are fresh before
       **Submit for Review**.
-- [ ] RevenueCat's Apple app/bundle, Apple credentials, product mapping,
-      `CUT_OS_PRO`, current offering/package, public iOS key, and server v2 key/
-      resource IDs are verified. Optional App Store Server Notifications are
-      not configured for initial release and are not represented as evidence.
+- [ ] RevenueCat's Apple app/bundle, required valid Apple in-app purchase/
+      subscription key, exact product mapping, `CUT_OS_PRO`, current offering/
+      package, public iOS key, customer-delete permission, restore behavior, and
+      server v2 key/resource IDs are verified. The optional App Store Connect
+      API sync credential was intentionally not created or uploaded after
+      Apple's live internal-use-only attestation and is not represented as
+      automatic import, price-sync, store-status, purchase, deletion, restore,
+      or native-QA evidence. Optional App Store Server Notifications are not
+      configured for initial release and are not represented as evidence.
 - [ ] The production API/database/Clerk/RevenueCat combination is deployed,
       migration-current, monitored, and available; no development, test-store,
       or placeholder value is in the release build.

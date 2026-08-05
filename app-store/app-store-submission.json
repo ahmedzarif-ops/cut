@@ -393,7 +393,7 @@
         "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat"
       },
       "productionMappingStatus": "verified",
-      "appStoreConnectApiKeyStatus": "pending",
+      "appStoreConnectApiKeyStatus": "intentionally_omitted_apple_internal_use_only",
       "subscriptionKeyStatus": "verified",
       "customerReadWritePermissionStatus": "verified",
       "apiV2Key": {

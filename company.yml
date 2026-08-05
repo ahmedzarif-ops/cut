@@ -5,7 +5,7 @@
 company:
   name: "CUT"
   legal_entity: "Zarif Ahmed (individual operator; Texas sole-proprietorship path under review)" # no separate entity; exact public operator spelling authorized 2026-08-04
-  domain: "" # no custom domain; the Replit provider address is not yet owner-approved
+  domain: "" # no custom domain; the working Replit v1 host is owner-approved, while public legal publication and qualified review remain pending
   one_liner: "CUT is an adults-only mobile app that gives lifters one practical daily cut check-in across weigh-ins and balanced meals."
 
 owner:
@@ -15,15 +15,15 @@ owner:
 
 offer:
   summary: "A paid App Store subscription for one daily next action, consistent weigh-ins, six curated balanced-meal choices, meal logging, and daily nutrition totals."
-  pricing_notes: "Owner-approved v1: free download; one US-only $4.99/month subscription; no trial; Family Sharing off; manual release. The exact App Store Connect app, subscription, price, and availability records are saved; Apple membership, Paid Apps Agreement, tax, and banking are active. RevenueCat production app, subscription key, product-entitlement-offering mapping, public iOS SDK-key provisioning, Decision 3 owner authorization, masked Replit storage of the replacement server key, dashboard read/write permission evidence, and the passing read-only live preflight are complete. Its separate App Store Connect API credential, exact-build purchase/restore QA, submission, and release remain pending; the old unconfigured key has not been revoked."
+  pricing_notes: "Owner-approved v1: free download; one US-only $4.99/month subscription; no trial; Family Sharing off; manual release. The exact App Store Connect app, subscription, price, and availability records are saved; Apple membership, Paid Apps Agreement, tax, and banking are active. RevenueCat production app, required valid Apple in-app purchase/subscription key, product-entitlement-offering mapping, public iOS SDK-key provisioning, Decision 3 owner authorization, masked Replit storage of the replacement server key, dashboard read/write permission evidence, and the passing read-only live preflight are complete. The optional RevenueCat App Store Connect API sync credential was intentionally not created or uploaded after Apple's live internal-use-only attestation; no automatic import, price-sync, or store-status capability is claimed. Exact-build purchase/delete/restore QA, submission, and release remain pending, and the old unconfigured server key has not been revoked."
   booking_link: ""
 
 icp:
-  description: "Lifters (people who train with weights) who are cutting — trying to lose fat while keeping muscle — and want to be told what to do instead of juggling spreadsheets and three apps."
+  description: "Lifters (people who train with weights) who are cutting — trying to lose fat while keeping muscle — and want one focused daily check-in instead of juggling spreadsheets and three apps."
   research_doc: "kb/icp-research.md" # sourced ICP research, 2026-07-12 (beachhead: the repeat cutter)
 
 brand:
-  voice: "Direct, coach-like, zero fluff. Short sentences. Talks like a knowledgeable training partner, not a wellness brand. No hype, no guilt-tripping, no medical claims."
+  voice: "Direct, concise, practical, and non-judgmental. Short sentences. No hype, guilt, medical claims, or guaranteed outcomes."
   banned_phrases: []
   visual_notes: "" # not established yet
 
@@ -31,7 +31,7 @@ kb_dir: "kb/"
 
 legal:
   jurisdiction: "Texas, United States"
-  regulated_claims: "No health or medical claims — CUT is a coaching tool, not medical advice. Privacy hard rule (GTM change order §6): body weight, calories, macros, and measurements never appear in URLs, logs, analytics events, or third-party SDKs."
+  regulated_claims: "Do not claim diagnosis, treatment, medical care, clinical status, or guaranteed outcomes. Final health and nutrition wording still requires qualified review. Privacy hard rule (GTM change order §6): body weight, calories, macros, and measurements never appear in URLs, logs, analytics events, or third-party SDKs."
 
 integrations:
   deploy_target: "" # product ships via the Apple App Store; no marketing site yet

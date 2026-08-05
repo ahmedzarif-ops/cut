@@ -650,8 +650,8 @@ export default function MealOneScreen() {
         {pendingIntent
           ? "Finish this safe recovery check before changing or adding meals."
           : loggedMeals.length > 0
-            ? "Check what you’ve logged. Add another option only when it fits your needs."
-            : "Start with protein, then add produce and a measured source of energy."}
+            ? "Review what you’ve logged, add another option, or return to today’s totals."
+            : "Choose a fixed recipe and review its ingredients, portions, and estimates before logging."}
       </Text>
 
       {recoveryNotice && !pendingIntent ? (

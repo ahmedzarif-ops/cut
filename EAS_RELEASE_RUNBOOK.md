@@ -88,12 +88,20 @@ preview builds skip those approved-publication checks.
 4. In App Store Connect, complete the Paid Apps Agreement/tax/banking, create
    the owner-approved subscription group/product, and keep the first
    subscription attached to the app-version submission.
-5. Create the RevenueCat project/iOS app for the exact bundle ID, connect both
-   the App Store Connect API key and Apple in-app purchase/subscription key, map
-   products to `CUT_OS_PRO`, create the current offering, and
+5. Create the RevenueCat project/iOS app for the exact bundle ID, upload the
+   required Apple in-app purchase/subscription key, manually verify the exact
+   product mapping to `CUT_OS_PRO`, create the current offering, and
    set **Project settings → General → Restore behavior** to **Transfer to new
    App User ID** (including the sandbox override if one is enabled). App Store
-   Server Notifications are intentionally omitted for the initial release. If
+   Connect's live API-key flow displayed an internal-use-only attestation that
+   does not permit sharing that credential with a third-party service. The
+   optional RevenueCat App Store Connect API sync credential was therefore not
+   created or uploaded; do not represent automatic product import, price sync,
+   or store-status checking as configured. This omission does not replace the
+   required valid Apple in-app purchase/subscription key, exact manual mapping,
+   customer-deletion permission, restore behavior, or exact-build native QA.
+   App Store Server Notifications are intentionally omitted for the initial
+   release. If
    configured later, use RevenueCat's full dashboard-issued production URL;
    Apple's sandbox field may remain empty and route sandbox notifications to
    the production URL.
@@ -106,17 +114,20 @@ preview builds skip those approved-publication checks.
 8. Verify the production API, Clerk tenant, and RevenueCat project are the exact
    service set intended for App Review.
 
-## RevenueCat permission, Apple credential, and exact-build gate
+## RevenueCat permission, Apple credentials, and exact-build gate
 
 The production API preflight proves the documented app/bundle, entitlement,
 product, monthly duration, no-trial state, exact active current offering, sole
 package mapping, exact associations, and customer-read access. It cannot prove
-customer write/delete access or Apple credential configuration because the
+customer write/delete access or the required Apple in-app purchase credential
+configuration because the
 bounded customer `GET` and documented `GET app` response do not expose those
 capabilities. Before the production build, an authorized operator must inspect
 the exact RevenueCat project and iOS app and record the production mapping,
-both Apple credential settings, customer read/write permission, restore
-behavior, shared verification UTC, and controlled evidence reference below.
+the valid in-app purchase/subscription key, the intentional absence of the
+optional App Store Connect API sync credential, customer read/write permission,
+restore behavior, shared verification UTC, and controlled evidence reference
+below.
 The three `nativeQa*` fields can be completed only after the signed build reaches
 internal TestFlight; record them after that continuous exact-build test and
 before App Review or release promotion.
@@ -124,7 +135,7 @@ before App Review or release promotion.
 | Evidence field                                                                   | Required release value                                                                                                                                            |
 | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `subscription.revenueCat.productionMappingStatus`                                | `verified` for the exact production app, `CUT_OS_PRO`, and monthly product                                                                                        |
-| `subscription.revenueCat.appStoreConnectApiKeyStatus`                            | `verified` by direct RevenueCat-dashboard inspection                                                                                                              |
+| `subscription.revenueCat.appStoreConnectApiKeyStatus`                            | `intentionally_omitted_apple_internal_use_only`, with controlled evidence that the optional sync credential was not created or uploaded after Apple's live attestation; use `verified` only if a later permitted first-party configuration is directly verified |
 | `subscription.revenueCat.subscriptionKeyStatus`                                  | `verified` for the Apple in-app purchase/subscription key by direct dashboard inspection                                                                          |
 | `subscription.revenueCat.customerReadWritePermissionStatus`                      | `verified` only by direct dashboard inspection that the server key has customer read/write access required to delete a customer; never by issuing a test deletion |
 | `subscription.revenueCat.restoreAfterAccountDeletion.dashboardBehavior`          | `transfer_to_new_app_user_id`, verified in the exact production project under Project settings → General                                                          |
@@ -140,10 +151,12 @@ Dashboard evidence alone does not prove the binary. After internal TestFlight
 upload, the same release record must also bind `storeKitOfferStatus`,
 `purchaseQaStatus`, and `testFlightStatus` as verified to the exact submitted
 app version, build number, Git commit, EAS build ID, and App Store Connect build
-ID. Missing dashboard evidence, a changed key, or any exact-build
+ID. Missing required dashboard evidence, a changed required key, or any exact-build
 purchase/restore failure blocks promotion. The shared
 `verifiedAtUtc` and `evidenceReference` must bind the customer permission and
-credential inspection to sanitized dashboard evidence. Never save a key
+required in-app purchase credential inspection to sanitized dashboard evidence.
+The intentionally absent optional sync credential is not purchase, mapping,
+deletion, restore, or native-QA evidence. Never save a key
 ID, issuer, private-key contents, API-key contents, screenshot containing key
 material, or raw provider response in the repository.
 

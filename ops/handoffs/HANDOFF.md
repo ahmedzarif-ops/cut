@@ -29,8 +29,9 @@
   verifying
   the CUT iOS mapping and bounded customer-read access. Dashboard evidence
   verifies read/write permission without issuing a test write or deletion.
-  Customer write/delete behavior, the separate App Store Connect API
-  credential, and post-upload exact-build restore QA remain evidence gates.
+  Customer write/delete behavior and post-upload exact-build restore QA remain
+  evidence gates. The optional App Store Connect API sync credential is
+  intentionally omitted after Apple's live internal-use-only attestation.
   Decision 3 owner authorization is confirmed.
   Database/migration and shutdown
   timeout relationships are cross-tested, and Metro gets only reviewed public
@@ -116,8 +117,9 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   release. RevenueCat production Apple app `app8feee0dfba` is created for the
   exact bundle, its subscription key is valid, and product `prod66e8dc0083`
   maps to `CUT_OS_PRO` and `default/$rc_monthly`. A public iOS SDK key is
-  provisioned without recording its value. The separate App Store Connect API
-  credential and public-iOS-key/EAS wiring remain pending.
+  provisioned without recording its value. The optional App Store Connect API
+  sync credential is intentionally omitted; public-iOS-key/EAS wiring remains
+  pending.
   **Transfer to new App User ID** is persisted with controlled non-secret
   dashboard evidence; Decision 3 owner authorization is confirmed, while
   exact-build restore-after-deletion QA remains required.
@@ -138,10 +140,11 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
    development-data copy setting is rechecked off.
 3. Keep the live active Apple membership, Paid Apps, banking, tax, and
    app/subscription evidence current.
-4. Preserve the passing bounded RevenueCat live preflight. Then connect and
-   directly verify RevenueCat's separate App Store Connect API credential and
-   place the app REST ID and provisioned public iOS SDK key only in their
-   approved server/EAS destinations.
+4. Preserve the passing bounded RevenueCat live preflight, valid Apple in-app
+   purchase key, customer read/write evidence, and intentional omission of the
+   optional App Store Connect API sync credential. Place the app REST ID and
+   provisioned public iOS SDK key only in their approved server/EAS
+   destinations.
 5. Validate the provisioned empty Replit production database, Clerk
    proxy/security, and RevenueCat Apple configuration only after their exact
    prerequisites can pass.
@@ -157,8 +160,9 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   `com.zarifahmed.cut.pro.monthly`; runtime fails closed and accepts only one
   $4.99 U.S. `P1M`, no-introductory-offer product mapped to `CUT_OS_PRO`.
   The exact App Store Connect product and U.S. price are saved; first-version
-  attachment, review screenshot, the separate RevenueCat App Store Connect API
-  key, and exact-build evidence remain pending. Credential-free Review Notes are
+  attachment, review screenshot, and exact-build evidence remain pending. The
+  optional RevenueCat App Store Connect API sync credential is intentionally
+  omitted. Credential-free Review Notes are
   saved. If the offer changes,
   update and reverify the owner decision, source, configuration, and tests before
   any signed build.

@@ -133,11 +133,14 @@ semantic/auth/not-found mismatch remains
 fatal unless the sole active subscription is
 `com.zarifahmed.cut.pro.monthly`, belongs to the exact iOS app, has duration
 `P1M`, and reports no trial. RevenueCat's documented app response does not
-expose whether the App Store Connect API key or Apple subscription key is
-configured, and a customer read cannot prove destructive customer write/delete
-permission. Release instead requires controlled RevenueCat-dashboard evidence
-for both Apple keys and the server key's customer read/write permission, plus
-StoreKit and purchase QA on the exact submitted build. Transient timeouts, network
+expose whether Apple purchase credentials are configured, and a customer read
+cannot prove destructive customer write/delete permission. The optional App
+Store Connect API sync credential is intentionally omitted after Apple's live
+authorization attestation limited it to internal-team use. Release still
+requires controlled RevenueCat-dashboard evidence for the valid Apple in-app
+purchase/subscription key and the server key's customer read/write permission,
+plus StoreKit and purchase QA on the exact submitted build. Transient timeouts,
+network
 failures, rate limits, and provider 5xx responses emit only a sanitized degraded
 warning so account and deletion APIs can start; subscription checks still fail
 closed.

@@ -39,7 +39,10 @@ any Apple Sandbox or TestFlight item.
       It verified the exact CUT iOS mapping and bounded customer-read access;
       dashboard evidence verifies read/write permission without issuing a test
       write or deletion.
-- [ ] The separate RevenueCat App Store Connect API key is directly verified.
+- [x] The optional RevenueCat App Store Connect API sync credential is recorded
+      as intentionally omitted after Apple's live authorization attestation
+      limited it to internal-team use. No request was submitted and no key was
+      uploaded to RevenueCat.
 - [x] RevenueCat **Project settings → General → Restore behavior** is directly
       verified as **Transfer to new App User ID** for production; any enabled
       sandbox override uses the same behavior. Record UTC and controlled,

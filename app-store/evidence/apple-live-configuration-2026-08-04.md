@@ -133,10 +133,14 @@ submitted or released.
   IDs as non-secret configurations. Replacement key value transfer was made
   directly into the masked `REVENUECAT_SECRET_API_KEY` secret without printing
   or storing the value in the repository.
-- The separate App Store Connect API credential remains unconfigured. This is
-  distinct from the valid In-App Purchase subscription key, so automatic
-  product import, price synchronization, and RevenueCat store-status checks
-  remain unavailable.
+- Apple's live App Store Connect API-key creation flow displayed an
+  internal-use-only attestation that does not permit sharing that credential
+  with or using it for a third-party service. Because RevenueCat requires an
+  upload to its service, the optional sync credential was intentionally not
+  created, downloaded, or uploaded. This is distinct from the required valid
+  In-App Purchase subscription key. Automatic product import, price
+  synchronization, and RevenueCat store-status checks are not configured or
+  claimed.
 - Replacement API key label:
   `CUT Replit Production Replacement 2026-08-04`.
 - API version: v2.
@@ -168,10 +172,14 @@ submitted or released.
 
 - The Apple In-App Purchase subscription credential remains secured outside the
   repository. Its contents and storage location are intentionally excluded.
-- RevenueCat still needs the separate App Store Connect API credential and
-  controlled exact-build native purchase/restore verification. The superseded
-  server key remains unconfigured; revocation requires a distinct destructive
-  credential confirmation.
+- The optional RevenueCat App Store Connect API sync credential remains
+  intentionally unconfigured after Apple's live internal-use-only attestation.
+  The required Apple In-App Purchase subscription key remains valid. Exact
+  mapping, customer-delete permission, **Transfer to new App User ID** restore
+  behavior, and controlled exact-build native purchase/delete/restore/server-
+  unlock verification remain mandatory. The superseded server key remains
+  unconfigured; revocation requires a distinct destructive credential
+  confirmation.
 - The first subscription must still be attached to version 1.0.0 with the
   approved review screenshot. Its factual credential-free Review Notes are
   already saved.

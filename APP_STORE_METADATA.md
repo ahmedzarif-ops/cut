@@ -360,8 +360,10 @@ source-controlled, read-only preflight passed from Replit on exact green commit
 `930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`, verifying bounded customer-read
 access and the exact CUT iOS mapping. Customer read/write permission is
 verified from the exact dashboard setting without issuing a test write or
-deletion. The separate App Store Connect API credential, native
-purchase/restore QA, exact build, submission, and release remain pending.
+deletion. RevenueCat's optional App Store Connect API sync credential is
+intentionally omitted after Apple's live authorization attestation limited it
+to internal-team use; this omission does not replace native purchase/restore
+QA. The exact build, submission, and release remain pending.
 Release requires App Store Connect confirmation, attachment to version 1.0,
 retention of the already saved credential-free Review Notes, an uploaded review
 screenshot whose SHA-256 equals approved shot 07, verified RevenueCat mapping,

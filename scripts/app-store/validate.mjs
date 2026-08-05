@@ -81,6 +81,13 @@ const EXPECTED_LISTING_PAID_DISCLOSURE = Object.freeze({
 });
 const EXPECTED_SUBSCRIPTION_OFFER_INTENDED_USE =
   "listing_candidate_and_in_app_purchase_review_evidence";
+const REVENUECAT_APP_STORE_CONNECT_API_KEY_INTENTIONAL_OMISSION =
+  "intentionally_omitted_apple_internal_use_only";
+const REVENUECAT_APP_STORE_CONNECT_API_KEY_STATUSES = Object.freeze([
+  "pending",
+  "verified",
+  REVENUECAT_APP_STORE_CONNECT_API_KEY_INTENTIONAL_OMISSION,
+]);
 
 export const MAX_REVIEW_ACCOUNT_EVIDENCE_AGE_MS = 24 * 60 * 60 * 1000;
 const EXACT_BUILD_IDENTITY_FIELDS = Object.freeze([
@@ -3015,16 +3022,18 @@ function validateSubscription({
     requirementLabel: "confirmed RevenueCat owner authorization",
     check,
   });
-  for (const field of [
-    "productionMappingStatus",
-    "appStoreConnectApiKeyStatus",
-    "subscriptionKeyStatus",
-  ]) {
+  for (const field of ["productionMappingStatus", "subscriptionKeyStatus"]) {
     check(
       ["pending", "verified"].includes(revenueCat?.[field]),
       `subscription.revenueCat.${field} must be pending or verified`,
     );
   }
+  check(
+    REVENUECAT_APP_STORE_CONNECT_API_KEY_STATUSES.includes(
+      revenueCat?.appStoreConnectApiKeyStatus,
+    ),
+    "subscription.revenueCat.appStoreConnectApiKeyStatus must be pending, verified, or intentionally_omitted_apple_internal_use_only",
+  );
   check(
     ["pending", "confirmed_in_revenuecat", "verified"].includes(
       revenueCat?.customerReadWritePermissionStatus,
@@ -3312,13 +3321,16 @@ function validateSubscription({
   );
   check(
     revenueCat?.productionMappingStatus === "verified" &&
-      revenueCat?.appStoreConnectApiKeyStatus === "verified" &&
+      [
+        "verified",
+        REVENUECAT_APP_STORE_CONNECT_API_KEY_INTENTIONAL_OMISSION,
+      ].includes(revenueCat?.appStoreConnectApiKeyStatus) &&
       revenueCat?.subscriptionKeyStatus === "verified" &&
       revenueCat?.customerReadWritePermissionStatus === "verified" &&
       validIsoTimestamp(revenueCat?.verifiedAtUtc) &&
       typeof revenueCat?.evidenceReference === "string" &&
       revenueCat.evidenceReference.trim().length > 0,
-    `${prefix} requires verified RevenueCat production mapping, customer read/write permission, and Apple credential dashboard evidence`,
+    `${prefix} requires verified RevenueCat production mapping, verified Apple IAP subscription key, verified customer read/write permission, an App Store Connect API key status of verified or intentionally_omitted_apple_internal_use_only, and dashboard UTC evidence`,
   );
   check(
     revenueCatOwnerAuthorization?.status === "confirmed" &&

@@ -41,7 +41,7 @@ export function selectNextAction(input: NextActionInput): NextAction {
       kind: "first_meal",
       title: "Build your first balanced meal",
       detail:
-        "Start with a protein anchor, then add produce and a measured carb or fat.",
+        "Choose a fixed recipe and review its ingredients, portions, and estimates before logging.",
     };
   }
 
@@ -49,6 +49,6 @@ export function selectNextAction(input: NextActionInput): NextAction {
     kind: "review_meals",
     title: "Review today’s meals",
     detail:
-      "See what you’ve logged. Add another meal only when it fits your needs.",
+      "See what you’ve logged, add another meal, or review today’s totals.",
   };
 }

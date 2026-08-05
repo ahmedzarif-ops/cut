@@ -26,6 +26,10 @@ import {
 
 const APPLE_STANDARD_EULA_TEST_URL =
   "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+const REVENUECAT_APP_STORE_CONNECT_API_KEY_INTENTIONAL_OMISSION =
+  "intentionally_omitted_apple_internal_use_only";
+const REVENUECAT_TECHNICAL_GATE_ERROR =
+  "release mode requires verified RevenueCat production mapping, verified Apple IAP subscription key, verified customer read/write permission, an App Store Connect API key status of verified or intentionally_omitted_apple_internal_use_only, and dashboard UTC evidence";
 
 function readJson(relativePath) {
   return JSON.parse(
@@ -281,7 +285,7 @@ test("committed working App Store records preserve approved and pending scopes",
   );
   assert.equal(
     submission.subscription.revenueCat.appStoreConnectApiKeyStatus,
-    "pending",
+    REVENUECAT_APP_STORE_CONNECT_API_KEY_INTENTIONAL_OMISSION,
   );
   assert.equal(
     submission.subscription.revenueCat.restoreAfterAccountDeletion
@@ -686,10 +690,10 @@ test("release mode stays fail closed while privacy, screenshot, and downstream l
       "release mode requires subscription.status ready_for_submission",
     ),
   );
-  assert.ok(
-    errors.includes(
-      "release mode requires verified RevenueCat production mapping, customer read/write permission, and Apple credential dashboard evidence",
-    ),
+  assert.equal(
+    errors.includes(REVENUECAT_TECHNICAL_GATE_ERROR),
+    false,
+    "the intentionally omitted optional App Store Connect API key must not block the otherwise verified RevenueCat technical gate",
   );
   assert.equal(
     errors.includes(
@@ -1529,13 +1533,52 @@ test("RevenueCat replacement key record rejects an obsolete label and an unrecor
   );
 });
 
+test("RevenueCat App Store Connect API key dispositions fail closed", () => {
+  const inputs = validationInputs();
+  const submission = clone(inputs.submission);
+
+  assert.equal(
+    validateMetadata({ ...inputs, submission, release: true }).includes(
+      REVENUECAT_TECHNICAL_GATE_ERROR,
+    ),
+    false,
+    "the explicit Apple internal-use-only omission must satisfy the optional credential disposition",
+  );
+
+  submission.subscription.revenueCat.appStoreConnectApiKeyStatus = "verified";
+  assert.equal(
+    validateMetadata({ ...inputs, submission, release: true }).includes(
+      REVENUECAT_TECHNICAL_GATE_ERROR,
+    ),
+    false,
+    "a verified optional credential must remain accepted",
+  );
+
+  submission.subscription.revenueCat.appStoreConnectApiKeyStatus = "pending";
+  assert.ok(
+    validateMetadata({ ...inputs, submission, release: true }).includes(
+      REVENUECAT_TECHNICAL_GATE_ERROR,
+    ),
+    "a pending optional credential disposition must remain release-blocking",
+  );
+
+  submission.subscription.revenueCat.appStoreConnectApiKeyStatus =
+    "omitted_without_policy_basis";
+
+  const errors = validateMetadata({ ...inputs, submission });
+  assert.ok(
+    errors.includes(
+      "subscription.revenueCat.appStoreConnectApiKeyStatus must be pending, verified, or intentionally_omitted_apple_internal_use_only",
+    ),
+  );
+});
+
 test("RevenueCat technical readiness cannot substitute for distinct owner authorization", () => {
   const inputs = validationInputs();
   const submission = clone(inputs.submission);
   const revenueCat = submission.subscription.revenueCat;
   const evidenceTime = "2026-08-03T23:59:00Z";
-  const technicalGateError =
-    "release mode requires verified RevenueCat production mapping, customer read/write permission, and Apple credential dashboard evidence";
+  const technicalGateError = REVENUECAT_TECHNICAL_GATE_ERROR;
   const ownerAuthorizationError =
     "release mode requires confirmed owner authorization for the prepared least-privilege RevenueCat server key, production Apple connection, and Transfer to new App User ID restore behavior";
 
@@ -2250,7 +2293,8 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
     evidenceReference: "evidence/subscription-review-screenshot-upload",
   });
   subscription.revenueCat.productionMappingStatus = "verified";
-  subscription.revenueCat.appStoreConnectApiKeyStatus = "verified";
+  subscription.revenueCat.appStoreConnectApiKeyStatus =
+    REVENUECAT_APP_STORE_CONNECT_API_KEY_INTENTIONAL_OMISSION;
   subscription.revenueCat.subscriptionKeyStatus = "verified";
   subscription.revenueCat.customerReadWritePermissionStatus = "verified";
   subscription.revenueCat.verifiedAtUtc = evidenceTime;
@@ -2352,7 +2396,7 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
   subscription.revenueCat.customerReadWritePermissionStatus = "pending";
   assert.ok(
     validateMetadata({ ...inputs, submission, release: true }).includes(
-      "release mode requires verified RevenueCat production mapping, customer read/write permission, and Apple credential dashboard evidence",
+      REVENUECAT_TECHNICAL_GATE_ERROR,
     ),
   );
 });

@@ -160,11 +160,13 @@ Other fail-closed bindings are deliberate:
 - subscription evidence records the effective U.S. USD price, owner-decision
   revision/reference, any introductory-offer terms, and exact App Store Connect
   upload evidence. It separately requires direct RevenueCat-dashboard evidence
-  that both the App Store Connect API key and Apple in-app purchase/subscription
-  key are configured, and that the server key has customer read/write permission
-  required for account deletion. The public v2 `GET app` response is not treated
-  as credential proof; the bounded customer-list `GET` proves read access only
-  and the release process never issues a test deletion.
+  that the Apple in-app purchase/subscription key is valid and that the server
+  key has customer read/write permission required for account deletion. The
+  optional App Store Connect API sync credential may be recorded as
+  intentionally omitted when Apple's authorization terms restrict it to
+  internal-team use. The public v2 `GET app` response is not treated as
+  credential proof; the bounded customer-list `GET` proves read access only and
+  the release process never issues a test deletion.
   Dashboard evidence must be paired with purchase, StoreKit-offer, and TestFlight
   QA bound to the exact submitted build. The core-offer approval does not
   ratify the prepared least-privilege server key or authorize the production

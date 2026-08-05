@@ -282,8 +282,8 @@ export default function SubscriptionScreen() {
       {!readyOfferVisible ? (
         <>
           <Text style={s.subtitle}>
-            CUT OS Pro keeps your daily check-in, weigh-in, and practical
-            nutrition guidance together.
+            CUT OS Pro keeps your daily check-in, weigh-in, meal options, and
+            nutrition estimates together.
           </Text>
 
           <View style={s.benefitsCard}>
