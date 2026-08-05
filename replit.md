@@ -15,6 +15,13 @@ PostgreSQL as the source of truth.
   may use that bootstrapper for package operations in the editor; the
   exception does not change the exact package manager selected by Corepack for
   source-controlled commands.
+- The audited `.npmrc` disables pnpm's automatic package-manager replacement.
+  Replit's ambient `10.26.1` bootstrap therefore cannot launch an unbounded
+  self-install before Publishing reaches the source-controlled build command;
+  `corepack pnpm` still resolves the exact repository pin for every audited
+  install, build, and runtime command. The deployment build invokes the API
+  workspace directly through Corepack so no nested bare `pnpm` can fall back
+  to the ambient bootstrapper.
 - Replit's ephemeral build-package resolver installs that pinned CLI at the
   workspace root without pnpm's `--workspace-root` flag when the resolver is
   invoked in the editor. The audited `.npmrc` permits that editor bootstrap;
