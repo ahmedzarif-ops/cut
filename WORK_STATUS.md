@@ -280,24 +280,33 @@ launch gate.
   without entering source. Proxy health and exact production security/iOS
   settings remain post-deployment and signed-device evidence gates.
 - Replit contains the exact CUT project, Apple app, entitlement, and offering
-  REST IDs as non-secret configurations. Its RevenueCat server API secret is
-  absent. Production Apple app `app8feee0dfba` is created for
+  REST IDs as non-secret configurations and the RevenueCat server API v2
+  replacement secret saved masked. Replacement key
+  `CUT Replit Production Replacement 2026-08-04` has Charts no access,
+  Customer Information read/write, and Project Configuration read-only
+  dashboard settings. Production Apple app `app8feee0dfba` is created for
   `com.zarifahmed.cut`, its subscription key is valid, and product
   `prod66e8dc0083` maps to `CUT_OS_PRO` and `default/$rc_monthly`. A public iOS
-  SDK key is provisioned without recording its value. The server API secret and
-  separate App Store Connect API key remain pending, so production continues to
-  fail closed. The dashboard restore behavior is evidence-bound as Transfer to
-  new App User ID; owner ratification and exact-build native restore QA remain
-  pending.
+  SDK key is provisioned without recording its value. Decision 3 owner
+  authorization is confirmed by the exact phrase
+  `approve RevenueCat server-key replacement and Decision 3`; the old
+  unconfigured key remains and has not been revoked. A live preflight found a
+  verifier assumption mismatch, so customer permission is not yet technically
+  verified. The separate App Store Connect API credential and exact-build
+  native restore QA remain pending, and production continues to fail closed.
+  The dashboard restore behavior is evidence-bound as Transfer to new App User
+  ID.
 
 ## Highest-priority next slice
 
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
-1. Connect and directly verify RevenueCat's separate App Store Connect API key,
-   then place the production app REST ID and provisioned public iOS SDK key only
-   in their approved server/EAS destinations.
+1. Correct the RevenueCat verifier assumption mismatch and rerun the bounded
+   live preflight, then connect and directly verify RevenueCat's separate App
+   Store Connect API credential. Place the production app REST ID and
+   provisioned public iOS SDK key only in their approved server/EAS
+   destinations.
 2. Retain the confirmed active Paid Apps Agreement, banking, and W-9 evidence.
    Have qualified counsel review the selected individual-seller/Texas-sole-
    proprietor path before submission.
@@ -345,10 +354,11 @@ seller-display verification and counsel review because Guideline 5.1.1(ix) direc
 sensitive-data apps toward legal-entity submission. Preliminary name screening
 also found a crowded same-market `CUT` field, so qualified `CUT OS` clearance
 remains open. Apple's Paid Apps Agreement, banking, and U.S. Form W-9 are active
-and evidence-confirmed. Apple signing, RevenueCat's separate App Store Connect
-API key, RevenueCat owner ratification, EAS/Apple authentication, TestFlight build/QA,
-distribution, App Store questionnaire/privacy publication, Submit for Review,
-and public release remain owner-controlled gates. The owner has confirmed an
+and evidence-confirmed. RevenueCat Decision 3 owner authorization is also
+confirmed. Apple signing, RevenueCat's separate App Store Connect API
+credential, EAS/Apple authentication, TestFlight build/QA, distribution, App
+Store questionnaire/privacy publication, Submit for Review, and public release
+remain owner-controlled gates. The owner has confirmed an
 18+ launch position; the final rating questionnaire and legal policy still need
 owner/counsel approval. Terms/Privacy and jurisdictional age-assurance remain
 qualified-counsel gates, and nutrition/health claims remain qualified

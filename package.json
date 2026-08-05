@@ -12,6 +12,7 @@
     "build": "pnpm run codegen:check && pnpm run typecheck && pnpm run test && pnpm -r --if-present run build",
     "build:production": "pnpm --filter @workspace/api-server run build",
     "start:production": "node --enable-source-maps artifacts/api-server/dist/index.mjs",
+    "verify:revenuecat:production": "pnpm run build:production && node --enable-source-maps artifacts/api-server/dist/revenueCatPreflight.mjs",
     "dry-run:production": "pnpm run build:production && node ops/scripts/production-topology-dry-run.mjs",
     "codegen": "pnpm --filter @workspace/api-spec run codegen",
     "codegen:check": "node ops/scripts/codegen-check.mjs",

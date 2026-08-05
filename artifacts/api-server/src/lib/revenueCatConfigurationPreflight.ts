@@ -255,42 +255,86 @@ function verifyCustomerReadPayload(
   }
 }
 
-function verifyProductPayload(
-  product: unknown,
-  expected: { appRestId: string; productIdentifier: string },
-): string {
+interface RevenueCatProductIdentity {
+  payload: Record<string, unknown>;
+  id: string;
+  appRestId: string;
+  productIdentifier: string;
+}
+
+function parseProductIdentity(product: unknown): RevenueCatProductIdentity {
   if (
     !isRecord(product) ||
-    typeof product.object !== "string" ||
+    product.object !== "product" ||
     typeof product.id !== "string" ||
     typeof product.store_identifier !== "string" ||
     typeof product.type !== "string" ||
     typeof product.state !== "string" ||
-    typeof product.app_id !== "string" ||
-    !isRecord(product.subscription) ||
+    typeof product.app_id !== "string"
+  ) {
+    throw new RevenueCatConfigurationPreflightError("invalid_response");
+  }
+
+  return {
+    payload: product,
+    id: product.id,
+    appRestId: product.app_id,
+    productIdentifier: product.store_identifier,
+  };
+}
+
+function isTargetProductIdentity(
+  product: RevenueCatProductIdentity,
+  expected: { appRestId: string; productIdentifier: string },
+): boolean {
+  return (
+    product.appRestId === expected.appRestId &&
+    product.productIdentifier === expected.productIdentifier
+  );
+}
+
+function verifyTargetProductPayload(
+  product: RevenueCatProductIdentity,
+  expected: { appRestId: string; productIdentifier: string },
+): string {
+  const subscription = product.payload.subscription;
+  if (
+    !isRecord(subscription) ||
     !(
-      product.subscription.duration === null ||
-      typeof product.subscription.duration === "string"
+      subscription.duration === null ||
+      typeof subscription.duration === "string"
     ) ||
     !(
-      product.subscription.trial_duration === null ||
-      typeof product.subscription.trial_duration === "string"
+      subscription.trial_duration === null ||
+      typeof subscription.trial_duration === "string"
     )
   ) {
     throw new RevenueCatConfigurationPreflightError("invalid_response");
   }
   if (
-    product.object !== "product" ||
-    product.store_identifier !== expected.productIdentifier ||
-    product.type !== "subscription" ||
-    product.state !== "active" ||
-    product.app_id !== expected.appRestId ||
-    product.subscription.duration !== "P1M" ||
-    product.subscription.trial_duration !== null
+    !isTargetProductIdentity(product, expected) ||
+    product.payload.type !== "subscription" ||
+    product.payload.state !== "active" ||
+    (subscription.duration !== null && subscription.duration !== "P1M") ||
+    subscription.trial_duration !== null
   ) {
     throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
   }
   return product.id;
+}
+
+function findSoleTargetProduct(
+  products: unknown[],
+  expected: { appRestId: string; productIdentifier: string },
+): RevenueCatProductIdentity {
+  const parsedProducts = products.map(parseProductIdentity);
+  const targetProducts = parsedProducts.filter((product) =>
+    isTargetProductIdentity(product, expected),
+  );
+  if (targetProducts.length !== 1) {
+    throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
+  }
+  return targetProducts[0];
 }
 
 function verifyAttachedProductsPayload(
@@ -311,10 +355,13 @@ function verifyAttachedProductsPayload(
     throw new RevenueCatConfigurationPreflightError("invalid_response");
   }
 
-  if (payload.items.length !== 1 || !hasNoNextPage(payload)) {
+  if (!hasNoNextPage(payload)) {
     throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
   }
-  return verifyProductPayload(payload.items[0], expected);
+  return verifyTargetProductPayload(
+    findSoleTargetProduct(payload.items, expected),
+    expected,
+  );
 }
 
 function verifyOfferingPayload(
@@ -379,24 +426,36 @@ function verifyOfferingPayload(
   ) {
     throw new RevenueCatConfigurationPreflightError("invalid_response");
   }
-  if (
-    packagePayload.products.items.length !== 1 ||
-    !hasNoNextPage(packagePayload.products)
-  ) {
+  if (!hasNoNextPage(packagePayload.products)) {
     throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
   }
 
-  const association = packagePayload.products.items[0];
-  if (
-    !isRecord(association) ||
-    typeof association.eligibility_criteria !== "string" ||
-    !Object.hasOwn(association, "product")
-  ) {
-    throw new RevenueCatConfigurationPreflightError("invalid_response");
+  const associations = packagePayload.products.items.map((association) => {
+    if (
+      !isRecord(association) ||
+      typeof association.eligibility_criteria !== "string" ||
+      !Object.hasOwn(association, "product")
+    ) {
+      throw new RevenueCatConfigurationPreflightError("invalid_response");
+    }
+    return {
+      eligibilityCriteria: association.eligibility_criteria,
+      product: parseProductIdentity(association.product),
+    };
+  });
+  const targetAssociations = associations.filter(({ product }) =>
+    isTargetProductIdentity(product, expected),
+  );
+  if (targetAssociations.length !== 1) {
+    throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
   }
-  const productRestId = verifyProductPayload(association.product, expected);
+  const targetAssociation = targetAssociations[0];
+  const productRestId = verifyTargetProductPayload(
+    targetAssociation.product,
+    expected,
+  );
   if (
-    association.eligibility_criteria !== "all" ||
+    targetAssociation.eligibilityCriteria !== "all" ||
     productRestId !== expected.productRestId
   ) {
     throw new RevenueCatConfigurationPreflightError("configuration_mismatch");
@@ -408,12 +467,16 @@ function verifyOfferingPayload(
  * project-scoped customer list with limit=1 that proves customer-read access.
  * It never follows customer pagination and never calls a write or delete
  * endpoint. No customer is created and no entitlement is granted; a verified
- * result requires the exact app identity, entitlement, and sole active
- * monthly/no-trial product association for this binary, plus the exact active
- * current offering and its sole package mapping that same product. RevenueCat's
- * documented read responses do not expose Apple credential configuration or
- * prove customer write/delete access; release evidence verifies those settings
- * separately in the dashboard and on the exact build.
+ * result requires the exact app identity, entitlement, and exactly one matching
+ * active/no-trial product association for this binary, plus the exact active
+ * current offering and its sole package mapping that same product. Products for
+ * other apps or store identifiers may legitimately share the entitlement and
+ * package. RevenueCat's App Store response may report a null subscription
+ * duration, so the target accepts null or P1M; the exact monthly period and
+ * no-trial offer remain separately proven by App Store Connect evidence.
+ * RevenueCat's documented read responses do not expose Apple credential
+ * configuration or prove customer write/delete access; release evidence verifies
+ * those settings separately in the dashboard and on the exact build.
  */
 export async function verifyRevenueCatConfiguration({
   apiKey: rawApiKey,

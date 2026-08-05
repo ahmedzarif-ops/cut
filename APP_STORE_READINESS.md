@@ -136,18 +136,26 @@ social features. Those are backlog, not submission truth.
       `com.zarifahmed.cut`; its Apple subscription key is valid, product
       `prod66e8dc0083` maps to `CUT_OS_PRO` and `default/$rc_monthly`, and a
       public iOS SDK key is provisioned without recording its value here.
+- [x] RevenueCat server API v2 replacement key
+      `CUT Replit Production Replacement 2026-08-04` is created with Charts
+      no access, Customer Information read/write, and Project Configuration
+      read-only permissions. Its value is saved masked in Replit, and the
+      owner's exact Decision 3 authorization is recorded. The old unconfigured
+      key has not been revoked.
+- [ ] Correct the live verifier assumption mismatch and rerun the bounded
+      RevenueCat preflight before marking the replacement key's customer
+      permission technically verified.
 - [ ] Connect and directly verify the separate RevenueCat App Store Connect API
-      key. Owner ratification and exact-build native purchase/restore QA remain
-      separate gates.
+      key. Exact-build native purchase/restore QA remains a separate gate.
 - [x] Record the initial-release omission of optional App Store Server
       Notifications. If configured later, use RevenueCat's production URL and
       retain non-secret evidence; Apple permits the sandbox URL to remain empty
       and route sandbox notifications to the production URL.
 - [x] Link the app config to the existing `@zee-digipit/cut` Expo/EAS project.
 - [ ] Authenticate the local EAS CLI and verify Apple signing credentials.
-- [ ] Deploy the production API/database/Clerk combination and server-only
-      RevenueCat v2 secret plus project, app, entitlement, and current-offering
-      resource IDs.
+- [ ] Deploy the production API/database/Clerk combination using the masked
+      RevenueCat v2 secret and existing project, app, entitlement, and
+      current-offering resource IDs after its corrected preflight passes.
 - [ ] Configure production EAS values for API domain, live Clerk key/proxy, the
       provisioned RevenueCat public Apple SDK key, Privacy, Terms, and Support.
 
@@ -296,7 +304,8 @@ social features. Those are backlog, not submission truth.
 2. Verify the activated personal seller name and have counsel review the owner's
    selected individual-seller path and intended Texas sole proprietorship,
    including Guideline 5.1.1(ix), before submission.
-3. Owner completes financial/store decisions and service credentials.
+3. Retain the active Apple membership, Paid Apps Agreement, banking, and W-9
+   evidence; complete the remaining provider credentials and technical checks.
 4. Publish approved legal/support pages and deploy the production backend.
 5. Complete the separate RevenueCat App Store Connect API-key connection and
    remaining server/EAS production values. Optional Apple notifications may be

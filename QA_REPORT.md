@@ -18,20 +18,24 @@
 - The production public server exposes a zero-JavaScript, CSP-locked CUT launch
   page and blocks both origin and mounted Expo preview artifacts; the bounded
   live verifier checks the same contract.
-- Production startup performs a bounded RevenueCat customer-read permission
-  check. The least-privilege API v2 key's Customer Information Read & write,
-  Project Configuration Read only, Charts no-access permissions now have
-  controlled non-secret dashboard evidence. Production write/delete behavior,
-  the separate App Store Connect API key, owner ratification, and exact-build
+- Production startup includes a bounded RevenueCat customer-permission check.
+  Replacement API v2 key `CUT Replit Production Replacement 2026-08-04` has
+  controlled non-secret dashboard evidence for Customer Information
+  read/write, Project Configuration read-only, and Charts no-access settings.
+  A live preflight found a verifier assumption mismatch, so customer permission
+  is not yet technically verified. Production write/delete behavior, the
+  separate App Store Connect API credential, and exact-build
   restore-after-deletion QA remain open gates.
 - Replit now has the exact RevenueCat project, Apple app, entitlement, and
-  offering REST IDs as non-secret configurations. Its server API secret is
-  absent. Production Apple app `app8feee0dfba` is created for
+  offering REST IDs as non-secret configurations and the replacement server
+  API secret saved masked. Production Apple app `app8feee0dfba` is created for
   `com.zarifahmed.cut`, its subscription key is valid, and product
   `prod66e8dc0083` maps to `CUT_OS_PRO` and `default/$rc_monthly`. A public iOS
-  SDK key is provisioned without recording its value. The server API secret,
-  separate App Store Connect API key, owner ratification, and exact-build native
-  QA remain pending, so production continues to fail closed.
+  SDK key is provisioned without recording its value. Decision 3 owner
+  authorization is confirmed; the old unconfigured RevenueCat key remains and
+  has not been revoked. The verifier mismatch, separate App Store Connect API
+  credential, and exact-build native QA remain pending, so production continues
+  to fail closed.
 - App Store Connect app ID `6798020879`, subscription group ID `22286645`, and
   subscription ID `6798020349` are evidence-bound in the machine record. The
   factual credential-free subscription Review Notes are saved, but the product

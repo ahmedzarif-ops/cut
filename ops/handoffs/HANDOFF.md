@@ -23,9 +23,11 @@
   excludes Replit development-domain injection. The production public process
   serves a CSP-locked zero-JavaScript CUT page, blocks Expo preview artifacts at
   origin and mounted paths, and has a bounded live verifier.
-- RevenueCat startup now proves bounded customer-read access; customer
-  write/delete behavior, the separate App Store Connect API key, owner
-  ratification, and post-upload exact-build restore QA remain evidence gates.
+- RevenueCat startup includes a bounded customer-permission verifier, but live
+  preflight exposed a verifier assumption mismatch. Customer permission remains
+  technically unverified; customer write/delete behavior, the separate App
+  Store Connect API credential, and post-upload exact-build restore QA remain
+  evidence gates. Decision 3 owner authorization is confirmed.
   Database/migration and shutdown
   timeout relationships are cross-tested, and Metro gets only reviewed public
   values with dotenv loading forced off.
@@ -92,9 +94,14 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   Production EAS submission
   routing is pinned to Apple app ID `6798020879` and validated against
   subscription group ID `22286645` and subscription ID `6798020349`.
-- RevenueCat has a prepared least-privilege server API v2 key. Replit now has
-  the exact CUT project, Apple app, entitlement, and offering REST IDs as
-  non-secret configurations, but its RevenueCat server API secret is absent.
+- RevenueCat server API v2 replacement key
+  `CUT Replit Production Replacement 2026-08-04` is created with Charts no
+  access, Customer Information read/write, and Project Configuration read-only
+  dashboard settings. Replit now has its value saved masked and the exact CUT
+  project, Apple app, entitlement, and offering REST IDs as non-secret
+  configurations. A live preflight found a verifier assumption mismatch, so
+  customer permission is not yet technically verified. The old unconfigured
+  key remains and has not been revoked.
   The existing Test Store product remains test-only. The owner-approved real
   offer is a free download with `com.zarifahmed.cut.pro.monthly` at $4.99/month,
   no trial, Family Sharing off, United States only initially, and manual
@@ -102,10 +109,10 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   exact bundle, its subscription key is valid, and product `prod66e8dc0083`
   maps to `CUT_OS_PRO` and `default/$rc_monthly`. A public iOS SDK key is
   provisioned without recording its value. The separate App Store Connect API
-  key, server API secret, and public-iOS-key/EAS wiring remain pending.
+  credential and public-iOS-key/EAS wiring remain pending.
   **Transfer to new App User ID** is persisted with controlled non-secret
-  dashboard evidence; owner ratification and exact-build
-  restore-after-deletion QA remain required.
+  dashboard evidence; Decision 3 owner authorization is confirmed, while
+  exact-build restore-after-deletion QA remains required.
 - TestFlight group `CUT OS Internal QA` is configured with automatic
   distribution off, the authorized public feedback email, the exact beta
   description, 0 testers, and 0 builds. The subscription's credential-free
@@ -122,9 +129,10 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
    preflight can pass and the development-data copy setting is rechecked off.
 3. Keep the live active Apple membership, Paid Apps, banking, tax, and
    app/subscription evidence current.
-4. Connect and directly verify RevenueCat's separate App Store Connect API key,
-   then place the app REST ID and provisioned public iOS SDK key only in their
-   approved server/EAS destinations.
+4. Correct the RevenueCat verifier assumption mismatch and rerun the bounded
+   live preflight. Then connect and directly verify RevenueCat's separate App
+   Store Connect API credential and place the app REST ID and provisioned public
+   iOS SDK key only in their approved server/EAS destinations.
 5. Complete Replit production database, Clerk proxy/security, and RevenueCat
    Apple configuration only after their exact prerequisites can pass.
 6. Build the exact signed TestFlight candidate and complete physical-iPhone

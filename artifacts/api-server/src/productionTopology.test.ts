@@ -16,6 +16,9 @@ describe("source-controlled production topology", () => {
     expect(rootPackage.scripts["start:production"]).toBe(
       "node --enable-source-maps artifacts/api-server/dist/index.mjs",
     );
+    expect(rootPackage.scripts["verify:revenuecat:production"]).toBe(
+      "pnpm run build:production && node --enable-source-maps artifacts/api-server/dist/revenueCatPreflight.mjs",
+    );
     expect(rootPackage.scripts["dry-run:production"]).toBe(
       "pnpm run build:production && node ops/scripts/production-topology-dry-run.mjs",
     );
@@ -96,6 +99,7 @@ describe("source-controlled production topology", () => {
     expect(buildSource).toContain(
       'app: path.resolve(artifactDir, "src/app.ts")',
     );
+    expect(buildSource).toContain('"src/revenueCatPreflight.ts"');
     expect(buildSource).toContain('"src/lib/productionConfig.ts"');
     expect(buildSource).toContain('"../cut-os/server/templates"');
     expect(buildSource).toContain('"public-site/templates"');
@@ -129,6 +133,21 @@ describe("source-controlled production topology", () => {
     expect(startInvocation).toBeGreaterThan(listener);
     expect(entrypoint.match(/app\.listen\(/gu)).toHaveLength(1);
     expect(publicSite).not.toMatch(/\.listen\(/u);
+  });
+
+  it("ships a sanitized read-only RevenueCat verification command", () => {
+    const runner = readFileSync(
+      resolve(workspaceRoot, "artifacts/api-server/src/revenueCatPreflight.ts"),
+      "utf8",
+    );
+
+    expect(runner).toContain("verifyRevenueCatConfiguration({");
+    expect(runner).toContain('process.env["REVENUECAT_SECRET_API_KEY"]');
+    expect(runner).toContain("RevenueCatConfigurationPreflightError");
+    expect(runner).toContain('status: "failed", reason');
+    expect(runner).not.toContain("error.message");
+    expect(runner).not.toContain("error.stack");
+    expect(runner).not.toContain("JSON.stringify(error)");
   });
 
   it("smokes the built production gates on loopback without provider routes", () => {

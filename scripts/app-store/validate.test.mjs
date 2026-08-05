@@ -254,13 +254,13 @@ test("committed working App Store records preserve approved and pending scopes",
     "confirmed_in_revenuecat",
   );
   assert.deepEqual(submission.subscription.revenueCat.apiV2Key, {
-    label: "CUT Replit Production",
+    label: "CUT Replit Production Replacement 2026-08-04",
     apiVersion: "v2",
     customerInformationPermission: "read_write",
     projectConfigurationPermission: "read_only",
     chartsPermission: "no_access",
-    keyValueViewedDuringVerification: false,
-    verifiedAtUtc: "2026-08-04T22:13:34Z",
+    keyValueViewedDuringVerification: true,
+    verifiedAtUtc: "2026-08-05T00:25:43Z",
     evidenceReference:
       "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat",
   });
@@ -269,10 +269,12 @@ test("committed working App Store records preserve approved and pending scopes",
       .dashboardBehavior,
     "transfer_to_new_app_user_id",
   );
-  assert.equal(
-    submission.subscription.revenueCat.ownerAuthorization.status,
-    "pending",
-  );
+  assert.deepEqual(submission.subscription.revenueCat.ownerAuthorization, {
+    status: "confirmed",
+    verifiedAtUtc: "2026-08-05T00:25:43Z",
+    evidenceReference:
+      "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat",
+  });
   assert.equal(
     submission.subscription.revenueCat.productionMappingStatus,
     "verified",
@@ -280,6 +282,21 @@ test("committed working App Store records preserve approved and pending scopes",
   assert.equal(
     submission.subscription.revenueCat.appStoreConnectApiKeyStatus,
     "pending",
+  );
+  assert.equal(
+    submission.subscription.revenueCat.restoreAfterAccountDeletion
+      .nativeQaStatus,
+    "pending",
+  );
+  assert.equal(
+    submission.subscription.revenueCat.restoreAfterAccountDeletion
+      .nativeQaTestedAtUtc,
+    null,
+  );
+  assert.equal(
+    submission.subscription.revenueCat.restoreAfterAccountDeletion
+      .nativeQaEvidenceReference,
+    null,
   );
   assert.equal(
     submission.subscription.revenueCat.subscriptionKeyStatus,
@@ -600,7 +617,7 @@ test("the initial listing screenshot story includes a clear paid subscription of
   );
 });
 
-test("release mode stays fail closed while owner, privacy, and screenshot gates are open", () => {
+test("release mode stays fail closed while privacy, screenshot, and downstream launch gates are open", () => {
   const errors = validateBundle({ release: true });
   assert.ok(errors.length > 20);
   assert.ok(
@@ -673,6 +690,13 @@ test("release mode stays fail closed while owner, privacy, and screenshot gates 
     errors.includes(
       "release mode requires verified RevenueCat production mapping, customer read/write permission, and Apple credential dashboard evidence",
     ),
+  );
+  assert.equal(
+    errors.includes(
+      "release mode requires confirmed owner authorization for the prepared least-privilege RevenueCat server key, production Apple connection, and Transfer to new App User ID restore behavior",
+    ),
+    false,
+    "the committed owner authorization must remain complete while the distinct App Store Connect credential gate stays open",
   );
   assert.equal(
     errors.includes(
@@ -1376,7 +1400,11 @@ test("verified or ready states cannot omit their supporting evidence", () => {
     "verified";
   submission.subscription.revenueCat.verifiedAtUtc = null;
   submission.subscription.revenueCat.evidenceReference = null;
-  submission.subscription.revenueCat.ownerAuthorization.status = "confirmed";
+  Object.assign(submission.subscription.revenueCat.ownerAuthorization, {
+    status: "confirmed",
+    verifiedAtUtc: null,
+    evidenceReference: null,
+  });
   submission.subscription.exactBuildEvidence.storeKitOfferStatus = "verified";
   submission.accessibility.status = "evaluated_for_release";
   submission.accessibility.appStoreConnectDecision.decision =
@@ -1482,6 +1510,25 @@ test("RevenueCat restore after account deletion requires transfer behavior and n
   );
 });
 
+test("RevenueCat replacement key record rejects an obsolete label and an unrecorded masked transfer", () => {
+  const inputs = validationInputs();
+  const submission = clone(inputs.submission);
+  submission.subscription.revenueCat.apiV2Key.label = "CUT Replit Production";
+  submission.subscription.revenueCat.apiV2Key.keyValueViewedDuringVerification = false;
+
+  const errors = validateMetadata({ ...inputs, submission });
+  assert.ok(
+    errors.includes(
+      "subscription.revenueCat.apiV2Key.label must remain CUT Replit Production Replacement 2026-08-04",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "subscription.revenueCat.apiV2Key.keyValueViewedDuringVerification must remain true to record the one-time masked Replit transfer without persisting secret material",
+    ),
+  );
+});
+
 test("RevenueCat technical readiness cannot substitute for distinct owner authorization", () => {
   const inputs = validationInputs();
   const submission = clone(inputs.submission);
@@ -1508,6 +1555,11 @@ test("RevenueCat technical readiness cannot substitute for distinct owner author
     nativeQaTestedAtUtc: evidenceTime,
     nativeQaEvidenceReference:
       "evidence/restore-after-account-deletion-native-qa",
+  });
+  Object.assign(revenueCat.ownerAuthorization, {
+    status: "pending",
+    verifiedAtUtc: null,
+    evidenceReference: null,
   });
 
   const pendingErrors = validateMetadata({

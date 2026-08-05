@@ -122,49 +122,46 @@ name and description are reviewed.
 
 ## Decision 3 — RevenueCat production authorization
 
-**Status:** Least-privilege server preparation and the exact production Apple
-mapping are complete; the separate App Store Connect API credential, owner
-ratification, restore approval, and exact-build production evidence remain
-pending.
+**Status:** Owner ratification, the least-privilege replacement server key, and
+the exact production Apple mapping and restore behavior are complete. The
+separate App Store Connect API credential and exact-build native purchase and
+restore evidence remain pending.
 
-**Verified August 4, 2026:** A secret RevenueCat API v2 key named
-`CUT Replit Production` was created with Charts set to no access, Customer info
-set to Read & write, and Project configuration set to Read only. Its value is
-not present in the current Replit project and cannot be recovered from this
-repository. Replit now holds the exact CUT project, Apple app, entitlement, and
-default offering REST IDs as non-secret configurations. The existing Test Store
-product remains test-only and cannot collect the approved live subscription
-revenue.
+**Verified August 5, 2026 UTC:** The owner explicitly approved RevenueCat
+server-key replacement and Decision 3. A replacement secret RevenueCat API v2
+key named `CUT Replit Production Replacement 2026-08-04` was created with
+Charts set to no access, Customer info set to Read & write, and Project
+configuration set to Read only. Its value was transferred directly into the
+masked Replit secret `REVENUECAT_SECRET_API_KEY` without entering source, chat,
+shell output, or this record. Replit also holds the exact CUT project, Apple
+app, entitlement, and default offering REST IDs as non-secret configurations.
+The existing Test Store product remains test-only and cannot collect the
+approved live subscription revenue.
 
-This key preparation is a completed technical fact, not owner approval. The
-RevenueCat Apple app is now bound to `com.zarifahmed.cut`; the exact
+The RevenueCat Apple app is bound to `com.zarifahmed.cut`; the exact
 `com.zarifahmed.cut.pro.monthly` product is attached to `CUT_OS_PRO` and the
 default `$rc_monthly` package. RevenueCat reports the uploaded In-App Purchase
 subscription key as valid and provisioned the public iOS SDK key. The separate
 App Store Connect API credential remains pending and must not be conflated with
-that subscription key. These technical facts do not approve or claim the
-restore policy or full Decision 3 ratification.
+that subscription key.
 
 The production project must also use RevenueCat's **Transfer to new App User
-ID** restore behavior. That setting now has controlled non-secret dashboard
-evidence, but owner approval remains pending.
+ID** restore behavior. That setting has controlled non-secret dashboard
+evidence and is now owner-approved under Decision 3.
 It is required so an Apple subscription that continues after CUT account
 deletion can move to a replacement CUT account after Restore, without leaving
 the deleted account's old App User ID entitled. The full exact-build purchase →
 delete → replacement account → Restore → server-confirmed unlock test still
-requires separate evidence and is not currently approved or verified. See RevenueCat's
+requires separate evidence and is not currently verified. See RevenueCat's
 [Restore Behavior](https://www.revenuecat.com/docs/projects/restore-behavior)
 documentation.
 
-Exact approval phrase:
+Recorded owner approval phrase:
 
-> Ratify the prepared least-privilege RevenueCat server key and approve the CUT
-> App Store connection and RevenueCat Transfer to new App User ID restore
-> behavior after the exact Apple app and subscription identifiers are verified.
+> approve RevenueCat server-key replacement and Decision 3
 
-If that server key cannot be recovered through the owner's secured credential
-store, creating or rotating a replacement is a new credential action and needs
-fresh owner approval before Replit can receive it.
+The superseded key remains unconfigured. Revoking it is a separate destructive
+credential action and requires action-time confirmation.
 
 Never paste a secret key into source code, the mobile app, screenshots, support
 messages, or this decision record.
@@ -228,8 +225,8 @@ The owner must explicitly choose and record:
 - evidence that each choice was saved in App Store Connect.
 
 The working records retain controlled evidence for the saved free-download,
-United States-only, public, compatibility, and manual-release choices. The W-9
-is active; Paid Apps and banking remain processing. EULA, DSA, counsel, and
+United States-only, public, compatibility, and manual-release choices. Paid
+Apps, banking, and the W-9 are active. EULA, DSA, counsel, and
 overall commercial approval fields remain pending. The notifications record
 explicitly states `not_configured_optional_for_initial_release` with no URL or
 fabricated evidence.

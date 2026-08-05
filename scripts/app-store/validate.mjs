@@ -3037,8 +3037,9 @@ function validateSubscription({
     "subscription.revenueCat.apiV2Key must contain exactly the required keys",
   );
   check(
-    revenueCatApiV2Key?.label === "CUT Replit Production",
-    "subscription.revenueCat.apiV2Key.label must remain CUT Replit Production",
+    revenueCatApiV2Key?.label ===
+      "CUT Replit Production Replacement 2026-08-04",
+    "subscription.revenueCat.apiV2Key.label must remain CUT Replit Production Replacement 2026-08-04",
   );
   check(
     revenueCatApiV2Key?.apiVersion === "v2",
@@ -3056,9 +3057,12 @@ function validateSubscription({
     revenueCatApiV2Key?.chartsPermission === "no_access",
     "subscription.revenueCat.apiV2Key.chartsPermission must remain no_access",
   );
+  // This boolean records the one-time, in-memory transfer into Replit. The
+  // exact-key contract above prevents secret material from entering this
+  // tracked release record or its evidence metadata.
   check(
-    revenueCatApiV2Key?.keyValueViewedDuringVerification === false,
-    "subscription.revenueCat.apiV2Key.keyValueViewedDuringVerification must remain false",
+    revenueCatApiV2Key?.keyValueViewedDuringVerification === true,
+    "subscription.revenueCat.apiV2Key.keyValueViewedDuringVerification must remain true to record the one-time masked Replit transfer without persisting secret material",
   );
   check(
     validIsoTimestamp(revenueCatApiV2Key?.verifiedAtUtc) &&

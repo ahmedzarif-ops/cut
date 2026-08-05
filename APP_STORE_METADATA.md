@@ -346,13 +346,20 @@ controlled evidence; no defensible effective timestamp is recorded and
 public/effective revenue status remains pending. The subscription tax category
 inherits the required app-level category unless an explicit override is
 approved.
-RevenueCat production Apple app `app8feee0dfba` is created for
-`com.zarifahmed.cut`; its Apple subscription key is valid. Product
-`prod66e8dc0083` maps to `CUT_OS_PRO` and the `default` offering's
-`$rc_monthly` package. A public iOS SDK key is provisioned, but its value is not
-recorded here. The separate App Store Connect API key, owner ratification,
-native purchase/restore QA, exact build, submission, and release remain
-pending.
+RevenueCat production Apple app “app8feee0dfba” is created for
+“com.zarifahmed.cut”; its Apple subscription key is valid. Product
+“prod66e8dc0083” maps to “CUT_OS_PRO”. The “default” offering uses its
+“$rc_monthly” package. A public iOS SDK key is provisioned, but its value is not
+recorded here. A RevenueCat server API v2 replacement key named “CUT Replit
+Production Replacement 2026-08-04” is created with Charts no access, Customer
+Information read/write, and Project Configuration read-only permissions, and
+its value is saved masked in Replit. The owner confirmed Decision 3 using the
+exact phrase “approve RevenueCat server-key replacement and Decision 3”. The
+old unconfigured key remains in place and has not been revoked. A live
+preflight found a verifier assumption mismatch, so the replacement key's
+customer permission is not yet technically verified. The separate App Store
+Connect API credential, native purchase/restore QA, exact build, submission,
+and release remain pending.
 Release requires App Store Connect confirmation, attachment to version 1.0,
 retention of the already saved credential-free Review Notes, an uploaded review
 screenshot whose SHA-256 equals approved shot 07, verified RevenueCat mapping,

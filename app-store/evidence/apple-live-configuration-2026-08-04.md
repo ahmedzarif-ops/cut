@@ -2,7 +2,7 @@
 
 **Initial verification:** 2026-08-04T21:33:17Z
 
-**Latest live update:** 2026-08-04T23:49:03Z
+**Latest live update:** 2026-08-05T00:25:43Z
 
 **Method:** Direct confirmation in the live Apple Developer and App Store
 Connect interfaces, direct confirmation in the RevenueCat dashboard, plus
@@ -130,32 +130,37 @@ submitted or released.
 - RevenueCat provisioned the production public iOS SDK key. Its value is
   intentionally not stored in this repository.
 - Replit directly shows the project, Apple app, entitlement, and offering REST
-  IDs as non-secret configurations. A name-only shell check confirms the
-  RevenueCat server API secret is absent; no credential value was printed.
+  IDs as non-secret configurations. Replacement key value transfer was made
+  directly into the masked `REVENUECAT_SECRET_API_KEY` secret without printing
+  or storing the value in the repository.
 - The separate App Store Connect API credential remains unconfigured. This is
   distinct from the valid In-App Purchase subscription key, so automatic
   product import, price synchronization, and RevenueCat store-status checks
   remain unavailable.
-- API key label: `CUT Replit Production`.
+- Replacement API key label:
+  `CUT Replit Production Replacement 2026-08-04`.
 - API version: v2.
 - Customer Information permission: Read & write.
 - Project Configuration permission: Read only.
 - Charts permission: No access.
-- The key value was not opened or viewed during this live verification and is
-  not stored in the repository.
+- The key value was viewed only to transfer it directly into masked Replit
+  Secrets. It was not printed, logged, or stored in the repository.
 - Project restore behavior is persisted as `Transfer to new App User ID`.
 - The exact production Apple app, product, entitlement, and default monthly
   offering mapping is verified.
-- Owner authorization of the RevenueCat production connection remains pending.
+- Owner authorization of the RevenueCat production connection and **Transfer to
+  new App User ID** restore behavior was confirmed at
+  `2026-08-05T00:25:43Z`.
 - No exact-build native purchase or restore QA has been completed.
 
 ## Open gates
 
 - The Apple In-App Purchase subscription credential remains secured outside the
   repository. Its contents and storage location are intentionally excluded.
-- RevenueCat still needs the separate App Store Connect API credential, owner
-  ratification of the prepared production connection and restore behavior, and
-  controlled exact-build native purchase/restore verification.
+- RevenueCat still needs the separate App Store Connect API credential and
+  controlled exact-build native purchase/restore verification. The superseded
+  server key remains unconfigured; revocation requires a distinct destructive
+  credential confirmation.
 - The first subscription must still be attached to version 1.0.0 with the
   approved review screenshot. Its factual credential-free Review Notes are
   already saved.

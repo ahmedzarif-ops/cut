@@ -26,8 +26,16 @@ any Apple Sandbox or TestFlight item.
       SDK key is provisioned without recording its value here.
 - [x] Product `prod66e8dc0083` maps to exact entitlement `CUT_OS_PRO` and the
       current `default/$rc_monthly` offering package.
-- [ ] The separate RevenueCat App Store Connect API key is directly verified;
-      owner ratification remains a distinct gate.
+- [x] RevenueCat server API v2 replacement key
+      `CUT Replit Production Replacement 2026-08-04` is created with Charts
+      no access, Customer Information read/write, and Project Configuration
+      read-only permissions, and is saved masked in Replit. Decision 3 owner
+      authorization is confirmed by the exact phrase
+      `approve RevenueCat server-key replacement and Decision 3`. The old
+      unconfigured key is not revoked.
+- [ ] Correct the live verifier assumption mismatch and rerun the bounded
+      preflight before marking customer permission technically verified.
+- [ ] The separate RevenueCat App Store Connect API key is directly verified.
 - [x] RevenueCat **Project settings → General → Restore behavior** is directly
       verified as **Transfer to new App User ID** for production; any enabled
       sandbox override uses the same behavior. Record UTC and controlled,

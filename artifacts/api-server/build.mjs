@@ -18,6 +18,10 @@ async function buildAll() {
     entryPoints: {
       index: path.resolve(artifactDir, "src/index.ts"),
       app: path.resolve(artifactDir, "src/app.ts"),
+      revenueCatPreflight: path.resolve(
+        artifactDir,
+        "src/revenueCatPreflight.ts",
+      ),
       productionConfig: path.resolve(
         artifactDir,
         "src/lib/productionConfig.ts",

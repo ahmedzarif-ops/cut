@@ -15,6 +15,9 @@ const ENTITLEMENT_REST_ID = "entlProduction1234";
 const APP_REST_ID = "appProduction1234";
 const OFFERING_REST_ID = "ofrngProduction1234";
 const PRODUCT_REST_ID = "prodProduction1234";
+const TEST_STORE_APP_REST_ID = "appTestStore123456";
+const TEST_STORE_PRODUCT_REST_ID = "prodTestStore123456";
+const TEST_STORE_PRODUCT_IDENTIFIER = "rc_test_monthly";
 const CUSTOMER_REST_ID = "cut-internal-user-uuid";
 
 function response(payload: unknown, status = 200): Response {
@@ -68,6 +71,22 @@ function productPayload(
     },
     ...overrides,
   };
+}
+
+function testStoreProductPayload(
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return productPayload({
+    id: TEST_STORE_PRODUCT_REST_ID,
+    store_identifier: TEST_STORE_PRODUCT_IDENTIFIER,
+    app_id: TEST_STORE_APP_REST_ID,
+    subscription: {
+      duration: null,
+      grace_period_duration: null,
+      trial_duration: null,
+    },
+    ...overrides,
+  });
 }
 
 function packageProductAssociation(
@@ -259,6 +278,36 @@ describe("RevenueCat production configuration preflight", () => {
     ).resolves.toBeUndefined();
   });
 
+  it("accepts the production-shaped Apple target alongside a cross-app Test Store association", async () => {
+    const targetProduct = productPayload({
+      subscription: {
+        duration: null,
+        grace_period_duration: null,
+        trial_duration: null,
+      },
+    });
+    const testStoreProduct = testStoreProductPayload();
+    const fetchImpl = configuredFetch({
+      products: productsPayload([testStoreProduct, targetProduct]),
+      offering: offeringPayload({
+        packages: [
+          offeringPackage({
+            productAssociations: [
+              packageProductAssociation(testStoreProduct, {
+                eligibility_criteria: "google_sdk_ge_6",
+              }),
+              packageProductAssociation(targetProduct),
+            ],
+          }),
+        ],
+      }),
+    });
+
+    await expect(
+      verifyRevenueCatConfiguration(verificationOptions(fetchImpl)),
+    ).resolves.toBeUndefined();
+  });
+
   it.each([
     ["wrong project", entitlementPayload({ project_id: "projOther123456" })],
     [
@@ -335,12 +384,11 @@ describe("RevenueCat production configuration preflight", () => {
       ]),
     ],
     [
-      "additional attached product",
+      "duplicate target product identity",
       productsPayload([
         productPayload(),
         productPayload({
           id: "prodOther123456",
-          store_identifier: "com.zarifahmed.cut.pro.annual",
         }),
       ]),
     ],
@@ -356,6 +404,17 @@ describe("RevenueCat production configuration preflight", () => {
     await expect(
       verifyRevenueCatConfiguration(verificationOptions(fetchImpl)),
     ).rejects.toMatchObject({ reason: "configuration_mismatch" });
+  });
+
+  it("rejects a malformed unrelated entitlement product as an invalid response", async () => {
+    const malformedTestStoreProduct = testStoreProductPayload({ id: 42 });
+    const fetchImpl = configuredFetch({
+      products: productsPayload([productPayload(), malformedTestStoreProduct]),
+    });
+
+    await expect(
+      verifyRevenueCatConfiguration(verificationOptions(fetchImpl)),
+    ).rejects.toMatchObject({ reason: "invalid_response" });
   });
 
   it.each([
@@ -402,7 +461,7 @@ describe("RevenueCat production configuration preflight", () => {
       }),
     ],
     [
-      "package with an additional product",
+      "package with a duplicate target product identity",
       offeringPayload({
         packages: [
           offeringPackage({
@@ -411,7 +470,6 @@ describe("RevenueCat production configuration preflight", () => {
               packageProductAssociation(
                 productPayload({
                   id: "prodOther123456",
-                  store_identifier: "com.zarifahmed.cut.pro.annual",
                 }),
               ),
             ],
@@ -497,6 +555,27 @@ describe("RevenueCat production configuration preflight", () => {
     await expect(
       verifyRevenueCatConfiguration(verificationOptions(fetchImpl)),
     ).rejects.toMatchObject({ reason: "configuration_mismatch" });
+  });
+
+  it("rejects a malformed unrelated package product as an invalid response", async () => {
+    const fetchImpl = configuredFetch({
+      offering: offeringPayload({
+        packages: [
+          offeringPackage({
+            productAssociations: [
+              packageProductAssociation(productPayload()),
+              packageProductAssociation(
+                testStoreProductPayload({ app_id: null }),
+              ),
+            ],
+          }),
+        ],
+      }),
+    });
+
+    await expect(
+      verifyRevenueCatConfiguration(verificationOptions(fetchImpl)),
+    ).rejects.toMatchObject({ reason: "invalid_response" });
   });
 
   it("accepts official list responses that omit a null next-page cursor", async () => {

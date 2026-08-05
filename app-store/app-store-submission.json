@@ -388,22 +388,22 @@
     "revenueCat": {
       "offeringId": "default",
       "ownerAuthorization": {
-        "status": "pending",
-        "verifiedAtUtc": null,
-        "evidenceReference": null
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-05T00:25:43Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat"
       },
       "productionMappingStatus": "verified",
       "appStoreConnectApiKeyStatus": "pending",
       "subscriptionKeyStatus": "verified",
       "customerReadWritePermissionStatus": "confirmed_in_revenuecat",
       "apiV2Key": {
-        "label": "CUT Replit Production",
+        "label": "CUT Replit Production Replacement 2026-08-04",
         "apiVersion": "v2",
         "customerInformationPermission": "read_write",
         "projectConfigurationPermission": "read_only",
         "chartsPermission": "no_access",
-        "keyValueViewedDuringVerification": false,
-        "verifiedAtUtc": "2026-08-04T22:13:34Z",
+        "keyValueViewedDuringVerification": true,
+        "verifiedAtUtc": "2026-08-05T00:25:43Z",
         "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat"
       },
       "restoreAfterAccountDeletion": {
