@@ -1,7 +1,12 @@
 modules = ["nodejs-24"]
 
+[packager.features]
+enabledForHosting = false
+
 [deployment]
 router = "application"
+build = "corepack pnpm install --frozen-lockfile --prod=false && corepack pnpm run build:production"
+run = "corepack pnpm run start:production"
 
 [deployment.postBuild]
 args = ["corepack", "pnpm", "store", "prune"]

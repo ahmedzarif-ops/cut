@@ -12,13 +12,21 @@ PostgreSQL as the source of truth.
   command metadata.
 - The root `engines.pnpm` guard admits only Replit's observed provider
   bootstrap (`10.26.1`) and the selected project version (`10.34.5`). Replit
-  uses that bootstrapper to install the exact `packageManager` pin before the
-  source-controlled build runs; the exception does not change the package
-  manager selected by Corepack.
+  may use that bootstrapper for package operations in the editor; the
+  exception does not change the exact package manager selected by Corepack for
+  source-controlled commands.
 - Replit's ephemeral build-package resolver installs that pinned CLI at the
-  workspace root without pnpm's `--workspace-root` flag. The audited
-  `.npmrc` permits this provider bootstrap; committed dependency changes still
-  require the source-controlled manifest, lockfile, and CI checks.
+  workspace root without pnpm's `--workspace-root` flag when the resolver is
+  invoked in the editor. The audited `.npmrc` permits that editor bootstrap;
+  committed dependency changes still require the source-controlled manifest,
+  lockfile, and CI checks.
+- Hosting explicitly sets `packager.features.enabledForHosting = false`, so
+  Replit does not run its provider package installer ahead of the audited
+  Publishing build command. The source-controlled deployment build performs a
+  frozen install with `--prod=false` before compiling, so TypeScript and other
+  build-time dependencies remain present even when the build environment sets
+  `NODE_ENV=production`. This avoids a provider bootstrap outside the audited
+  build while preserving the exact Corepack-selected pnpm version.
 - `pnpm run build:production` — build the one production HTTP artifact (API +
   Clerk proxy + public launch/legal/support/status routes)
 - `pnpm run start:production` — start that sole production process on the
@@ -90,11 +98,12 @@ for all Expo manifests and preview assets. The mobile artifact remains available
 for Replit development/Expo preview but intentionally declares no production
 service.
 
-For a Reserved VM draft, set the Publishing **Build command** to
-`corepack pnpm run build:production` and the **Run command** to
-`corepack pnpm run start:production`, choose one Web Server port mapped
-to the injected `PORT`, and keep the app unpublished until the owner approves
-hosting and all production secrets and release gates are complete.
+For a Reserved VM draft, keep the source-controlled Publishing **Build command**
+`corepack pnpm install --frozen-lockfile --prod=false && corepack pnpm run build:production`
+and **Run command** `corepack pnpm run start:production`, choose one Web Server
+port mapped to the injected `PORT`, and keep the app unpublished until the
+owner approves hosting and all production secrets and release gates are
+complete.
 
 ## Stack
 

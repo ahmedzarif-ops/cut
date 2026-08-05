@@ -77,6 +77,21 @@ test("Replit runtime commands use the repository-pinned pnpm version", () => {
     /^ignore-workspace-root-check=true$/mu,
     "the Replit resolver must be able to install the exact pnpm pin in its ephemeral workspace root",
   );
+  assert.match(
+    replitConfiguration,
+    /^enabledForHosting\s*=\s*false$/mu,
+    "Replit hosting must not run its provider package installer before the audited build command",
+  );
+  assert.match(
+    replitConfiguration,
+    /^build\s*=\s*"corepack pnpm install --frozen-lockfile --prod=false && corepack pnpm run build:production"$/mu,
+    "the deployment build must install the frozen dependency graph, including build-time dependencies, before compiling",
+  );
+  assert.match(
+    replitConfiguration,
+    /^run\s*=\s*"corepack pnpm run start:production"$/mu,
+    "the deployment runtime must use the repository-pinned production start command",
+  );
   assert.doesNotMatch(
     replitConfiguration,
     /^\s*deploymentTarget\s*=/mu,
