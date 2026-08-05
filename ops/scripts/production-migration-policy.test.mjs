@@ -60,6 +60,7 @@ test("the Replit post-merge hook is dependency-install-only", () => {
 
 test("Replit runtime commands use the repository-pinned pnpm version", () => {
   const replitConfiguration = readRepoFile(".replit");
+  const pnpmConfiguration = readRepoFile(".npmrc");
   const workspacePackage = JSON.parse(readRepoFile("package.json"));
   assert.equal(
     workspacePackage.packageManager,
@@ -70,6 +71,11 @@ test("Replit runtime commands use the repository-pinned pnpm version", () => {
     workspacePackage.engines?.pnpm,
     "10.26.1 || 10.34.5",
     "only the observed provider bootstrap and exact project pnpm may pass the engine guard",
+  );
+  assert.match(
+    pnpmConfiguration,
+    /^ignore-workspace-root-check=true$/mu,
+    "the Replit resolver must be able to install the exact pnpm pin in its ephemeral workspace root",
   );
   assert.doesNotMatch(
     replitConfiguration,

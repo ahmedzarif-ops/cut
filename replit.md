@@ -15,6 +15,10 @@ PostgreSQL as the source of truth.
   uses that bootstrapper to install the exact `packageManager` pin before the
   source-controlled build runs; the exception does not change the package
   manager selected by Corepack.
+- Replit's ephemeral build-package resolver installs that pinned CLI at the
+  workspace root without pnpm's `--workspace-root` flag. The audited
+  `.npmrc` permits this provider bootstrap; committed dependency changes still
+  require the source-controlled manifest, lockfile, and CI checks.
 - `pnpm run build:production` — build the one production HTTP artifact (API +
   Clerk proxy + public launch/legal/support/status routes)
 - `pnpm run start:production` — start that sole production process on the
