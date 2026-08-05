@@ -75,10 +75,10 @@ describe("source-controlled production topology", () => {
       /^\[services\.production\.health\.startup\]\npath = "\/api\/readyz"$/mu,
     );
     expect(apiArtifact).toContain(
-      '["corepack", "pnpm@10.34.5", "run", "build:production"]',
+      '["corepack", "pnpm", "run", "build:production"]',
     );
     expect(apiArtifact).toContain(
-      '["corepack", "pnpm@10.34.5", "run", "start:production"]',
+      '["corepack", "pnpm", "run", "start:production"]',
     );
     expect(mobileArtifact).not.toMatch(/^\[services\.production(?:\.|\])/mu);
     expect(mobileArtifact).toContain("[services.development]");

@@ -4,7 +4,7 @@ modules = ["nodejs-24"]
 router = "application"
 
 [deployment.postBuild]
-args = ["corepack", "pnpm@10.34.5", "store", "prune"]
+args = ["corepack", "pnpm", "store", "prune"]
 env = { "CI" = "true" }
 
 [workflows]
@@ -17,11 +17,11 @@ author = 61899471
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PORT=8080 corepack pnpm@10.34.5 --filter @workspace/api-server run dev"
+args = "PORT=8080 corepack pnpm --filter @workspace/api-server run dev"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PORT=22203 corepack pnpm@10.34.5 --filter @workspace/cut-os run dev"
+args = "PORT=22203 corepack pnpm --filter @workspace/cut-os run dev"
 
 [agent]
 stack = "PNPM_WORKSPACE"

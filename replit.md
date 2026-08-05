@@ -6,9 +6,9 @@ PostgreSQL as the source of truth.
 
 ## Run & Operate
 
-- Replit service, deployment, and post-merge commands invoke
-  `corepack pnpm@10.34.5` so the runtime uses the exact version pinned by the
-  repository instead of Replit's ambient package-manager binary.
+- Replit service, deployment, and post-merge commands invoke `corepack pnpm`,
+  which resolves the exact `pnpm@10.34.5` version pinned by the repository
+  without asking Replit's build-package resolver to install pnpm itself.
 - `pnpm run build:production` — build the one production HTTP artifact (API +
   Clerk proxy + public launch/legal/support/status routes)
 - `pnpm run start:production` — start that sole production process on the
@@ -81,8 +81,8 @@ for Replit development/Expo preview but intentionally declares no production
 service.
 
 For a Reserved VM draft, set the Publishing **Build command** to
-`corepack pnpm@10.34.5 run build:production` and the **Run command** to
-`corepack pnpm@10.34.5 run start:production`, choose one Web Server port mapped
+`corepack pnpm run build:production` and the **Run command** to
+`corepack pnpm run start:production`, choose one Web Server port mapped
 to the injected `PORT`, and keep the app unpublished until the owner approves
 hosting and all production secrets and release gates are complete.
 

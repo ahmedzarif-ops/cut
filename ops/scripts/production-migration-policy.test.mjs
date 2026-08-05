@@ -5,7 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const pinnedPnpmCommand = "corepack pnpm@10.34.5";
+const pinnedPnpmCommand = "corepack pnpm";
 
 function readRepoFile(path) {
   return readFileSync(resolve(repoRoot, path), "utf8");
@@ -60,6 +60,12 @@ test("the Replit post-merge hook is dependency-install-only", () => {
 
 test("Replit runtime commands use the repository-pinned pnpm version", () => {
   const replitConfiguration = readRepoFile(".replit");
+  const workspacePackage = JSON.parse(readRepoFile("package.json"));
+  assert.equal(
+    workspacePackage.packageManager,
+    "pnpm@10.34.5",
+    "Corepack must resolve the repository's exact audited pnpm version",
+  );
   assert.doesNotMatch(
     replitConfiguration,
     /^\s*deploymentTarget\s*=/mu,
@@ -67,7 +73,7 @@ test("Replit runtime commands use the repository-pinned pnpm version", () => {
   );
   assert.match(
     replitConfiguration,
-    /args\s*=\s*\["corepack",\s*"pnpm@10\.34\.5",\s*"store",\s*"prune"\]/u,
+    /args\s*=\s*\["corepack",\s*"pnpm",\s*"store",\s*"prune"\]/u,
     "deployment post-build cleanup must use the pinned package manager",
   );
   assert.match(
@@ -77,12 +83,12 @@ test("Replit runtime commands use the repository-pinned pnpm version", () => {
   );
   assert.match(
     replitConfiguration,
-    /args\s*=\s*"PORT=8080 corepack pnpm@10\.34\.5 --filter @workspace\/api-server run dev"/u,
+    /args\s*=\s*"PORT=8080 corepack pnpm --filter @workspace\/api-server run dev"/u,
     "the development workflow must start the API on its routed port",
   );
   assert.match(
     replitConfiguration,
-    /args\s*=\s*"PORT=22203 corepack pnpm@10\.34\.5 --filter @workspace\/cut-os run dev"/u,
+    /args\s*=\s*"PORT=22203 corepack pnpm --filter @workspace\/cut-os run dev"/u,
     "the development workflow must start Expo on its preview port",
   );
 
@@ -95,8 +101,13 @@ test("Replit runtime commands use the repository-pinned pnpm version", () => {
     const source = readRepoFile(path);
     assert.match(
       source,
-      /corepack(?:",\s*")? pnpm@10\.34\.5|corepack",\s*"pnpm@10\.34\.5/u,
+      /corepack(?:",\s*")? pnpm|corepack",\s*"pnpm/u,
       `${path} must invoke the pinned package manager through Corepack`,
+    );
+    assert.doesNotMatch(
+      source,
+      /pnpm@/u,
+      `${path} must let Corepack read packageManager instead of asking Replit to install pnpm`,
     );
     assert.doesNotMatch(
       source,

@@ -10,12 +10,12 @@ name = "API Server"
 paths = ["/"]
 
 [services.development]
-run = "corepack pnpm@10.34.5 --filter @workspace/api-server run dev"
+run = "corepack pnpm --filter @workspace/api-server run dev"
 
 [services.production]
 
 [services.production.build]
-args = ["corepack", "pnpm@10.34.5", "run", "build:production"]
+args = ["corepack", "pnpm", "run", "build:production"]
 
 [services.production.build.env]
 NODE_ENV = "production"
@@ -23,7 +23,7 @@ NODE_ENV = "production"
 [services.production.run]
 # Sole production process: API, Clerk proxy, landing, legal, support, and status
 # all share this one platform-provided PORT.
-args = ["corepack", "pnpm@10.34.5", "run", "start:production"]
+args = ["corepack", "pnpm", "run", "start:production"]
 
 [services.production.run.env]
 PORT = "8080"

@@ -14,4 +14,4 @@ PORT = "8081"
 BASE_PATH = "/__mockup"
 
 [services.development]
-run = "corepack pnpm@10.34.5 --filter @workspace/mockup-sandbox run dev"
+run = "corepack pnpm --filter @workspace/mockup-sandbox run dev"
