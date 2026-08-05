@@ -41,3 +41,11 @@ externalPort = 80
 
 [[ports]]
 localPort = 22203
+
+[userenv]
+
+[userenv.shared]
+REVENUECAT_PROJECT_ID = "projea0cbd46"
+REVENUECAT_ENTITLEMENT_REST_ID = "entl8efd6d2c18"
+REVENUECAT_APP_REST_ID = "app8feee0dfba"
+REVENUECAT_OFFERING_REST_ID = "ofrngeb5cc4a73c"
