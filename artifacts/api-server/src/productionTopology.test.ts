@@ -114,6 +114,9 @@ describe("source-controlled production topology", () => {
       resolve(workspaceRoot, "artifacts/api-server/src/publicSite.ts"),
       "utf8",
     );
+    const environmentPreparation = entrypoint.indexOf(
+      "prepareProductionEnvironment();",
+    );
     const configurationGate = entrypoint.indexOf(
       "assertProductionConfiguration();",
     );
@@ -126,7 +129,8 @@ describe("source-controlled production topology", () => {
     const listener = entrypoint.indexOf("app.listen(port");
     const startInvocation = entrypoint.indexOf("void start().catch(");
 
-    expect(configurationGate).toBeGreaterThan(-1);
+    expect(environmentPreparation).toBeGreaterThan(-1);
+    expect(configurationGate).toBeGreaterThan(environmentPreparation);
     expect(providerGate).toBeGreaterThan(configurationGate);
     expect(databaseGate).toBeGreaterThan(providerGate);
     expect(listener).toBeGreaterThan(databaseGate);

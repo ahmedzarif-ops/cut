@@ -6,8 +6,8 @@
 
 ## Current launch addendum — August 4, 2026
 
-- **1,341/1,341 automated tests pass:** 300 release operations, 60 App Store, 33
-  domain, 4 database, 438 mobile, and 506 API.
+- **1,373/1,373 automated tests pass:** 300 release operations, 61 App Store, 33
+  domain, 4 database, 438 mobile, and 537 API.
 - Root TypeScript, generated-code drift, working App Store validation,
   changed-file formatting, `.replit` parsing, migration drift, Expo dependency
   health, and a non-secret production-profile Expo bundle rehearsal pass. The
@@ -23,7 +23,8 @@
   controlled non-secret dashboard evidence for Customer Information
   read/write, Project Configuration read-only, and Charts no-access settings.
   The corrected source-controlled, read-only live preflight passed from Replit
-  on exact green commit `a7cbea360593681e4971fea3b3c05e78cd7604e4`,
+  on then-current green commit
+  `930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`,
   verifying the exact CUT iOS mapping and bounded customer-read access.
   Dashboard evidence verifies customer read/write permission without issuing a
   test write or deletion. Production write/delete behavior, the separate App
@@ -36,9 +37,20 @@
   `prod66e8dc0083` maps to `CUT_OS_PRO` and `default/$rc_monthly`. A public iOS
   SDK key is provisioned without recording its value. Decision 3 owner
   authorization is confirmed; the old unconfigured RevenueCat key remains and
-  has not been revoked. The verifier mismatch, separate App Store Connect API
-  credential, and exact-build native QA remain pending, so production continues
+  has not been revoked. The production-shaped cross-app association and nullable
+  duration verifier mismatch is resolved. The separate App Store Connect API
+  credential and exact-build native QA remain pending, so production continues
   to fail closed.
+- Replit provisioned a production database during a first publish attempt while
+  the development-data-copy control was off. The attempt was canceled before
+  application bundling or promotion, so no production app is promoted or
+  running. The production schema is present and every application table has
+  zero rows. Replit exposes the credential-bearing connection value read-only
+  with `sslmode=require`. CUT now source-tests a fail-closed runtime adaptation
+  of only that exact supported shape to `sslmode=verify-full`; invalid,
+  ambiguous, credential-incomplete, and IP-literal URLs remain rejected. A live
+  TLS/readiness check remains pending. No billing or charge status is asserted
+  by this evidence.
 - App Store Connect app ID `6798020879`, subscription group ID `22286645`, and
   subscription ID `6798020349` are evidence-bound in the machine record. The
   factual credential-free subscription Review Notes are saved, but the product

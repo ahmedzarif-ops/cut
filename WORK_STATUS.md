@@ -171,8 +171,8 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 1,341 tests** (release operations 300, App Store
-  artifacts 60, domain 33, database 4, mobile 438, API 506).
+- `pnpm run test`: **PASS — 1,373 tests** (release operations 300, App Store
+  artifacts 61, domain 33, database 4, mobile 438, API 537).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
@@ -270,11 +270,14 @@ launch gate.
   and 0 builds; no build assignment or QA is claimed.
 - Replit hosting is owner-approved up to **$20/month before tax** and phone
   verification is complete. The clean workspace matches the exact source
-  checkpoint. The one-machine $15 Reserved VM remains stopped and unpublished,
-  so its recurring server charge has not started. The provider UI reset the
-  development-data-copy option on and it was directly returned to off at
-  `2026-08-04T23:54:24Z`; production database creation and its exact TLS mode
-  remain unverified until publish.
+  checkpoint. The first publish was canceled before application bundling or
+  promotion, so no production app is promoted or running. The no-copy control
+  was off. Replit nevertheless provisioned the production database schema, and
+  every application table has zero rows. Its credential-bearing connection
+  value is provider-managed and read-only with `sslmode=require`. CUT now
+  source-tests a fail-closed adaptation of only that exact supported shape to
+  `sslmode=verify-full`; live TLS/readiness proof and recovery evidence remain
+  open. No billing or charge status is asserted here.
 - Clerk production exists on the free Hobby plan for
   `cut-ahmedzarif1.replit.app`; live keys were transferred directly into Replit
   without entering source. Proxy health and exact production security/iOS
@@ -292,7 +295,7 @@ launch gate.
   `approve RevenueCat server-key replacement and Decision 3`; the old
   unconfigured key remains and has not been revoked. The corrected,
   source-controlled read-only preflight passed from Replit on exact green
-  commit `a7cbea360593681e4971fea3b3c05e78cd7604e4`, verifying the exact CUT iOS
+  commit `930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`, verifying the exact CUT iOS
   mapping and bounded customer-read access. Dashboard evidence verifies
   customer read/write permission without issuing a test write or deletion. The
   separate App Store Connect API credential and exact-build native restore QA

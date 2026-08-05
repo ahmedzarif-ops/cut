@@ -357,7 +357,7 @@ its value is saved masked in Replit. The owner confirmed Decision 3 using the
 exact phrase “approve RevenueCat server-key replacement and Decision 3”. The
 old unconfigured key remains in place and has not been revoked. A live
 source-controlled, read-only preflight passed from Replit on exact green commit
-`a7cbea360593681e4971fea3b3c05e78cd7604e4`, verifying bounded customer-read
+`930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`, verifying bounded customer-read
 access and the exact CUT iOS mapping. Customer read/write permission is
 verified from the exact dashboard setting without issuing a test write or
 deletion. The separate App Store Connect API credential, native

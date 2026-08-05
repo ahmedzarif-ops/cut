@@ -148,9 +148,10 @@ submitted or released.
 - Project restore behavior is persisted as `Transfer to new App User ID`.
 - The exact production Apple app, product, entitlement, and default monthly
   offering mapping is verified.
-- Replit was fast-forwarded cleanly to green commit
-  `a7cbea360593681e4971fea3b3c05e78cd7604e4`. At
-  `2026-08-05T00:46:13Z`, the source-controlled, read-only production preflight
+- At `2026-08-05T00:46:13Z`, the source-controlled, read-only production
+  preflight returned only `{"status":"verified"}`. Replit was then
+  fast-forwarded cleanly to then-current green commit
+  `930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`, and the same preflight again
   returned only `{"status":"verified"}`. It verified the exact project, app,
   entitlement, CUT iOS product, current offering/package association, and
   bounded customer-read access. RevenueCat's separate Test Store companion

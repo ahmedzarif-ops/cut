@@ -45,14 +45,17 @@ derived from dashboard URLs or public lookup keys.
 Any preview or Test Store build that sets a RevenueCat iOS SDK key must also
 set the exact product ID for that offering. Production API startup verifies the
 official v2 app, entitlement, attached-product, expanded offering, and bounded
-customer-list shapes:
-the only active attached subscription must be
-`com.zarifahmed.cut.pro.monthly` for the exact iOS app, with RevenueCat duration
-`P1M` and no trial duration. The exact configured offering must be active and
-current, with exactly one package mapping that same active RevenueCat product
-resource. The documented read response does not expose App Store Connect API-
-key, Apple subscription-key configuration, or customer write/delete access, so
-those settings remain a separate dashboard-evidence gate below. The customer
+customer-list shapes. It requires exactly one matching active, no-trial target
+product for the exact iOS app and store identifier
+`com.zarifahmed.cut.pro.monthly`; unrelated products for other apps or store
+identifiers may legitimately share the entitlement or package. RevenueCat may
+report the target duration as either `null` or `P1M`, so the exact monthly
+period remains separately proven by App Store Connect evidence. The exact
+configured offering must be active and current, with exactly one target-product
+association in its package; unrelated associations do not invalidate that
+target mapping. The documented read response does not expose App Store Connect
+API-key, Apple subscription-key configuration, or customer write/delete access,
+so those settings remain a separate dashboard-evidence gate below. The customer
 permission preflight performs only `GET /projects/{project_id}/customers?limit=1`
 to prove read access; it never follows pagination or probes `DELETE`. Semantic,
 authentication, and missing-resource failures stop startup.

@@ -34,7 +34,8 @@ any Apple Sandbox or TestFlight item.
       `approve RevenueCat server-key replacement and Decision 3`. The old
       unconfigured key is not revoked.
 - [x] The corrected source-controlled, read-only preflight passed from Replit
-      on exact green commit `a7cbea360593681e4971fea3b3c05e78cd7604e4`.
+      on then-current green commit
+      `930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`.
       It verified the exact CUT iOS mapping and bounded customer-read access;
       dashboard evidence verifies read/write permission without issuing a test
       write or deletion.

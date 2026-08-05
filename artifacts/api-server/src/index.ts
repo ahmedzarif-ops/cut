@@ -3,7 +3,10 @@ import { logger } from "./lib/logger";
 import { getPool } from "@workspace/db";
 import { createShutdownHandler, parseShutdownTimeout } from "./lib/shutdown";
 import { startAccountDeletionWorker } from "./services/accountDeletionWorker";
-import { assertProductionConfiguration } from "./lib/productionConfig";
+import {
+  assertProductionConfiguration,
+  prepareProductionEnvironment,
+} from "./lib/productionConfig";
 import {
   prepareProductionDatabase,
   StartupMigrationError,
@@ -20,6 +23,7 @@ import {
 // Development and test remain easy to run, but a production process must not
 // bind a port with placeholder credentials, an insecure database transport,
 // or no usable browser origin.
+prepareProductionEnvironment();
 assertProductionConfiguration();
 
 const rawPort = process.env["PORT"];

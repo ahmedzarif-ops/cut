@@ -138,9 +138,10 @@ app, entitlement, and default offering REST IDs as non-secret configurations.
 The existing Test Store product remains test-only and cannot collect the
 approved live subscription revenue.
 
-The replacement key then passed the source-controlled, read-only production
-preflight from Replit at `2026-08-05T00:46:13Z` on green commit
-`a7cbea360593681e4971fea3b3c05e78cd7604e4`. The check verified bounded
+The replacement key first passed the source-controlled, read-only production
+preflight from Replit at `2026-08-05T00:46:13Z` and was rechecked after Replit
+fast-forwarded to then-current green commit
+`930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`. The check verified bounded
 customer-read access and the exact CUT iOS mapping without issuing a customer
 write or deletion.
 
@@ -213,11 +214,11 @@ decisions.
 **Status:** The owner-approved free-download, United States-only, public,
 iPhone-only, manual-release commercial settings are saved in App Store Connect.
 Paid Apps shows an August 4, 2026 through August 3, 2027 effective period with
-status `Processing`; banking is `Processing`, and U.S. Form W-9 is `Active`
-after its August 4 submission. The tax gate is confirmed; the agreement gate,
-EULA, banking, DSA, counsel review, and full commercial approval remain pending. Optional App Store Server
-Notifications are explicitly omitted from the initial release rather than
-treated as a submission gate.
+status `Active`; banking is `Active`, and U.S. Form W-9 is `Active` after its
+August 4 submission. Apple commerce readiness is confirmed; EULA, app tax
+category, DSA, counsel review, and full commercial approval remain pending.
+Optional App Store Server Notifications are explicitly omitted from the
+initial release rather than treated as a submission gate.
 
 The owner must explicitly choose and record:
 
@@ -305,7 +306,7 @@ Credentials remain only in App Store Connect or approved secret storage.
 ## Decision 7 — production hosting and database spend
 
 **Status:** Owner cost approval and private phone verification complete;
-deployment and recurring server charge have not started.
+production database provisioned empty, with no application promoted or running.
 
 The API's current rate limits and account-deletion retry scheduler are
 process-local. The fastest safe launch topology therefore keeps exactly one API
@@ -315,16 +316,16 @@ can reach zero is not sufficient for the deletion retry guarantee even if its
 maximum is one.
 
 Production also requires managed PostgreSQL with verified TLS, backups or
-point-in-time recovery, and a successful restore drill. No production host or
-database has been purchased or deployed yet.
+point-in-time recovery, and a successful restore drill. Replit has now
+provisioned the production database, but verified TLS, recovery evidence, and a
+running production application remain incomplete.
 
 **Verified August 4, 2026:** Replit's live publishing screen offers a public
 North America Reserved VM with 0.5 vCPU and 2 GiB for **$15 USD per month** at
 `cut-ahmedzarif1.replit.app`. The production PostgreSQL database and excess
 outbound transfer are separate usage-based services. Replit supports a
 service-shutdown limit for those variable services. Private owner phone
-verification is complete, the Publish control is available, and no recurring
-deployment was started.
+verification is complete, and the Publish control is available.
 
 **Working recommendation:** use one stable HTTPS host for the API, Clerk proxy,
 landing page, Privacy, Terms, and Support. A stable `.replit.app` address is
@@ -340,15 +341,26 @@ before tax**. Replit's current-period usage budget is set so the already-incurre
 extra usage leaves exactly $5.00 of new usage-based headroom; combined with the
 $15 Reserved VM, this enforces the newly approved ceiling from the approval
 point. Publishing must still wait until the exact Apple/RevenueCat/database
-production preflight can pass. Immediately before publish, verify that Replit's
+production preflight can pass. Immediately before any republish, verify that Replit's
 **Set up your production database with your current development data** control
 remains off because the UI can reset it after a reload.
 
 **Direct recheck 2026-08-04T23:54:24Z:** The live draft still shows one public
 North America Reserved VM at 0.5 vCPU / 2 GiB for $15/month, critical-
 vulnerability blocking on, and the development-data-copy control off after the
-provider UI reset was corrected. No publish action or recurring charge was
-started.
+provider UI reset was corrected.
+
+**Provisioning evidence August 4, 2026:** A first publish attempt began with the
+development-data-copy control off and was canceled before application bundling
+or promotion. No production app was promoted or left running. Replit did
+provision the production database schema; every application table shows zero
+rows. The provider exposes the credential-bearing connection value read-only
+with `sslmode=require`. CUT now implements and source-tests a fail-closed
+runtime adaptation of only that exact supported shape to
+`sslmode=verify-full`; malformed, ambiguous, credential-incomplete, and
+IP-literal URLs still fail validation. Live TLS/readiness and recovery evidence
+remain required before promotion. This record makes no billing or charge-status
+claim.
 
 ## Decision 8 — Clerk production plan and billing
 
@@ -418,11 +430,11 @@ brand. See the USPTO's
 These are intentionally deferred until the prerequisites are ready:
 
 - EAS cloud build if it can consume paid quota or incur cost.
-- Replit production publishing under the approved **$20/month before tax**
-  ceiling; deployment remains deferred until production preflight passes.
+- Replit application republishing under the approved **$20/month before tax**
+  ceiling after the source-tested `sslmode=verify-full` adaptation reaches the
+  exact green commit and production preflight passes.
 - Any Clerk trial, billing method, or paid-plan upgrade if production cannot use
   the existing no-cost plan.
-- Apple Paid Apps and bank-processing completion; the W-9 is active.
 - EULA, app tax category, optional subscription tax override, and DSA status.
   The free-download, optional-notification omission, and subscription App Name
   Display choices are recorded.

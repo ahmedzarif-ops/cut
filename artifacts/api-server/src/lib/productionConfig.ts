@@ -1,4 +1,5 @@
 import { isPublishableKey, parsePublishableKey } from "@clerk/shared/keys";
+import { isIP } from "node:net";
 import { parseProductionCanonicalOrigin } from "./allowedHosts";
 import { parseAccountDeletionRetryInterval } from "./accountDeletionRetryInterval";
 import {
@@ -34,29 +35,111 @@ const PLACEHOLDER_CLERK_FRONTEND_APIS = new Set([
 ]);
 const PG_POOL_MAXIMUM = 20;
 const FULL_GIT_SHA = /^(?!0{40}$)[0-9a-f]{40}$/u;
+const DNS_HOSTNAME =
+  /^(?=.{1,253}\.?$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.?$/iu;
+
+type ManagedProductionDatabaseUrl = {
+  sslMode: "require" | "verify-full";
+};
+
+function isIpLiteralHostname(hostname: string): boolean {
+  if (isIP(hostname) !== 0) return true;
+
+  // WHATWG's special-scheme host parser canonicalizes legacy numeric IPv4
+  // spellings (for example octal or hexadecimal) that `node:net.isIP` does
+  // not recognize directly. Those are still IP literals, not DNS names.
+  try {
+    const canonicalHostname = new URL(`http://${hostname}`).hostname.replace(
+      /^\[|\]$/gu,
+      "",
+    );
+    return isIP(canonicalHostname) !== 0;
+  } catch {
+    return false;
+  }
+}
+
+function parseManagedProductionDatabaseUrl(
+  value: string | undefined,
+): ManagedProductionDatabaseUrl | undefined {
+  const candidate = value?.trim();
+  if (!candidate || candidate !== value || /\s/u.test(candidate)) {
+    return undefined;
+  }
+
+  try {
+    const parsed = new URL(candidate);
+    const hostname = parsed.hostname.replace(/^\[|\]$/gu, "");
+    const queryKeys = [...parsed.searchParams.keys()];
+    const sslModes = parsed.searchParams.getAll("sslmode");
+    const sslMode = sslModes[0];
+    const hasAmbiguousTlsParameter = queryKeys.some(
+      (key) =>
+        (key.toLowerCase() === "sslmode" && key !== "sslmode") ||
+        key.toLowerCase() === "ssl",
+    );
+
+    if (
+      (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") ||
+      !parsed.username ||
+      !parsed.password ||
+      !hostname ||
+      !DNS_HOSTNAME.test(hostname) ||
+      isIpLiteralHostname(hostname) ||
+      !parsed.pathname.slice(1).replaceAll("/", "") ||
+      parsed.hash ||
+      hasAmbiguousTlsParameter ||
+      sslModes.length !== 1 ||
+      (sslMode !== "require" && sslMode !== "verify-full")
+    ) {
+      return undefined;
+    }
+
+    return { sslMode };
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Accepts only the provider-managed PostgreSQL URL shape used in production.
+ * An exact `sslmode=require` is upgraded without exposing credentials;
+ * already verified URLs are returned unchanged.
+ */
+export function normalizeProductionDatabaseUrlForRuntime(
+  value: string | undefined,
+): string | undefined {
+  const parsed = parseManagedProductionDatabaseUrl(value);
+  if (!parsed || !value) return undefined;
+  if (parsed.sslMode === "verify-full") return value;
+
+  const normalized = value.replace(
+    /([?&])sslmode=require(?=&|$)/u,
+    "$1sslmode=verify-full",
+  );
+  return normalized === value ? undefined : normalized;
+}
+
+/**
+ * Replit currently injects a read-only production DSN with `sslmode=require`.
+ * Upgrade that one recognized shape before validation and before the lazy
+ * database pool reads process.env. Invalid or ambiguous values remain
+ * untouched so the existing production validator fails closed.
+ */
+export function prepareProductionEnvironment(
+  env: NodeJS.ProcessEnv = process.env,
+): void {
+  if (env.NODE_ENV !== "production") return;
+  const normalized = normalizeProductionDatabaseUrlForRuntime(env.DATABASE_URL);
+  if (normalized !== undefined) env.DATABASE_URL = normalized;
+}
 
 function isClerkDevelopmentFrontendApi(frontendApi: string): boolean {
   return frontendApi.endsWith(".accounts.dev");
 }
 
 function hasVerifiedTlsDatabaseUrl(value: string | undefined): boolean {
-  const candidate = value?.trim();
-  if (!candidate || candidate !== value || /\s/.test(candidate)) return false;
-
-  try {
-    const parsed = new URL(candidate);
-    const sslModes = parsed.searchParams.getAll("sslmode");
-    return Boolean(
-      (parsed.protocol === "postgres:" || parsed.protocol === "postgresql:") &&
-      parsed.hostname &&
-      !parsed.hash &&
-      sslModes.length === 1 &&
-      sslModes[0] === "verify-full" &&
-      !parsed.searchParams.has("ssl"),
-    );
-  } catch {
-    return false;
-  }
+  return parseManagedProductionDatabaseUrl(value)?.sslMode === "verify-full";
 }
 
 function isLiveClerkPublishableKey(value: string | undefined): boolean {

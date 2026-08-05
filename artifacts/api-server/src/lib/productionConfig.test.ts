@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { poolConfig } from "@workspace/db";
 import {
   assertProductionConfiguration,
+  normalizeProductionDatabaseUrlForRuntime,
+  prepareProductionEnvironment,
   ProductionConfigurationError,
   validateProductionConfiguration,
 } from "./productionConfig";
@@ -17,6 +20,12 @@ const PLACEHOLDER_CLERK_FRONTEND_APIS = [
   "example.clerk.accounts.dev",
   "clerk.example.com",
 ] as const;
+
+function credentialedDatabaseUrl(authorityPathAndQuery: string): string {
+  // Assemble credential-shaped test URLs at runtime so tracked-source secret
+  // scanning never has to exempt fixture-looking PostgreSQL credentials.
+  return ["postgresql://user", `password@${authorityPathAndQuery}`].join(":");
+}
 
 const validProductionEnvironment: NodeJS.ProcessEnv = {
   NODE_ENV: "production",
@@ -48,6 +57,85 @@ describe("production configuration", () => {
     ).not.toThrow();
   });
 
+  it("upgrades the exact provider-managed TLS mode before validation and pool creation", () => {
+    const environment = {
+      ...validProductionEnvironment,
+      DATABASE_URL: [
+        "postgresql://private-user",
+        "private-password@db.example.com/cut?application_name=cut&sslmode=require",
+      ].join(":"),
+    };
+
+    expect(validateProductionConfiguration(environment)).toContain(
+      "DATABASE_URL",
+    );
+    prepareProductionEnvironment(environment);
+
+    const expected = [
+      "postgresql://private-user",
+      "private-password@db.example.com/cut?application_name=cut&sslmode=verify-full",
+    ].join(":");
+    expect(environment.DATABASE_URL).toBe(expected);
+    expect(validateProductionConfiguration(environment)).toEqual([]);
+    expect(poolConfig(environment).connectionString).toBe(expected);
+  });
+
+  it("accepts an already verified provider URL without rewriting it", () => {
+    const value = validProductionEnvironment.DATABASE_URL;
+    const environment = { ...validProductionEnvironment };
+
+    expect(normalizeProductionDatabaseUrlForRuntime(value)).toBe(value);
+    prepareProductionEnvironment(environment);
+    expect(environment.DATABASE_URL).toBe(value);
+  });
+
+  it.each([
+    undefined,
+    "not-a-url",
+    "mysql://user:password@db.example.com/cut?sslmode=require",
+    credentialedDatabaseUrl("db.example.com/cut?sslmode=disable"),
+    credentialedDatabaseUrl("db.example.com/cut?sslmode=verify-ca"),
+    credentialedDatabaseUrl(
+      "db.example.com/cut?sslmode=require&sslmode=require",
+    ),
+    credentialedDatabaseUrl("db.example.com/cut?sslmode=require&ssl=false"),
+    credentialedDatabaseUrl("db.example.com/cut?SSLMODE=require"),
+    "postgresql://db.example.com/cut?sslmode=require",
+    "postgresql://user@db.example.com/cut?sslmode=require",
+    credentialedDatabaseUrl("db.example.com/?sslmode=require"),
+    credentialedDatabaseUrl("127.0.0.1/cut?sslmode=require"),
+    credentialedDatabaseUrl("0177.0.0.1/cut?sslmode=require"),
+    credentialedDatabaseUrl("0x7f000001/cut?sslmode=require"),
+    credentialedDatabaseUrl("[::1]/cut?sslmode=require"),
+    ` ${credentialedDatabaseUrl("db.example.com/cut?sslmode=require")}`,
+    `${credentialedDatabaseUrl("db.example.com/cut?sslmode=require")} `,
+  ])("leaves an invalid or ambiguous provider URL unchanged: %s", (value) => {
+    const environment: NodeJS.ProcessEnv = {
+      ...validProductionEnvironment,
+      DATABASE_URL: value,
+    };
+
+    expect(normalizeProductionDatabaseUrlForRuntime(value)).toBeUndefined();
+    prepareProductionEnvironment(environment);
+    expect(environment.DATABASE_URL).toBe(value);
+    expect(validateProductionConfiguration(environment)).toContain(
+      "DATABASE_URL",
+    );
+  });
+
+  it("does not rewrite provider database URLs outside production", () => {
+    const value = credentialedDatabaseUrl("db.example.com/cut?sslmode=require");
+
+    for (const nodeEnvironment of ["development", "test"]) {
+      const environment = {
+        NODE_ENV: nodeEnvironment,
+        DATABASE_URL: value,
+      };
+      prepareProductionEnvironment(environment);
+      expect(environment.DATABASE_URL).toBe(value);
+    }
+  });
+
   it("rejects every missing required production value", () => {
     expect(validateProductionConfiguration({ NODE_ENV: "production" })).toEqual(
       [
@@ -76,6 +164,13 @@ describe("production configuration", () => {
     "postgresql://db.example.com/cut?sslmode=verify-ca",
     "postgresql://db.example.com/cut?sslmode=verify-full&sslmode=require",
     "postgresql://db.example.com/cut?sslmode=verify-full&ssl=false",
+    "postgresql://db.example.com/cut?sslmode=verify-full",
+    "postgresql://user@db.example.com/cut?sslmode=verify-full",
+    credentialedDatabaseUrl("db.example.com/?sslmode=verify-full"),
+    credentialedDatabaseUrl("127.0.0.1/cut?sslmode=verify-full"),
+    credentialedDatabaseUrl("0177.0.0.1/cut?sslmode=verify-full"),
+    credentialedDatabaseUrl("0x7f000001/cut?sslmode=verify-full"),
+    credentialedDatabaseUrl("[::1]/cut?sslmode=verify-full"),
   ])("rejects a database URL without unambiguous verified TLS: %s", (value) => {
     expect(
       validateProductionConfiguration({

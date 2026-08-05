@@ -12,8 +12,8 @@
   become historical as soon as the handoff itself changes.
 - The agent must not self-merge the pull request; the owner merges or explicitly
   overrides that repository rule.
-- The current repository checkpoint passes **1,341 automated tests** (300 release
-  operations, 60 App Store, 33 domain, 4 database, 438 mobile, and 506 API), all
+- The current repository checkpoint passes **1,373 automated tests** (300 release
+  operations, 61 App Store, 33 domain, 4 database, 438 mobile, and 537 API), all
   TypeScript checks, generated-code drift, working App Store validation,
   changed-file formatting, `.replit`/migration parsing and drift checks, Expo
   dependency health, and the clean zero-JavaScript Replit production-build
@@ -25,7 +25,8 @@
   origin and mounted paths, and has a bounded live verifier.
 - RevenueCat startup includes a bounded customer-permission verifier. Its
   corrected source-controlled, read-only live preflight passed from Replit on
-  exact green commit `a7cbea360593681e4971fea3b3c05e78cd7604e4`, verifying
+  then-current green commit `930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`,
+  verifying
   the CUT iOS mapping and bounded customer-read access. Dashboard evidence
   verifies read/write permission without issuing a test write or deletion.
   Customer write/delete behavior, the separate App Store Connect API
@@ -84,10 +85,13 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   re-verified after every sync.
 - The owner approved Replit up to **$20/month before tax**: a $15 Reserved VM
   plus $5 of new usage-based headroom. Phone verification is complete. No
-  Replit production deployment or $15 recurring server charge has started; the
-  one-machine draft remains stopped and unpublished, with development-data copy
-  directly rechecked off at `2026-08-04T23:54:24Z` and subject to another
-  immediate pre-publish recheck.
+  production app is promoted or running: the first publish was canceled before
+  application bundling or promotion. Its no-copy control was off. That attempt
+  provisioned the production database schema; every application table has zero
+  rows. Replit's read-only connection value currently uses `sslmode=require`,
+  and CUT now source-tests a fail-closed adaptation of only that exact supported
+  shape to `sslmode=verify-full`. Live TLS/readiness evidence must still pass
+  before promotion. This handoff does not assert billing or charge status.
 - Apple Developer Program membership is active as an Individual account with
   Zarif Ahmed as Account Holder. App Store Connect access and the CUT OS app
   record are active. Paid Apps shows an August 4, 2026 through August 3, 2027
@@ -103,7 +107,7 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   dashboard settings. Replit now has its value saved masked and the exact CUT
   project, Apple app, entitlement, and offering REST IDs as non-secret
   configurations. The corrected read-only live preflight passed on exact green
-  commit `a7cbea360593681e4971fea3b3c05e78cd7604e4`; dashboard evidence verifies
+  commit `930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`; dashboard evidence verifies
   customer read/write permission and no test write or deletion was issued. The
   old unconfigured key remains and has not been revoked.
   The existing Test Store product remains test-only. The owner-approved real
@@ -129,16 +133,18 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
    never rely on a green run from an older revision and never self-merge.
 2. Keep Replit on the exact pushed commit with a clean tree and verify the
    Publishing draft still says Reserved VM after every sync. The cost ceiling is
-   approved, but do not publish until the Apple/RevenueCat/database production
-   preflight can pass and the development-data copy setting is rechecked off.
+   approved, but do not republish until the source-tested database adaptation is
+   on the exact green commit, the production preflight can pass, and the
+   development-data copy setting is rechecked off.
 3. Keep the live active Apple membership, Paid Apps, banking, tax, and
    app/subscription evidence current.
 4. Preserve the passing bounded RevenueCat live preflight. Then connect and
    directly verify RevenueCat's separate App Store Connect API credential and
    place the app REST ID and provisioned public iOS SDK key only in their
    approved server/EAS destinations.
-5. Complete Replit production database, Clerk proxy/security, and RevenueCat
-   Apple configuration only after their exact prerequisites can pass.
+5. Validate the provisioned empty Replit production database, Clerk
+   proxy/security, and RevenueCat Apple configuration only after their exact
+   prerequisites can pass.
 6. Build the exact signed TestFlight candidate and complete physical-iPhone
    authentication, recovery, purchase, restore, deletion, accessibility, and
    screenshot evidence before App Review.
