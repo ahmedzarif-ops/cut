@@ -23,11 +23,14 @@
   excludes Replit development-domain injection. The production public process
   serves a CSP-locked zero-JavaScript CUT page, blocks Expo preview artifacts at
   origin and mounted paths, and has a bounded live verifier.
-- RevenueCat startup includes a bounded customer-permission verifier, but live
-  preflight exposed a verifier assumption mismatch. Customer permission remains
-  technically unverified; customer write/delete behavior, the separate App
-  Store Connect API credential, and post-upload exact-build restore QA remain
-  evidence gates. Decision 3 owner authorization is confirmed.
+- RevenueCat startup includes a bounded customer-permission verifier. Its
+  corrected source-controlled, read-only live preflight passed from Replit on
+  exact green commit `a7cbea360593681e4971fea3b3c05e78cd7604e4`, verifying
+  the CUT iOS mapping and bounded customer-read access. Dashboard evidence
+  verifies read/write permission without issuing a test write or deletion.
+  Customer write/delete behavior, the separate App Store Connect API
+  credential, and post-upload exact-build restore QA remain evidence gates.
+  Decision 3 owner authorization is confirmed.
   Database/migration and shutdown
   timeout relationships are cross-tested, and Metro gets only reviewed public
   values with dotenv loading forced off.
@@ -99,9 +102,10 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   access, Customer Information read/write, and Project Configuration read-only
   dashboard settings. Replit now has its value saved masked and the exact CUT
   project, Apple app, entitlement, and offering REST IDs as non-secret
-  configurations. A live preflight found a verifier assumption mismatch, so
-  customer permission is not yet technically verified. The old unconfigured
-  key remains and has not been revoked.
+  configurations. The corrected read-only live preflight passed on exact green
+  commit `a7cbea360593681e4971fea3b3c05e78cd7604e4`; dashboard evidence verifies
+  customer read/write permission and no test write or deletion was issued. The
+  old unconfigured key remains and has not been revoked.
   The existing Test Store product remains test-only. The owner-approved real
   offer is a free download with `com.zarifahmed.cut.pro.monthly` at $4.99/month,
   no trial, Family Sharing off, United States only initially, and manual
@@ -129,10 +133,10 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
    preflight can pass and the development-data copy setting is rechecked off.
 3. Keep the live active Apple membership, Paid Apps, banking, tax, and
    app/subscription evidence current.
-4. Correct the RevenueCat verifier assumption mismatch and rerun the bounded
-   live preflight. Then connect and directly verify RevenueCat's separate App
-   Store Connect API credential and place the app REST ID and provisioned public
-   iOS SDK key only in their approved server/EAS destinations.
+4. Preserve the passing bounded RevenueCat live preflight. Then connect and
+   directly verify RevenueCat's separate App Store Connect API credential and
+   place the app REST ID and provisioned public iOS SDK key only in their
+   approved server/EAS destinations.
 5. Complete Replit production database, Clerk proxy/security, and RevenueCat
    Apple configuration only after their exact prerequisites can pass.
 6. Build the exact signed TestFlight candidate and complete physical-iPhone

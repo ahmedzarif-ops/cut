@@ -356,10 +356,12 @@ Information read/write, and Project Configuration read-only permissions, and
 its value is saved masked in Replit. The owner confirmed Decision 3 using the
 exact phrase “approve RevenueCat server-key replacement and Decision 3”. The
 old unconfigured key remains in place and has not been revoked. A live
-preflight found a verifier assumption mismatch, so the replacement key's
-customer permission is not yet technically verified. The separate App Store
-Connect API credential, native purchase/restore QA, exact build, submission,
-and release remain pending.
+source-controlled, read-only preflight passed from Replit on exact green commit
+`a7cbea360593681e4971fea3b3c05e78cd7604e4`, verifying bounded customer-read
+access and the exact CUT iOS mapping. Customer read/write permission is
+verified from the exact dashboard setting without issuing a test write or
+deletion. The separate App Store Connect API credential, native
+purchase/restore QA, exact build, submission, and release remain pending.
 Release requires App Store Connect confirmation, attachment to version 1.0,
 retention of the already saved credential-free Review Notes, an uploaded review
 screenshot whose SHA-256 equals approved shot 07, verified RevenueCat mapping,

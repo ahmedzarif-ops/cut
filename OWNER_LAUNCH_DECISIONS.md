@@ -138,6 +138,12 @@ app, entitlement, and default offering REST IDs as non-secret configurations.
 The existing Test Store product remains test-only and cannot collect the
 approved live subscription revenue.
 
+The replacement key then passed the source-controlled, read-only production
+preflight from Replit at `2026-08-05T00:46:13Z` on green commit
+`a7cbea360593681e4971fea3b3c05e78cd7604e4`. The check verified bounded
+customer-read access and the exact CUT iOS mapping without issuing a customer
+write or deletion.
+
 The RevenueCat Apple app is bound to `com.zarifahmed.cut`; the exact
 `com.zarifahmed.cut.pro.monthly` product is attached to `CUT_OS_PRO` and the
 default `$rc_monthly` package. RevenueCat reports the uploaded In-App Purchase

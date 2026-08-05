@@ -251,7 +251,7 @@ test("committed working App Store records preserve approved and pending scopes",
   assert.equal(submission.subscription.usPricing.effectiveAtUtc, null);
   assert.equal(
     submission.subscription.revenueCat.customerReadWritePermissionStatus,
-    "confirmed_in_revenuecat",
+    "verified",
   );
   assert.deepEqual(submission.subscription.revenueCat.apiV2Key, {
     label: "CUT Replit Production Replacement 2026-08-04",
@@ -304,7 +304,7 @@ test("committed working App Store records preserve approved and pending scopes",
   );
   assert.equal(
     submission.subscription.revenueCat.verifiedAtUtc,
-    "2026-08-04T23:39:31Z",
+    "2026-08-05T00:46:13Z",
   );
   assert.equal(
     submission.subscription.revenueCat.evidenceReference,

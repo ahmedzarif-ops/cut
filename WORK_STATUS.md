@@ -290,10 +290,13 @@ launch gate.
   SDK key is provisioned without recording its value. Decision 3 owner
   authorization is confirmed by the exact phrase
   `approve RevenueCat server-key replacement and Decision 3`; the old
-  unconfigured key remains and has not been revoked. A live preflight found a
-  verifier assumption mismatch, so customer permission is not yet technically
-  verified. The separate App Store Connect API credential and exact-build
-  native restore QA remain pending, and production continues to fail closed.
+  unconfigured key remains and has not been revoked. The corrected,
+  source-controlled read-only preflight passed from Replit on exact green
+  commit `a7cbea360593681e4971fea3b3c05e78cd7604e4`, verifying the exact CUT iOS
+  mapping and bounded customer-read access. Dashboard evidence verifies
+  customer read/write permission without issuing a test write or deletion. The
+  separate App Store Connect API credential and exact-build native restore QA
+  remain pending, and production continues to fail closed.
   The dashboard restore behavior is evidence-bound as Transfer to new App User
   ID.
 
@@ -302,11 +305,10 @@ launch gate.
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
-1. Correct the RevenueCat verifier assumption mismatch and rerun the bounded
-   live preflight, then connect and directly verify RevenueCat's separate App
-   Store Connect API credential. Place the production app REST ID and
-   provisioned public iOS SDK key only in their approved server/EAS
-   destinations.
+1. With the bounded RevenueCat live preflight now passing, connect and directly
+   verify RevenueCat's separate App Store Connect API credential. Place the
+   production app REST ID and provisioned public iOS SDK key only in their
+   approved server/EAS destinations.
 2. Retain the confirmed active Paid Apps Agreement, banking, and W-9 evidence.
    Have qualified counsel review the selected individual-seller/Texas-sole-
    proprietor path before submission.

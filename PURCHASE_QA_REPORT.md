@@ -33,8 +33,11 @@ any Apple Sandbox or TestFlight item.
       authorization is confirmed by the exact phrase
       `approve RevenueCat server-key replacement and Decision 3`. The old
       unconfigured key is not revoked.
-- [ ] Correct the live verifier assumption mismatch and rerun the bounded
-      preflight before marking customer permission technically verified.
+- [x] The corrected source-controlled, read-only preflight passed from Replit
+      on exact green commit `a7cbea360593681e4971fea3b3c05e78cd7604e4`.
+      It verified the exact CUT iOS mapping and bounded customer-read access;
+      dashboard evidence verifies read/write permission without issuing a test
+      write or deletion.
 - [ ] The separate RevenueCat App Store Connect API key is directly verified.
 - [x] RevenueCat **Project settings → General → Restore behavior** is directly
       verified as **Transfer to new App User ID** for production; any enabled

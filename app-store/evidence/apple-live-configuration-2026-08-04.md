@@ -2,7 +2,7 @@
 
 **Initial verification:** 2026-08-04T21:33:17Z
 
-**Latest live update:** 2026-08-05T00:25:43Z
+**Latest live update:** 2026-08-05T00:46:13Z
 
 **Method:** Direct confirmation in the live Apple Developer and App Store
 Connect interfaces, direct confirmation in the RevenueCat dashboard, plus
@@ -148,6 +148,16 @@ submitted or released.
 - Project restore behavior is persisted as `Transfer to new App User ID`.
 - The exact production Apple app, product, entitlement, and default monthly
   offering mapping is verified.
+- Replit was fast-forwarded cleanly to green commit
+  `a7cbea360593681e4971fea3b3c05e78cd7604e4`. At
+  `2026-08-05T00:46:13Z`, the source-controlled, read-only production preflight
+  returned only `{"status":"verified"}`. It verified the exact project, app,
+  entitlement, CUT iOS product, current offering/package association, and
+  bounded customer-read access. RevenueCat's separate Test Store companion
+  product was correctly ignored because it belongs to another app.
+- Customer Information read/write permission is verified from the exact
+  replacement-key dashboard settings. The live preflight proves read access;
+  no customer write or deletion was issued merely to test permission.
 - Owner authorization of the RevenueCat production connection and **Transfer to
   new App User ID** restore behavior was confirmed at
   `2026-08-05T00:25:43Z`.

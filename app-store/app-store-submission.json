@@ -395,7 +395,7 @@
       "productionMappingStatus": "verified",
       "appStoreConnectApiKeyStatus": "pending",
       "subscriptionKeyStatus": "verified",
-      "customerReadWritePermissionStatus": "confirmed_in_revenuecat",
+      "customerReadWritePermissionStatus": "verified",
       "apiV2Key": {
         "label": "CUT Replit Production Replacement 2026-08-04",
         "apiVersion": "v2",
@@ -414,7 +414,7 @@
         "nativeQaTestedAtUtc": null,
         "nativeQaEvidenceReference": null
       },
-      "verifiedAtUtc": "2026-08-04T23:39:31Z",
+      "verifiedAtUtc": "2026-08-05T00:46:13Z",
       "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat"
     },
     "exactBuildEvidence": {

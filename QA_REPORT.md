@@ -22,10 +22,13 @@
   Replacement API v2 key `CUT Replit Production Replacement 2026-08-04` has
   controlled non-secret dashboard evidence for Customer Information
   read/write, Project Configuration read-only, and Charts no-access settings.
-  A live preflight found a verifier assumption mismatch, so customer permission
-  is not yet technically verified. Production write/delete behavior, the
-  separate App Store Connect API credential, and exact-build
-  restore-after-deletion QA remain open gates.
+  The corrected source-controlled, read-only live preflight passed from Replit
+  on exact green commit `a7cbea360593681e4971fea3b3c05e78cd7604e4`,
+  verifying the exact CUT iOS mapping and bounded customer-read access.
+  Dashboard evidence verifies customer read/write permission without issuing a
+  test write or deletion. Production write/delete behavior, the separate App
+  Store Connect API credential, and exact-build restore-after-deletion QA
+  remain open gates.
 - Replit now has the exact RevenueCat project, Apple app, entitlement, and
   offering REST IDs as non-secret configurations and the replacement server
   API secret saved masked. Production Apple app `app8feee0dfba` is created for

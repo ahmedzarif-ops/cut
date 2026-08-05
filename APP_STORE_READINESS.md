@@ -142,9 +142,11 @@ social features. Those are backlog, not submission truth.
       read-only permissions. Its value is saved masked in Replit, and the
       owner's exact Decision 3 authorization is recorded. The old unconfigured
       key has not been revoked.
-- [ ] Correct the live verifier assumption mismatch and rerun the bounded
-      RevenueCat preflight before marking the replacement key's customer
-      permission technically verified.
+- [x] The corrected, read-only RevenueCat production preflight passed from
+      Replit on exact green commit
+      `a7cbea360593681e4971fea3b3c05e78cd7604e4`. Customer read/write permission
+      is verified from the exact dashboard setting; the preflight proves
+      bounded read access without issuing a test write or deletion.
 - [ ] Connect and directly verify the separate RevenueCat App Store Connect API
       key. Exact-build native purchase/restore QA remains a separate gate.
 - [x] Record the initial-release omission of optional App Store Server
@@ -153,9 +155,10 @@ social features. Those are backlog, not submission truth.
       and route sandbox notifications to the production URL.
 - [x] Link the app config to the existing `@zee-digipit/cut` Expo/EAS project.
 - [ ] Authenticate the local EAS CLI and verify Apple signing credentials.
-- [ ] Deploy the production API/database/Clerk combination using the masked
-      RevenueCat v2 secret and existing project, app, entitlement, and
-      current-offering resource IDs after its corrected preflight passes.
+- [ ] Deploy the production API/database/Clerk combination using the verified
+      masked RevenueCat v2 secret and existing project, app, entitlement, and
+      current-offering resource IDs after the remaining public-host, database,
+      and legal-publication gates are ready.
 - [ ] Configure production EAS values for API domain, live Clerk key/proxy, the
       provisioned RevenueCat public Apple SDK key, Privacy, Terms, and Support.
 

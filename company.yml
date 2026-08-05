@@ -15,7 +15,7 @@ owner:
 
 offer:
   summary: "A paid App Store subscription for one daily next action, consistent weigh-ins, six curated balanced-meal choices, meal logging, and daily nutrition totals."
-  pricing_notes: "Owner-approved v1: free download; one US-only $4.99/month subscription; no trial; Family Sharing off; manual release. The exact App Store Connect app, subscription, price, and availability records are saved; Apple membership, Paid Apps Agreement, tax, and banking are active. RevenueCat production app, subscription key, product-entitlement-offering mapping, public iOS SDK-key provisioning, Decision 3 owner authorization, and masked Replit storage of the replacement server key are complete. The replacement key's customer permission remains technically unverified after a live verifier assumption mismatch. Its separate App Store Connect API credential, exact-build purchase/restore QA, submission, and release remain pending; the old unconfigured key has not been revoked."
+  pricing_notes: "Owner-approved v1: free download; one US-only $4.99/month subscription; no trial; Family Sharing off; manual release. The exact App Store Connect app, subscription, price, and availability records are saved; Apple membership, Paid Apps Agreement, tax, and banking are active. RevenueCat production app, subscription key, product-entitlement-offering mapping, public iOS SDK-key provisioning, Decision 3 owner authorization, masked Replit storage of the replacement server key, dashboard read/write permission evidence, and the passing read-only live preflight are complete. Its separate App Store Connect API credential, exact-build purchase/restore QA, submission, and release remain pending; the old unconfigured key has not been revoked."
   booking_link: ""
 
 icp:
