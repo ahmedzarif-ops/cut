@@ -444,6 +444,30 @@ variants and advise whether to keep `CUT OS` or adopt a more distinctive primary
 brand. See the USPTO's
 [federal trademark searching guidance](https://www.uspto.gov/trademarks/search/federal-trademark-searching).
 
+## Decision 11 — qualified launch-review budget
+
+**Status:** Approved August 8, 2026; bounded outreach is underway and written
+quotes remain pending.
+
+The owner approved a combined hard ceiling of **$3,000 before tax** for the
+qualified U.S. technology/privacy counsel review and qualified registered
+dietitian nutrition review required for launch. The strong working target is
+**$1,000 or less combined**. The ceiling is not a spending target.
+
+Start with the State Bar of Texas referral service's bounded initial
+consultation and request fixed-fee, launch-limited scopes. Prefer reviewers who
+can work directly from `legal-site/COUNSEL_REVIEW_PACKET.md` and the existing
+nutrition evidence so paid time is spent on conclusions, redlines, and approval
+rather than rediscovery. Do not accept an open-ended hourly engagement, broad
+retainer, automatic renewal, or aggregate commitment above $3,000 before tax.
+Record the written scope and quote before payment, and continue to minimize cost
+without substituting an unqualified reviewer.
+
+Four bounded inquiries were sent on August 8 without payment or engagement:
+two Texas firms, the State Bar of Texas referral service, and a registered
+dietitian whose published basic package covers CUT's six-item catalog. See
+`legal-site/PROFESSIONAL_REVIEW_OUTREACH.md`.
+
 ## Later explicit approvals
 
 These are intentionally deferred until the prerequisites are ready:

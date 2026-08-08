@@ -178,6 +178,9 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
 ## OWNER-CONTROLLED GATES
 
 - Replit approval phrase: **Approve Replit up to $20/month before tax**.
+- Qualified-review approval: **up to $3,000 combined before tax**, with a
+  strong target of **$1,000 or less**, for qualified U.S. technology/privacy
+  counsel and a qualified registered dietitian reviewer.
 - Final public seller-display verification and qualified-counsel review of the
   individual seller path.
 - Standard-versus-custom EULA, app tax category, optional subscription tax

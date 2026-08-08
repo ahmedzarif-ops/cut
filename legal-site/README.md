@@ -8,6 +8,8 @@ finished legal controls.
 Start qualified review with [`COUNSEL_REVIEW_PACKET.md`](COUNSEL_REVIEW_PACKET.md),
 which consolidates the exact launch facts, open compliance decisions,
 publication placeholders, requested deliverables, and supporting evidence.
+Track the approved budget, reviewer outreach, and quote controls in
+[`PROFESSIONAL_REVIEW_OUTREACH.md`](PROFESSIONAL_REVIEW_OUTREACH.md).
 
 The content is grounded in the repository's current engineering records,
 especially `PRIVACY_DATA_MAP.md`, `ADR_002_ACCOUNT_DELETION.md`,

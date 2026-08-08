@@ -21,7 +21,7 @@ Certificate secrets and provisioning contents are intentionally excluded.
 ## Source and hosting
 
 - The authoritative GitHub branch and the Replit workspace were aligned to
-  commit `1f633dbe8d08481344cb8f803fe10dd8c49dc396` at verification time.
+  commit `1257d8823f1a3ef3177a3e12409c4bf903e6009e` at verification time.
 - The Replit working branch was clean and exactly even with its upstream.
 - Replit-only empty “Published your App” commits were preserved on backup
   branches before alignment; no user source changes were discarded.
@@ -36,6 +36,35 @@ Certificate secrets and provisioning contents are intentionally excluded.
 The new green source commit was deliberately not republished over the older
 deployment because the legal/publication and final production-build gates are
 not yet satisfied.
+
+## Production database transport and readiness
+
+- Replit's current [production database documentation](https://docs.replit.com/references/data-and-storage/production-databases)
+  and [database-upgrade documentation](https://docs.replit.com/references/data-and-storage/database-upgrade)
+  distinguish the editor's development database from the deployment database:
+  the current development database is local Helium and does not use SSL, while
+  production databases run on Neon.
+- A connect-only probe in the Replit editor reproduced the documented Helium
+  behavior: the development endpoint rejects every forced SSL mode. That result
+  is development evidence and is not evidence of a production TLS failure.
+- Deployed build `3041d46f4893eafab994e4862e1a62c85e83dc64` contains the same
+  production database normalization, validation, startup-migration path, and
+  migration files as the current source. There is no migration diff between
+  that build and the current source.
+- Its production entrypoint upgrades the one accepted provider URL shape from
+  `sslmode=require` to `sslmode=verify-full`, rejects any non-verified final
+  configuration, completes startup migrations before binding the listener, and
+  exposes readiness only after a database query succeeds.
+- On August 8, `https://getcutos.com/status` identified that exact deployed
+  build and `https://getcutos.com/api/readyz` returned HTTP 200. Together with
+  the fail-closed startup ordering, this proves that the deployed application
+  requested certificate-verifying production transport, completed the current
+  migration set, and executed a production readiness query.
+
+This does not replace an exact-candidate recheck. After the current green source
+is deployed, record the exact deployment SHA, re-run readiness, and inspect the
+live TLS socket's encryption and authorization flags without exposing its host,
+credentials, certificate subject, or database contents.
 
 ## EAS production environment
 
@@ -86,8 +115,9 @@ No Clerk secret key or complete publishable key is stored in this file.
 
 1. Qualified approval and publication of Privacy, Terms, and Support pages.
 2. Add the three approved public legal URLs to EAS production.
-3. Provision or revalidate the final production database and prove certificate
-   verification with `sslmode=verify-full` without exposing the database URL.
+3. Revalidate the exact-candidate production database, including direct live
+   TLS socket encryption/authorization evidence, without exposing the database
+   URL.
 4. Recheck the final deployment's build SHA and Clerk proxy-health endpoint.
 5. Generate the first signed production build and inspect its embedded privacy
    manifests, SDKs, entitlements, and permissions.
