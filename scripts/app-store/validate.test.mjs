@@ -3418,12 +3418,12 @@ test("TestFlight record distinguishes internal testing from external review", ()
     name: "CUT OS Internal QA",
     status: "configured",
     automaticDistribution: false,
-    testerCount: 0,
+    testerCount: 1,
     buildCount: 0,
     assignedAppStoreConnectBuildId: null,
     assignmentVerifiedAtUtc: null,
     assignmentEvidenceReference: null,
-    verifiedAtUtc: "2026-08-04T22:13:34Z",
+    verifiedAtUtc: "2026-08-08T18:43:18Z",
     evidenceReference:
       "app-store/evidence/apple-live-configuration-2026-08-04.md#testflight-internal-configuration",
   });
@@ -3466,7 +3466,7 @@ test("TestFlight record distinguishes internal testing from external review", ()
   ready.internalGroup.testerCount = 1;
   ready.internalGroup.buildCount = 1;
   ready.internalGroup.assignedAppStoreConnectBuildId = "asc-build-01234567";
-  ready.internalGroup.assignmentVerifiedAtUtc = "2026-08-04T22:14:00Z";
+  ready.internalGroup.assignmentVerifiedAtUtc = "2026-08-08T18:44:00Z";
   ready.internalGroup.assignmentEvidenceReference =
     "evidence/testflight-group-build-assignment";
   Object.assign(ready.exactBuildEvidence, {
@@ -3474,7 +3474,7 @@ test("TestFlight record distinguishes internal testing from external review", ()
     gitCommit: "0123456789abcdef0123456789abcdef01234567",
     easBuildId: "eas-build-01234567",
     appStoreConnectBuildId: "asc-build-01234567",
-    testedAtUtc: "2026-08-04T22:15:00Z",
+    testedAtUtc: "2026-08-08T18:45:00Z",
     qaReportReference: "QA_REPORT.md",
     purchaseQaReportReference: "PURCHASE_QA_REPORT.md",
     appReviewRunbookReference: "APP_REVIEW_RUNBOOK.md",
