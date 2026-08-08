@@ -17,6 +17,9 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.zarifahmed.cut",
+      "entitlements": {
+        "com.apple.developer.declared-age-range": true
+      },
       "config": {
         "usesNonExemptEncryption": false
       },

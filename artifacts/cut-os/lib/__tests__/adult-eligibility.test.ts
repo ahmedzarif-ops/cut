@@ -11,6 +11,71 @@ import {
   shouldClearAdultEligibilityInput,
   validateDateOfBirth,
 } from "../adult-eligibility";
+import {
+  declaredAgeRangeAllowsPrivateAccess,
+  resolveAdultAgeRangeResponse,
+  resolveDeclaredAgeRangeRequirement,
+} from "../declared-age-range";
+
+describe("Apple declared age range", () => {
+  it("requires the system sheet only for an eligible regulated user", () => {
+    expect(
+      resolveDeclaredAgeRangeRequirement({
+        supported: true,
+        isEligibleForAgeFeatures: true,
+        requiredFeatures: ["declaredAgeRangeRequired"],
+      }),
+    ).toBe("required");
+    expect(
+      resolveDeclaredAgeRangeRequirement({
+        supported: true,
+        isEligibleForAgeFeatures: false,
+        requiredFeatures: [],
+      }),
+    ).toBe("not_required");
+  });
+
+  it("opens private features only for an adult range or no requirement", () => {
+    expect(
+      resolveAdultAgeRangeResponse({
+        status: "sharing",
+        lowerBound: 18,
+        upperBound: null,
+      }),
+    ).toBe("verified_adult");
+    expect(
+      resolveAdultAgeRangeResponse({
+        status: "sharing",
+        lowerBound: null,
+        upperBound: 17,
+      }),
+    ).toBe("ineligible");
+    expect(resolveAdultAgeRangeResponse({ status: "declined" })).toBe(
+      "declined",
+    );
+    expect(declaredAgeRangeAllowsPrivateAccess("verified_adult")).toBe(true);
+    expect(declaredAgeRangeAllowsPrivateAccess("not_required")).toBe(true);
+    expect(declaredAgeRangeAllowsPrivateAccess("required")).toBe(false);
+    expect(declaredAgeRangeAllowsPrivateAccess("error")).toBe(false);
+  });
+
+  it("rejects ambiguous or contradictory age ranges", () => {
+    expect(() =>
+      resolveAdultAgeRangeResponse({
+        status: "sharing",
+        lowerBound: null,
+        upperBound: null,
+      }),
+    ).toThrow(/ambiguous/i);
+    expect(() =>
+      resolveAdultAgeRangeResponse({
+        status: "sharing",
+        lowerBound: 18,
+        upperBound: 17,
+      }),
+    ).toThrow(/contradictory/i);
+  });
+});
 
 describe("adult eligibility route gate", () => {
   it("allows private routes only for the exact eligible status", () => {

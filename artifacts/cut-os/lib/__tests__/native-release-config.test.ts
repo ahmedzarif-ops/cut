@@ -168,6 +168,37 @@ describe("native release configuration", () => {
     expect(clerkPods).not.toContain("ClerkGoogleSignIn");
   });
 
+  it("autolinks Apple's age-range bridge and requests only its capability", () => {
+    expect(appConfig.expo.ios.entitlements).toEqual({
+      "com.apple.developer.declared-age-range": true,
+    });
+
+    const autolinking = JSON.parse(
+      execFileSync(
+        process.execPath,
+        [expoAutolinkingCli, "resolve", "--platform", "apple", "--json"],
+        {
+          cwd: process.cwd(),
+          encoding: "utf8",
+        },
+      ),
+    ) as {
+      modules: Array<{
+        packageName: string;
+        modules?: string[];
+        pods?: Array<{ podName: string }>;
+      }>;
+    };
+    const bridge = autolinking.modules.find(
+      ({ packageName }) => packageName === "cut-declared-age-range",
+    );
+
+    expect(bridge?.modules).toEqual(["CutDeclaredAgeRangeModule"]);
+    expect(bridge?.pods?.map(({ podName }) => podName)).toEqual([
+      "CutDeclaredAgeRange",
+    ]);
+  });
+
   it("uses the dark launch background behind the full-canvas app icon", () => {
     expect(appConfig.expo.splash).toMatchObject({
       image: "./assets/images/icon-v2.png",
@@ -284,7 +315,7 @@ describe("native release configuration", () => {
       expect(easConfig.build[profile].environment).toBe(profile);
     }
     expect(easConfig.build.production.ios.image).toBe(
-      "macos-sequoia-15.6-xcode-26.0",
+      "macos-tahoe-26.4-xcode-26.4",
     );
     expect(easConfig.build.production.autoIncrement).toBe(true);
   });

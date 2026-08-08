@@ -50,11 +50,15 @@ export default function AdultEligibilityScreen() {
   const insets = useSafeAreaInsets();
   const s = makeStyles(c);
   const gate = useAdultEligibilityGate();
+  const declaredAgeRange = gate.declaredAgeRange;
 
   const meQuery = useGetMe({
     query: {
       queryKey: [...getGetMeQueryKey(), userId],
-      enabled: gate.status === "eligible" && Boolean(userId),
+      enabled:
+        gate.status === "eligible" &&
+        declaredAgeRange.allowsPrivateAccess &&
+        Boolean(userId),
       retry: false,
     },
   });
@@ -279,6 +283,85 @@ export default function AdultEligibilityScreen() {
       ],
     );
   };
+
+  if (declaredAgeRange.isLoading) {
+    return (
+      <MessageScreen
+        title="Checking Apple's age requirement"
+        message="Private health and nutrition features remain locked while CUT OS checks whether Apple requires an age range on this device."
+        loading
+        onManage={manageAccount}
+        onSignOut={() => void handleSignOut()}
+        signingOut={signingOut}
+        actionError={actionError}
+      />
+    );
+  }
+
+  if (declaredAgeRange.status === "error") {
+    return (
+      <MessageScreen
+        title="Apple age check needed"
+        message={
+          declaredAgeRange.error ??
+          "CUT OS couldn't verify Apple's age requirement."
+        }
+        primaryLabel="Try again"
+        onPrimary={declaredAgeRange.retry}
+        onManage={manageAccount}
+        onSignOut={() => void handleSignOut()}
+        signingOut={signingOut}
+        actionError={actionError}
+      />
+    );
+  }
+
+  if (
+    declaredAgeRange.status === "required" ||
+    declaredAgeRange.status === "declined"
+  ) {
+    return (
+      <MessageScreen
+        title="Share your age range with CUT OS"
+        message={
+          declaredAgeRange.status === "declined"
+            ? "Apple didn't share an age range. CUT OS is adults-only, so private health and nutrition features remain locked."
+            : "Apple requires an age-range check on this device. CUT OS asks only whether your range is 18 or older and does not receive your exact birth date."
+        }
+        loading={declaredAgeRange.isRequesting}
+        primaryLabel={
+          declaredAgeRange.isRequesting
+            ? undefined
+            : declaredAgeRange.status === "declined"
+              ? "Try Apple's age check again"
+              : "Continue with Apple"
+        }
+        onPrimary={
+          declaredAgeRange.isRequesting
+            ? undefined
+            : () => void declaredAgeRange.requestAdultAgeRange()
+        }
+        onManage={manageAccount}
+        onSignOut={() => void handleSignOut()}
+        signingOut={signingOut}
+        actionError={declaredAgeRange.error ?? actionError}
+      />
+    );
+  }
+
+  if (declaredAgeRange.status === "ineligible") {
+    return (
+      <MessageScreen
+        title="CUT OS is for adults"
+        message="Apple's shared age range does not meet CUT OS's 18-or-older requirement. Private health and nutrition features remain locked."
+        primaryLabel="Manage or delete account"
+        onPrimary={manageAccount}
+        onSignOut={() => void handleSignOut()}
+        signingOut={signingOut}
+        actionError={actionError}
+      />
+    );
+  }
 
   if (gate.status === "eligible") {
     if (meQuery.data) {

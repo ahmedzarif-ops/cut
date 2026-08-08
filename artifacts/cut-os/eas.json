@@ -33,7 +33,7 @@
       "autoIncrement": true,
       "environment": "production",
       "ios": {
-        "image": "macos-sequoia-15.6-xcode-26.0"
+        "image": "macos-tahoe-26.4-xcode-26.4"
       }
     }
   },

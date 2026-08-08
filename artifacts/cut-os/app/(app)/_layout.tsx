@@ -41,6 +41,7 @@ import {
   type AdultEligibilityRoute,
 } from "@/lib/adult-eligibility";
 import { AdultEligibilityGateProvider } from "@/lib/adult-eligibility-gate";
+import { useDeclaredAgeRangeGate } from "@/lib/declared-age-range-gate";
 import { parseRevenueCatIosApiKey } from "@/lib/runtime-config";
 import {
   DeviceTimeZoneSyncCoordinator,
@@ -311,13 +312,18 @@ export default function AppLayout() {
     adultEligibilityQuery.data,
     adultEligibilityQuery.isError,
   );
+  const declaredAgeRange = useDeclaredAgeRangeGate({
+    enabled: adultEligibilityReady,
+    principalId: userId ?? null,
+  });
   const resolvedAdultEligibilityStatus =
     adultEligibilityResolution.response?.status ?? null;
   const adultEligibilityMustFailClosed = Boolean(
     adultEligibilityReady &&
     (adultEligibilityResolution.error ||
       (adultEligibilityResolution.response &&
-        resolvedAdultEligibilityStatus !== "eligible")),
+        (resolvedAdultEligibilityStatus !== "eligible" ||
+          !declaredAgeRange.allowsPrivateAccess))),
   );
 
   // A status poll can learn about deletion before any normal endpoint emits a
@@ -478,7 +484,11 @@ export default function AppLayout() {
   const adultRouteDecision = decideAdultEligibilityRoute({
     deletionRequired,
     route,
-    status: adultEligibilityResponse?.status ?? null,
+    status:
+      adultEligibilityResponse?.status === "eligible" &&
+      !declaredAgeRange.allowsPrivateAccess
+        ? null
+        : (adultEligibilityResponse?.status ?? null),
   });
   if (adultRouteDecision === "redirect_settings") {
     return <Redirect href="/settings" />;
@@ -510,12 +520,15 @@ export default function AppLayout() {
           error: adultEligibilityError,
           isRequired:
             !deletionRequired &&
-            adultEligibilityResponse?.status !== "eligible",
+            (adultEligibilityResponse?.status !== "eligible" ||
+              !declaredAgeRange.allowsPrivateAccess),
+          declaredAgeRange,
           retry: () => void adultEligibilityQuery.refetch(),
         }}
       >
         {!deletionRequired &&
-        adultEligibilityResponse?.status === "eligible" ? (
+        adultEligibilityResponse?.status === "eligible" &&
+        declaredAgeRange.allowsPrivateAccess ? (
           <EligibleSubscriptionShell
             key={userId}
             clerkUserId={userId}

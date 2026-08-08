@@ -4,6 +4,7 @@ import type {
   AdultEligibilityResponse,
   AdultEligibilityStatus,
 } from "@/lib/adult-eligibility";
+import type { DeclaredAgeRangeGateValue } from "@/lib/declared-age-range-gate";
 
 export interface AdultEligibilityGateValue {
   response: AdultEligibilityResponse | null;
@@ -11,6 +12,7 @@ export interface AdultEligibilityGateValue {
   isLoading: boolean;
   error: string | null;
   isRequired: boolean;
+  declaredAgeRange: DeclaredAgeRangeGateValue;
   retry(): void;
 }
 
