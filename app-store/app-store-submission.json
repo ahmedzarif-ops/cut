@@ -31,7 +31,7 @@
     "secondaryCategory": null,
     "madeForKids": false,
     "promotionalText": "One focused daily check-in for lifters: log a weigh-in, choose a balanced meal, and review today's estimated nutrition totals.",
-    "marketingUrl": null,
+    "marketingUrl": "https://getcutos.com",
     "whatsNew": null,
     "whatsNewPosition": "not_applicable_initial_release",
     "releaseMethod": "manual",
@@ -52,7 +52,7 @@
     "ageSuitabilityUrl": null,
     "sellerLegalOperator": "Zarif Ahmed",
     "sku": "cut-ios-v1",
-    "copyright": null,
+    "copyright": "2026 Zarif Ahmed",
     "contentRightsDeclaration": null,
     "initialTerritories": ["US"],
     "approval": {

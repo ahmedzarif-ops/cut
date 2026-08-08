@@ -86,8 +86,8 @@
   apex A, TXT, or DMARC record changed and no charge was incurred. DNS is no
   longer the blocker. At approximately `2026-08-08T21:27Z`, a user-provided
   simulator observation confirmed real signup-email delivery, successful user
-  entry of its verification code, and an authenticated session reaching `Apple
-  age check needed`; no account detail is recorded. The authenticated
+  entry of its verification code, and an authenticated session reaching
+  `Apple age check needed`; no account detail is recorded. The authenticated
   JavaScript path worked; that simulator native SDK retained a separate stale
   DNS cache. A superseding EAS-production-environment arm64 Release simulator
   build, signed locally, linked and resolved `CutDeclaredAgeRange`, preserved
@@ -102,8 +102,9 @@
   requires Clerk production test mode, Client Trust, five reserved synthetic
   accounts, and exact-build new-device proof; public release separately
   requires production test mode off while Client Trust remains on. The verifier
-  accepts only `BUILD_SHA -> APP_REVIEW_EVIDENCE_SHA ->
-PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
+  accepts only
+  `BUILD_SHA -> APP_REVIEW_EVIDENCE_SHA -> PUBLIC_RELEASE_EVIDENCE_SHA`; it
+  freezes the review account history and every
   non-allowlisted submission field across the transition, freezes release ID
   plus build/deployment identity across target manifests, and rejects a third
   evidence commit. Only root `updated`, target-state Clerk/Apple evidence, and
@@ -123,12 +124,19 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
 - The owner approved Replit up to **$20/month before tax**: a $15 Reserved VM
   plus $5 of new usage-based headroom. Phone verification is complete. Replit
   now serves exact source commit
-  `d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4`; its development-data-copy control
-  was rechecked off before publish. Bounded live status, readiness, and Clerk
-  proxy checks pass. Replit's provider-managed production database remains
-  separate from development, and CUT requires `sslmode=verify-full`; direct
-  exact-candidate TLS and recovery evidence remain open. This handoff does not
-  assert billing or charge status.
+  `891a9bb1fdd452a133bf4defa4db70d4592aa25e` as deployment `4186bf93`. Replit
+  reported successful Provision, Security, Build, Bundle, and Promote stages at
+  August 8, 2026, 5:31 PM America/Chicago. After publish, the
+  development-data-copy control remained off, critical-vulnerability publish
+  blocking remained on, and the production database was connected. Production
+  point-in-time recovery is on with a seven-day window; the available restore
+  action was not exercised, so the recovery drill remains open. At
+  `2026-08-08T22:33:05Z`, bounded live checks passed for the exact `/status`
+  `BUILD_SHA`, `/`, `/api/readyz`, and the canonical Clerk proxy. `/privacy`,
+  `/terms`, and `/support` each remain 503 fail-closed pending qualified
+  publication approval. CUT continues to require `sslmode=verify-full`; direct
+  production TLS-socket evidence and the restore drill remain open. This
+  handoff does not assert billing or charge status.
 - Apple Developer Program membership is active as an Individual account with
   Zarif Ahmed as Account Holder. App Store Connect access and the CUT OS app
   record are active. Paid Apps shows an August 4, 2026 through August 3, 2027
@@ -148,7 +156,7 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   customer read/write permission and no test write or deletion was issued. The
   old unconfigured key remains and has not been revoked.
   The existing Test Store product remains test-only. The owner-approved real
-  offer is a free download with `com.zarifahmed.cut.pro.monthly` at $4.99/month,
+  offer is a free download with `com.zarifahmed.cut.pro.monthly` at \$4.99/month,
   no trial, Family Sharing off, United States only initially, and manual
   release. RevenueCat production Apple app `app8feee0dfba` is created for the
   exact bundle, its subscription key is valid, and product `prod66e8dc0083`
@@ -177,7 +185,7 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
 1. Keep PR #9 draft and require exact GitHub CI success after every new commit;
    never rely on a green run from an older revision and never self-merge.
 2. Keep Replit on exact deployed commit
-   `d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4`, verify that the Publishing draft
+   `891a9bb1fdd452a133bf4defa4db70d4592aa25e`, verify that the Publishing draft
    still says Reserved VM after every sync, and recheck that development-data
    copy remains off before every future publish.
 3. Keep the live active Apple membership, Paid Apps, banking, tax, and

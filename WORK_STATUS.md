@@ -271,11 +271,19 @@ launch gate.
   assignment or QA is claimed.
 - Replit hosting is owner-approved up to **$20/month before tax** and phone
   verification is complete. Replit is now serving exact source commit
-  `d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4`; the development-data-copy control
-  was rechecked off before publish. Bounded live `/status` and `/api/readyz`
-  checks pass. The production schema remains distinct from development, and
-  CUT continues to require `sslmode=verify-full`; exact-candidate direct TLS and
-  recovery evidence remain open. No billing or charge status is asserted here.
+  `891a9bb1fdd452a133bf4defa4db70d4592aa25e` as deployment `4186bf93`. Replit
+  reported successful Provision, Security, Build, Bundle, and Promote stages at
+  August 8, 2026, 5:31 PM America/Chicago. After publish, the
+  development-data-copy control remained off, critical-vulnerability publish
+  blocking remained on, and the production database was connected. Production
+  point-in-time recovery is on with a seven-day window; the available restore
+  action was not exercised, so the recovery drill remains open. At
+  `2026-08-08T22:33:05Z`, bounded live checks passed for the exact `/status`
+  `BUILD_SHA`, `/`, `/api/readyz`, and the canonical Clerk proxy. `/privacy`,
+  `/terms`, and `/support` each remain 503 fail-closed pending qualified
+  publication approval. CUT continues to require `sslmode=verify-full`; direct
+  production TLS-socket evidence and the restore drill remain open. No billing
+  or charge status is asserted here.
 - Clerk production now uses the replacement free-Hobby application
   `app_3HeFFYD0GpUEjcPIlOwNYXAKUmo`, production instance
   `ins_3HeFLfOAbfStrVB4eW5b7sYOeAq`, and domain
@@ -297,8 +305,9 @@ launch gate.
   or DMARC record changed and no charge was incurred. DNS is no longer the
   blocker. At approximately `2026-08-08T21:27Z`, a user-provided simulator
   observation confirmed real signup-email delivery, successful user entry of
-  the verification code, and an authenticated session reaching `Apple age check
-  needed`; no account detail is recorded. The authenticated JavaScript path
+  the verification code, and an authenticated session reaching
+  `Apple age check needed`; no account detail is recorded. The authenticated
+  JavaScript path
   worked; that simulator's native SDK retained a separate stale DNS cache. A
   superseding EAS-production-environment arm64 Release simulator build, signed
   locally, linked and resolved `CutDeclaredAgeRange`, preserved the authenticated
@@ -346,6 +355,14 @@ launch gate.
 
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
+
+Non-binding fixed-fee quote requests are now out to six Texas legal routes and
+four registered-dietitian candidates. The outreach explicitly authorizes no
+billable work, engagement, or payment; responses remain pending and are tracked
+in `legal-site/PROFESSIONAL_REVIEW_OUTREACH.md`. App Store Connect now uses
+`https://getcutos.com` for the version Marketing URL, while the Support,
+Privacy, and Terms endpoints correctly remain unavailable until qualified
+approval.
 
 1. Preserve the bounded RevenueCat live preflight and direct **Valid
    credentials** evidence for both Apple credential configurations. Keep the

@@ -125,6 +125,8 @@ test("committed working App Store records preserve approved and pending scopes",
   const { submission } = validationInputs();
   assert.deepEqual(submission.listing.initialTerritories, ["US"]);
   assert.equal(submission.listing.sku, "cut-ios-v1");
+  assert.equal(submission.listing.marketingUrl, "https://getcutos.com");
+  assert.equal(submission.listing.copyright, "2026 Zarif Ahmed");
   assert.deepEqual(submission.appleIdentifiers, {
     appId: "6798020879",
     subscriptionGroupId: "22286645",
@@ -635,7 +637,11 @@ test("release mode stays fail closed while privacy, screenshot, and downstream l
       "release mode requires submission.status approved_for_submission",
     ),
   );
-  assert.ok(errors.includes("release mode requires listing.copyright"));
+  assert.equal(
+    errors.includes("release mode requires listing.copyright"),
+    false,
+    "the saved App Store Connect copyright value must be retained",
+  );
   assert.equal(
     errors.includes(
       "release mode requires initial territories confirmed in App Store Connect",
@@ -1252,7 +1258,7 @@ test("records cannot claim approval without satisfying release evidence", () => 
   submission.status = "approved_for_submission";
   assert.ok(
     validateMetadata({ ...inputs, submission }).includes(
-      "release mode requires listing.copyright",
+      "release mode requires listing.approval.status confirmed",
     ),
   );
 

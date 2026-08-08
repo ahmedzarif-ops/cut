@@ -2,11 +2,13 @@
 
 **Initial verification:** 2026-08-04T21:33:17Z
 
-**Latest live update:** 2026-08-08T21:24:17Z
+**Latest live update:** 2026-08-08T22:04:40Z
 
 **Method:** Direct confirmation in the live Apple Developer, App Store Connect,
 and exact CUT RevenueCat App Store app interfaces for the latest update, plus
-checked-in routing validation. No credential material was recorded.
+checked-in routing validation. The version listing was saved with the approved
+custom-domain Marketing URL and its existing copyright value. No credential
+material was recorded.
 
 **Scope:** Non-secret configuration evidence only; this is not submission,
 App Review, or public-release approval.
@@ -72,8 +74,9 @@ submitted, approved, or publicly available.
 
 - Version 1.0.0 remains in `Prepare for Submission`.
 - No screenshots are uploaded and no build is selected.
-- The Support URL is blank. The Marketing URL still points to the earlier
-  Replit origin rather than the approved custom-domain candidate.
+- The Support URL is blank.
+- The Marketing URL is saved as `https://getcutos.com`.
+- Copyright is saved as `2026 Zarif Ahmed`.
 - App Review sign-in is marked required, but the review username, password,
   contact fields, and notes are blank.
 - Manual release remains selected.

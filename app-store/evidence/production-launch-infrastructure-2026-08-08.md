@@ -20,22 +20,24 @@ Certificate secrets and provisioning contents are intentionally excluded.
 
 ## Source and hosting
 
-- The authoritative GitHub branch and the Replit workspace were aligned to
-  commit `1257d8823f1a3ef3177a3e12409c4bf903e6009e` at verification time.
-- The Replit working branch was clean and exactly even with its upstream.
-- Replit-only empty “Published your App” commits were preserved on backup
-  branches before alignment; no user source changes were discarded.
-- `https://getcutos.com/` returned HTTP 200 over HTTPS.
-- `https://getcutos.com/status` returned HTTP 200 and identified the currently
-  deployed older build as
-  `3041d46f4893eafab994e4862e1a62c85e83dc64`.
-- `https://getcutos.com/api/readyz` returned HTTP 200.
-- The legal routes returned HTTP 503, as required while publication approval
-  remains draft.
+- The authoritative release branch and current candidate are
+  `codex/app-store-v1` at commit
+  `891a9bb1fdd452a133bf4defa4db70d4592aa25e`.
+- Replit deployment `4186bf93` completed at August 8, 2026, 5:31 PM
+  America/Chicago. The Provision, Security, Build, Bundle, and Promote stages
+  each reported success.
+- Replit's development-to-production data-copy control remained **off** after
+  publish, critical-vulnerability publish blocking remained **on**, and the
+  production database was connected.
+- At `2026-08-08T22:33:05Z`, bounded verification passed for the exact
+  `BUILD_SHA` at `https://getcutos.com/status`, the public root, production
+  readiness at `/api/readyz`, and the canonical Clerk proxy.
+- `/privacy`, `/terms`, and `/support` each remained HTTP 503, as required
+  while qualified publication approval remains open.
 
-The new green source commit was deliberately not republished over the older
-deployment because the legal/publication and final production-build gates are
-not yet satisfied.
+This proves the bounded public identity and application-level health of the
+current deployment. It does not provide a direct production TLS-socket or
+backup-recovery result.
 
 ## Production database transport and readiness
 
@@ -47,24 +49,24 @@ not yet satisfied.
 - A connect-only probe in the Replit editor reproduced the documented Helium
   behavior: the development endpoint rejects every forced SSL mode. That result
   is development evidence and is not evidence of a production TLS failure.
-- Deployed build `3041d46f4893eafab994e4862e1a62c85e83dc64` contains the same
-  production database normalization, validation, startup-migration path, and
-  migration files as the current source. There is no migration diff between
-  that build and the current source.
+- Current deployed build `891a9bb1fdd452a133bf4defa4db70d4592aa25e`
+  contains the production database normalization, validation,
+  startup-migration path, and migration files for the current candidate.
 - Its production entrypoint upgrades the one accepted provider URL shape from
   `sslmode=require` to `sslmode=verify-full`, rejects any non-verified final
   configuration, completes startup migrations before binding the listener, and
   exposes readiness only after a database query succeeds.
-- On August 8, `https://getcutos.com/status` identified that exact deployed
-  build and `https://getcutos.com/api/readyz` returned HTTP 200. Together with
-  the fail-closed startup ordering, this proves that the deployed application
-  requested certificate-verifying production transport, completed the current
-  migration set, and executed a production readiness query.
+- At `2026-08-08T22:33:05Z`, the exact-build `/status` check and the production
+  `/api/readyz` check both passed while Replit showed the production database
+  connected. This establishes current application-level readiness without
+  claiming direct inspection of the live TLS socket or recovery configuration.
+- Replit Production Database settings show point-in-time recovery **on** with a
+  seven-day recovery window. A restore action is available but was not
+  exercised, so no recovery drill is claimed.
 
-This does not replace an exact-candidate recheck. After the current green source
-is deployed, record the exact deployment SHA, re-run readiness, and inspect the
-live TLS socket's encryption and authorization flags without exposing its host,
-credentials, certificate subject, or database contents.
+Directly inspect the live TLS socket's encryption and authorization flags, and
+complete a restore drill without exposing its host, credentials, certificate
+subject, database contents, or recovery material before release.
 
 ## EAS production environment
 
@@ -145,9 +147,10 @@ control was rechecked **off** immediately before publishing. EAS production now
 targets this tenant and the exact same-origin proxy without recording any key
 material here.
 
-Commit `d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4` is the deployed source identity.
-Bounded live checks passed for `/status`, `/api/readyz`, and the Clerk proxy
-health endpoint; the proxy check matched production domain ID
+Commit `891a9bb1fdd452a133bf4defa4db70d4592aa25e` is the deployed source identity
+for Replit deployment `4186bf93`. At `2026-08-08T22:33:05Z`, bounded live checks
+passed for the exact `/status` `BUILD_SHA`, `/`, `/api/readyz`, and the canonical
+Clerk proxy; the proxy check matched production domain ID
 `dmn_3HeFLeuWzWg9xKNeG4o6PUUVHlb`. Any binary created before this cutover is
 ineligible for release. App Store Connect still has zero TestFlight builds, so
 no signed-build authentication or physical-device claim is made.
@@ -178,12 +181,12 @@ verification below.
 The owner-approved Replit DNS action published exactly these five public CNAME
 records required by Clerk:
 
-| Host | CNAME target |
-| --- | --- |
-| `clerk.getcutos.com` | `frontend-api.clerk.services.` |
-| `accounts.getcutos.com` | `accounts.clerk.services.` |
-| `clkmail.getcutos.com` | `mail.yex4yt4xrwzc.clerk.services.` |
-| `clk._domainkey.getcutos.com` | `dkim1.yex4yt4xrwzc.clerk.services.` |
+| Host                           | CNAME target                         |
+| ------------------------------ | ------------------------------------ |
+| `clerk.getcutos.com`           | `frontend-api.clerk.services.`       |
+| `accounts.getcutos.com`        | `accounts.clerk.services.`           |
+| `clkmail.getcutos.com`         | `mail.yex4yt4xrwzc.clerk.services.`  |
+| `clk._domainkey.getcutos.com`  | `dkim1.yex4yt4xrwzc.clerk.services.` |
 | `clk2._domainkey.getcutos.com` | `dkim2.yex4yt4xrwzc.clerk.services.` |
 
 The authoritative nameserver `ns1cny.name.com`, Cloudflare resolver `1.1.1.1`,
@@ -237,7 +240,8 @@ release-configuration suite passed 15/15 tests.
 3. Revalidate the exact-candidate production database, including direct live
    TLS socket encryption/authorization evidence, without exposing the database
    URL.
-4. Recheck the final deployment's build SHA and Clerk proxy-health endpoint.
+4. Preserve the passing exact-build and Clerk proxy-health checks, and repeat
+   them after any future publish.
 5. Exercise the full native password-recovery flow and validate Apple's
    Declared Age Range entitlement/API on the exact physical-device/TestFlight
    build. Signup email/code and the local simulator bridge are complete.
