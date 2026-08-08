@@ -58,8 +58,8 @@
   review screenshot, and without a defensible price-effective timestamp.
 - The `CUT OS Internal QA` TestFlight group is configured with automatic
   distribution off, the approved public feedback email, and the repository beta
-  description. It still has 0 testers and 0 builds; no TestFlight or exact-build
-  QA is claimed.
+  description. The Account Holder is its one internal tester and it has 0
+  builds; no TestFlight or exact-build QA is claimed.
 - Database statements, startup migrations, API/public-server shutdown, and
   readiness recovery now have cross-tested timeout boundaries. Metro receives
   an allowlist with dotenv loading disabled instead of the server environment.

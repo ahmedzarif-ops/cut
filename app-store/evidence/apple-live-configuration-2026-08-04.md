@@ -104,7 +104,8 @@ submitted or released.
 
 - Internal group name: `CUT OS Internal QA`.
 - Automatic distribution: off.
-- Testers: 0.
+- Testers: 1; the Account Holder was directly reverified as an internal tester
+  on August 8, 2026.
 - Builds: 0.
 - The repository beta app description is saved exactly in App Store Connect.
 - TestFlight feedback email is saved as the already owner-authorized public

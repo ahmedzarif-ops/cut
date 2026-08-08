@@ -316,11 +316,12 @@ from automated tests or framework use.
 
 For TestFlight, the already authorized public email is saved as the feedback
 email, and internal group `CUT OS Internal QA` is configured with automatic
-distribution off. It currently has 0 testers and 0 builds, and TestFlight owner,
-mobile-QA, and App Store Connect approvals remain pending. Internal-only testing
-does not require external TestFlight App Review; adding external testers does,
-including review contact, demo access, notes, and review of the selected build.
-Credentials remain only in App Store Connect or approved secret storage.
+distribution off. The Account Holder is assigned as its one internal tester; it
+has 0 builds, and TestFlight owner, mobile-QA, and App Store Connect approvals
+remain pending. Internal-only testing does not require external TestFlight App
+Review; adding external testers does, including review contact, demo access,
+notes, and review of the selected build. Credentials remain only in App Store
+Connect or approved secret storage.
 
 ## Decision 7 — production hosting and database spend
 

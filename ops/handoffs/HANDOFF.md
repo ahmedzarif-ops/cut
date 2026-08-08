@@ -125,7 +125,8 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   exact-build restore-after-deletion QA remains required.
 - TestFlight group `CUT OS Internal QA` is configured with automatic
   distribution off, the authorized public feedback email, the exact beta
-  description, 0 testers, and 0 builds. The subscription's credential-free
+  description, the Account Holder as its one internal tester, and 0 builds. The
+  subscription's credential-free
   Review Notes are saved, but version attachment and its review screenshot are
   pending; no TestFlight QA or submission is claimed.
 

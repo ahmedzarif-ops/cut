@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "working_not_approved",
-  "updated": "2026-08-04",
+  "updated": "2026-08-08",
   "distributionScope": "internal_only",
   "betaAppDescription": "CUT OS is an adults-only daily cut check-in for people who lift. Testers can record a daily weigh-in, choose and log one of six curated balanced meals, view estimated nutrition totals, and manage their account and CUT OS Pro subscription. It provides general fitness and nutrition information, not medical advice. Nutrition and common-allergen information is estimated.",
   "whatToTest": "Use the purpose-built beta account supplied through the approved tester channel. Please test sign-in and the 18+ gate; purchase, cancellation, restore, and subscription management; daily weigh-in; balanced-meal selection and logging; serving adjustment and meal deletion; relaunch and account switching; legal and support links; and in-app account deletion. Verify that paid screens open only after server-confirmed access, prices and periods match Apple's purchase sheet, and deleting the CUT OS account does not claim to cancel Apple billing. Also complete these common tasks with VoiceOver and large text and report any unclear label, focus-order issue, clipped text, low contrast, or unusable control. When reporting an issue, include the selected TestFlight version/build, device/iOS, account-state alias, steps, expected result, and observed result. Do not include passwords, verification codes, receipts, personal data, or secrets.",
@@ -11,12 +11,12 @@
     "name": "CUT OS Internal QA",
     "status": "configured",
     "automaticDistribution": false,
-    "testerCount": 0,
+    "testerCount": 1,
     "buildCount": 0,
     "assignedAppStoreConnectBuildId": null,
     "assignmentVerifiedAtUtc": null,
     "assignmentEvidenceReference": null,
-    "verifiedAtUtc": "2026-08-04T22:13:34Z",
+    "verifiedAtUtc": "2026-08-08T18:43:18Z",
     "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#testflight-internal-configuration"
   },
   "externalBetaReview": {

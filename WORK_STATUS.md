@@ -266,8 +266,9 @@ launch gate.
   August 4 submission. Apple commerce readiness is confirmed; legal gates
   remain open.
 - TestFlight feedback email and the exact beta description are saved. Internal
-  group `CUT OS Internal QA` exists with automatic distribution off, 0 testers,
-  and 0 builds; no build assignment or QA is claimed.
+  group `CUT OS Internal QA` exists with automatic distribution off, the
+  Account Holder assigned as its one internal tester, and 0 builds; no build
+  assignment or QA is claimed.
 - Replit hosting is owner-approved up to **$20/month before tax** and phone
   verification is complete. The clean workspace matches the exact source
   checkpoint. The first publish was canceled before application bundling or
@@ -334,24 +335,17 @@ more sensitive preference data:
 The owner-approved one-time Expo browser login is complete. Read-only EAS checks
 confirmed `@zee-digipit/cut`, the expected project ID, zero iOS builds, and no
 iOS signing credentials. No Apple account login or credential mutation was
-performed; signing authorization remains the next sensitive build gate.
-8. Exercise success, cancellation, timeout, app-kill, retry, second-device, and
-   shared-device account-switch scenarios with a real Clerk development identity
-   in an iOS development build.
-9. Have qualified counsel approve adults-18+ Terms/EULA, Privacy Policy,
-   notice-at-collection, retention/underage handling, launch jurisdictions, and
-   sufficiency of the self-declared assurance method and permanent
-   ineligible-identity workflow.
-10. Define tombstone/backups retention—including the maximum accepted lifetime
-    of stale Clerk sessions/tokens—deletion completion expectations, production
-    monitoring, alerting, and manual reconciliation.
-11. Inventory privacy manifests and required-reason APIs in the generated iOS
-    archive; reconcile `APP_STORE_METADATA.md`, complete the current Apple
-    questionnaire truthfully, and apply the higher 18+ override once the
-    Terms/EULA minimum is final.
-12. Add dietary preferences/allergy exclusions only after the deletion and privacy paths exist.
-13. Add authoritative calorie/protein targets and deterministic hard filters before using the product name **Best Balanced Fit**.
-14. Then advance Today to training and closeout actions.
+performed; signing authorization remains the next sensitive build gate. 8. Exercise success, cancellation, timeout, app-kill, retry, second-device, and
+shared-device account-switch scenarios with a real Clerk development identity
+in an iOS development build. 9. Have qualified counsel approve adults-18+ Terms/EULA, Privacy Policy,
+notice-at-collection, retention/underage handling, launch jurisdictions, and
+sufficiency of the self-declared assurance method and permanent
+ineligible-identity workflow. 10. Define tombstone/backups retention—including the maximum accepted lifetime
+of stale Clerk sessions/tokens—deletion completion expectations, production
+monitoring, alerting, and manual reconciliation. 11. Inventory privacy manifests and required-reason APIs in the generated iOS
+archive; reconcile `APP_STORE_METADATA.md`, complete the current Apple
+questionnaire truthfully, and apply the higher 18+ override once the
+Terms/EULA minimum is final. 12. Add dietary preferences/allergy exclusions only after the deletion and privacy paths exist. 13. Add authoritative calorie/protein targets and deterministic hard filters before using the product name **Best Balanced Fit**. 14. Then advance Today to training and closeout actions.
 
 ## Owner actions required for the next external step
 
