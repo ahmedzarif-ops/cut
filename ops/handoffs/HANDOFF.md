@@ -117,9 +117,10 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   release. RevenueCat production Apple app `app8feee0dfba` is created for the
   exact bundle, its subscription key is valid, and product `prod66e8dc0083`
   maps to `CUT_OS_PRO` and `default/$rc_monthly`. A public iOS SDK key is
-  provisioned without recording its value. The optional App Store Connect API
-  sync credential is intentionally omitted; public-iOS-key/EAS wiring remains
-  pending.
+  provisioned without recording its value. Apple approved App Store Connect API
+  access and the owner-authorized minimum App Manager key for RevenueCat sync
+  has been generated outside the repository. Its secure RevenueCat upload and
+  validation remain pending; public-iOS-key/EAS wiring remains pending.
   **Transfer to new App User ID** is persisted with controlled non-secret
   dashboard evidence; Decision 3 owner authorization is confirmed, while
   exact-build restore-after-deletion QA remains required.
@@ -142,8 +143,9 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
 3. Keep the live active Apple membership, Paid Apps, banking, tax, and
    app/subscription evidence current.
 4. Preserve the passing bounded RevenueCat live preflight, valid Apple in-app
-   purchase key, customer read/write evidence, and intentional omission of the
-   optional App Store Connect API sync credential. Place the app REST ID and
+   purchase key, and customer read/write evidence. Complete the already
+   authorized secure upload and validation of the App Store Connect API sync
+   credential. Place the app REST ID and
    provisioned public iOS SDK key only in their approved server/EAS
    destinations.
 5. Validate the provisioned empty Replit production database, Clerk
@@ -152,6 +154,16 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
 6. Build the exact signed TestFlight candidate and complete physical-iPhone
    authentication, recovery, purchase, restore, deletion, accessibility, and
    screenshot evidence before App Review.
+
+## EAS SIGNING EVIDENCE
+
+- The production Apple distribution certificate and provisioning profile for
+  `com.zarifahmed.cut` are active in EAS through August 8, 2027.
+- The read-only verification was performed without logging in to Apple again;
+  no push-notification key, local credentials file, or additional capability
+  was created.
+- EAS still has zero iOS builds, so no signed-candidate or TestFlight claim is
+  made.
 
 ## LOCKED SAFETY BOUNDARIES
 
@@ -162,8 +174,8 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   $4.99 U.S. `P1M`, no-introductory-offer product mapped to `CUT_OS_PRO`.
   The exact App Store Connect product and U.S. price are saved; first-version
   attachment, review screenshot, and exact-build evidence remain pending. The
-  optional RevenueCat App Store Connect API sync credential is intentionally
-  omitted. Credential-free Review Notes are
+  RevenueCat App Store Connect API sync credential has been generated and is
+  pending secure upload and validation. Credential-free Review Notes are
   saved. If the offer changes,
   update and reverify the owner decision, source, configuration, and tests before
   any signed build.
@@ -188,7 +200,7 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   override, DSA status, copyright holder/year, content-rights declaration, and
   final product-name clearance.
 - Qualified legal/privacy and nutrition/allergen review.
-- Apple signing/2FA, App Review submission, and manual public release.
+- App Review submission and manual public release.
 
 ## PERSISTENT REFERENCE
 

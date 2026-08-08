@@ -294,14 +294,18 @@ launch gate.
   SDK key is provisioned without recording its value. Decision 3 owner
   authorization is confirmed by the exact phrase
   `approve RevenueCat server-key replacement and Decision 3`; the old
-  unconfigured key remains and has not been revoked. The corrected,
+  unconfigured key remains and has not been revoked. Apple has approved App
+  Store Connect API access and the minimum App Manager team key intended only
+  for RevenueCat product/price synchronization has been generated. Its private
+  file remains outside the repository and has not been read or recorded here;
+  secure upload and RevenueCat validation remain pending. The corrected,
   source-controlled read-only preflight passed from Replit on exact green
   commit `930a70eb4773b534c9d9fa33fb6030bdd6ee5a54`, verifying the exact CUT iOS
   mapping and bounded customer-read access. Dashboard evidence verifies
   customer read/write permission without issuing a test write or deletion. The
-  optional App Store Connect API sync credential is intentionally omitted after
-  Apple's live internal-use-only attestation. Exact-build native purchase and
-  restore QA remain pending, and production continues to fail closed.
+  optional App Store Connect API sync credential is not yet active in
+  RevenueCat. Exact-build native purchase and restore QA remain pending, and
+  production continues to fail closed.
   The dashboard restore behavior is evidence-bound as Transfer to new App User
   ID.
 
@@ -310,8 +314,9 @@ launch gate.
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
-1. Preserve the bounded RevenueCat live preflight and the documented omission
-   of the optional App Store Connect API sync credential. Place the production
+1. Preserve the bounded RevenueCat live preflight and complete the already
+   authorized secure upload and validation of the App Store Connect API sync
+   credential. Place the production
    app REST ID and provisioned public iOS SDK key only in their approved
    server/EAS destinations; keep the valid Apple in-app purchase key and
    customer read/write dashboard evidence current.
@@ -333,9 +338,11 @@ more sensitive preference data:
    substantiation, and qualified review records for every public meal template.
 
 The owner-approved one-time Expo browser login is complete. Read-only EAS checks
-confirmed `@zee-digipit/cut`, the expected project ID, zero iOS builds, and no
-iOS signing credentials. No Apple account login or credential mutation was
-performed; signing authorization remains the next sensitive build gate. 8. Exercise success, cancellation, timeout, app-kill, retry, second-device, and
+confirmed `@zee-digipit/cut`, the expected project ID, and zero iOS builds.
+After the separately approved Apple account sign-in, the production Apple
+distribution certificate and provisioning profile are active in EAS through
+August 8, 2027 for `com.zarifahmed.cut`. No push key or extra capability was
+created. 8. Exercise success, cancellation, timeout, app-kill, retry, second-device, and
 shared-device account-switch scenarios with a real Clerk development identity
 in an iOS development build. 9. Have qualified counsel approve adults-18+ Terms/EULA, Privacy Policy,
 notice-at-collection, retention/underage handling, launch jurisdictions, and
@@ -361,8 +368,8 @@ sensitive-data apps toward legal-entity submission. Preliminary name screening
 also found a crowded same-market `CUT` field, so qualified `CUT OS` clearance
 remains open. Apple's Paid Apps Agreement, banking, and U.S. Form W-9 are active
 and evidence-confirmed. RevenueCat Decision 3 owner authorization is also
-confirmed. Apple signing, EAS/Apple authentication, TestFlight build/QA,
-distribution, App
+confirmed. Apple signing and EAS/Apple authentication are complete;
+TestFlight build/QA, distribution, App
 Store questionnaire/privacy publication, Submit for Review, and public release
 remain owner-controlled gates. The owner has confirmed an
 18+ launch position; the final rating questionnaire and legal policy still need
