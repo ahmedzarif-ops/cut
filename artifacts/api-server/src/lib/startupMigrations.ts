@@ -3,6 +3,7 @@ import { drizzle, type NodePgClient } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { getDb, getPool } from "@workspace/db";
 import { checkDatabaseReadiness } from "./readiness";
+import { attestProductionDatabaseTls } from "./productionDatabaseTlsAttestation";
 
 // Stable, application-specific 64-bit key. Every API replica must use the same
 // value so only one process can apply committed migrations at a time.
@@ -30,6 +31,7 @@ export interface MigrationPool {
 export type StartupMigrationErrorCode =
   | "database_unavailable"
   | "database_not_ready"
+  | "database_tls_attestation_failed"
   | "migration_lock_timeout"
   | "migration_failed"
   | "migration_lock_release_failed";
@@ -198,6 +200,7 @@ export async function ensureProductionMigrations(
 type ProductionDatabasePreparationDependencies = {
   migrate?: (env: NodeJS.ProcessEnv) => Promise<void>;
   checkReadiness?: () => Promise<void>;
+  attestTls?: () => Promise<void>;
 };
 
 /**
@@ -215,5 +218,11 @@ export async function prepareProductionDatabase(
     await (dependencies.checkReadiness ?? checkDatabaseReadiness)();
   } catch {
     throw new StartupMigrationError("database_not_ready");
+  }
+
+  try {
+    await (dependencies.attestTls ?? attestProductionDatabaseTls)();
+  } catch {
+    throw new StartupMigrationError("database_tls_attestation_failed");
   }
 }

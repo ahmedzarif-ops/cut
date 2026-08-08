@@ -216,9 +216,12 @@ describe("production startup migrations", () => {
         checkReadiness: async () => {
           events.push("ready");
         },
+        attestTls: async () => {
+          events.push("tls");
+        },
       },
     );
-    expect(events).toEqual(["migrate", "ready"]);
+    expect(events).toEqual(["migrate", "ready", "tls"]);
   });
 
   it("never checks readiness or proceeds after migration failure", async () => {
@@ -256,5 +259,58 @@ describe("production startup migrations", () => {
       message: "Production database preparation failed",
     });
     expect(migrate).toHaveBeenCalledOnce();
+  });
+
+  it("fails startup with a stable sanitized code when TLS attestation fails", async () => {
+    const privateDatabaseDetail =
+      "private-user|private-password|db.example.com|cut";
+    const events: string[] = [];
+    let thrown: unknown;
+
+    try {
+      await prepareProductionDatabase(
+        { NODE_ENV: "production" },
+        {
+          migrate: async () => {
+            events.push("migrate");
+          },
+          checkReadiness: async () => {
+            events.push("ready");
+          },
+          attestTls: async () => {
+            events.push("tls");
+            throw new Error(privateDatabaseDetail);
+          },
+        },
+      );
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(events).toEqual(["migrate", "ready", "tls"]);
+    expect(thrown).toMatchObject({
+      name: "StartupMigrationError",
+      code: "database_tls_attestation_failed",
+      message: "Production database preparation failed",
+    });
+    expect(JSON.stringify(thrown)).not.toContain("private-user");
+    expect(JSON.stringify(thrown)).not.toContain("private-password");
+  });
+
+  it("does not migrate, probe, or attest outside production", async () => {
+    const migrate = vi.fn(async () => undefined);
+    const checkReadiness = vi.fn(async () => undefined);
+    const attestTls = vi.fn(async () => undefined);
+
+    for (const NODE_ENV of ["development", "test"]) {
+      await prepareProductionDatabase(
+        { NODE_ENV },
+        { migrate, checkReadiness, attestTls },
+      );
+    }
+
+    expect(migrate).not.toHaveBeenCalled();
+    expect(checkReadiness).not.toHaveBeenCalled();
+    expect(attestTls).not.toHaveBeenCalled();
   });
 });
