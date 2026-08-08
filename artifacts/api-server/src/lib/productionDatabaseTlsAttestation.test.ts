@@ -12,20 +12,30 @@ type FakeDatabaseOptions = {
   encrypted?: unknown;
   authorized?: unknown;
   authorizationError?: unknown;
-  serverSsl?: boolean;
-  omitServerRow?: boolean;
+  servername?: unknown;
+  queryReady?: number;
+  omitQueryRow?: boolean;
   queryFailure?: Error;
   rollbackFailure?: Error;
+  releaseFailure?: Error;
 };
 
 function fakeDatabase(options: FakeDatabaseOptions = {}) {
   const queries: string[] = [];
-  const release = vi.fn<(error?: Error | boolean) => void>();
+  const release = vi.fn<(error?: Error | boolean) => void>(() => {
+    if (options.releaseFailure) throw options.releaseFailure;
+  });
   const info = vi.fn<ProductionTlsAttestationLogger["info"]>();
+  const host = Object.hasOwn(options, "host")
+    ? options.host
+    : "production-db.example.com";
+  const servername = Object.hasOwn(options, "servername")
+    ? options.servername
+    : host;
 
   const client: ProductionTlsClient = {
     connectionParameters: {
-      host: options.host ?? "production-db.example.com",
+      host,
       ssl: options.ssl ?? {},
     },
     connection: {
@@ -33,6 +43,7 @@ function fakeDatabase(options: FakeDatabaseOptions = {}) {
         encrypted: options.encrypted ?? true,
         authorized: options.authorized ?? true,
         authorizationError: options.authorizationError ?? null,
+        servername,
       },
     },
     async query<Row extends Record<string, unknown>>(text: string) {
@@ -40,14 +51,14 @@ function fakeDatabase(options: FakeDatabaseOptions = {}) {
       if (text === "rollback" && options.rollbackFailure) {
         throw options.rollbackFailure;
       }
-      if (options.queryFailure && text.includes("pg_stat_ssl")) {
+      if (options.queryFailure && text.includes("database_ready")) {
         throw options.queryFailure;
       }
-      if (text.includes("pg_stat_ssl")) {
+      if (text.includes("database_ready")) {
         return {
-          rows: options.omitServerRow
+          rows: options.omitQueryRow
             ? []
-            : [{ ssl: options.serverSsl ?? true }],
+            : [{ database_ready: options.queryReady ?? 1 }],
         } as unknown as { rows: Row[] };
       }
       return { rows: [] };
@@ -71,11 +82,8 @@ describe("production database TLS attestation", () => {
 
     expect(database.queries).toHaveLength(3);
     expect(database.queries[0]).toBe("begin transaction read only");
-    expect(database.queries[1]).toMatch(/select "ssl"/u);
-    expect(database.queries[1]).toMatch(/where "pid" = pg_backend_pid\(\)/u);
-    expect(database.queries[1]).not.toMatch(
-      /(?:version|cipher|bits|client_dn|issuer_dn)/u,
-    );
+    expect(database.queries[1]).toBe(`select 1 as "database_ready"`);
+    expect(database.queries.join("\n")).not.toContain("pg_stat_ssl");
     expect(database.queries[2]).toBe("rollback");
     expect(database.release).toHaveBeenCalledWith(false);
     expect(database.info).toHaveBeenCalledOnce();
@@ -88,23 +96,40 @@ describe("production database TLS attestation", () => {
         socketEncrypted: true,
         peerAuthorized: true,
         authorizationErrorAbsent: true,
-        serverReportsSsl: true,
+        hostnameVerified: true,
+        sameSocketQueryPassed: true,
       },
       "Production database TLS attestation passed",
     );
+  });
+
+  it("accepts pg's boolean verified-TLS configuration", async () => {
+    const database = fakeDatabase({ ssl: true });
+
+    await expect(
+      attestProductionDatabaseTls({
+        pool: database.pool,
+        logger: database.evidenceLogger,
+      }),
+    ).resolves.toBeUndefined();
+    expect(database.info).toHaveBeenCalledOnce();
   });
 
   it.each([
     ["non-TLS socket", { encrypted: false }],
     ["unauthorized peer", { authorized: false }],
     ["authorization error", { authorizationError: new Error("private") }],
-    ["server-side non-SSL", { serverSsl: false }],
-    ["missing current-backend row", { omitServerRow: true }],
+    ["mismatched SNI hostname", { servername: "other.example.com" }],
+    ["missing SNI hostname", { servername: null }],
+    ["failed same-client query", { queryReady: 0 }],
+    ["missing same-client query row", { omitQueryRow: true }],
+    ["disabled TLS configuration", { ssl: false }],
     ["verification bypass", { ssl: { rejectUnauthorized: false } }],
     [
       "hostname-check override",
       { ssl: { checkServerIdentity: () => undefined } },
     ],
+    ["missing connection target", { host: "" }],
     ["IP connection target", { host: "192.0.2.1" }],
   ] satisfies [string, FakeDatabaseOptions][])(
     "fails closed for %s",
@@ -153,6 +178,23 @@ describe("production database TLS attestation", () => {
       expect(database.release).toHaveBeenCalledWith(true);
       expect(database.info).not.toHaveBeenCalled();
     }
+  });
+
+  it("sanitizes client-release failures", async () => {
+    const database = fakeDatabase({
+      releaseFailure: new Error(
+        "private-user|private-password|db.example.com|cut",
+      ),
+    });
+
+    await expect(
+      attestProductionDatabaseTls({
+        pool: database.pool,
+        logger: database.evidenceLogger,
+      }),
+    ).rejects.toMatchObject({ code: "database_tls_attestation_failed" });
+    expect(database.release).toHaveBeenCalledWith(false);
+    expect(database.info).not.toHaveBeenCalled();
   });
 
   it("sanitizes connection failures without producing evidence", async () => {

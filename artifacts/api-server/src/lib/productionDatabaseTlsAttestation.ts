@@ -35,6 +35,7 @@ type TlsSocketShape = {
   encrypted?: unknown;
   authorized?: unknown;
   authorizationError?: unknown;
+  servername?: unknown;
 };
 
 type PgSslConfiguration = {
@@ -87,16 +88,14 @@ function tlsSocket(client: ProductionTlsClient): TlsSocketShape | undefined {
   return asRecord(client.connection?.stream) as TlsSocketShape | undefined;
 }
 
-const TLS_ATTESTATION_QUERY = `
-  select "ssl"
-  from "pg_catalog"."pg_stat_ssl"
-  where "pid" = pg_backend_pid()
-`;
+const TLS_ATTESTATION_QUERY = `select 1 as "database_ready"`;
 
 /**
  * Fail-closed proof that the exact production pool client is using an
- * authorized TLS socket and that PostgreSQL reports SSL for that same backend.
- * No connection, certificate, provider, PID, or query metadata is logged.
+ * authorized TLS socket for the configured DNS hostname and can carry a
+ * read-only query. PostgreSQL may sit behind a TLS-terminating provider proxy,
+ * so server-side transport views do not attest this client-to-endpoint socket.
+ * No connection, certificate, provider, or query metadata is logged.
  */
 export async function attestProductionDatabaseTls(
   dependencies: ProductionTlsAttestationDependencies = {},
@@ -122,16 +121,20 @@ export async function attestProductionDatabaseTls(
     await client.query("begin transaction read only");
     transactionOpen = true;
 
-    const result = await client.query<{ ssl: boolean }>(TLS_ATTESTATION_QUERY);
+    const result = await client.query<{ database_ready: number }>(
+      TLS_ATTESTATION_QUERY,
+    );
     const socket = tlsSocket(client);
+    const configuredHost = client.connectionParameters?.host;
 
     attested =
       hasVerifiedTlsConfiguration(client) &&
       socket?.encrypted === true &&
       socket.authorized === true &&
       socket.authorizationError == null &&
+      socket.servername === configuredHost &&
       result.rows.length === 1 &&
-      result.rows[0]?.ssl === true;
+      result.rows[0]?.database_ready === 1;
   } catch {
     attested = false;
     discardClient = true;
@@ -164,7 +167,8 @@ export async function attestProductionDatabaseTls(
       socketEncrypted: true,
       peerAuthorized: true,
       authorizationErrorAbsent: true,
-      serverReportsSsl: true,
+      hostnameVerified: true,
+      sameSocketQueryPassed: true,
     },
     "Production database TLS attestation passed",
   );

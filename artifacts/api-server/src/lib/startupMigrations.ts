@@ -204,8 +204,9 @@ type ProductionDatabasePreparationDependencies = {
 };
 
 /**
- * Complete production gate used before app.listen: migrate first, then prove
- * that the database's latest recorded revision exactly matches this build.
+ * Complete production gate used before app.listen: migrate first, prove that
+ * the database's latest recorded revision exactly matches this build, then
+ * attest the exact production client's verified TLS socket.
  */
 export async function prepareProductionDatabase(
   env: NodeJS.ProcessEnv = process.env,
