@@ -30,8 +30,12 @@
   the CUT iOS mapping and bounded customer-read access. Dashboard evidence
   verifies read/write permission without issuing a test write or deletion.
   Customer write/delete behavior and post-upload exact-build restore QA remain
-  evidence gates. The optional App Store Connect API sync credential is
-  intentionally omitted after Apple's live internal-use-only attestation.
+  evidence gates. Direct RevenueCat inspection on August 8 showed **Valid
+  credentials** for the required In-App Purchase key configuration and the
+  owner-authorized App Store Connect API credential on exact app
+  `app8feee0dfba`; its machine status is `verified`. Apple server notifications
+  show no notifications received, and exact-build purchase/TestFlight evidence
+  remains open.
   Decision 3 owner authorization is confirmed.
   Database/migration and shutdown
   timeout relationships are cross-tested, and Metro gets only reviewed public
@@ -57,11 +61,43 @@
   physical-device flow, or full tap-through.
 - CUT password recovery now uses Clerk's prebuilt sign-in-only native and web
   flows. The Clerk development tenant has Strict enumeration protection,
-  Client Trust, bot protection, and lockout protection enabled. A production
-  instance now exists on the free Hobby plan for
-  `cut-ahmedzarif1.replit.app`, and its live keys are held only in Replit.
-  Production Strict/Native API/iOS-registration evidence, deployed proxy health,
-  and signed physical-iPhone evidence remain release gates.
+  Client Trust, bot protection, and lockout protection enabled. Production now
+  uses free-Hobby application `app_3HeFFYD0GpUEjcPIlOwNYXAKUmo`, instance
+  `ins_3HeFLfOAbfStrVB4eW5b7sYOeAq`, and domain record
+  `dmn_3HeFLeuWzWg9xKNeG4o6PUUVHlb` for `getcutos.com`. Email/password with
+  required email-code verification, Strict enumeration, lockout, Device Trust,
+  bot protection, Native API, iOS prefix `6JP2ZDM4HC`, bundle
+  `com.zarifahmed.cut`, callback `com.zarifahmed.cut://callback`, and exact proxy
+  `https://getcutos.com/api/__clerk` are configured. Masked keys are active in
+  Replit and EAS production, and bounded proxy health passes. The prior
+  provider-domain tenant had zero users and remains only as rollback; it is not
+  claimed revoked or deleted. No Clerk card, trial, paid-plan change, or new
+  billing action occurred. A Release-style dedicated iOS 27 zero-user simulator
+  build used Xcode **Sign to Run Locally**, contained the exact current EAS
+  production Clerk publishable key by a value-free equality check, and launched
+  the real `Welcome back` UI without a new keychain error at
+  `2026-08-08T21:07:02Z`. Its non-durable local screenshot fingerprint is in
+  `app-store/evidence/production-launch-infrastructure-2026-08-08.md`; that
+  result is not signed/TestFlight QA. `clerk.getcutos.com` was NXDOMAIN during
+  that rehearsal; preserve that historical observation. Superseding public DNS
+  verification at `2026-08-08T21:21:47Z` confirmed all five required Clerk
+  CNAMEs through an authoritative nameserver, Cloudflare, and Google, and Clerk
+  now shows the primary domain, DNS configuration, and proxy as Verified. No
+  apex A, TXT, or DMARC record changed and no charge was incurred. DNS is no
+  longer the blocker. At approximately `2026-08-08T21:27Z`, a user-provided
+  simulator observation confirmed real signup-email delivery, successful user
+  entry of its verification code, and an authenticated session reaching `Apple
+  age check needed`; no account detail is recorded. The authenticated
+  JavaScript path worked; that simulator native SDK retained a separate stale
+  DNS cache. A superseding EAS-production-environment arm64 Release simulator
+  build, signed locally, linked and resolved `CutDeclaredAgeRange`, preserved
+  the authenticated session to the DOB gate, and returned `not_required` from
+  `getStatusAsync()` without a crash or fatal configuration, module, or keychain
+  error. No DOB or account data was entered, and its `/tmp` screenshot is
+  ephemeral rather than release evidence. `ios-simulator` and `production`
+  share the pinned 26.4 EAS image; the targeted native configuration suite
+  passes 15/15. Native password recovery and exact physical-device/TestFlight
+  Declared Age Range entitlement/API validation remain open.
 - App Review access is now a target-bound release gate: its controlled window
   requires Clerk production test mode, Client Trust, five reserved synthetic
   accounts, and exact-build new-device proof; public release separately
@@ -85,14 +121,14 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   stash. The live Publishing draft must remain a one-machine Reserved VM and be
   re-verified after every sync.
 - The owner approved Replit up to **$20/month before tax**: a $15 Reserved VM
-  plus $5 of new usage-based headroom. Phone verification is complete. No
-  production app is promoted or running: the first publish was canceled before
-  application bundling or promotion. Its no-copy control was off. That attempt
-  provisioned the production database schema; every application table has zero
-  rows. Replit's read-only connection value currently uses `sslmode=require`,
-  and CUT now source-tests a fail-closed adaptation of only that exact supported
-  shape to `sslmode=verify-full`. Live TLS/readiness evidence must still pass
-  before promotion. This handoff does not assert billing or charge status.
+  plus $5 of new usage-based headroom. Phone verification is complete. Replit
+  now serves exact source commit
+  `d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4`; its development-data-copy control
+  was rechecked off before publish. Bounded live status, readiness, and Clerk
+  proxy checks pass. Replit's provider-managed production database remains
+  separate from development, and CUT requires `sslmode=verify-full`; direct
+  exact-candidate TLS and recovery evidence remain open. This handoff does not
+  assert billing or charge status.
 - Apple Developer Program membership is active as an Individual account with
   Zarif Ahmed as Account Holder. App Store Connect access and the CUT OS app
   record are active. Paid Apps shows an August 4, 2026 through August 3, 2027
@@ -116,11 +152,16 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   no trial, Family Sharing off, United States only initially, and manual
   release. RevenueCat production Apple app `app8feee0dfba` is created for the
   exact bundle, its subscription key is valid, and product `prod66e8dc0083`
-  maps to `CUT_OS_PRO` and `default/$rc_monthly`. A public iOS SDK key is
+  maps to `CUT_OS_PRO` (`entl8efd6d2c18`) and active default offering
+  `ofrngeb5cc4a73c` (`CUT OS Pro`), which has one `$rc_monthly` package. Store
+  status `MISSING_METADATA` and no transactions remain Apple metadata, review-
+  screenshot, and TestFlight gates rather than a mapping failure. The Test Store
+  sibling is excluded from production claims. A public iOS SDK key is
   provisioned without recording its value. Apple approved App Store Connect API
   access and the owner-authorized minimum App Manager key for RevenueCat sync
-  has been generated outside the repository. Its secure RevenueCat upload and
-  validation remain pending; public-iOS-key/EAS wiring remains pending.
+  was generated outside the repository. RevenueCat now shows **Valid
+  credentials** for it and the required In-App Purchase key configuration;
+  public-iOS-key/EAS wiring and exact-build native QA remain pending.
   **Transfer to new App User ID** is persisted with controlled non-secret
   dashboard evidence; Decision 3 owner authorization is confirmed, while
   exact-build restore-after-deletion QA remains required.
@@ -135,22 +176,20 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
 
 1. Keep PR #9 draft and require exact GitHub CI success after every new commit;
    never rely on a green run from an older revision and never self-merge.
-2. Keep Replit on the exact pushed commit with a clean tree and verify the
-   Publishing draft still says Reserved VM after every sync. The cost ceiling is
-   approved, but do not republish until the source-tested database adaptation is
-   on the exact green commit, the production preflight can pass, and the
-   development-data copy setting is rechecked off.
+2. Keep Replit on exact deployed commit
+   `d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4`, verify that the Publishing draft
+   still says Reserved VM after every sync, and recheck that development-data
+   copy remains off before every future publish.
 3. Keep the live active Apple membership, Paid Apps, banking, tax, and
    app/subscription evidence current.
-4. Preserve the passing bounded RevenueCat live preflight, valid Apple in-app
-   purchase key, and customer read/write evidence. Complete the already
-   authorized secure upload and validation of the App Store Connect API sync
-   credential. Place the app REST ID and
-   provisioned public iOS SDK key only in their approved server/EAS
-   destinations.
-5. Validate the provisioned empty Replit production database, Clerk
-   proxy/security, and RevenueCat Apple configuration only after their exact
-   prerequisites can pass.
+4. Preserve the passing bounded RevenueCat live preflight, both Apple **Valid
+   credentials** results, and customer read/write evidence. Place the app REST
+   ID and provisioned public iOS SDK key only in their approved server/EAS
+   destinations. Keep server-notification delivery and exact-build purchase/
+   restore as separate open gates.
+5. Preserve the passing Replit status/readiness and replacement-Clerk proxy
+   checks. Complete direct production TLS/recovery evidence and exact-build
+   Clerk/RevenueCat acceptance only when their remaining prerequisites can pass.
 6. Build the exact signed TestFlight candidate and complete physical-iPhone
    authentication, recovery, purchase, restore, deletion, accessibility, and
    screenshot evidence before App Review.
@@ -163,7 +202,7 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   no push-notification key, local credentials file, or additional capability
   was created.
 - EAS still has zero iOS builds, so no signed-candidate or TestFlight claim is
-  made.
+  made. Every pre-Clerk-cutover binary is ineligible for release.
 
 ## LOCKED SAFETY BOUNDARIES
 
@@ -174,8 +213,8 @@ PUBLIC_RELEASE_EVIDENCE_SHA`; it freezes the review account history and every
   $4.99 U.S. `P1M`, no-introductory-offer product mapped to `CUT_OS_PRO`.
   The exact App Store Connect product and U.S. price are saved; first-version
   attachment, review screenshot, and exact-build evidence remain pending. The
-  RevenueCat App Store Connect API sync credential has been generated and is
-  pending secure upload and validation. Credential-free Review Notes are
+  RevenueCat App Store Connect API sync credential is directly validated in
+  RevenueCat. Credential-free Review Notes are
   saved. If the offer changes,
   update and reverify the owner decision, source, configuration, and tests before
   any signed build.

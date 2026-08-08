@@ -28,6 +28,7 @@ const APPLE_STANDARD_EULA_TEST_URL =
   "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
 const REVENUECAT_APP_STORE_CONNECT_API_KEY_INTENTIONAL_OMISSION =
   "intentionally_omitted_apple_internal_use_only";
+const REVENUECAT_APP_STORE_CONNECT_API_KEY_VERIFIED = "verified";
 const REVENUECAT_TECHNICAL_GATE_ERROR =
   "release mode requires verified RevenueCat production mapping, verified Apple IAP subscription key, verified customer read/write permission, an App Store Connect API key status of verified or intentionally_omitted_apple_internal_use_only, and dashboard UTC evidence";
 
@@ -285,7 +286,7 @@ test("committed working App Store records preserve approved and pending scopes",
   );
   assert.equal(
     submission.subscription.revenueCat.appStoreConnectApiKeyStatus,
-    REVENUECAT_APP_STORE_CONNECT_API_KEY_INTENTIONAL_OMISSION,
+    REVENUECAT_APP_STORE_CONNECT_API_KEY_VERIFIED,
   );
   assert.equal(
     submission.subscription.revenueCat.restoreAfterAccountDeletion
@@ -308,7 +309,7 @@ test("committed working App Store records preserve approved and pending scopes",
   );
   assert.equal(
     submission.subscription.revenueCat.verifiedAtUtc,
-    "2026-08-05T00:46:13Z",
+    "2026-08-08T21:24:17Z",
   );
   assert.equal(
     submission.subscription.revenueCat.evidenceReference,
@@ -693,14 +694,14 @@ test("release mode stays fail closed while privacy, screenshot, and downstream l
   assert.equal(
     errors.includes(REVENUECAT_TECHNICAL_GATE_ERROR),
     false,
-    "the intentionally omitted optional App Store Connect API key must not block the otherwise verified RevenueCat technical gate",
+    "the directly validated App Store Connect credential must remain complete",
   );
   assert.equal(
     errors.includes(
       "release mode requires confirmed owner authorization for the prepared least-privilege RevenueCat server key, production Apple connection, and Transfer to new App User ID restore behavior",
     ),
     false,
-    "the committed owner authorization must remain complete while the distinct App Store Connect credential gate stays open",
+    "the committed owner authorization must remain complete",
   );
   assert.equal(
     errors.includes(
@@ -1536,6 +1537,9 @@ test("RevenueCat replacement key record rejects an obsolete label and an unrecor
 test("RevenueCat App Store Connect API key dispositions fail closed", () => {
   const inputs = validationInputs();
   const submission = clone(inputs.submission);
+
+  submission.subscription.revenueCat.appStoreConnectApiKeyStatus =
+    REVENUECAT_APP_STORE_CONNECT_API_KEY_INTENTIONAL_OMISSION;
 
   assert.equal(
     validateMetadata({ ...inputs, submission, release: true }).includes(

@@ -317,6 +317,9 @@ describe("native release configuration", () => {
     expect(easConfig.build.production.ios.image).toBe(
       "macos-tahoe-26.4-xcode-26.4",
     );
+    expect(easConfig.build["ios-simulator"].ios.image).toBe(
+      easConfig.build.production.ios.image,
+    );
     expect(easConfig.build.production.autoIncrement).toBe(true);
   });
 

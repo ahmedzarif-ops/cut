@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "working_not_approved",
-  "updated": "2026-08-04",
+  "updated": "2026-08-08",
   "references": {
     "humanRecord": "APP_STORE_METADATA.md",
     "appConfig": "artifacts/cut-os/app.json",
@@ -393,7 +393,7 @@
         "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat"
       },
       "productionMappingStatus": "verified",
-      "appStoreConnectApiKeyStatus": "intentionally_omitted_apple_internal_use_only",
+      "appStoreConnectApiKeyStatus": "verified",
       "subscriptionKeyStatus": "verified",
       "customerReadWritePermissionStatus": "verified",
       "apiV2Key": {
@@ -414,7 +414,7 @@
         "nativeQaTestedAtUtc": null,
         "nativeQaEvidenceReference": null
       },
-      "verifiedAtUtc": "2026-08-05T00:46:13Z",
+      "verifiedAtUtc": "2026-08-08T21:24:17Z",
       "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat"
     },
     "exactBuildEvidence": {
@@ -552,7 +552,7 @@
     "clerkSupportEvidenceReference": "https://clerk.com/docs/reference/expo/overview; https://clerk.com/docs/reference/expo/native-components/auth-view; https://clerk.com/docs/guides/secure/user-enumeration-protection",
     "implementationEvidenceReference": "artifacts/cut-os/app/(auth)/forgot-password.native.tsx; artifacts/cut-os/app/(auth)/forgot-password.web.tsx; artifacts/cut-os/lib/__tests__/password-recovery-native.test.ts",
     "productionTenantEvidence": {
-      "clerkTenantAlias": null,
+      "clerkTenantAlias": "clerk-cut-os-getcutos-production-v2",
       "testedAtUtc": null,
       "checks": {
         "genericPublicResponse": {

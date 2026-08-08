@@ -123,10 +123,11 @@ name and description are reviewed.
 ## Decision 3 — RevenueCat production authorization
 
 **Status:** Owner ratification, the least-privilege replacement server key, and
-the exact production Apple mapping and restore behavior are complete. The
-optional App Store Connect API sync credential was intentionally not created or
-uploaded after Apple's live internal-use-only attestation; exact-build native
-purchase and restore evidence remains pending.
+the exact production Apple mapping and restore behavior are complete. The owner
+later authorized the optional App Store Connect API sync credential after
+acknowledging Apple's attestation. Direct RevenueCat evidence now confirms the
+credential as valid; exact-build native purchase and restore evidence remains
+pending.
 
 **Verified August 5, 2026 UTC:** The owner explicitly approved RevenueCat
 server-key replacement and Decision 3. A replacement secret RevenueCat API v2
@@ -156,20 +157,42 @@ that required subscription key.
 **Recorded safety decision August 5, 2026 UTC:** Apple's live App Store Connect
 API-key creation flow displayed an attestation limiting the credential to
 internal development, testing, and reporting within the Apple team and not
-permitting it to be shared with or used by a third-party service. RevenueCat
-requires uploading that credential to its service. The optional sync credential
-was therefore not created, downloaded, or uploaded, and no automatic product
-import, price synchronization, or RevenueCat store-status capability is claimed.
-This records the observed attestation and action taken; it does not provide a
-legal interpretation or authorize a later credential-sharing path. Any future
-reconsideration requires qualified review and explicit owner authorization.
+permitting it to be shared with or used by a third-party service. At that
+verification point, the optional sync credential was therefore not created,
+downloaded, or uploaded. This is retained as historical evidence of the state
+and decision at that time, not as the current key disposition.
 
-The intentional omission does not weaken or satisfy the mandatory controls: the
-valid Apple In-App Purchase subscription key, exact Apple product-entitlement-
-offering mapping, RevenueCat customer-delete permission, **Transfer to new App
-User ID** restore behavior, and exact-build Apple Sandbox/TestFlight purchase,
-delete, replacement-account, restore, and server-unlock evidence all remain
-required.
+**Intermediate owner-authorized state after August 5, 2026 UTC:** The owner later
+explicitly approved the CUT App Store Connect API key and secure RevenueCat
+upload, then separately confirmed approval after acknowledging the Apple API
+attestation. A direct Apple-side check on August 8 showed the minimum App
+Manager key `CUT RevenueCat Sync` active and last used that day. Apple-side
+existence and use do not establish that RevenueCat accepted the credential.
+The repository therefore recorded the optional sync credential as `pending`
+until a direct RevenueCat dashboard or API check could confirm validation. This
+paragraph preserves that fail-closed intermediate state and does not describe
+the current disposition.
+
+**Superseding direct RevenueCat verification August 8, 2026:** In the exact CUT
+project and App Store app `app8feee0dfba` for `com.zarifahmed.cut`, RevenueCat
+showed **Valid credentials** for both the required In-App Purchase key
+configuration and the owner-authorized App Store Connect API credential. The
+machine status is now `verified`. No issuer ID, key ID, filename, vendor number,
+notification URL, or credential detail is recorded. Apple server notifications
+show no notifications received; this credential check is not notification-
+delivery, purchase, restore, signed-build, or TestFlight evidence. The active
+default offering `ofrngeb5cc4a73c` (`CUT OS Pro`) has one `$rc_monthly`
+package, and exact Apple product `prod66e8dc0083` is correctly associated with
+`CUT_OS_PRO` (`entl8efd6d2c18`) and that offering. Its `MISSING_METADATA` status
+and no transactions are Apple metadata, review-screenshot, and TestFlight gates,
+not a mapping failure. The Test Store sibling remains outside production claims.
+
+The optional credential's verified status does not weaken or satisfy the
+mandatory controls: the valid Apple In-App Purchase subscription key, exact
+Apple product-entitlement-offering mapping, RevenueCat customer-delete
+permission, **Transfer to new App User ID** restore behavior, and exact-build
+Apple Sandbox/TestFlight purchase, delete, replacement-account, restore, and
+server-unlock evidence all remain required.
 
 The production project must also use RevenueCat's **Transfer to new App User
 ID** restore behavior. That setting has controlled non-secret dashboard
@@ -186,6 +209,12 @@ Recorded owner approval phrase:
 
 > approve RevenueCat server-key replacement and Decision 3
 
+Later App Store Connect API approval phrases:
+
+> approve the CUT App Store Connect API key and secure RevenueCat upload
+
+> I approve the Apple API attestation and secure RevenueCat upload.
+
 The superseded key remains unconfigured. Revoking it is a separate destructive
 credential action and requires action-time confirmation.
 
@@ -195,8 +224,8 @@ messages, or this decision record.
 ## Decision 4 — public legal and support identity
 
 **Status:** Owner supplied and authorized the public operator name, contact, and
-working v1 Replit host; legal-page publication, retention decisions, qualified
-review, and exact-live evidence remain pending.
+canonical v1 host; legal-page publication, retention decisions, qualified
+review, and exact-live legal-page evidence remain pending.
 
 **Owner facts recorded August 4, 2026:**
 
@@ -207,26 +236,29 @@ review, and exact-live evidence remain pending.
   the public repository;
 - public support/privacy email authorized for publication:
   `ahmed.zarif@gmail.com`; and
-- no custom domain currently exists.
+- no custom domain existed at the August 4 intake. This is historical and is
+  superseded by the August 8 canonical `getcutos.com` deployment below.
 
 Use only the owner-supplied spelling `Zarif Ahmed`; do not substitute the app
 name, GitHub account, or email display name. The owner-approved Replit hosting
-draft establishes `cut-ahmedzarif1.replit.app` as the working v1 provider
-address; public legal publication at that address still requires the remaining
-qualified review and exact-live-page evidence.
+draft originally established `cut-ahmedzarif1.replit.app` as the working v1
+provider address. **Superseding verified state August 8, 2026:**
+`getcutos.com` is now the canonical live host and serves exact source commit
+`d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4`. Public legal-page publication on
+that domain still requires qualified approval and exact-live-page evidence.
 
 The draft Privacy, Terms, and Support pages cannot be published until the
 remaining identity, hosting, operating, and legal gates are complete:
 
-- stable production domain or host;
+- stable production domain or host (**satisfied by `getcutos.com`**);
 - support mailbox owner and response target; and
 - counsel-approved retention periods for deletion tombstones, backups, logs,
   support mail, and pending/failed deletion records.
 
 The owner has explicitly authorized both the legal-operator name and Gmail
 address above for public legal/support/privacy use. That approval does not fill
-the still-missing public host, mailbox response commitment, or retention
-decisions.
+the still-missing mailbox response commitment or retention decisions, and it
+does not authorize publication of the draft pages.
 
 ## Decision 5 — App Store commercial and legal configuration
 
@@ -326,7 +358,9 @@ Connect or approved secret storage.
 ## Decision 7 — production hosting and database spend
 
 **Status:** Owner cost approval and private phone verification complete;
-production database provisioned empty, with no application promoted or running.
+production application live on the approved Reserved VM at `getcutos.com` from
+exact source commit `d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4`; direct
+production TLS and recovery evidence remain open.
 
 The API's current rate limits and account-deletion retry scheduler are
 process-local. The fastest safe launch topology therefore keeps exactly one API
@@ -337,10 +371,12 @@ maximum is one.
 
 Production also requires managed PostgreSQL with verified TLS, backups or
 point-in-time recovery, and a successful restore drill. Replit has now
-provisioned the production database, but verified TLS, recovery evidence, and a
-running production application remain incomplete.
+provisioned the production database and is running the exact deployment above.
+Bounded status and readiness checks pass, while direct exact-candidate TLS and
+recovery evidence remain incomplete.
 
-**Verified August 4, 2026:** Replit's live publishing screen offers a public
+**Historical verification August 4, 2026, superseded by the live August 8
+deployment above:** Replit's live publishing screen offered a public
 North America Reserved VM with 0.5 vCPU and 2 GiB for **$15 USD per month** at
 `cut-ahmedzarif1.replit.app`. The production PostgreSQL database and excess
 outbound transfer are separate usage-based services. Replit supports a
@@ -360,27 +396,32 @@ billing cycle, so usage must be monitored after launch.
 before tax**. Replit's current-period usage budget is set so the already-incurred
 extra usage leaves exactly $5.00 of new usage-based headroom; combined with the
 $15 Reserved VM, this enforces the newly approved ceiling from the approval
-point. Publishing must still wait until the exact Apple/RevenueCat/database
-production preflight can pass. Immediately before any republish, verify that Replit's
-**Set up your production database with your current development data** control
-remains off because the UI can reset it after a reload.
+point. At that time, publishing still had to wait for the exact
+Apple/RevenueCat/database production preflight. That wait instruction is the
+historical August 4 state; exact commit
+`d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4` is now live.
+Immediately before any future republish, verify that Replit's **Set up your
+production database with your current development data** control remains off
+because the UI can reset it after a reload.
 
-**Direct recheck 2026-08-04T23:54:24Z:** The live draft still shows one public
-North America Reserved VM at 0.5 vCPU / 2 GiB for $15/month, critical-
+**Historical direct recheck 2026-08-04T23:54:24Z:** The live draft showed one
+public North America Reserved VM at 0.5 vCPU / 2 GiB for $15/month, critical-
 vulnerability blocking on, and the development-data-copy control off after the
 provider UI reset was corrected.
 
-**Provisioning evidence August 4, 2026:** A first publish attempt began with the
-development-data-copy control off and was canceled before application bundling
-or promotion. No production app was promoted or left running. Replit did
+**Historical provisioning evidence August 4, 2026:** A first publish attempt
+began with the development-data-copy control off and was canceled before
+application bundling or promotion. No production app was promoted or left
+running in that attempt. This is superseded by the August 8 deployment above.
+Replit did
 provision the production database schema; every application table shows zero
 rows. The provider exposes the credential-bearing connection value read-only
 with `sslmode=require`. CUT now implements and source-tests a fail-closed
 runtime adaptation of only that exact supported shape to
 `sslmode=verify-full`; malformed, ambiguous, credential-incomplete, and
-IP-literal URLs still fail validation. Live TLS/readiness and recovery evidence
-remain required before promotion. This record makes no billing or charge-status
-claim.
+IP-literal URLs still fail validation. Bounded readiness now passes; direct
+exact-candidate TLS and recovery evidence remain required before release. This
+record makes no billing or charge-status claim.
 
 ## Decision 8 — Clerk production plan and billing
 
@@ -394,6 +435,17 @@ publishable and secret keys were transferred directly into masked Replit
 deployment secrets without being printed or committed. Its expected production
 frontend API/proxy is `https://cut-ahmedzarif1.replit.app/__clerk`, which cannot
 be verified until the host is live.
+
+**Superseding verified state August 8, 2026:** The original provider-domain
+tenant had zero users and could not be moved to the canonical domain. A separate
+`CUT OS Production` application was therefore created on the same free Hobby
+plan for `getcutos.com`, with no card, trial, paid-plan change, or new billing
+action. Its production configuration and exact same-origin
+`https://getcutos.com/api/__clerk` proxy are verified, and its masked live keys
+are active in Replit and EAS production. The original application and keys are
+retained only as a bounded rollback path until replacement-tenant QA completes;
+they are not claimed revoked, deleted, or disabled. Any pre-cutover binary is
+ineligible for release, and App Store Connect still has zero TestFlight builds.
 
 Engineering may create no Clerk trial, paid production plan, or billing change
 unless the exact required feature and current total monthly cost are shown to

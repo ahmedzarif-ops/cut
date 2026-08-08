@@ -2,11 +2,11 @@
 
 **Initial verification:** 2026-08-04T21:33:17Z
 
-**Latest live update:** 2026-08-05T00:46:13Z
+**Latest live update:** 2026-08-08T21:24:17Z
 
-**Method:** Direct confirmation in the live Apple Developer and App Store
-Connect interfaces, direct confirmation in the RevenueCat dashboard, plus
-checked-in routing validation.
+**Method:** Direct confirmation in the live Apple Developer, App Store Connect,
+and exact CUT RevenueCat App Store app interfaces for the latest update, plus
+checked-in routing validation. No credential material was recorded.
 
 **Scope:** Non-secret configuration evidence only; this is not submission,
 App Review, or public-release approval.
@@ -34,7 +34,7 @@ or account credential is stored in this evidence.
 - App Store Connect app: `CUT OS`.
 - Apple app ID: `6798020879`.
 - The production EAS submit profile is pinned to that exact Apple app ID.
-- Version: `1.0.0`.
+- Version: `1.0.0`, with status `Prepare for Submission`.
 - Primary language: English (U.S.).
 - Subtitle saved: `Daily weigh-ins & meal logging`.
 - Primary category saved: Health & Fitness.
@@ -57,8 +57,9 @@ submitted.
 
 ## Distribution
 
-- App download price saved as free.
-- Availability saved as United States only.
+- App download price saved as `$0.00`.
+- The availability table shows the United States as `Available on App Release`
+  and the other 174 countries or regions as `Not Available`.
 - Distribution method saved as Public.
 - Apple-silicon Mac availability disabled.
 - Apple Vision Pro availability disabled.
@@ -66,6 +67,22 @@ submitted.
 
 These facts confirm the saved distribution configuration only. The app is not
 submitted, approved, or publicly available.
+
+## Version and review readiness
+
+- Version 1.0.0 remains in `Prepare for Submission`.
+- No screenshots are uploaded and no build is selected.
+- The Support URL is blank. The Marketing URL still points to the earlier
+  Replit origin rather than the approved custom-domain candidate.
+- App Review sign-in is marked required, but the review username, password,
+  contact fields, and notes are blank.
+- Manual release remains selected.
+- The App Review page contains no submitted items.
+- Content Rights, Age Ratings, the regulated-medical-device declaration, and
+  Digital Services Act compliance remain incomplete.
+
+These are current saved-state observations, not approval to fill legal,
+credential, health, or sensitive review fields by assumption.
 
 ## Subscription
 
@@ -77,7 +94,10 @@ submitted, approved, or publicly available.
 - Availability: United States only.
 - United States price schedule saved at `$4.99` for new subscribers.
 - Family Sharing remains off.
-- No introductory offer or free trial was created.
+- The subscription has zero introductory offers, zero upcoming changes, and no
+  free trial.
+- Only the United States is selected for availability, and automatic
+  availability in future countries or regions is off.
 - English (U.S.) group display name: `CUT OS Pro`.
 - English (U.S.) product display name: `CUT OS Pro Monthly`.
 - English (U.S.) description:
@@ -99,6 +119,27 @@ submitted or released.
 - The pricing page labels the schedule as `Starting Price`, but no defensible
   effective timestamp is available. The repository therefore keeps price
   effectiveness pending.
+
+## Signing and Apple credentials
+
+- One Apple distribution certificate is active for the CUT OS team and expires
+  August 8, 2027.
+- One App Store provisioning profile is active for
+  `com.zarifahmed.cut` and expires August 8, 2027.
+- No certificate secret, private key, or provisioning-profile contents are
+  recorded here.
+
+## Apple API credentials
+
+- Team App Store Connect API access is active. The minimum App Manager key
+  named `CUT RevenueCat Sync` exists and showed `Last Used` on August 8, 2026.
+- Apple In-App Purchase key access is separately active. The key named
+  `CUT RevenueCat Production` showed as downloaded on August 4, 2026.
+- No issuer ID, key ID, private-key contents, or downloaded credential is
+  recorded here.
+- Apple proves that the App Manager key exists and has been used. At that
+  intermediate verification point, direct RevenueCat validation was still
+  pending. The superseding direct RevenueCat result is recorded below.
 
 ## TestFlight internal configuration
 
@@ -128,20 +169,25 @@ submitted or released.
   Store product.
 - The Apple In-App Purchase subscription key was uploaded through the secured
   file chooser and RevenueCat reports `Valid credentials`.
+- At `2026-08-08T21:24:17Z`, exact App Store app `app8feee0dfba` for
+  `com.zarifahmed.cut` also showed `Valid credentials` for the owner-authorized
+  App Store Connect API credential. The machine status is now `verified`.
 - RevenueCat provisioned the production public iOS SDK key. Its value is
   intentionally not stored in this repository.
 - Replit directly shows the project, Apple app, entitlement, and offering REST
   IDs as non-secret configurations. Replacement key value transfer was made
   directly into the masked `REVENUECAT_SECRET_API_KEY` secret without printing
   or storing the value in the repository.
-- Apple's live App Store Connect API-key creation flow displayed an
-  internal-use-only attestation that does not permit sharing that credential
-  with or using it for a third-party service. Because RevenueCat requires an
-  upload to its service, the optional sync credential was intentionally not
-  created, downloaded, or uploaded. This is distinct from the required valid
-  In-App Purchase subscription key. Automatic product import, price
-  synchronization, and RevenueCat store-status checks are not configured or
-  claimed.
+- The August 5 record that the optional App Store Connect sync credential had
+  not been created was accurate at that verification point. The owner later
+  expressly approved the Apple API attestation, key creation, and secure
+  RevenueCat upload. Apple now shows the owner-authorized App Manager key as
+  active and used. This is distinct from the required valid In-App Purchase
+  subscription key.
+- The earlier Apple-only check did not establish RevenueCat acceptance and is
+  retained as historical context. The direct RevenueCat check above supersedes
+  that pending state. Apple server notifications show no notifications received;
+  credential validity is not notification-delivery or exact-build purchase QA.
 - Replacement API key label:
   `CUT Replit Production Replacement 2026-08-04`.
 - API version: v2.
@@ -153,6 +199,14 @@ submitted or released.
 - Project restore behavior is persisted as `Transfer to new App User ID`.
 - The exact production Apple app, product, entitlement, and default monthly
   offering mapping is verified.
+- Active default offering `ofrngeb5cc4a73c`, display name `CUT OS Pro`, has one
+  `$rc_monthly` package. Apple product `prod66e8dc0083`, exact identifier
+  `com.zarifahmed.cut.pro.monthly`, is associated with entitlement `CUT_OS_PRO`
+  (`entl8efd6d2c18`) and that default offering. The separate Test Store sibling
+  remains test-only and is excluded from production claims.
+- RevenueCat reports store status `MISSING_METADATA` and no transactions. This
+  is an Apple metadata, TestFlight, and subscription review-screenshot gate,
+  not a product-entitlement-offering mapping failure.
 - At `2026-08-05T00:46:13Z`, the source-controlled, read-only production
   preflight returned only `{"status":"verified"}`. Replit was then
   fast-forwarded cleanly to then-current green commit
@@ -172,10 +226,11 @@ submitted or released.
 ## Open gates
 
 - The Apple In-App Purchase subscription credential remains secured outside the
-  repository. Its contents and storage location are intentionally excluded.
-- The optional RevenueCat App Store Connect API sync credential remains
-  intentionally unconfigured after Apple's live internal-use-only attestation.
-  The required Apple In-App Purchase subscription key remains valid. Exact
+  repository. Apple separately shows the In-App Purchase key as active; its
+  contents and storage location are intentionally excluded.
+- The owner-authorized App Store Connect API credential and the required Apple
+  In-App Purchase key configuration both show `Valid credentials` in the exact
+  RevenueCat app. Exact
   mapping, customer-delete permission, **Transfer to new App User ID** restore
   behavior, and controlled exact-build native purchase/delete/restore/server-
   unlock verification remain mandatory. The superseded server key remains
@@ -185,10 +240,11 @@ submitted or released.
   approved review screenshot. Its factual credential-free Review Notes are
   already saved.
 - Paid Apps Agreement, banking, and W-9 tax readiness are confirmed active.
-- Public Privacy, Terms, and Support pages, content-rights and copyright answers,
-  age-rating answers, regulated-medical-device declaration, final legal and
-  qualified nutrition review, exact signed-build QA, TestFlight, App Review
-  submission, and manual public release all remain pending.
+- Public Privacy, Terms, and Support pages, screenshots, App Review contact and
+  sign-in details, content-rights and copyright answers, age-rating answers,
+  regulated-medical-device declaration, Digital Services Act compliance, final
+  legal and qualified nutrition review, exact signed-build QA, TestFlight, App
+  Review submission, and manual public release all remain pending.
 
 This evidence intentionally makes no claim that those open gates are approved
 or complete.

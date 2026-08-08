@@ -92,13 +92,18 @@ preview builds skip those approved-publication checks.
    required Apple in-app purchase/subscription key, manually verify the exact
    product mapping to `CUT_OS_PRO`, create the current offering, and
    set **Project settings → General → Restore behavior** to **Transfer to new
-   App User ID** (including the sandbox override if one is enabled). App Store
-   Connect's live API-key flow displayed an internal-use-only attestation that
-   does not permit sharing that credential with a third-party service. The
-   optional RevenueCat App Store Connect API sync credential was therefore not
-   created or uploaded; do not represent automatic product import, price sync,
-   or store-status checking as configured. This omission does not replace the
-   required valid Apple in-app purchase/subscription key, exact manual mapping,
+   App User ID** (including the sandbox override if one is enabled). Historical
+   state: the optional RevenueCat App Store Connect API sync credential was
+   initially omitted after Apple's internal-use-only attestation. Superseding
+   current state: after explicit owner authorization, the minimum App Manager
+   key exists and is active on Apple's side. The intermediate machine state was
+   `pending` until RevenueCat directly confirmed it. Current direct RevenueCat
+   evidence shows **Valid credentials**, so
+   `subscription.revenueCat.appStoreConnectApiKeyStatus` is `verified`. Any
+   replacement, rejection, or configuration change must reset it to `pending`
+   until direct RevenueCat validation passes again. Do not create another key to
+   bypass a failed validation. This optional credential does not replace the required
+   valid Apple in-app purchase/subscription key, exact manual mapping,
    customer-deletion permission, restore behavior, or exact-build native QA.
    App Store Server Notifications are intentionally omitted for the initial
    release. If
@@ -124,10 +129,12 @@ configuration because the
 bounded customer `GET` and documented `GET app` response do not expose those
 capabilities. Before the production build, an authorized operator must inspect
 the exact RevenueCat project and iOS app and record the production mapping,
-the valid in-app purchase/subscription key, the intentional absence of the
+the valid in-app purchase/subscription key, the exact current disposition of the
 optional App Store Connect API sync credential, customer read/write permission,
 restore behavior, shared verification UTC, and controlled evidence reference
-below.
+below. The current optional-credential result is `verified`; any credential or
+configuration change resets it fail-closed to `pending` until direct RevenueCat
+validation succeeds again.
 The three `nativeQa*` fields can be completed only after the signed build reaches
 internal TestFlight; record them after that continuous exact-build test and
 before App Review or release promotion.
@@ -135,7 +142,7 @@ before App Review or release promotion.
 | Evidence field                                                                   | Required release value                                                                                                                                            |
 | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `subscription.revenueCat.productionMappingStatus`                                | `verified` for the exact production app, `CUT_OS_PRO`, and monthly product                                                                                        |
-| `subscription.revenueCat.appStoreConnectApiKeyStatus`                            | `intentionally_omitted_apple_internal_use_only`, with controlled evidence that the optional sync credential was not created or uploaded after Apple's live attestation; use `verified` only if a later permitted first-party configuration is directly verified |
+| `subscription.revenueCat.appStoreConnectApiKeyStatus`                            | Current value `verified`, supported by direct RevenueCat **Valid credentials** evidence. Use `pending` after any replacement or configuration change until RevenueCat directly validates it again. `intentionally_omitted_apple_internal_use_only` is historical-only. |
 | `subscription.revenueCat.subscriptionKeyStatus`                                  | `verified` for the Apple in-app purchase/subscription key by direct dashboard inspection                                                                          |
 | `subscription.revenueCat.customerReadWritePermissionStatus`                      | `verified` only by direct dashboard inspection that the server key has customer read/write access required to delete a customer; never by issuing a test deletion |
 | `subscription.revenueCat.restoreAfterAccountDeletion.dashboardBehavior`          | `transfer_to_new_app_user_id`, verified in the exact production project under Project settings → General                                                          |
@@ -147,6 +154,14 @@ before App Review or release promotion.
 | `subscription.revenueCat.verifiedAtUtc`                                          | UTC time of that dashboard inspection                                                                                                                             |
 | `subscription.revenueCat.evidenceReference`                                      | Controlled reference to the sanitized dashboard evidence; never key material                                                                                      |
 
+Current catalog evidence has one `$rc_monthly` package in active default
+offering `ofrngeb5cc4a73c` (`CUT OS Pro`). Apple product `prod66e8dc0083`, exact
+identifier `com.zarifahmed.cut.pro.monthly`, is associated with entitlement
+`CUT_OS_PRO` (`entl8efd6d2c18`) and that offering. Store status
+`MISSING_METADATA` and no transactions remain Apple metadata, subscription
+review-screenshot, and TestFlight gates; they are not a mapping failure. Never
+use the Test Store sibling as production evidence.
+
 Dashboard evidence alone does not prove the binary. After internal TestFlight
 upload, the same release record must also bind `storeKitOfferStatus`,
 `purchaseQaStatus`, and `testFlightStatus` as verified to the exact submitted
@@ -155,8 +170,8 @@ ID. Missing required dashboard evidence, a changed required key, or any exact-bu
 purchase/restore failure blocks promotion. The shared
 `verifiedAtUtc` and `evidenceReference` must bind the customer permission and
 required in-app purchase credential inspection to sanitized dashboard evidence.
-The intentionally absent optional sync credential is not purchase, mapping,
-deletion, restore, or native-QA evidence. Never save a key
+The optional sync credential's pending or verified state is not purchase,
+mapping, deletion, restore, or native-QA evidence. Never save a key
 ID, issuer, private-key contents, API-key contents, screenshot containing key
 material, or raw provider response in the repository.
 
@@ -296,10 +311,14 @@ credential:
 ```
 
 This profile extends the production-like preview build, sets
-`ios.simulator: true`, and uses the same pinned Xcode image as production. It
-is a compile rehearsal only: it cannot be submitted to App Store Connect,
+`ios.simulator: true`, and pins
+`macos-tahoe-26.4-xcode-26.4`, exactly matching the production image. The
+targeted native release-configuration suite currently verifies this parity and
+the `CutDeclaredAgeRange` module contract with 15/15 passing tests. It is a
+compile and local-runtime rehearsal only: it cannot be submitted to App Store Connect,
 cannot prove StoreKit behavior, and does not replace the signed production
-archive, physical-iPhone QA, Apple Sandbox, or TestFlight. Confirm the active
+archive, physical-iPhone Declared Age Range entitlement/API validation, Apple
+Sandbox, or TestFlight. Confirm the active
 Expo plan and remaining included build quota before starting it; obtain owner
 approval first if the job could incur a charge or consume paid quota.
 
