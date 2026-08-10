@@ -224,8 +224,9 @@ messages, or this decision record.
 ## Decision 4 — public legal and support identity
 
 **Status:** Owner supplied and authorized the public operator name, contact, and
-canonical v1 host; legal-page publication, retention decisions, qualified
-review, and exact-live legal-page evidence remain pending.
+canonical v1 host. Privacy, Terms, and Support are live under the dated
+owner-deferred professional-review decision; retention decisions and qualified
+review remain pending, and no professional approval is claimed.
 
 **Owner facts recorded August 4, 2026:**
 
@@ -242,23 +243,24 @@ review, and exact-live legal-page evidence remain pending.
 Use only the owner-supplied spelling `Zarif Ahmed`; do not substitute the app
 name, GitHub account, or email display name. The owner-approved Replit hosting
 draft originally established `cut-ahmedzarif1.replit.app` as the working v1
-provider address. **Superseding verified state August 8, 2026:**
-`getcutos.com` is now the canonical live host and serves exact source commit
-`b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`. Public legal-page publication on
-that domain still requires qualified approval and exact-live-page evidence.
+provider address. **Superseding verified state August 10, 2026:**
+`getcutos.com` is the canonical live host and serves exact release commit
+`08e62232db7f81047eec5b55a184f30fb7d4162a`. Privacy, Terms, and Support return
+HTTP 200 under the owner-deferred review decision. Qualified review remains due
+within the first three calendar days after public release.
 
-The draft Privacy, Terms, and Support pages cannot be published until the
-remaining identity, hosting, operating, and legal gates are complete:
+The published Privacy, Terms, and Support pages still require the remaining
+operating and post-launch professional-review work:
 
 - stable production domain or host (**satisfied by `getcutos.com`**);
 - support mailbox owner and response target; and
-- counsel-approved retention periods for deletion tombstones, backups, logs,
+- counsel-reviewed retention periods for deletion tombstones, backups, logs,
   support mail, and pending/failed deletion records.
 
 The owner has explicitly authorized both the legal-operator name and Gmail
 address above for public legal/support/privacy use. That approval does not fill
-the still-missing mailbox response commitment or retention decisions, and it
-does not authorize publication of the draft pages.
+the still-missing mailbox response commitment, retention decisions, or
+qualified review.
 
 ## Decision 5 — App Store commercial and legal configuration
 
@@ -349,8 +351,8 @@ from automated tests or framework use.
 For TestFlight, the already authorized public email is saved as the feedback
 email, and internal group `CUT OS Internal QA` is configured with automatic
 distribution off. The Account Holder is assigned as its one internal tester; it
-has 0 builds, and TestFlight owner, mobile-QA, and App Store Connect approvals
-remain pending. Internal-only testing does not require external TestFlight App
+has exact build 3 assigned, and physical-iPhone TestFlight QA and App Review
+approval remain pending. Internal-only testing does not require external TestFlight App
 Review; adding external testers does, including review contact, demo access,
 notes, and review of the selected build. Credentials remain only in App Store
 Connect or approved secret storage.
@@ -359,8 +361,8 @@ Connect or approved secret storage.
 
 **Status:** Owner cost approval and private phone verification complete;
 production application live on the approved Reserved VM at `getcutos.com` from
-exact source commit `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` as deployment
-`6e48c23c`. Direct production TLS attestation is complete. Replit later
+exact release commit `08e62232db7f81047eec5b55a184f30fb7d4162a` as deployment
+`78b1854c`. Direct production TLS attestation is complete. Replit later
 confirmed that its PITR control restores the live production database in place,
 cannot restore to an isolated target, and cannot roll forward. The destructive
 restore drill remains open and is not authorized by the hosting ceiling.
@@ -405,8 +407,8 @@ extra usage leaves exactly $5.00 of new usage-based headroom; combined with the
 $15 Reserved VM, this enforces the newly approved ceiling from the approval
 point. At that time, publishing still had to wait for the exact
 Apple/RevenueCat/database production preflight. That wait instruction is the
-historical August 4 state; exact commit
-`b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` is now live.
+historical August 4 state; exact release commit
+`08e62232db7f81047eec5b55a184f30fb7d4162a` is now live.
 Immediately before any future republish, verify that Replit's **Set up your
 production database with your current development data** control remains off
 because the UI can reset it after a reload.
@@ -453,7 +455,8 @@ action. Its production configuration and exact same-origin
 are active in Replit and EAS production. The original application and keys are
 retained only as a bounded rollback path until replacement-tenant QA completes;
 they are not claimed revoked, deleted, or disabled. Any pre-cutover binary is
-ineligible for release, and App Store Connect still has zero TestFlight builds.
+ineligible for release. Exact build 3 is now assigned to internal TestFlight;
+physical-iPhone authentication and purchase/restore QA remain pending.
 
 Engineering may create no Clerk trial, paid production plan, or billing change
 unless the exact required feature and current total monthly cost are shown to

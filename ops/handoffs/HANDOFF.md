@@ -8,10 +8,18 @@
 - Working branch: `codex/app-store-v1`.
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
 - The exact code commit verified and deployed at this checkpoint is
-  `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`; GitHub Actions run `31411665065`
+  `08e62232db7f81047eec5b55a184f30fb7d4162a`; GitHub Actions run `31425815282`
   reports **Success** for both **CI verify** and **Release evidence boundary** on
-  that commit. A later documentation-only commit may move the branch and pull-
-  request head without changing the deployed build.
+  that commit. Replit serves the same commit; root, status, readiness, Clerk
+  proxy, Privacy, Terms, and Support pass. A later documentation-only commit may
+  move the branch and pull-request head without changing the deployed build.
+- Exact EAS production build `1fe435cf-9d8b-4eff-a1d3-bfb893b344a6` is version
+  1.0.0 build 3. Apple processed App Store Connect build
+  `dce1d8df-cd9e-46d7-8607-dcde9570df2e` as valid, assigned it to the internal
+  TestFlight group with automatic notifications off, and selected it for App
+  Store version 1.0.0. The saved age declaration returns an effective 18+ U.S.
+  rating. Physical-iPhone QA, screenshots, privacy, remaining owner
+  declarations, App Review submission, and manual release remain open.
 - Resolve the exact remote branch SHA and its required GitHub checks live before
   relying on a checkpoint. A commit ID embedded in this tracked handoff would
   become historical as soon as the handoff itself changes.
@@ -153,14 +161,14 @@
 - The owner approved Replit up to **$20/month before tax**: a $15 Reserved VM
   plus $5 of new usage-based headroom. Phone verification is complete. Replit
   now serves exact source commit
-  `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` as Reserved VM deployment
-  `6e48c23c`. After publish, development-data copy remained off, critical-
+  `08e62232db7f81047eec5b55a184f30fb7d4162a` as Reserved VM deployment
+  `78b1854c`. After publish, development-data copy remained off, critical-
   vulnerability publish blocking remained on, and the production database was
   connected. The corrected startup logged direct client-side TLS attestation
   **PASS** at August 10, 2026, 12:47:01.28 PM America/Chicago. Exact-build
   `/status`, `/`, `/api/readyz`, and canonical Clerk proxy checks returned 200;
-  `/privacy`, `/terms`, and `/support` each remain 503 fail-closed pending
-  qualified publication approval. Point-in-time recovery is on with a seven-day
+  `/privacy`, `/terms`, and `/support` are public and return 200 under the
+  owner-deferred professional-review decision. Point-in-time recovery is on with a seven-day
   window. Replit Support confirmed its restore is in-place only, has no isolated
   target, leaves app code unchanged, and cannot roll forward. The destructive
   control remains untouched pending a separately approved recovery plan. See the single detailed
@@ -204,7 +212,7 @@
   exact-build restore-after-deletion QA remains required.
 - TestFlight group `CUT OS Internal QA` is configured with automatic
   distribution off, the authorized public feedback email, the exact beta
-  description, the Account Holder as its one internal tester, and 0 builds. The
+  description, the Account Holder as its one internal tester, and exact build 3. The
   subscription's credential-free
   Review Notes are saved, but version attachment and its review screenshot are
   pending; no TestFlight QA or submission is claimed.
@@ -214,7 +222,7 @@
 1. Keep PR #9 draft and require exact GitHub CI success after every new commit;
    never rely on a green run from an older revision and never self-merge.
 2. Keep Replit on exact deployed commit
-   `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`, verify that the Publishing draft
+   `08e62232db7f81047eec5b55a184f30fb7d4162a`, verify that the Publishing draft
    still says Reserved VM after every sync, and recheck that development-data
    copy remains off before every future publish.
 3. Keep the live active Apple membership, Paid Apps, banking, tax, and
@@ -229,7 +237,7 @@
    only PITR control without a separately approved destructive recovery plan.
    Complete exact-build Clerk/RevenueCat acceptance only when its remaining
    prerequisites can pass.
-6. Build the exact signed TestFlight candidate and complete physical-iPhone
+6. Install exact TestFlight build 3 and complete physical-iPhone
    authentication, recovery, purchase, restore, deletion, accessibility, and
    screenshot evidence before App Review.
 
@@ -240,8 +248,9 @@
 - The read-only verification was performed without logging in to Apple again;
   no push-notification key, local credentials file, or additional capability
   was created.
-- EAS still has zero iOS builds, so no signed-candidate or TestFlight claim is
-  made. Every pre-Clerk-cutover binary is ineligible for release.
+- Exact EAS production build 3 is valid in App Store Connect, assigned to
+  internal TestFlight, and selected for version 1.0.0. Every pre-Clerk-cutover
+  binary is ineligible for release.
 
 ## LOCKED SAFETY BOUNDARIES
 

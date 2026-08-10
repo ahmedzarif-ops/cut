@@ -6,6 +6,26 @@
 
 ## Current launch addendum — August 10, 2026
 
+The following live checkpoint supersedes earlier build/deployment counts in this
+section:
+
+- GitHub PR #9 is draft/open and clean at exact head
+  `08e62232db7f81047eec5b55a184f30fb7d4162a`; CI run `31425815282` reports both
+  required checks successful. Replit serves that exact commit, and the root,
+  status, readiness, canonical Clerk proxy, Privacy, Terms, and Support routes
+  pass.
+- EAS production build `1fe435cf-9d8b-4eff-a1d3-bfb893b344a6` produced version
+  1.0.0 build 3. Apple validated the same IPA, processed App Store Connect build
+  `dce1d8df-cd9e-46d7-8607-dcde9570df2e` as `VALID` and
+  `APP_STORE_ELIGIBLE`, attached it to the internal TestFlight group with
+  automatic notifications off, and selected it for App Store version 1.0.0.
+- The exact archive passes strict signature and entitlement checks. Apple now
+  stores the v1 age questionnaire, calculates 9+ before the higher-age override,
+  and returns an effective 18+ rating after the restored adults-only override.
+- Physical-iPhone exact-build authentication, purchase, restore, age, deletion,
+  accessibility, and screenshot QA remain open. No App Review submission or
+  public release is claimed.
+
 - **1,417/1,417 automated tests pass:** 303 release operations, 62 App Store, 33
   domain, 4 database, 459 mobile, and 556 API.
 - Root TypeScript, generated-code drift, working App Store validation,
@@ -51,13 +71,14 @@
   duration verifier mismatch is resolved. Exact-build native purchase and
   restore QA remain pending, so production continues to fail closed.
 - Replit now serves exact source commit
-  `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` as Reserved VM deployment
-  `6e48c23c`. Exact-head GitHub Actions run `31411665065` reports both required
+  `08e62232db7f81047eec5b55a184f30fb7d4162a` as Reserved VM deployment
+  `78b1854c`. Exact-head GitHub Actions run `31425815282` reports both required
   checks successful. Post-publish development-data copy remained off, critical-
   vulnerability blocking remained on, and the production database was
   connected. Corrected startup TLS attestation and the exact-build status,
-  readiness, root, and canonical Clerk proxy checks pass; legal routes remain
-  503 fail-closed. Replit Support confirmed PITR is in-place only and cannot
+  readiness, root, and canonical Clerk proxy checks pass; legal routes now
+  return 200 under the owner-deferred review decision. Replit Support confirmed
+  PITR is in-place only and cannot
   roll forward; the destructive restore remains unexercised. See the
   [production infrastructure evidence](app-store/evidence/production-launch-infrastructure-2026-08-08.md)
   for the read-only provider-proxy incident and fixed, sanitized attestation
@@ -186,8 +207,8 @@
   proxy health passes. The original provider-domain tenant had zero users and
   remains only as rollback, with no revocation or deletion claim. No Clerk card,
   trial, paid-plan change, or new billing action occurred. Every pre-cutover
-  binary is ineligible, TestFlight still has zero builds, and signed physical-
-  iPhone QA remains pending.
+  binary is ineligible, exact build 3 is assigned in internal TestFlight, and
+  signed physical-iPhone QA remains pending.
 - The exact $4.99 monthly/no-trial/Family-Sharing-off offer is now bound to the
   recorded names, identifiers, U.S. price, 45-character description, and
   `use_app_name` choice. Working validation rejects changes even if a matching

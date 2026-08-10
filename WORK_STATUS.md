@@ -11,6 +11,32 @@ Automated server/domain/mobile implementation is complete. Legal/privacy,
 native-device and live-service QA, and App Store completion remain open; this is
 not a public-launch readiness claim.
 
+## Current App Store launch checkpoint — 2026-08-10T20:56:38Z
+
+- Exact EAS production build 3 for version 1.0.0 is signed from commit
+  `08e62232db7f81047eec5b55a184f30fb7d4162a`, processed by Apple as `VALID`
+  and `APP_STORE_ELIGIBLE`, assigned to `CUT OS Internal QA`, and selected for
+  App Store version 1.0.0. Automatic internal build notifications remain off;
+  no invite or build-notification email was sent.
+- App Store Connect now stores the exact public Support, Privacy, Marketing,
+  description, keyword, promotional, subtitle, beta-description, and
+  What-to-Test metadata. The processed build and metadata are not an App Review
+  submission or public release.
+- Apple's current age questionnaire is saved from the exact v1 scope. The
+  calculated U.S. rating is 9+ before the higher-age override and 18+ after the
+  owner-approved adults-only override. The override was restored and re-read
+  as `EIGHTEEN_PLUS`.
+- Replit serves the exact release commit, and `/`, `/status`, `/api/readyz`,
+  `/privacy`, `/terms`, `/support`, and the canonical Clerk proxy pass. Detailed
+  build and age evidence is in
+  [apple-build-3-and-age-rating-2026-08-10.md](app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md).
+- Remaining gates are exact-build physical-iPhone authentication, age,
+  purchase/restore, deletion, and accessibility QA; 6.9-inch listing and
+  subscription screenshots; App Privacy; content-rights, medical-device, tax,
+  and DSA owner declarations; review-account/contact configuration; first-
+  subscription attachment; and explicit confirmation before App Review
+  submission and later manual public release.
+
 ## What now works
 
 - The previously reviewed P1-9/10 and P1-4 branches are integrated locally:
@@ -250,8 +276,8 @@ launch gate.
 
 - Source routing: draft pull request #9 remains unmerged on
   `codex/app-store-v1`. The exact code commit verified and deployed at this
-  checkpoint is `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`; GitHub Actions run
-  `31411665065` reports **Success** for both **CI verify** and **Release evidence
+  checkpoint is `08e62232db7f81047eec5b55a184f30fb7d4162a`; GitHub Actions run
+  `31425815282` reports **Success** for both **CI verify** and **Release evidence
   boundary** on that commit. Documentation-only commits may move the branch and
   pull-request head without changing the deployed build, so re-resolve all three
   identities and checks before the next publish.
@@ -262,26 +288,29 @@ launch gate.
   ID `6798020879`, subscription group ID `22286645`, and subscription ID
   `6798020349` are evidence-bound, and production EAS submission routing is
   pinned to the app ID. Credential-free subscription Review Notes are saved,
-  while first-version attachment, review screenshot, price-effective timestamp,
-  exact build, submission, and release remain pending. Apple's commerce page
+  while first-version subscription attachment, review screenshot, price-
+  effective timestamp, submission, and release remain pending. Exact signed
+  build 3 is selected for version 1.0.0. Apple's commerce page
   shows the Paid Apps Agreement effective August 4, 2026 through August 3, 2027
   with status `Active`, banking `Active`, and U.S. Form W-9 `Active` after its
   August 4 submission. Apple commerce readiness is confirmed; legal gates
   remain open.
 - TestFlight feedback email and the exact beta description are saved. Internal
   group `CUT OS Internal QA` exists with automatic distribution off, the
-  Account Holder assigned as its one internal tester, and 0 builds; no build
-  assignment or QA is claimed.
+  Account Holder assigned as its one internal tester, and exact build 3
+  assigned. Apple reports the build `VALID` and `IN_BETA_TESTING`; physical-
+  iPhone exact-build QA is not yet claimed.
 - Replit hosting is owner-approved up to **$20/month before tax** and phone
   verification is complete. Replit is now serving exact source commit
-  `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` as Reserved VM deployment
-  `6e48c23c`. After publish, development-data copy remained off, critical-
+  `08e62232db7f81047eec5b55a184f30fb7d4162a` as Reserved VM deployment
+  `78b1854c`. After publish, development-data copy remained off, critical-
   vulnerability publish blocking remained on, and the production database was
   connected. The corrected startup logged direct client-side TLS attestation
   **PASS** at August 10, 2026, 12:47:01.28 PM America/Chicago. Exact-build
   `/status`, `/`, `/api/readyz`, and canonical Clerk proxy checks returned 200;
-  `/privacy`, `/terms`, and `/support` each remain 503 fail-closed pending
-  qualified publication approval. Point-in-time recovery is on with a seven-day
+  `/privacy`, `/terms`, and `/support` are public and each returns 200 under the
+  owner-deferred professional-review decision. Point-in-time recovery is on
+  with a seven-day
   window. Replit Support confirmed its restore is in-place only, has no isolated
   target, leaves app code unchanged, and cannot roll forward. The destructive
   control remains untouched pending a separately approved recovery plan. The
@@ -353,8 +382,8 @@ launch gate.
   OS Pro Monthly `$4.99 per month` screen and remained alive on the same screen
   for more than 70 seconds. Authenticated requests remain no-store; tokens are
   never persisted or logged. Physical-device/TestFlight reset and purchase QA
-  remain pending. Pre-cutover binaries are ineligible and TestFlight still has
-  zero builds.
+  remain pending. Pre-cutover binaries are ineligible; exact build 3 is the
+  only current release candidate assigned in TestFlight.
 - Replit contains the exact CUT project, Apple app, entitlement, and offering
   REST IDs as non-secret configurations and the RevenueCat server API v2
   replacement secret saved masked. Replacement key
@@ -389,60 +418,23 @@ launch gate.
 
 ## Highest-priority next slice
 
-Close the public-launch safety and native acceptance gates before collecting
-more sensitive preference data:
-
-On August 10 the owner explicitly changed launch sequencing: qualified legal
-and nutrition review will be initiated within three calendar days after public
-release rather than completed before submission. This is a documented owner
-risk acceptance, not professional approval, and it does not authorize any new
-email or external contact. The exact disposition and stop-sales triggers are in
-`app-store/evidence/owner-deferred-professional-review-2026-08-10.md`. App Store
-Connect uses `https://getcutos.com` for the version Marketing URL; Support,
-Privacy, and Terms must now be finalized accurately under owner responsibility,
-published, and verified before the production build.
-
-1. Preserve the bounded RevenueCat live preflight and direct **Valid
-   credentials** evidence for both Apple credential configurations. Keep the
-   production app REST ID and provisioned public iOS SDK key only in their
-   approved server/EAS destinations; keep the customer read/write dashboard
-   evidence current. Do not infer Apple server-notification delivery or exact-
-   build purchase/restore success from credential validity.
-2. Retain the confirmed active Paid Apps Agreement, banking, and W-9 evidence.
-   Record the individual-seller/Texas-sole-proprietor position truthfully and
-   preserve qualified counsel review as the three-day post-launch remediation.
-3. Finalize and publish accurate owner-approved Privacy, Terms, and Support
-   pages, then supply their exact HTTPS destinations to production EAS.
-4. Complete the still-provisional age-rating and regulated-medical-device
-   answers against the exact binary and Apple UI. Use only the recorded owner-
-   deferred professional-review disposition; do not claim professional review.
-5. Link the intended Apple and Expo/EAS projects, configure the validated
-   production values, and upload a build into the already configured internal
-   TestFlight group after the remaining public-key/EAS configuration and public
-   legal URLs are ready.
-6. Complete native-device acceptance for `adult-18-v1`, including deep links,
-   offline/relaunch, shared-device account switching, stale-cache clearing,
-   deletion in every eligibility state, legal/support links, and VoiceOver.
-7. Preserve the reproducible recipes, nutrition methodology/sources, estimate
-   and allergen limitations, and no-medical/outcome-claim controls. Initiate and
-   record qualified review within three calendar days after public release.
-
-The owner-approved one-time Expo browser login is complete. Read-only EAS checks
-confirmed `@zee-digipit/cut`, the expected project ID, and zero iOS builds.
-After the separately approved Apple account sign-in, the production Apple
-distribution certificate and provisioning profile are active in EAS through
-August 8, 2027 for `com.zarifahmed.cut`. No push key or extra capability was
-created. 8. Exercise success, cancellation, timeout, app-kill, retry, second-device, and
-shared-device account-switch scenarios with a real Clerk development identity
-in an iOS development build. 9. Have qualified counsel approve adults-18+ Terms/EULA, Privacy Policy,
-notice-at-collection, retention/underage handling, launch jurisdictions, and
-sufficiency of the self-declared assurance method and permanent
-ineligible-identity workflow. 10. Define tombstone/backups retention—including the maximum accepted lifetime
-of stale Clerk sessions/tokens—deletion completion expectations, production
-monitoring, alerting, and manual reconciliation. 11. Inventory privacy manifests and required-reason APIs in the generated iOS
-archive; reconcile `APP_STORE_METADATA.md`, complete the current Apple
-questionnaire truthfully, and apply the higher 18+ override once the
-Terms/EULA minimum is final. 12. Add dietary preferences/allergy exclusions only after the deletion and privacy paths exist. 13. Add authoritative calorie/protein targets and deterministic hard filters before using the product name **Best Balanced Fit**. 14. Then advance Today to training and closeout actions.
+1. Have the owner install exact TestFlight build 3 on a physical iPhone and run
+   the credential-safe authentication, age, purchase, restore, deletion,
+   accessibility, relaunch, offline, and account-switch matrix.
+2. Capture the exact-build 6.9-inch listing set and subscription review image,
+   inspect every image for personal data, and upload only approved PNG bytes.
+3. Finish and save App Privacy against the exact archive and production vendor
+   behavior. Complete the remaining owner declarations for content rights,
+   regulated-medical-device status, tax category, DSA status, and App Review
+   contact/review-account access without claiming professional approval.
+4. Attach the first subscription to version 1.0.0 only after its review image
+   and exact-build purchase/restore evidence are complete.
+5. Resolve every release validator error, obtain explicit owner confirmation,
+   and only then submit the app-version and first subscription together for App
+   Review. Preserve manual release after Apple approval.
+6. Initiate legal and nutrition review within three calendar days after public
+   release under the owner-deferred decision and stop-sales triggers. Do not
+   send any outreach without separate owner confirmation.
 
 ## Owner actions required for the next external step
 
@@ -458,11 +450,10 @@ sensitive-data apps toward legal-entity submission. Preliminary name screening
 also found a crowded same-market `CUT` field, so qualified `CUT OS` clearance
 remains open. Apple's Paid Apps Agreement, banking, and U.S. Form W-9 are active
 and evidence-confirmed. RevenueCat Decision 3 owner authorization is also
-confirmed. Apple signing and EAS/Apple authentication are complete;
-TestFlight build/QA, distribution, App
-Store questionnaire/privacy publication, Submit for Review, and public release
-remain owner-controlled gates. The owner has confirmed an
-18+ launch position; the final rating questionnaire and legal policy still need
-owner/counsel approval. Terms/Privacy and jurisdictional age-assurance remain
-qualified-counsel gates, and nutrition/health claims remain qualified
-professional/legal review gates.
+confirmed. Apple signing and EAS/Apple authentication are complete; exact build
+3 is valid and assigned to internal TestFlight, while physical-iPhone QA,
+screenshots, App Privacy, the remaining owner declarations, Submit for Review,
+and public release remain owner-controlled gates. The owner has confirmed an
+18+ launch position and App Store Connect now returns an effective 18+ rating.
+Legal and nutrition review remain explicitly deferred until the first three
+calendar days after public release and are not claimed complete.

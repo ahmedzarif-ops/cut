@@ -726,10 +726,12 @@ test("release mode stays fail closed while privacy, screenshot, and downstream l
     false,
     "voluntarily unreported accessibility labels must not block release",
   );
-  assert.ok(
+  assert.equal(
     errors.includes(
       "release mode requires saved App Store Connect age-questionnaire evidence",
     ),
+    false,
+    "the saved 18+ App Store Connect age questionnaire must remain complete",
   );
   assert.ok(
     errors.includes(
@@ -764,10 +766,7 @@ test("release mode stays fail closed while privacy, screenshot, and downstream l
 
   for (const retainedGate of [
     "release mode requires a boolean content-rights declaration",
-    "appReview.exactBuild.buildNumber is required",
-    "screenshots.captureDefaults.buildNumber is required",
     "release mode requires screenshots.captureDefaults.capturedAtUtc as a UTC ISO timestamp",
-    "TestFlight exactBuildEvidence.buildNumber is required",
   ]) {
     assert.ok(errors.includes(retainedGate), retainedGate);
   }
@@ -945,6 +944,14 @@ test("release and confirmed listings bind exact legal URLs to Apple-accepted met
   const confirmedListing = clone(inputs.submission);
   confirmedListing.listing.privacyPolicyUrl = null;
   confirmedListing.listing.termsUrl = null;
+  Object.assign(
+    confirmedListing.listing.legalUrlPlacement.appStoreConnectConfirmation,
+    {
+      status: "pending",
+      verifiedAtUtc: null,
+      evidenceReference: null,
+    },
+  );
   const confirmedApproval = confirmedListing.listing.approval;
   confirmedApproval.status = "confirmed";
   for (const field of [
@@ -1031,6 +1038,14 @@ test("release and confirmed listings bind exact legal URLs to Apple-accepted met
   submission.listing.legalUrlPlacement.terms = "listing_description";
   submission.listing.legalUrlPlacement.termsSubmittedUrl =
     submission.listing.termsUrl;
+  Object.assign(
+    submission.listing.legalUrlPlacement.appStoreConnectConfirmation,
+    {
+      status: "pending",
+      verifiedAtUtc: null,
+      evidenceReference: null,
+    },
+  );
 
   let errors = validateMetadata({ ...inputs, submission, release: true });
   assert.ok(
@@ -3532,10 +3547,11 @@ test("TestFlight record distinguishes internal testing from external review", ()
     status: "configured",
     automaticDistribution: false,
     testerCount: 1,
-    buildCount: 0,
-    assignedAppStoreConnectBuildId: null,
-    assignmentVerifiedAtUtc: null,
-    assignmentEvidenceReference: null,
+    buildCount: 1,
+    assignedAppStoreConnectBuildId: "dce1d8df-cd9e-46d7-8607-dcde9570df2e",
+    assignmentVerifiedAtUtc: "2026-08-10T20:56:38Z",
+    assignmentEvidenceReference:
+      "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#testflight-and-version-assignment",
     verifiedAtUtc: "2026-08-08T18:43:18Z",
     evidenceReference:
       "app-store/evidence/apple-live-configuration-2026-08-04.md#testflight-internal-configuration",

@@ -64,9 +64,9 @@ not ship in v1 and must not be claimed.
   Support supplied a public preview package that resolves the prior native
   session/TLS path; it is integrity-pinned and must remain pinned until Clerk
   publishes a supported stable release and CUT retests the exact candidate.
-- The current production backend is bound to Git commit
-  `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` and Replit deployment
-  `6e48c23c`. The connected production database passed direct client-side TLS
+- The current production backend is bound to release commit
+  `08e62232db7f81047eec5b55a184f30fb7d4162a` and Replit deployment
+  `78b1854c`. The connected production database passed direct client-side TLS
   authorization and hostname verification. Point-in-time recovery is enabled
   with a seven-day in-place restore window; no destructive restore drill has
   been approved or performed.
@@ -79,9 +79,10 @@ not ship in v1 and must not be claimed.
   when adult eligibility cannot be established. PermissionKit Significant
   Change handling and Apple's consent-revocation server notification are not
   represented as complete.
-- Public Privacy, Terms, and Support routes return HTTP 503 while the legal
-  publication record remains unapproved.
-- App Store Connect and EAS contain no iOS build. Every exact-build, physical
+- Public Privacy, Terms, and Support routes return HTTP 200 under the documented
+  owner-deferred professional-review decision. This availability is not a
+  qualified approval.
+- App Store Connect contains exact build 3 in internal TestFlight. Every physical
   iPhone, TestFlight, purchase, restore, deletion, recovery, privacy-archive,
   and screenshot conclusion remains pending.
 

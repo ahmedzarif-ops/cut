@@ -1,6 +1,6 @@
 # CUT OS — production launch infrastructure evidence
 
-**Verified:** August 8, 2026<br>
+**Verified:** August 10, 2026<br>
 **Scope:** Non-secret live configuration evidence only<br>
 **Release claim:** This evidence does not prove a signed build, TestFlight QA,
 App Review submission, or public release.
@@ -21,21 +21,22 @@ Certificate secrets and provisioning contents are intentionally excluded.
 ## Source and hosting
 
 - The exact `codex/app-store-v1` code commit verified and deployed as the live
-  build is `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`.
-- GitHub Actions run `31411665065` reports **Success** for both required checks
+  build is `08e62232db7f81047eec5b55a184f30fb7d4162a`.
+- GitHub Actions run `31425815282` reports **Success** for both required checks
   on that code commit: **CI verify** and **Release evidence boundary**. A later
   evidence-only commit may move the branch and draft pull-request head without
   changing the deployed build.
 - The current Replit Reserved VM deployment and log deployment ID is
-  `6e48c23c`.
+  `78b1854c`.
 - Replit's development-to-production data-copy control remained **off** after
   publish, critical-vulnerability publish blocking remained **on**, and the
   production database was connected.
 - Post-publish bounded verification returned HTTP 200 for the exact `BUILD_SHA`
   at `https://getcutos.com/status`, production readiness at `/api/readyz`, the
   CSP-locked zero-JavaScript public root, and the canonical Clerk proxy.
-- `/privacy`, `/terms`, and `/support` each remained HTTP 503, as required
-  while qualified publication approval remains open.
+- `/privacy`, `/terms`, and `/support` each return HTTP 200 under the dated
+  owner-deferred professional-review decision. No qualified publication
+  approval is claimed.
 
 This proves the bounded public identity, application-level health, and direct
 client-side production TLS attestation of the current deployment. It does not
@@ -51,7 +52,7 @@ prove a restore drill.
 - A connect-only probe in the Replit editor reproduced the documented Helium
   behavior: the development endpoint rejects every forced SSL mode. That result
   is development evidence and is not evidence of a production TLS failure.
-- Current deployed build `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`
+- Current deployed build `08e62232db7f81047eec5b55a184f30fb7d4162a`
   contains the production database normalization, validation, startup-migration
   path, direct TLS attestation, and migration files for the current candidate.
 - Its production entrypoint upgrades the one accepted provider URL shape from
@@ -181,13 +182,13 @@ control was rechecked **off** immediately before publishing. EAS production now
 targets this tenant and the exact same-origin proxy without recording any key
 material here.
 
-Commit `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` is the deployed source identity
-for Replit deployment `6e48c23c`. Bounded live checks passed for the exact
+Commit `08e62232db7f81047eec5b55a184f30fb7d4162a` is the deployed source identity
+for Replit deployment `78b1854c`. Bounded live checks passed for the exact
 `/status` `BUILD_SHA`, `/`, `/api/readyz`, and the canonical Clerk proxy; the
 proxy check matched production domain ID
 `dmn_3HeFLeuWzWg9xKNeG4o6PUUVHlb`. Any binary created before this cutover is
-ineligible for release. App Store Connect still has zero TestFlight builds, so
-no signed-build authentication or physical-device claim is made.
+ineligible for release. Exact build 3 is assigned in internal TestFlight, but
+no physical-device authentication claim is made.
 
 ### Bounded local iOS simulator rehearsal
 
