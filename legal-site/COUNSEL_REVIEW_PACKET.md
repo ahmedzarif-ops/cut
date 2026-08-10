@@ -1,6 +1,6 @@
 # CUT OS — counsel review packet
 
-**Prepared:** August 8, 2026<br>
+**Prepared:** August 10, 2026<br>
 **Status:** Engineering and compliance-review packet; not legal advice<br>
 **Requested outcome:** Written approval or redlines for the exact launch scope,
 public legal pages, App Store disclosures, and operating procedures described
@@ -52,6 +52,16 @@ not ship in v1 and must not be claimed.
   `com.zarifahmed.cut://callback` is allowlisted.
 - Clerk production test mode is off, and no development users were copied into
   production.
+- Native Clerk traffic now uses the verified same-origin CUT proxy. Clerk
+  Support supplied a public preview package that resolves the prior native
+  session/TLS path; it is integrity-pinned and must remain pinned until Clerk
+  publishes a supported stable release and CUT retests the exact candidate.
+- The current production backend is bound to Git commit
+  `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` and Replit deployment
+  `6e48c23c`. The connected production database passed direct client-side TLS
+  authorization and hostname verification. Point-in-time recovery is enabled
+  with a seven-day in-place restore window; no destructive restore drill has
+  been approved or performed.
 - Account deletion is designed as a durable workflow spanning Clerk,
   RevenueCat, and the CUT database. It does not cancel the Apple subscription.
 - A self-declared full date of birth is sent to the CUT server only to produce
@@ -63,6 +73,9 @@ not ship in v1 and must not be claimed.
   represented as complete.
 - Public Privacy, Terms, and Support routes return HTTP 503 while the legal
   publication record remains unapproved.
+- App Store Connect and EAS contain no iOS build. Every exact-build, physical
+  iPhone, TestFlight, purchase, restore, deletion, recovery, privacy-archive,
+  and screenshot conclusion remains pending.
 
 These are engineering assertions, not counsel conclusions. The exact signed
 archive, production vendor settings, and real-device behavior remain the final
@@ -70,19 +83,19 @@ evidence.
 
 ## 3. Data and vendor summary
 
-| Data or processing                                                  | Purpose                                        | System(s)                                            | Current deletion/retention position                                          |
-| ------------------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Email and account IDs                                               | Authentication and support                     | Clerk, CUT database                                  | Delete with account, subject to approved vendor/legal retention              |
-| Display name and goal                                               | Setup and personalization                      | CUT database                                         | Cascade with user                                                            |
-| Start/goal weight and daily weigh-ins                               | Daily wellness tracking                        | CUT database                                         | Cascade with user; backup retention unresolved                               |
-| Meal choice, servings, calories, protein, carbohydrates, fat, fiber | Meal logging and daily totals                  | CUT database                                         | Cascade with user; backup retention unresolved                               |
-| Full self-declared DOB                                              | One-time 18+ decision                          | Request memory only                                  | Designed for immediate discard; no persistence or logging                    |
-| Eligibility result/version/time                                     | Enforce adults-only access                     | CUT database                                         | Delete with user; backup retention unresolved                                |
-| IP and request metadata                                             | Delivery, security, rate limiting, Clerk proxy | One-minute memory, Replit, Clerk                     | In-app limiter expires after one minute; vendor retention/linkage unresolved |
-| Device/session and recovery markers                                 | Authentication and interrupted-action recovery | Secure device storage, Clerk                         | Clear on sign-out/deletion; exact native QA pending                          |
-| Internal UUID and purchase state                                    | Paid access, restore, subscription support     | Apple, RevenueCat, CUT server cache                  | Delete CUT-linked RevenueCat customer; Apple retains its transaction records |
-| Deletion tombstone and status                                       | Prevent account recreation and resume failures | CUT database                                         | Raw Clerk ID removed on completion; hash/status retention unresolved         |
-| Support communications                                              | Respond to user requests                       | Proposed public email; final support tooling pending | Retention and deletion procedure unresolved                                  |
+| Data or processing                                                  | Purpose                                        | System(s)                                            | Current deletion/retention position                                                           |
+| ------------------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Email and account IDs                                               | Authentication and support                     | Clerk, CUT database                                  | Delete with account, subject to approved vendor/legal retention                               |
+| Display name and goal                                               | Setup and personalization                      | CUT database                                         | Cascade with user                                                                             |
+| Start/goal weight and daily weigh-ins                               | Daily wellness tracking                        | CUT database                                         | Cascade with user; seven-day in-place PITR exists; legal backup deletion treatment unresolved |
+| Meal choice, servings, calories, protein, carbohydrates, fat, fiber | Meal logging and daily totals                  | CUT database                                         | Cascade with user; seven-day in-place PITR exists; legal backup deletion treatment unresolved |
+| Full self-declared DOB                                              | One-time 18+ decision                          | Request memory only                                  | Designed for immediate discard; no persistence or logging                                     |
+| Eligibility result/version/time                                     | Enforce adults-only access                     | CUT database                                         | Delete with user; backup retention unresolved                                                 |
+| IP and request metadata                                             | Delivery, security, rate limiting, Clerk proxy | One-minute memory, Replit, Clerk                     | In-app limiter expires after one minute; vendor retention/linkage unresolved                  |
+| Device/session and recovery markers                                 | Authentication and interrupted-action recovery | Secure device storage, Clerk                         | Clear on sign-out/deletion; exact native QA pending                                           |
+| Internal UUID and purchase state                                    | Paid access, restore, subscription support     | Apple, RevenueCat, CUT server cache                  | Delete CUT-linked RevenueCat customer; Apple retains its transaction records                  |
+| Deletion tombstone and status                                       | Prevent account recreation and resume failures | CUT database                                         | Raw Clerk ID removed on completion; hash/status retention unresolved                          |
+| Support communications                                              | Respond to user requests                       | Proposed public email; final support tooling pending | Retention and deletion procedure unresolved                                                   |
 
 Current vendors/services are Apple, Clerk, RevenueCat, Replit hosting, and the
 production database service connected through Replit. No advertising network is
@@ -224,6 +237,7 @@ a single rendered set before `{{PUBLIC_DOMAIN}}` is resolved and hashed.
 ## 8. Repository evidence supplied with this packet
 
 - `PRIVACY_DATA_MAP.md`
+- `NUTRITION_CATALOG_EVIDENCE.md`
 - `ADR_002_ACCOUNT_DELETION.md`
 - `ADR_003_ADULT_ELIGIBILITY.md`
 - `ADR_004_SUBSCRIPTIONS.md`
@@ -236,6 +250,8 @@ a single rendered set before `{{PUBLIC_DOMAIN}}` is resolved and hashed.
 - `artifacts/cut-os/server/templates/terms.html`
 - `artifacts/cut-os/server/templates/support.html`
 - `artifacts/cut-os/server/templates/legal-publication-approval.json`
+- `artifacts/cut-os/AUTH_SECURITY_PRELAUNCH.md`
+- `artifacts/cut-os/AUTH_SECURITY_PRODUCTION_QA_PROTOCOL.md`
 - `app-store/app-store-submission.json`
 - `app-store/evidence/apple-live-configuration-2026-08-04.md`
 - `app-store/evidence/production-launch-infrastructure-2026-08-08.md`
