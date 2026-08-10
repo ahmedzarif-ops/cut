@@ -107,8 +107,11 @@
   SDK's direct Frontend API host `clerk.getcutos.com` fails during the TLS
   handshake before serving a certificate. Clerk shows the primary domain, DNS,
   and proxy as Verified but marks that direct host Optional. An existing Clerk
-  support ticket was acknowledged on August 9, with no technical response yet.
-  Preserve the working proxy and instance. At `2026-08-10T08:30:11Z`, an
+  support ticket was acknowledged on August 9. On August 10, Clerk Support
+  supplied public preview package `@clerk/expo@cfb6495`, upstream head
+  `cfb64951dc6a2a47af7971bbff2b18dd66b59326`; CUT installed that exact snapshot
+  and retired its local 4.2.0 patch. No reply was sent. Preserve the working
+  proxy and instance. At `2026-08-10T08:30:11Z`, an
   EAS-production-environment arm64 Release simulator build based on `d8cd698`
   plus the candidate patch
   verified a reproducible `@clerk/expo` patch that forwards CUT's existing
@@ -116,10 +119,14 @@
   simulator opened the real `Welcome back` UI, and exact-process logs showed
   successful TLS and HTTP 200 only through `getcutos.com/api/__clerk`, with no
   direct-host request or TLS failure. No email, code, password, account
-  identifier, or external message was entered or sent. Focused tests pass 8/8
-  and the mobile suite passes 445/445. Exact signed-device password recovery and
-  physical-device/TestFlight Declared Age Range entitlement/API validation
-  remain open.
+  identifier, or external message was entered or sent. Focused tests pass. With
+  the support snapshot installed, additional token-refresh and same-principal
+  route-remount races were repaired. A later EAS-production-environment arm64
+  Release simulator build reached the real CUT OS Pro Monthly `$4.99 per month`
+  screen and remained stable for more than 70 seconds. Tokens were not logged or
+  persisted and authenticated traffic remains no-store. Exact signed-device
+  password recovery, purchase/restore, and physical-device/TestFlight Declared
+  Age Range entitlement/API validation remain open.
 - App Review access is now a target-bound release gate: its controlled window
   requires Clerk production test mode, Client Trust, five reserved synthetic
   accounts, and exact-build new-device proof; public release separately

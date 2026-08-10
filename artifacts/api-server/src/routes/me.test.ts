@@ -39,6 +39,7 @@ describe("auth gate", () => {
     const res = await request(ctx.app).get("/api/me");
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ error: "Unauthorized" });
+    expect(res.headers["cache-control"]).toBe("no-store");
   });
 
   it("rejects unauthenticated account-setting updates", async () => {
@@ -65,6 +66,7 @@ describe("GET /api/me — eligible existing users only", () => {
       .get("/api/me")
       .set(asUser("clerk_jit_1", "jit1@example.com"));
     expect(res.status).toBe(200);
+    expect(res.headers["cache-control"]).toBe("no-store");
     expect(res.body.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(res.body.timezone).toBe("UTC");
     expect(res.body.units).toBe("metric");

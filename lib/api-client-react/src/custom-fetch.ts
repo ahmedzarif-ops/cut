@@ -6,7 +6,14 @@ export type ErrorType<T = unknown> = ApiError<T>;
 
 export type BodyType<T> = T;
 
-export type AuthTokenGetter = () => Promise<string | null> | string | null;
+export type AuthTokenGetterOptions = {
+  /** Bypass the provider token cache after an authenticated request is rejected. */
+  skipCache?: boolean;
+};
+
+export type AuthTokenGetter = (
+  options?: AuthTokenGetterOptions,
+) => Promise<string | null> | string | null;
 export type GoneResponseHandler = (
   error: ApiError<unknown>,
 ) => Promise<void> | void;
@@ -33,10 +40,47 @@ export class ApiRequestTimeoutError extends Error {
   }
 }
 
+export class AuthTokenUnavailableError extends Error {
+  readonly name = "AuthTokenUnavailableError";
+
+  constructor() {
+    super("The signed-in session token is temporarily unavailable. Try again.");
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
 interface RequestDeadline {
   signal: AbortSignal;
   race<T>(operation: PromiseLike<T>): Promise<T>;
   dispose(): void;
+}
+
+async function waitForAuthRetry(
+  deadline: RequestDeadline,
+  delayMs = 100,
+): Promise<void> {
+  await deadline.race(
+    new Promise<void>((resolve) => setTimeout(resolve, delayMs)),
+  );
+}
+
+async function resolveAuthToken(
+  getter: AuthTokenGetter,
+  deadline: RequestDeadline,
+  forceRefreshFirst: boolean,
+): Promise<string | null> {
+  const attempts: Array<AuthTokenGetterOptions | undefined> = forceRefreshFirst
+    ? [{ skipCache: true }, undefined, { skipCache: true }]
+    : [undefined, undefined, { skipCache: true }];
+
+  for (const [index, options] of attempts.entries()) {
+    if (index > 0) await waitForAuthRetry(deadline);
+    const token = await deadline.race(
+      Promise.resolve().then(() => getter(options)),
+    );
+    if (token) return token;
+  }
+  return null;
 }
 
 function createAbortError(): Error {
@@ -485,9 +529,18 @@ export async function customFetch<T = unknown>(
   const requestInfo = { method, url: resolveUrl(input) };
 
   // Validate explicit authorization before starting any request work.
-  if (headers.has("authorization")) {
+  const hasExplicitAuthorization = headers.has("authorization");
+  if (hasExplicitAuthorization) {
     assertAllowedAuthenticatedTarget(requestInfo.url);
   }
+
+  // Native URL loading stacks can cache an authentication failure when a
+  // protected response omits cache directives. Never let a prior 401 be
+  // reused after Clerk has supplied a newer bearer token.
+  const authenticatedInit =
+    hasExplicitAuthorization || authTokenGetter
+      ? { ...init, cache: "no-store" as const }
+      : init;
 
   const deadline = createRequestDeadline([
     init.signal,
@@ -498,20 +551,56 @@ export async function customFetch<T = unknown>(
     // Authorization header has been explicitly provided. The deadline also
     // bounds custom getters; the Expo getter retains its own shorter timeout.
     if (!headers.has("authorization") && authTokenGetter) {
-      const token = await deadline.race(
-        Promise.resolve().then(() => authTokenGetter()),
-      );
-      if (token) {
-        assertAllowedAuthenticatedTarget(requestInfo.url);
-        headers.set("authorization", `Bearer ${token}`);
-      }
+      const token = await resolveAuthToken(authTokenGetter, deadline, false);
+      if (!token) throw new AuthTokenUnavailableError();
+      assertAllowedAuthenticatedTarget(requestInfo.url);
+      headers.set("authorization", `Bearer ${token}`);
     }
 
-    const response = await deadline.race(
+    let response = await deadline.race(
       Promise.resolve().then(() =>
-        fetch(input, { ...init, method, headers, signal: deadline.signal }),
+        fetch(input, {
+          ...authenticatedInit,
+          method,
+          headers,
+          signal: deadline.signal,
+        }),
       ),
     );
+
+    // Clerk can briefly return a cached session token that the backend has
+    // already rejected (for example immediately after a native session sync).
+    // Retry one replay-safe, automatically-authenticated request with a forced
+    // token refresh. A 401 proves the protected handler did not accept the
+    // request, so this cannot duplicate an authorized mutation. Explicit
+    // caller-owned Authorization headers are never replaced or replayed.
+    const canReplayAfterAuthRefresh =
+      response.status === 401 &&
+      !hasExplicitAuthorization &&
+      !!authTokenGetter &&
+      !isRequest(input) &&
+      (method === "GET" || method === "HEAD" || method === "OPTIONS");
+    if (canReplayAfterAuthRefresh) {
+      const refreshedToken = await resolveAuthToken(
+        authTokenGetter,
+        deadline,
+        true,
+      );
+      if (refreshedToken) {
+        assertAllowedAuthenticatedTarget(requestInfo.url);
+        headers.set("authorization", `Bearer ${refreshedToken}`);
+        response = await deadline.race(
+          Promise.resolve().then(() =>
+            fetch(input, {
+              ...authenticatedInit,
+              method,
+              headers,
+              signal: deadline.signal,
+            }),
+          ),
+        );
+      }
+    }
 
     if (!response.ok) {
       const errorData = await deadline.race(parseErrorBody(response, method));

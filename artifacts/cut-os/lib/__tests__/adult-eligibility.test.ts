@@ -9,6 +9,7 @@ import {
   parseAdultEligibilityResponse,
   resolveAdultEligibilityQuery,
   shouldClearAdultEligibilityInput,
+  shouldDeferPrivateRouteForDeclaredAgeRange,
   validateDateOfBirth,
 } from "../adult-eligibility";
 import {
@@ -78,6 +79,30 @@ describe("Apple declared age range", () => {
 });
 
 describe("adult eligibility route gate", () => {
+  it("waits on a private route while Apple's declared-age check is loading", () => {
+    expect(
+      shouldDeferPrivateRouteForDeclaredAgeRange({
+        route: "private",
+        status: "eligible",
+        declaredAgeRangeLoading: true,
+      }),
+    ).toBe(true);
+    expect(
+      shouldDeferPrivateRouteForDeclaredAgeRange({
+        route: "adult_eligibility",
+        status: "eligible",
+        declaredAgeRangeLoading: true,
+      }),
+    ).toBe(false);
+    expect(
+      shouldDeferPrivateRouteForDeclaredAgeRange({
+        route: "private",
+        status: "eligible",
+        declaredAgeRangeLoading: false,
+      }),
+    ).toBe(false);
+  });
+
   it("allows private routes only for the exact eligible status", () => {
     expect(
       decideAdultEligibilityRoute({

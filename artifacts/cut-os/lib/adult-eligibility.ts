@@ -28,6 +28,18 @@ export type AdultEligibilityRoute =
 export type AdultEligibilityRouteDecision =
   "allow_route" | "redirect_adult_eligibility" | "redirect_settings";
 
+export function shouldDeferPrivateRouteForDeclaredAgeRange(input: {
+  route: AdultEligibilityRoute;
+  status: AdultEligibilityStatus | null;
+  declaredAgeRangeLoading: boolean;
+}): boolean {
+  return (
+    input.route === "private" &&
+    input.status === "eligible" &&
+    input.declaredAgeRangeLoading
+  );
+}
+
 /**
  * Account deletion always wins. Otherwise only a verified eligible response
  * opens private health screens; unknown, failed, and non-eligible states stay

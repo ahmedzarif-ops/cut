@@ -46,6 +46,11 @@ export async function requireAuth(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
+  // Authentication and authorization decisions are principal-specific and
+  // can change as Clerk refreshes a native session. Keep successes and every
+  // fail-closed response out of device, browser, and intermediary caches.
+  res.setHeader("Cache-Control", "no-store");
+
   const auth = getAuth(req);
   const clerkUserId = auth?.userId;
 

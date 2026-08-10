@@ -61,6 +61,7 @@ describe("API client principal isolation", () => {
     const fetchMock = vi.fn(
       async (input: RequestInfo | URL, init?: RequestInit) => {
         expect(input.toString()).toBe("https://api.example.com/api/me");
+        expect(init?.cache).toBe("no-store");
         expect(new Headers(init?.headers).get("authorization")).toBe(
           "Bearer token-for-user-a",
         );
@@ -76,6 +77,134 @@ describe("API client principal isolation", () => {
 
     await getMe();
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("recovers a temporarily missing token before sending a protected request", async () => {
+    const tokenGetter = vi
+      .fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce("recovered-token");
+    const observedAuthorization: Array<string | null> = [];
+    const fetchMock = vi.fn(async (_input: unknown, init?: RequestInit) => {
+      observedAuthorization.push(
+        new Headers(init?.headers).get("authorization"),
+      );
+      return new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    setBaseUrl("https://api.example.com");
+    setAuthTokenGetter(tokenGetter);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getMe();
+
+    expect(tokenGetter).toHaveBeenNthCalledWith(1, undefined);
+    expect(tokenGetter).toHaveBeenNthCalledWith(2, undefined);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(observedAuthorization).toEqual(["Bearer recovered-token"]);
+  });
+
+  it("never sends a protected request when the registered token stays unavailable", async () => {
+    const tokenGetter = vi.fn(async () => null);
+    const fetchMock = vi.fn();
+    setBaseUrl("https://api.example.com");
+    setAuthTokenGetter(tokenGetter);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getMe()).rejects.toMatchObject({
+      name: "AuthTokenUnavailableError",
+    });
+
+    expect(tokenGetter).toHaveBeenCalledTimes(3);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refreshes a provider token once after a 401 and replays a safe request", async () => {
+    const tokenGetter = vi
+      .fn()
+      .mockResolvedValueOnce("stale-token")
+      .mockResolvedValueOnce("fresh-token");
+    const observedAuthorization: Array<string | null> = [];
+    const observedCacheModes: Array<RequestCache | undefined> = [];
+    const fetchMock = vi.fn(async (_input: unknown, init?: RequestInit) => {
+      observedAuthorization.push(
+        new Headers(init?.headers).get("authorization"),
+      );
+      observedCacheModes.push(init?.cache);
+      return observedAuthorization.length === 1
+        ? new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { "content-type": "application/json" },
+          })
+        : new Response(JSON.stringify({}), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+    });
+    setBaseUrl("https://api.example.com");
+    setAuthTokenGetter(tokenGetter);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getMe();
+
+    expect(tokenGetter).toHaveBeenNthCalledWith(1, undefined);
+    expect(tokenGetter).toHaveBeenNthCalledWith(2, { skipCache: true });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(observedAuthorization).toEqual([
+      "Bearer stale-token",
+      "Bearer fresh-token",
+    ]);
+    expect(observedCacheModes).toEqual(["no-store", "no-store"]);
+  });
+
+  it("never replays a state-changing request after an authentication failure", async () => {
+    const tokenGetter = vi.fn(async () => "token");
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    setBaseUrl("https://api.example.com");
+    setAuthTokenGetter(tokenGetter);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      customFetch("https://api.example.com/api/me/subscription/refresh", {
+        method: "POST",
+        body: "{}",
+        responseType: "json",
+      }),
+    ).rejects.toMatchObject({ status: 401 });
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(tokenGetter).toHaveBeenCalledOnce();
+  });
+
+  it("never replaces or replays an explicit Authorization header after a 401", async () => {
+    const tokenGetter = vi.fn(async () => "other-token");
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    setBaseUrl("https://api.example.com");
+    setAuthTokenGetter(tokenGetter);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      customFetch("https://api.example.com/api/me", {
+        headers: { Authorization: "Bearer captured-token" },
+      }),
+    ).rejects.toMatchObject({ status: 401 });
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(tokenGetter).not.toHaveBeenCalled();
   });
 
   it.each([

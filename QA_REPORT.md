@@ -6,8 +6,8 @@
 
 ## Current launch addendum — August 10, 2026
 
-- **1,392/1,392 automated tests pass:** 300 release operations, 61 App Store, 33
-  domain, 4 database, 438 mobile, and 556 API.
+- **1,417/1,417 automated tests pass:** 303 release operations, 62 App Store, 33
+  domain, 4 database, 459 mobile, and 556 API.
 - Root TypeScript, generated-code drift, working App Store validation,
   changed-file formatting, `.replit` parsing, migration drift, Expo dependency
   health, and a non-secret production-profile Expo bundle rehearsal pass. The
@@ -140,9 +140,11 @@
   release-configuration suite passes 15/15. Native password recovery and exact
   physical-device/TestFlight Apple Declared Age Range entitlement/API
   validation remain pending.
-- Native configuration now keeps the dark launch screen's status bar readable
-  and uses Clerk Expo 4.2.0 without the optional Google Sign-In package or pod.
-  Expo introspection and native autolinking checks enforce both conditions.
+- Native configuration keeps the dark launch screen's status bar readable and
+  uses Clerk Support's exact public `@clerk/expo@cfb6495` preview, upstream head
+  `cfb64951dc6a2a47af7971bbff2b18dd66b59326`, without the optional Google
+  Sign-In package or pod. The prior local 4.2.0 patch is retired. Expo
+  introspection and native autolinking checks enforce both conditions.
 - App Store password recovery now resolves to Clerk's documented custom
   email-code flow on native and uses CUT's verified same-origin Clerk proxy;
   the direct-host native `AuthView` override has been removed. Public web keeps
@@ -165,6 +167,15 @@
   was entered or sent. Proxy/recovery tests pass 8/8 and the mobile suite passes
   445/445. This remains local Sign-to-Run-Locally evidence, not a completed
   reset, signed EAS archive, TestFlight result, or physical-device result.
+- Clerk Support's snapshot fixed native proxy propagation. Follow-on runtime QA
+  exposed and enabled repair of token-refresh and same-principal route-remount
+  races. A final EAS-production-environment arm64 Release simulator build
+  reached the real CUT OS Pro Monthly `$4.99 per month` screen and remained
+  alive on that screen for more than 70 seconds. Tokens were neither logged nor
+  persisted, and authenticated traffic remains no-store. This closes the local
+  `Account check needed` loop only; exact signed-device password recovery,
+  purchase/restore, Apple age API, and TestFlight QA remain pending. No reply was
+  sent to Clerk.
 - Clerk production now uses free-Hobby application
   `app_3HeFFYD0GpUEjcPIlOwNYXAKUmo`, production instance
   `ins_3HeFLfOAbfStrVB4eW5b7sYOeAq`, and domain record

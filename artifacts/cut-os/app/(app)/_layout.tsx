@@ -25,6 +25,7 @@ import {
 } from "react-native";
 
 import { useColors } from "@/hooks/useColors";
+import { AuthTokenCoordinator } from "@/lib/auth-token-coordinator";
 import {
   accountDeletionKey,
   decideAccountDeletionGate,
@@ -38,11 +39,13 @@ import { AccountDeletionGateProvider } from "@/lib/account-deletion-gate";
 import {
   decideAdultEligibilityRoute,
   resolveAdultEligibilityQuery,
+  shouldDeferPrivateRouteForDeclaredAgeRange,
   type AdultEligibilityRoute,
 } from "@/lib/adult-eligibility";
 import { AdultEligibilityGateProvider } from "@/lib/adult-eligibility-gate";
 import { useDeclaredAgeRangeGate } from "@/lib/declared-age-range-gate";
 import { parseRevenueCatIosApiKey } from "@/lib/runtime-config";
+import { transitionPrincipalQueryCache } from "@/lib/principal-query-cache";
 import {
   DeviceTimeZoneSyncCoordinator,
   isExpectedDeviceTimeZoneUpdateResponse,
@@ -106,6 +109,8 @@ export default function AppLayout() {
     useAuth();
   const qc = useQueryClient();
   const pathname = usePathname();
+  const getTokenRef = React.useRef(getToken);
+  getTokenRef.current = getToken;
 
   const [authReadyUserId, setAuthReadyUserId] = React.useState<string | null>(
     null,
@@ -136,10 +141,16 @@ export default function AppLayout() {
     }
 
     let active = true;
-    setAuthTokenGetter(async () => {
+    // Clerk may replace the getToken function while its native client syncs.
+    // Read the latest implementation through a ref so that a harmless Clerk
+    // render cannot tear down the coordinator and abort in-flight gate queries.
+    const tokenCoordinator = new AuthTokenCoordinator((options) =>
+      getTokenRef.current(options),
+    );
+    setAuthTokenGetter(async (options) => {
       try {
         return await Promise.race([
-          getToken(),
+          tokenCoordinator.getToken(options),
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
         ]);
       } catch {
@@ -150,9 +161,10 @@ export default function AppLayout() {
 
     return () => {
       active = false;
+      tokenCoordinator.dispose();
       setAuthTokenGetter(null);
     };
-  }, [getToken, isLoaded, isSignedIn, userId]);
+  }, [isLoaded, isSignedIn, sessionId, userId]);
 
   // A 410 from a normal authenticated endpoint means the server has already
   // tombstoned this principal. Register the handler before private children
@@ -206,16 +218,20 @@ export default function AppLayout() {
   }, [isLoaded, isSignedIn, qc, userId]);
 
   // The query cache is global, so it must be emptied before any screen for a
-  // new Clerk principal mounts. Cleanup also protects sign-out transitions.
+  // new Clerk principal mounts. Expo Router may remount this layout while the
+  // same principal moves between guarded routes; that must not erase the
+  // verified gate results and cause a redirect loop.
   React.useEffect(() => {
     setCacheReadyUserId(null);
-    setForcedGateOwnerUserId(null);
-    qc.clear();
-    if (isLoaded && isSignedIn && userId) setCacheReadyUserId(userId);
-    return () => {
-      qc.clear();
-    };
-  }, [isLoaded, isSignedIn, qc, userId]);
+    const ownerKey =
+      isLoaded && isSignedIn && userId
+        ? JSON.stringify([userId, sessionId])
+        : null;
+    if (transitionPrincipalQueryCache(qc, ownerKey)) {
+      setForcedGateOwnerUserId(null);
+    }
+    if (ownerKey && userId) setCacheReadyUserId(userId);
+  }, [isLoaded, isSignedIn, qc, sessionId, userId]);
 
   React.useEffect(() => {
     if (!isLoaded || !isSignedIn || !userId) {
@@ -323,7 +339,8 @@ export default function AppLayout() {
     (adultEligibilityResolution.error ||
       (adultEligibilityResolution.response &&
         (resolvedAdultEligibilityStatus !== "eligible" ||
-          !declaredAgeRange.allowsPrivateAccess))),
+          (!declaredAgeRange.isLoading &&
+            !declaredAgeRange.allowsPrivateAccess)))),
   );
 
   // A status poll can learn about deletion before any normal endpoint emits a
@@ -479,6 +496,16 @@ export default function AppLayout() {
   } else if (adultEligibilityResolution.error === "invalid") {
     adultEligibilityError =
       "CUT OS received an age requirement status it could not safely verify.";
+  }
+
+  if (
+    shouldDeferPrivateRouteForDeclaredAgeRange({
+      route,
+      status: adultEligibilityResponse?.status ?? null,
+      declaredAgeRangeLoading: declaredAgeRange.isLoading,
+    })
+  ) {
+    return <GateLoading />;
   }
 
   const adultRouteDecision = decideAdultEligibilityRoute({

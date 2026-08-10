@@ -112,7 +112,9 @@ describe("native release configuration", () => {
   });
 
   it("applies Clerk's native build requirements without advertising unused Apple sign-in", () => {
-    expect(packageConfig.dependencies["@clerk/expo"]).toBe("4.2.0");
+    expect(packageConfig.dependencies["@clerk/expo"]).toBe(
+      "https://pkg.pr.new/clerk/javascript/@clerk/expo@cfb6495",
+    );
     expect(appConfig.expo.plugins).toContainEqual([
       "@clerk/expo",
       { appleSignIn: false },

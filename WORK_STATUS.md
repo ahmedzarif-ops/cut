@@ -327,8 +327,11 @@ launch gate.
   `clerk.getcutos.com` fails during the TLS handshake before serving a
   certificate. Clerk shows the primary domain, DNS, and proxy as Verified but
   marks that direct host Optional. An existing Clerk ticket titled **Native
-  AuthView TLS error** was acknowledged on August 9; no technical response is
-  recorded. Do not remove the working proxy or change the instance. The native
+  AuthView TLS error** was acknowledged on August 9. On August 10, Clerk Support
+  supplied public preview package `@clerk/expo@cfb6495`, upstream head
+  `cfb64951dc6a2a47af7971bbff2b18dd66b59326`; CUT installed that exact snapshot
+  and retired the local 4.2.0 patch. No reply was sent. Do not remove the working
+  proxy or change the instance. The native
   route now avoids that failing direct-host path by resolving to Clerk's
   documented custom email-code flow through CUT's verified proxy. Source-level
   regression coverage and a production-environment iOS Hermes export confirm
@@ -344,9 +347,14 @@ launch gate.
   `getcutos.com/api/__clerk`, with no direct-host request or TLS failure. The
   complete mobile suite passes 445/445. No email, code, password, account
   identifier, or external message was entered or sent. This is local
-  Sign-to-Run-Locally evidence only; physical-device/TestFlight reset QA remains
-  pending. Pre-cutover binaries are ineligible and TestFlight still has zero
-  builds.
+  Sign-to-Run-Locally evidence only. The snapshot exposed and enabled repair of
+  token-refresh and same-principal route-remount races. A later
+  EAS-production-environment arm64 Release simulator build reached the real CUT
+  OS Pro Monthly `$4.99 per month` screen and remained alive on the same screen
+  for more than 70 seconds. Authenticated requests remain no-store; tokens are
+  never persisted or logged. Physical-device/TestFlight reset and purchase QA
+  remain pending. Pre-cutover binaries are ineligible and TestFlight still has
+  zero builds.
 - Replit contains the exact CUT project, Apple app, entitlement, and offering
   REST IDs as non-secret configurations and the RevenueCat server API v2
   replacement secret saved masked. Replacement key

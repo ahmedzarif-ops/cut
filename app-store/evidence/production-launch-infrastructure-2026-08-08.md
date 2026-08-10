@@ -324,6 +324,48 @@ The screenshot remains only in `/tmp`; this is local simulator evidence, not an
 EAS-signed archive, TestFlight result, physical-device result, completed
 password reset, or App Review evidence.
 
+### Superseding Clerk support snapshot and authenticated-route stability — `2026-08-10T16:42:57Z`
+
+Clerk Support supplied the public preview package associated with Clerk
+JavaScript pull request `9373`. CUT replaced its local `@clerk/expo` 4.2.0 patch
+with the exact support snapshot
+`https://pkg.pr.new/clerk/javascript/@clerk/expo@cfb6495`, whose upstream head
+is `cfb64951dc6a2a47af7971bbff2b18dd66b59326`. The downloaded tarball's SHA-256
+was `caf4e09247d90261b9c3f93d5179fde027f0464b6e911e046931988dd6405f51`, and a
+bounded archive-path check passed before installation. The retired local patch
+is removed from the workspace configuration. No Clerk key, tenant, DNS record,
+Replit setting, account, or billing state changed. No reply was sent to Clerk;
+follow-up remains owner-controlled.
+
+The support snapshot correctly routed the native Clerk client through CUT's
+configured same-origin proxy. A separate authenticated-route regression then
+exposed two application lifecycle defects: token reads could race an initial
+Clerk session refresh, and route remounts could discard the same principal's
+gate-query state while treating the native declared-age hook's initial loading
+state as denial. The candidate now single-flights and briefly reuses only the
+in-memory Clerk token, forces one safe idempotent refresh after a 401, clears
+private query state only when the actual session or user changes, and renders a
+locked loading state while declared-age data is unresolved. Tokens are not
+decoded, persisted, or logged; authenticated responses and requests remain
+`no-store`.
+
+An EAS-production-environment arm64 Release simulator build, signed with Xcode
+**Sign to Run Locally** and installed without entering account or date-of-birth
+data, reached the real CUT OS Pro screen. It displayed the exact approved CUT OS
+Pro Monthly offer at `$4.99 per month`. A second capture more than 70 seconds
+later showed the same screen, and the process remained alive. The two ephemeral
+1,206-by-2,622 captures remain only in `/tmp`; their SHA-256 fingerprints are
+`e4f4a62421cc8441a5c8e62285b5881afe952cb5f1ddfb931a1a83a03a0ec8d7` and
+`f4ada357a25a4a204618bb57fb1d340121414b6023fe3b210762eb90918dc23c`.
+
+Focused auth, proxy, eligibility, and principal-cache tests, the complete mobile
+suite, root TypeScript, and a frozen pnpm 10.34.5 install pass. This proves the
+local simulator no longer loops on `Account check needed`; it does not prove a
+purchase, restore, password reset, Apple-signed archive, physical-device flow,
+TestFlight behavior, or App Review readiness. The support snapshot is an
+upstream preview and must remain pinned exactly until Clerk publishes and CUT
+validates a supported release replacement.
+
 ### Superseding native age-bridge simulator result — recorded `2026-08-08T21:46:02Z`
 
 An arm64 Release simulator build, signed locally and built with the EAS
@@ -352,8 +394,9 @@ release-configuration suite passed 15/15 tests.
    Direct live TLS attestation is complete.
 4. Preserve the passing exact-build and Clerk proxy-health checks, and repeat
    them after any future publish.
-5. Preserve the tested native same-origin proxy patch, exercise the full native
-   password-recovery flow, and validate Apple's
+5. Preserve the tested exact Clerk support snapshot and authenticated-route
+   stability fixes, exercise the full native password-recovery flow, and
+   validate Apple's
    Declared Age Range entitlement/API on the exact physical-device/TestFlight
    build. Signup email/code, the local age bridge, and native proxy routing are
    complete. Clerk's optional direct host remains a provider issue and must not

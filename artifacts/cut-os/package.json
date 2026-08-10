@@ -31,7 +31,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
-    "@clerk/expo": "4.2.0",
+    "@clerk/expo": "https://pkg.pr.new/clerk/javascript/@clerk/expo@cfb6495",
     "@expo-google-fonts/inter": "^0.4.0",
     "@expo/vector-icons": "^15.0.3",
     "@stardazed/streams-text-encoding": "^1.0.2",
