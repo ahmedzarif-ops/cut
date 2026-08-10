@@ -189,6 +189,7 @@ overrides:
 # exact transitive version for Expo/Metro compatibility, apply the reviewed
 # fail-closed parser patch below, and ignore only those two patched CVE records.
 patchedDependencies:
+  "@clerk/expo@4.2.0": patches/@clerk__expo@4.2.0.patch
   image-size@1.2.1: patches/image-size@1.2.1.patch
 
 auditConfig:

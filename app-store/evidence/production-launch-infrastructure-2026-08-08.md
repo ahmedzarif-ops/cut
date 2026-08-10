@@ -248,7 +248,7 @@ TestFlight QA. The authenticated JavaScript path worked. Native password
 recovery and the Apple age/native bridge remained active gates at that
 observation point.
 
-### Native Clerk Frontend API TLS gap — open
+### Native Clerk Frontend API TLS gap — provider path remains open
 
 At `2026-08-10T07:27:51Z`, a bounded certificate-safe comparison showed two
 different paths:
@@ -290,6 +290,40 @@ physical-device/TestFlight reset request, real user-entered code, new-password
 completion, session result, provider-failure behavior, and no-sign-up-transfer
 observation remain required release evidence.
 
+### Superseding Expo native-client proxy repair — `2026-08-10T08:30:11Z`
+
+The application-level native Clerk bootstrap previously omitted the configured
+`ClerkProvider` proxy URL when it initialized Clerk's iOS and Android SDKs. The
+JavaScript client therefore used CUT's verified same-origin proxy while the
+native client still selected the failing direct Frontend API host. CUT now
+applies a reproducible pnpm patch to `@clerk/expo` 4.2.0 that forwards the
+existing proxy URL through the JavaScript bootstrap and both native bridges.
+The iOS bridge passes it to `Clerk.Options(proxyUrl:)`; the Android bridge passes
+it to `ClerkConfigurationOptions(proxyUrl=...)`. The patch also treats a proxy
+change as a native reconfiguration boundary. No Clerk key, domain, tenant,
+Replit setting, DNS record, or billing state changed.
+
+An EAS-production-environment arm64 Release simulator build based on commit
+`d8cd6982a1e3029b323a3d728ced6e7a87bc830d` plus the candidate dependency
+patch, signed with Xcode **Sign to Run Locally**, was installed on a newly
+created zero-user iOS 27 simulator. The app
+opened the real `Welcome back` screen. Bounded process-specific logs showed the
+native request using
+`https://getcutos.com/api/__clerk/v1/environment`, successful TLS, and HTTP 200;
+they showed no request to `clerk.getcutos.com` and no TLS-handshake failure for
+that exact process. A prior disposable simulator retained an invalid local
+session and correctly received HTTP 401 from CUT's internal API; it was deleted
+without touching the preserved `CUT Release QA` simulator or any server
+account. No email, verification code, password, account identifier, or external
+message was entered or sent.
+
+The focused proxy/recovery suite passed 8/8 tests, the complete mobile suite
+passed 445/445, root TypeScript passed, the full workspace test command passed,
+the working App Store validator passed, and a frozen pnpm 10.34.5 install passed.
+The screenshot remains only in `/tmp`; this is local simulator evidence, not an
+EAS-signed archive, TestFlight result, physical-device result, completed
+password reset, or App Review evidence.
+
 ### Superseding native age-bridge simulator result — recorded `2026-08-08T21:46:02Z`
 
 An arm64 Release simulator build, signed locally and built with the EAS
@@ -318,10 +352,12 @@ release-configuration suite passed 15/15 tests.
    Direct live TLS attestation is complete.
 4. Preserve the passing exact-build and Clerk proxy-health checks, and repeat
    them after any future publish.
-5. Resolve the native Clerk direct-host TLS gap, exercise the full native
+5. Preserve the tested native same-origin proxy patch, exercise the full native
    password-recovery flow, and validate Apple's
    Declared Age Range entitlement/API on the exact physical-device/TestFlight
-   build. Signup email/code and the local simulator bridge are complete.
+   build. Signup email/code, the local age bridge, and native proxy routing are
+   complete. Clerk's optional direct host remains a provider issue and must not
+   replace or bypass CUT's working proxy.
 6. Generate the first signed production build and inspect its embedded privacy
    manifests, SDKs, entitlements, and permissions.
 7. Complete physical-device and TestFlight purchase, restore, deletion, adult

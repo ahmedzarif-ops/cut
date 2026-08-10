@@ -108,7 +108,16 @@
   handshake before serving a certificate. Clerk shows the primary domain, DNS,
   and proxy as Verified but marks that direct host Optional. An existing Clerk
   support ticket was acknowledged on August 9, with no technical response yet.
-  Preserve the working proxy and instance. Exact signed-device password recovery and
+  Preserve the working proxy and instance. At `2026-08-10T08:30:11Z`, an
+  EAS-production-environment arm64 Release simulator build based on `d8cd698`
+  plus the candidate patch
+  verified a reproducible `@clerk/expo` patch that forwards CUT's existing
+  proxy URL into both native SDK bridges. A newly created zero-user iOS 27
+  simulator opened the real `Welcome back` UI, and exact-process logs showed
+  successful TLS and HTTP 200 only through `getcutos.com/api/__clerk`, with no
+  direct-host request or TLS failure. No email, code, password, account
+  identifier, or external message was entered or sent. Focused tests pass 8/8
+  and the mobile suite passes 445/445. Exact signed-device password recovery and
   physical-device/TestFlight Declared Age Range entitlement/API validation
   remain open.
 - App Review access is now a target-bound release gate: its controlled window

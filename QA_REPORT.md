@@ -4,7 +4,7 @@
 > exercised in the running iOS simulator; hardware behavior on a real iPhone.
 > This report does not claim PASS for anything that was not actually run.
 
-## Current launch addendum — August 8, 2026
+## Current launch addendum — August 10, 2026
 
 - **1,392/1,392 automated tests pass:** 300 release operations, 61 App Store, 33
   domain, 4 database, 438 mobile, and 556 API.
@@ -152,6 +152,19 @@
   excluding the removed native instructions; this is an unsigned structural
   rehearsal, not TestFlight evidence. An exact signed physical-device reset
   remains pending. The development tenant has Strict enumeration protection enabled.
+- A later EAS-production-environment arm64 Release simulator build based on
+  `d8cd698` plus the candidate patch applies a reproducible pnpm repair to
+  `@clerk/expo` 4.2.0 so
+  the configured same-origin proxy reaches both native Clerk SDK bridges. On a
+  newly created zero-user iOS 27 simulator, CUT opened the real `Welcome back`
+  UI. Exact-process logs showed successful TLS and HTTP 200 through
+  `getcutos.com/api/__clerk`, with no request to the failing direct host. A
+  prior disposable simulator's invalid local session received HTTP 401 and was
+  deleted; the preserved release-QA simulator and server account were not
+  changed. No email, code, password, account identifier, or external message
+  was entered or sent. Proxy/recovery tests pass 8/8 and the mobile suite passes
+  445/445. This remains local Sign-to-Run-Locally evidence, not a completed
+  reset, signed EAS archive, TestFlight result, or physical-device result.
 - Clerk production now uses free-Hobby application
   `app_3HeFFYD0GpUEjcPIlOwNYXAKUmo`, production instance
   `ins_3HeFLfOAbfStrVB4eW5b7sYOeAq`, and domain record

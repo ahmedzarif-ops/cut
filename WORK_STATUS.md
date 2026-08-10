@@ -1,6 +1,6 @@
 # CUT OS — Work Status
 
-**Updated:** August 8, 2026
+**Updated:** August 10, 2026
 
 **Working branch:** `codex/app-store-v1`
 
@@ -334,8 +334,19 @@ launch gate.
   regression coverage and a production-environment iOS Hermes export confirm
   the custom flow is bundled and the removed native instructions are absent;
   exact signed-device request, code, password, session, and no-sign-up-transfer
-  QA remains pending. Pre-cutover binaries are ineligible and TestFlight still
-  has zero builds.
+  QA remains pending. At `2026-08-10T08:30:11Z`, an EAS-production-environment
+  arm64 Release simulator build based on `d8cd698` plus the candidate patch
+  verified a
+  reproducible `@clerk/expo` patch that forwards CUT's existing proxy URL into
+  the native iOS and Android Clerk SDK bootstrap. On a newly created zero-user
+  iOS 27 simulator, the app opened the real `Welcome back` UI; process-specific
+  logs showed successful TLS and HTTP 200 through
+  `getcutos.com/api/__clerk`, with no direct-host request or TLS failure. The
+  complete mobile suite passes 445/445. No email, code, password, account
+  identifier, or external message was entered or sent. This is local
+  Sign-to-Run-Locally evidence only; physical-device/TestFlight reset QA remains
+  pending. Pre-cutover binaries are ineligible and TestFlight still has zero
+  builds.
 - Replit contains the exact CUT project, Apple app, entitlement, and offering
   REST IDs as non-secret configurations and the RevenueCat server API v2
   replacement secret saved masked. Replacement key
