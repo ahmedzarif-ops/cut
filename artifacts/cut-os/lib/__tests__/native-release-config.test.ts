@@ -325,13 +325,13 @@ describe("native release configuration", () => {
     expect(easConfig.build.production.autoIncrement).toBe(true);
   });
 
-  it("pins one EAS, Node, pnpm, and Corepack toolchain across build profiles", () => {
+  it("pins EAS, Node, and the Corepack-managed pnpm toolchain across build profiles", () => {
     expect(easConfig.cli.version).toBe("21.4.0");
     expect(easConfig.build.base).toEqual({
       node: "24.14.0",
-      pnpm: "10.34.5",
       corepack: true,
     });
+    expect(easConfig.build.base).not.toHaveProperty("pnpm");
     for (const profile of ["development", "preview", "production"] as const) {
       expect(easConfig.build[profile].extends).toBe("base");
     }
