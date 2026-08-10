@@ -227,6 +227,22 @@ tester status remained present on August 10 after the maintenance window, so
 the current evidence does not attribute CUT's problem to an active reported
 platform incident.
 
+## Superseding build 3 release eligibility
+
+Build 3 remains valid Apple processing and assignment evidence, and the Apple
+support case above remains open. A later local authenticated-session regression
+proved that build 3's source predates the same-session Clerk refresh repair
+required after bearer-token expiry. It is therefore ineligible as the release
+candidate even if Apple repairs its internal tester availability. Do not use a
+successful build 3 installation as release acceptance and do not attach its
+screenshots or QA to the final submission record.
+
+The local replacement candidate and its bounded, non-TestFlight evidence are
+recorded in
+[local-auth-refresh-candidate-2026-08-10.md](local-auth-refresh-candidate-2026-08-10.md).
+A fresh production build must be created only after the repair is committed and
+the exact commit passes CI.
+
 ## Remaining release boundary
 
 Build processing and the age questionnaire are complete, but this evidence does

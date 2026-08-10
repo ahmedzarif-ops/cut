@@ -217,6 +217,17 @@ section:
   `Account check needed` loop only; exact signed-device password recovery,
   purchase/restore, Apple age API, and TestFlight QA remain pending. No reply was
   sent to Clerk.
+- A stronger cold-relaunch check later exposed the remaining failure after the
+  short-lived Clerk bearer token had expired. The candidate now clears and
+  touches only the same active Clerk session before the coordinator's single
+  cache-bypassing refresh and safe GET replay. Installed over the preserved
+  authenticated simulator without an uninstall, it reached the `$4.99 per
+month` paywall, stayed there beyond token expiry, and returned there after a
+  cold relaunch. The complete mobile suite passes 462/462, the App Store and
+  screenshot suite passes 64/64, root TypeScript passes, and no fatal or crash
+  line was observed. Build 3 predates this repair and is ineligible; an exact
+  replacement EAS/TestFlight build remains required. See
+  [local-auth-refresh-candidate-2026-08-10.md](app-store/evidence/local-auth-refresh-candidate-2026-08-10.md).
 - Clerk production now uses free-Hobby application
   `app_3HeFFYD0GpUEjcPIlOwNYXAKUmo`, production instance
   `ins_3HeFLfOAbfStrVB4eW5b7sYOeAq`, and domain record

@@ -60,6 +60,17 @@ not a public-launch readiness claim.
   email and gave no response-time guarantee. The case requested repair or
   diagnosis of the contradictory internal tester/build relationship and did
   not send another invitation or change App Store state.
+- A later authenticated simulator regression proved that build 3's source
+  lacks the session-refresh repair needed after a short-lived Clerk bearer
+  token is rejected. A local candidate now refreshes the same active Clerk
+  session before the single allowed 401 replay. It stayed on the real `$4.99
+per month` paywall beyond token expiry and returned to that screen after a
+  cold relaunch, with 462/462 mobile tests, 64/64 App Store/screenshot tests,
+  the working validator, and the full TypeScript check passing. Build 3 remains
+  valid Apple processing evidence but is no longer an eligible release
+  candidate. A fresh production build from the committed, green repair is
+  required. See
+  [local-auth-refresh-candidate-2026-08-10.md](app-store/evidence/local-auth-refresh-candidate-2026-08-10.md).
 - The credential-free App Review Notes template now pre-resolves every stable
   build, category, product, price, URL, and network fact. It is 3,156 UTF-8
   bytes with 12 placeholders remaining only for sensitive contact/review-
@@ -415,9 +426,10 @@ launch gate.
   EAS-production-environment arm64 Release simulator build reached the real CUT
   OS Pro Monthly `$4.99 per month` screen and remained alive on the same screen
   for more than 70 seconds. Authenticated requests remain no-store; tokens are
-  never persisted or logged. Physical-device/TestFlight reset and purchase QA
-  remain pending. Pre-cutover binaries are ineligible; exact build 3 is the
-  only current release candidate assigned in TestFlight.
+  never persisted or logged. A later cold-relaunch regression required the
+  same-session refresh repair recorded above. Physical-device/TestFlight reset
+  and purchase QA remain pending. Build 3 remains assigned in TestFlight but is
+  ineligible for release; no current Apple-processed release candidate exists.
 - Replit contains the exact CUT project, Apple app, entitlement, and offering
   REST IDs as non-secret configurations and the RevenueCat server API v2
   replacement secret saved masked. Replacement key
@@ -452,14 +464,18 @@ launch gate.
 
 ## Highest-priority next slice
 
-1. Have the owner install exact TestFlight build 3 on a physical iPhone and run
-   the credential-safe authentication, age, purchase, restore, deletion,
-   accessibility, relaunch, offline, and account-switch matrix.
+1. Commit the authenticated-session refresh repair, require exact-head green
+   CI, then create a fresh production build. After Apple processes and assigns
+   that replacement, have the owner install the exact TestFlight binary on a
+   physical iPhone and run the credential-safe authentication, age, purchase,
+   restore, deletion, accessibility, relaunch, offline, and account-switch
+   matrix.
 2. Capture the exact-build 6.9-inch listing set and subscription review image,
    inspect every image for personal data, and upload only approved PNG bytes.
 3. Keep the published App Privacy and approved content, medical, tax, DSA, and
-   EULA declarations bound to exact build 3. Complete only the remaining App
-   Review contact/review-account access without claiming professional approval.
+   EULA declarations bound to the replacement exact build. Complete only the
+   remaining App Review contact/review-account access without claiming
+   professional approval.
 4. Attach the first subscription to version 1.0.0 only after its review image
    and exact-build purchase/restore evidence are complete.
 5. Resolve every release validator error, obtain explicit owner confirmation,
@@ -483,8 +499,9 @@ sensitive-data apps toward legal-entity submission. Preliminary name screening
 also found a crowded same-market `CUT` field, so qualified `CUT OS` clearance
 remains open. Apple's Paid Apps Agreement, banking, and U.S. Form W-9 are active
 and evidence-confirmed. RevenueCat Decision 3 owner authorization is also
-confirmed. Apple signing and EAS/Apple authentication are complete; exact build
-3 is valid and assigned to internal TestFlight, while physical-iPhone QA,
+confirmed. Apple signing and EAS/Apple authentication are complete; build 3 is
+valid and assigned to internal TestFlight but is ineligible after the
+session-refresh repair, while replacement-build creation, physical-iPhone QA,
 screenshots, review access, Submit for Review, and public release remain
 owner-controlled gates. The approved App Privacy, content-rights, medical,
 tax, DSA, and Standard-EULA decisions are now live. The owner has confirmed an

@@ -367,6 +367,19 @@ TestFlight behavior, or App Review readiness. The support snapshot is an
 upstream preview and must remain pinned exactly until Clerk publishes and CUT
 validates a supported release replacement.
 
+### Superseding cold-relaunch session refresh — `2026-08-10T23:00:44Z`
+
+The earlier more-than-70-second foreground result did not exercise a cold
+relaunch after token expiry. That stronger check exposed a remaining 401
+recovery failure. The candidate now clears and touches only the same active
+Clerk session before the existing single forced token refresh and safe GET
+replay. Installed over the preserved authenticated simulator without an
+uninstall, it reached the real paywall, remained there beyond token expiry, and
+returned there after termination and cold launch. No token or personal datum
+was logged or recorded. Build 3 predates this repair and is ineligible; a fresh
+production/TestFlight build is required. Full bounded evidence is in
+[local-auth-refresh-candidate-2026-08-10.md](local-auth-refresh-candidate-2026-08-10.md).
+
 ### Superseding native age-bridge simulator result — recorded `2026-08-08T21:46:02Z`
 
 An arm64 Release simulator build, signed locally and built with the EAS

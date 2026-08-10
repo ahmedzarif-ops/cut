@@ -38,6 +38,14 @@ Available` despite bidirectional group/build assignment. No second email was
   diagnosis of the contradictory tester/build relationship without another
   invitation or App Store mutation. Apple-side availability, acceptance, and
   exact-build installation remain open.
+- Build 3 is no longer release-eligible even though Apple still reports it
+  valid and assigned. Its source predates the same-session Clerk refresh repair
+  required after bearer-token expiry. A local EAS-production-environment
+  Release simulator candidate passed initial access, more-than-one-minute
+  access, and cold relaunch after expiry on the preserved authenticated
+  account; 462 mobile tests, 64 App Store/screenshot tests, the working
+  validator, and full TypeScript pass. The bounded evidence is
+  [local-auth-refresh-candidate-2026-08-10.md](../../app-store/evidence/local-auth-refresh-candidate-2026-08-10.md).
 - The credential-free App Review Notes template now has all stable build,
   category, product, price, URL, and network facts resolved. It remains unsaved
   with 12 placeholders only for sensitive contact/review-account data and the
@@ -264,7 +272,8 @@ Available` despite bidirectional group/build assignment. No second email was
    only PITR control without a separately approved destructive recovery plan.
    Complete exact-build Clerk/RevenueCat acceptance only when its remaining
    prerequisites can pass.
-6. Install exact TestFlight build 3 and complete physical-iPhone
+6. Commit the same-session refresh repair, require green exact-head CI, create
+   and assign a fresh production/TestFlight build, and complete physical-iPhone
    authentication, recovery, purchase, restore, deletion, accessibility, and
    screenshot evidence before App Review.
 
@@ -276,8 +285,9 @@ Available` despite bidirectional group/build assignment. No second email was
   no push-notification key, local credentials file, or additional capability
   was created.
 - Exact EAS production build 3 is valid in App Store Connect, assigned to
-  internal TestFlight, and selected for version 1.0.0. Every pre-Clerk-cutover
-  binary is ineligible for release.
+  internal TestFlight, and selected for version 1.0.0, but it predates the
+  session-refresh repair and is ineligible for release. Every pre-Clerk-cutover
+  binary is also ineligible.
 
 ## LOCKED SAFETY BOUNDARIES
 

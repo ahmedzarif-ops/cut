@@ -54,6 +54,54 @@ describe("AuthTokenCoordinator", () => {
     expect(provider).toHaveBeenNthCalledWith(2, { skipCache: true });
   });
 
+  it("prepares one native session refresh before parallel forced reads", async () => {
+    let releasePreparation!: () => void;
+    const preparation = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          releasePreparation = resolve;
+        }),
+    );
+    const provider = vi.fn(async () => "refreshed-token");
+    const coordinator = new AuthTokenCoordinator(
+      provider,
+      Date.now,
+      10_000,
+      preparation,
+    );
+
+    const first = coordinator.getToken({ skipCache: true });
+    const second = coordinator.getToken({ skipCache: true });
+    await vi.waitFor(() => expect(preparation).toHaveBeenCalledOnce());
+    expect(provider).not.toHaveBeenCalled();
+
+    releasePreparation();
+    await expect(Promise.all([first, second])).resolves.toEqual([
+      "refreshed-token",
+      "refreshed-token",
+    ]);
+    expect(provider).toHaveBeenCalledOnce();
+  });
+
+  it("still asks Clerk for a refreshed token when session touch fails", async () => {
+    const preparation = vi.fn(async () => {
+      throw new Error("touch failed");
+    });
+    const provider = vi.fn(async () => "provider-token");
+    const coordinator = new AuthTokenCoordinator(
+      provider,
+      Date.now,
+      10_000,
+      preparation,
+    );
+
+    await expect(coordinator.getToken({ skipCache: true })).resolves.toBe(
+      "provider-token",
+    );
+    expect(preparation).toHaveBeenCalledOnce();
+    expect(provider).toHaveBeenCalledWith({ skipCache: true });
+  });
+
   it("uses the latest provider implementation without replacing the coordinator", async () => {
     let currentMs = 1_000;
     let provider: AuthTokenGetter = vi.fn(async () => "initial-token");

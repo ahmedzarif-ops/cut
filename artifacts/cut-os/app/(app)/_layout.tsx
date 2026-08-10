@@ -1,4 +1,4 @@
-import { useAuth } from "@clerk/expo";
+import { useAuth, useSession } from "@clerk/expo";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetAccountDeletionStatusQueryKey,
@@ -107,10 +107,13 @@ function isSecurityGateQuery(queryKey: readonly unknown[]): boolean {
 export default function AppLayout() {
   const { isLoaded, isSignedIn, userId, sessionId, getToken, signOut } =
     useAuth();
+  const { session } = useSession();
   const qc = useQueryClient();
   const pathname = usePathname();
   const getTokenRef = React.useRef(getToken);
   getTokenRef.current = getToken;
+  const sessionRef = React.useRef(session);
+  sessionRef.current = session;
 
   const [authReadyUserId, setAuthReadyUserId] = React.useState<string | null>(
     null,
@@ -144,8 +147,20 @@ export default function AppLayout() {
     // Clerk may replace the getToken function while its native client syncs.
     // Read the latest implementation through a ref so that a harmless Clerk
     // render cannot tear down the coordinator and abort in-flight gate queries.
-    const tokenCoordinator = new AuthTokenCoordinator((options) =>
-      getTokenRef.current(options),
+    const tokenCoordinator = new AuthTokenCoordinator(
+      (options) => getTokenRef.current(options),
+      Date.now,
+      10_000,
+      async () => {
+        const activeSession = sessionRef.current;
+        if (!activeSession) return;
+
+        // A native session may remain signed in after its short-lived bearer
+        // token is rejected. Touching the same active Clerk session refreshes
+        // its server-backed client state before the one allowed 401 replay.
+        activeSession.clearCache();
+        await activeSession.touch({ intent: "focus" });
+      },
     );
     setAuthTokenGetter(async (options) => {
       try {

@@ -6,6 +6,7 @@ import type {
 const DEFAULT_TOKEN_REUSE_MS = 10_000;
 
 type ProviderTokenGetter = AuthTokenGetter;
+type ForceRefreshPreparation = () => Promise<void> | void;
 
 interface CachedToken {
   token: string;
@@ -28,6 +29,7 @@ export class AuthTokenCoordinator {
     private readonly providerGetToken: ProviderTokenGetter,
     private readonly now: () => number = Date.now,
     private readonly tokenReuseMs = DEFAULT_TOKEN_REUSE_MS,
+    private readonly prepareForceRefresh?: ForceRefreshPreparation,
   ) {}
 
   getToken(options?: AuthTokenGetterOptions): Promise<string | null> {
@@ -58,9 +60,23 @@ export class AuthTokenCoordinator {
     if (existing) return existing;
 
     const request = Promise.resolve()
-      .then(() =>
-        this.providerGetToken(forceRefresh ? { skipCache: true } : undefined),
-      )
+      .then(async () => {
+        if (forceRefresh && this.prepareForceRefresh) {
+          // Native Clerk can preserve a signed-in session while its one-minute
+          // bearer token has gone stale. Give the provider a chance to touch
+          // that session before asking for a cache-bypassing replacement. A
+          // failed touch must not suppress Clerk's normal getToken recovery.
+          try {
+            await this.prepareForceRefresh();
+          } catch {
+            // Continue with the provider's explicit skip-cache read.
+          }
+        }
+
+        return this.providerGetToken(
+          forceRefresh ? { skipCache: true } : undefined,
+        );
+      })
       .then((token) => {
         if (!this.disposed && token) {
           this.cached = {
