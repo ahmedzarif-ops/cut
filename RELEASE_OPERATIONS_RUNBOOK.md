@@ -199,7 +199,7 @@ git diff --exit-code -- lib/db/migrations
 git status --porcelain --untracked-files=all -- lib/db/migrations
 pnpm --filter @workspace/cut-os exec expo install --check
 pnpm --filter @workspace/cut-os exec expo-doctor
-pnpm --filter @workspace/cut-os run validate:legal-site
+pnpm --filter @workspace/cut-os run validate:legal-site:release
 ```
 
 The first command and the migration-scoped status command must print nothing.

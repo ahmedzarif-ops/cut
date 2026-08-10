@@ -64,8 +64,8 @@ jobs:
         run: |
           pnpm --filter @workspace/cut-os exec expo install --check
           pnpm --filter @workspace/cut-os exec expo-doctor
-      - name: Verify draft legal hosting remains fail closed
-        run: pnpm --filter @workspace/cut-os run validate:legal-site
+      - name: Verify approved legal source and fail-closed runtime contract
+        run: pnpm --filter @workspace/cut-os run validate:legal-site:release
       - name: Prepare a non-secret production bundle fixture
         shell: bash
         run: |

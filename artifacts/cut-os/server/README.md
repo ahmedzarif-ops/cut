@@ -55,10 +55,12 @@ pnpm run validate:legal-site:release
 pnpm run validate:legal-site:live
 ```
 
-The first command verifies the unavailable-mode safety markers and
-zero-JavaScript boundary. The release command fails until an authorized
-publication path is complete. The live command uses the configured production URLs
-and fails unless the exact approved pages and stylesheet are publicly served.
+The first command verifies the legacy draft-source safety markers and
+zero-JavaScript boundary. The current launch source uses the release command,
+which requires an authorized publication path while the runtime remains
+fail-closed unless `LEGAL_SITE_PUBLICATION_STATUS=approved`. The live command
+uses the configured production URLs and fails unless the exact approved pages
+and stylesheet are publicly served.
 The EAS pre-install hook always validates release configuration; production also
 runs both approved-source and live-site checks, while development and preview do
 not require approved legal pages.
