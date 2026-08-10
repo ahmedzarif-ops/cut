@@ -114,7 +114,14 @@ describe("app middleware order", () => {
       const draftLegalPage = await request(app).get(route);
       expect(draftLegalPage.status).toBe(503);
       expect(draftLegalPage.headers["x-robots-tag"]).toContain("noindex");
-      expect(draftLegalPage.text).toContain('data-publication-status="draft"');
+      // The source templates are publication-ready, but the runtime switch
+      // remains fail-closed until LEGAL_SITE_PUBLICATION_STATUS is approved.
+      expect(draftLegalPage.text).toContain(
+        'data-publication-status="approved"',
+      );
+      expect(draftLegalPage.text).toContain(
+        'data-professional-review-status="owner-deferred-post-launch"',
+      );
     }
 
     const apiHealth = await request(app).get("/api/healthz");
