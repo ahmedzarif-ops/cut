@@ -34,8 +34,11 @@ section:
   Holder tester was re-added. App Store Connect reported one tester added, but
   the owner then reported no invitation received and the live tester row still
   showed `No Builds Available` despite bidirectional group/build assignment. No
-  second email was sent. Apple-side availability, acceptance, and exact-build
-  installation remain pending.
+  second email was sent. With explicit owner approval, Apple Developer Support
+  case `20000133994444` was submitted at `2026-08-10T22:22:22Z` to request
+  repair or diagnosis of that contradictory internal tester/build state. Apple
+  will reply by email and provided no response-time guarantee. Apple-side
+  availability, acceptance, and exact-build installation remain pending.
 - Physical-iPhone exact-build authentication, purchase, restore, age, deletion,
   accessibility, and screenshot QA remain open. No App Review submission or
   public release is claimed.

@@ -32,8 +32,12 @@
   re-added, and App Store Connect reported one tester added. The owner then
   reported no invitation received, and the live tester row remained `No Builds
 Available` despite bidirectional group/build assignment. No second email was
-  sent. Apple-side availability, acceptance, and exact-build installation
-  remain open.
+  sent. With explicit owner approval, Apple Developer Support case
+  `20000133994444` was submitted at `2026-08-10T22:22:22Z`; Apple will reply by
+  email and gave no response-time guarantee. The case requests repair or
+  diagnosis of the contradictory tester/build relationship without another
+  invitation or App Store mutation. Apple-side availability, acceptance, and
+  exact-build installation remain open.
 - Resolve the exact remote branch SHA and its required GitHub checks live before
   relying on a checkpoint. A commit ID embedded in this tracked handoff would
   become historical as soon as the handoff itself changes.

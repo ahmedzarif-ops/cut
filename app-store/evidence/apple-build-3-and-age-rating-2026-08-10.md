@@ -200,6 +200,24 @@ email was sent. Apple-side availability, invitation acceptance, and exact-build
 installation remain pending. No additional email is authorized by this
 evidence.
 
+### Apple Developer Support escalation
+
+At `2026-08-10T22:22:22Z`, after the owner explicitly approved contacting
+Apple Developer Support about this exact TestFlight issue, a TestFlight email
+support case was submitted. Apple assigned case ID `20000133994444` and said it
+would review the message and reply by email. The sanitized case included the
+exact app, bundle, version/build, App Store Connect build ID, internal-group
+state, tester/build contradiction, and the already completed remove/re-add and
+device-account checks. It did not include a password, verification code,
+private address, phone number, bank detail, or credential material.
+
+The support request asks Apple to refresh or repair the internal tester/build
+availability relationship, or identify the backend state preventing the
+eligible Account Holder tester from seeing build 3. This escalation did not
+send another TestFlight invitation, change the group/build assignment, submit
+the app for review, or release it. Apple's reply and a successful exact-build
+installation remain pending; Apple supplied no response-time guarantee.
+
 ## Remaining release boundary
 
 Build processing and the age questionnaire are complete, but this evidence does

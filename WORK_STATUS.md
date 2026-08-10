@@ -11,7 +11,7 @@ Automated server/domain/mobile implementation is complete. Legal/privacy,
 native-device and live-service QA, and App Store completion remain open; this is
 not a public-launch readiness claim.
 
-## Current App Store launch checkpoint — 2026-08-10T22:06:07Z
+## Current App Store launch checkpoint — 2026-08-10T22:22:22Z
 
 - Exact EAS production build 3 for version 1.0.0 is signed from commit
   `08e62232db7f81047eec5b55a184f30fb7d4162a`, processed by Apple as `VALID`
@@ -55,7 +55,11 @@ not a public-launch readiness claim.
   tester row still showed `No Builds Available` even though the group and exact
   build each cross-reference the other. No second email was sent. Apple-side
   availability, invitation acceptance, and exact-build installation remain
-  pending.
+  pending. With explicit owner approval, Apple Developer Support case
+  `20000133994444` was submitted at `2026-08-10T22:22:22Z`; Apple will reply by
+  email and gave no response-time guarantee. The case requested repair or
+  diagnosis of the contradictory internal tester/build relationship and did
+  not send another invitation or change App Store state.
 
 ## What now works
 
