@@ -20,24 +20,26 @@ Certificate secrets and provisioning contents are intentionally excluded.
 
 ## Source and hosting
 
-- The authoritative release branch and current candidate are
-  `codex/app-store-v1` at commit
-  `891a9bb1fdd452a133bf4defa4db70d4592aa25e`.
-- Replit deployment `4186bf93` completed at August 8, 2026, 5:31 PM
-  America/Chicago. The Provision, Security, Build, Bundle, and Promote stages
-  each reported success.
+- The exact `codex/app-store-v1` code commit verified and deployed as the live
+  build is `a83d5ea0ae4db5dc82884929fa9b4911314f4eae`.
+- GitHub Actions run `31283711614` reports **Success** for both required checks
+  on that code commit: **CI verify** and **Release evidence boundary**. A later
+  evidence-only commit may move the branch and draft pull-request head without
+  changing the deployed build.
+- The current Replit Reserved VM deployment and log deployment ID is
+  `02619bd1`.
 - Replit's development-to-production data-copy control remained **off** after
   publish, critical-vulnerability publish blocking remained **on**, and the
   production database was connected.
-- At `2026-08-08T22:33:05Z`, bounded verification passed for the exact
-  `BUILD_SHA` at `https://getcutos.com/status`, the public root, production
-  readiness at `/api/readyz`, and the canonical Clerk proxy.
+- Post-publish bounded verification returned HTTP 200 for the exact `BUILD_SHA`
+  at `https://getcutos.com/status`, production readiness at `/api/readyz`, the
+  CSP-locked zero-JavaScript public root, and the canonical Clerk proxy.
 - `/privacy`, `/terms`, and `/support` each remained HTTP 503, as required
   while qualified publication approval remains open.
 
-This proves the bounded public identity and application-level health of the
-current deployment. It does not provide a direct production TLS-socket or
-backup-recovery result.
+This proves the bounded public identity, application-level health, and direct
+client-side production TLS attestation of the current deployment. It does not
+prove a restore drill.
 
 ## Production database transport and readiness
 
@@ -49,24 +51,56 @@ backup-recovery result.
 - A connect-only probe in the Replit editor reproduced the documented Helium
   behavior: the development endpoint rejects every forced SSL mode. That result
   is development evidence and is not evidence of a production TLS failure.
-- Current deployed build `891a9bb1fdd452a133bf4defa4db70d4592aa25e`
-  contains the production database normalization, validation,
-  startup-migration path, and migration files for the current candidate.
+- Current deployed build `a83d5ea0ae4db5dc82884929fa9b4911314f4eae`
+  contains the production database normalization, validation, startup-migration
+  path, direct TLS attestation, and migration files for the current candidate.
 - Its production entrypoint upgrades the one accepted provider URL shape from
   `sslmode=require` to `sslmode=verify-full`, rejects any non-verified final
-  configuration, completes startup migrations before binding the listener, and
-  exposes readiness only after a database query succeeds.
-- At `2026-08-08T22:33:05Z`, the exact-build `/status` check and the production
-  `/api/readyz` check both passed while Replit showed the production database
-  connected. This establishes current application-level readiness without
-  claiming direct inspection of the live TLS socket or recovery configuration.
+  configuration, creates the pool from the normalized URL, completes startup
+  migrations and exact-revision readiness, attests the live pool client's TLS
+  socket, and only then binds the listener.
+- At August 8, 2026, 6:29:33.13 PM America/Chicago, deployment `02619bd1`
+  logged `production_database_tls_attestation` with status `PASS`. Its fixed,
+  non-secret evidence booleans were `readOnlyTransaction`,
+  `verificationEnabled`, `socketEncrypted`, `peerAuthorized`,
+  `authorizationErrorAbsent`, `hostnameVerified`, and
+  `sameSocketQueryPassed`, all `true`.
 - Replit Production Database settings show point-in-time recovery **on** with a
   seven-day recovery window. A restore action is available but was not
   exercised, so no recovery drill is claimed.
+- At `2026-08-08T23:56:34Z`, Replit's authenticated technical-support form
+  confirmed receipt of a request asking whether a selected PITR timestamp can
+  be restored into a new isolated database, what usage charges and secure
+  cleanup would apply, and whether app code remains unchanged. The request
+  explicitly forbids Replit from initiating a restore, database mutation, or
+  account change.
+- Replit Support answered at `2026-08-09T00:17:01Z`: production PITR is
+  **in-place only**, has no self-service isolated restore target, does not
+  modify application code, and cannot roll forward after a restore. The Core
+  plan provides the observed seven-day history. This makes the available
+  restore action a destructive production-data decision rather than a safe
+  rehearsal control. It remains untouched; no charge or restore is claimed.
 
-Directly inspect the live TLS socket's encryption and authorization flags, and
-complete a restore drill without exposing its host, credentials, certificate
-subject, database contents, or recovery material before release.
+### Replit/Neon provider-proxy TLS incident and resolution
+
+Deployment `02619bd1` initially failed its startup gate because the first
+attestation implementation required PostgreSQL's server-side `pg_stat_ssl` view
+to report TLS. Replit's production SQL console was placed in read-only mode and
+used only for `SELECT pg_stat_ssl`; it returned `false` behind the Replit/Neon
+provider proxy and remained read-only. No data or schema mutation occurred.
+
+The corrected implementation does not use that server-side value as proof of
+the separate client-to-provider socket. On one exact pool client it opens a
+read-only transaction, runs `SELECT 1`, and requires the client configuration to
+preserve certificate and hostname verification, the socket to be encrypted and
+peer-authorized with no authorization error, and the socket SNI server name to
+equal the configured DNS hostname. The successful sanitized startup event above
+and the exact-build live probes close the direct production TLS gate.
+
+Do not exercise the in-place restore without a separately approved destructive
+production-data recovery plan. The still-pending recovery gate must not expose
+the database host, credentials, certificate details, contents, or recovery
+material.
 
 ## EAS production environment
 
@@ -147,10 +181,10 @@ control was rechecked **off** immediately before publishing. EAS production now
 targets this tenant and the exact same-origin proxy without recording any key
 material here.
 
-Commit `891a9bb1fdd452a133bf4defa4db70d4592aa25e` is the deployed source identity
-for Replit deployment `4186bf93`. At `2026-08-08T22:33:05Z`, bounded live checks
-passed for the exact `/status` `BUILD_SHA`, `/`, `/api/readyz`, and the canonical
-Clerk proxy; the proxy check matched production domain ID
+Commit `a83d5ea0ae4db5dc82884929fa9b4911314f4eae` is the deployed source identity
+for Replit deployment `02619bd1`. Bounded live checks passed for the exact
+`/status` `BUILD_SHA`, `/`, `/api/readyz`, and the canonical Clerk proxy; the
+proxy check matched production domain ID
 `dmn_3HeFLeuWzWg9xKNeG4o6PUUVHlb`. Any binary created before this cutover is
 ineligible for release. App Store Connect still has zero TestFlight builds, so
 no signed-build authentication or physical-device claim is made.
@@ -210,9 +244,28 @@ other account detail is recorded.
 This closes real signup-email delivery and successful user-entered verification-
 code acceptance. It does not prove password recovery, the Apple age/native
 bridge, a fresh native-Clerk DNS resolution, signed-build behavior, or
-TestFlight QA. The authenticated JavaScript path worked; the current simulator's
-native SDK still has a separate stale DNS cache. Native password recovery and
-the Apple age/native bridge remained active gates at that observation point.
+TestFlight QA. The authenticated JavaScript path worked. Native password
+recovery and the Apple age/native bridge remained active gates at that
+observation point.
+
+### Native Clerk Frontend API TLS gap — open
+
+At `2026-08-10T07:27:51Z`, a bounded certificate-safe comparison showed two
+different paths:
+
+- `https://getcutos.com/api/__clerk/v1/client` returned HTTP 200 with certificate
+  verification successful;
+- `https://clerk.getcutos.com/v1/client`, the direct host used by the native
+  Clerk SDK, failed during TLS negotiation before serving a certificate.
+
+Public DNS resolves the required Frontend API CNAME, and Clerk shows the primary
+domain, DNS configuration, and proxy as Verified, but its dashboard marks
+`clerk.getcutos.com` Optional. The JavaScript signup path through the verified
+proxy remains working; native `AuthView` recovery is not release evidence. Do
+not remove the proxy, change the domain, or replace the instance to work around
+this gap. An existing Clerk support ticket titled **Native AuthView TLS error**
+was acknowledged at `2026-08-09T16:17:44Z`; no technical response is recorded.
+No secret, account detail, or certificate body is stored here.
 
 ### Superseding native age-bridge simulator result — recorded `2026-08-08T21:46:02Z`
 
@@ -237,12 +290,13 @@ release-configuration suite passed 15/15 tests.
 
 1. Qualified approval and publication of Privacy, Terms, and Support pages.
 2. Add the three approved public legal URLs to EAS production.
-3. Revalidate the exact-candidate production database, including direct live
-   TLS socket encryption/authorization evidence, without exposing the database
-   URL.
+3. Define and separately approve a safe destructive production-data recovery
+   plan before exercising Replit's in-place-only, no-roll-forward PITR control.
+   Direct live TLS attestation is complete.
 4. Preserve the passing exact-build and Clerk proxy-health checks, and repeat
    them after any future publish.
-5. Exercise the full native password-recovery flow and validate Apple's
+5. Resolve the native Clerk direct-host TLS gap, exercise the full native
+   password-recovery flow, and validate Apple's
    Declared Age Range entitlement/API on the exact physical-device/TestFlight
    build. Signup email/code and the local simulator bridge are complete.
 6. Generate the first signed production build and inspect its embedded privacy

@@ -1,6 +1,6 @@
 # CUT OS — Work Status
 
-**Updated:** August 4, 2026
+**Updated:** August 8, 2026
 
 **Working branch:** `codex/app-store-v1`
 
@@ -171,8 +171,8 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 1,373 tests** (release operations 300, App Store
-  artifacts 61, domain 33, database 4, mobile 438, API 537).
+- `pnpm run test`: **PASS — 1,392 tests** (release operations 300, App Store
+  artifacts 61, domain 33, database 4, mobile 438, API 556).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
@@ -249,9 +249,12 @@ launch gate.
 ## Current live launch setup
 
 - Source routing: draft pull request #9 remains unmerged on
-  `codex/app-store-v1`. Resolve the remote SHA and latest exact-head required
-  checks live; do not treat a commit embedded in this tracked file as current
-  release evidence.
+  `codex/app-store-v1`. The exact code commit verified and deployed at this
+  checkpoint is `a83d5ea0ae4db5dc82884929fa9b4911314f4eae`; GitHub Actions run
+  `31283711614` reports **Success** for both **CI verify** and **Release evidence
+  boundary** on that commit. Documentation-only commits may move the branch and
+  pull-request head without changing the deployed build, so re-resolve all three
+  identities and checks before the next publish.
 - Apple Developer Program membership is active as an Individual account for
   Account Holder Zarif Ahmed. The explicit bundle ID, CUT OS App Store Connect
   app, free U.S.-only Public distribution, iPhone-only compatibility choices,
@@ -271,19 +274,21 @@ launch gate.
   assignment or QA is claimed.
 - Replit hosting is owner-approved up to **$20/month before tax** and phone
   verification is complete. Replit is now serving exact source commit
-  `891a9bb1fdd452a133bf4defa4db70d4592aa25e` as deployment `4186bf93`. Replit
-  reported successful Provision, Security, Build, Bundle, and Promote stages at
-  August 8, 2026, 5:31 PM America/Chicago. After publish, the
-  development-data-copy control remained off, critical-vulnerability publish
-  blocking remained on, and the production database was connected. Production
-  point-in-time recovery is on with a seven-day window; the available restore
-  action was not exercised, so the recovery drill remains open. At
-  `2026-08-08T22:33:05Z`, bounded live checks passed for the exact `/status`
-  `BUILD_SHA`, `/`, `/api/readyz`, and the canonical Clerk proxy. `/privacy`,
-  `/terms`, and `/support` each remain 503 fail-closed pending qualified
-  publication approval. CUT continues to require `sslmode=verify-full`; direct
-  production TLS-socket evidence and the restore drill remain open. No billing
-  or charge status is asserted here.
+  `a83d5ea0ae4db5dc82884929fa9b4911314f4eae` as Reserved VM deployment
+  `02619bd1`. After publish, development-data copy remained off, critical-
+  vulnerability publish blocking remained on, and the production database was
+  connected. The corrected startup logged direct client-side TLS attestation
+  **PASS** at August 8, 2026, 6:29:33.13 PM America/Chicago. Exact-build
+  `/status`, `/`, `/api/readyz`, and canonical Clerk proxy checks returned 200;
+  `/privacy`, `/terms`, and `/support` each remain 503 fail-closed pending
+  qualified publication approval. Point-in-time recovery is on with a seven-day
+  window. Replit Support confirmed its restore is in-place only, has no isolated
+  target, leaves app code unchanged, and cannot roll forward. The destructive
+  control remains untouched pending a separately approved recovery plan. The
+  read-only provider-proxy incident and sanitized TLS
+  evidence are recorded once in the
+  [production infrastructure evidence](app-store/evidence/production-launch-infrastructure-2026-08-08.md).
+  No billing or charge status is asserted here.
 - Clerk production now uses the replacement free-Hobby application
   `app_3HeFFYD0GpUEjcPIlOwNYXAKUmo`, production instance
   `ins_3HeFLfOAbfStrVB4eW5b7sYOeAq`, and domain
@@ -302,13 +307,12 @@ launch gate.
   DNS verification at `2026-08-08T21:21:47Z` confirmed all five Clerk CNAMEs
   through an authoritative nameserver, Cloudflare, and Google; Clerk now shows
   the primary domain, DNS configuration, and proxy as Verified. No apex A, TXT,
-  or DMARC record changed and no charge was incurred. DNS is no longer the
-  blocker. At approximately `2026-08-08T21:27Z`, a user-provided simulator
+  or DMARC record changed and no charge was incurred. At approximately
+  `2026-08-08T21:27Z`, a user-provided simulator
   observation confirmed real signup-email delivery, successful user entry of
   the verification code, and an authenticated session reaching
   `Apple age check needed`; no account detail is recorded. The authenticated
-  JavaScript path
-  worked; that simulator's native SDK retained a separate stale DNS cache. A
+  JavaScript path worked. A
   superseding EAS-production-environment arm64 Release simulator build, signed
   locally, linked and resolved `CutDeclaredAgeRange`, preserved the authenticated
   session to the DOB gate, and returned `not_required` from `getStatusAsync()`
@@ -317,8 +321,16 @@ launch gate.
   evidence. `ios-simulator` and `production` share the pinned 26.4 EAS image,
   and the targeted native configuration suite passes 15/15. Native password
   recovery plus physical-device/TestFlight Apple Declared Age Range entitlement
-  and API validation remain open. Pre-cutover binaries are ineligible and
-  TestFlight still has zero builds.
+  and API validation remain open. A bounded recheck at
+  `2026-08-10T07:27:51Z` proved the canonical proxy still returns HTTP 200 with
+  a valid certificate while the native SDK's direct Frontend API host
+  `clerk.getcutos.com` fails during the TLS handshake before serving a
+  certificate. Clerk shows the primary domain, DNS, and proxy as Verified but
+  marks that direct host Optional. An existing Clerk ticket titled **Native
+  AuthView TLS error** was acknowledged on August 9; no technical response is
+  recorded. Do not remove the working proxy or change the instance. Native
+  recovery remains blocked pending a supported no-downtime resolution.
+  Pre-cutover binaries are ineligible and TestFlight still has zero builds.
 - Replit contains the exact CUT project, Apple app, entitlement, and offering
   REST IDs as non-secret configurations and the RevenueCat server API v2
   replacement secret saved masked. Replacement key
@@ -357,9 +369,12 @@ Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
 Non-binding fixed-fee quote requests are now out to six Texas legal routes and
-four registered-dietitian candidates. The outreach explicitly authorizes no
-billable work, engagement, or payment; responses remain pending and are tracked
-in `legal-site/PROFESSIONAL_REVIEW_OUTREACH.md`. App Store Connect now uses
+four registered-dietitian candidates. Authenticated Sent evidence recovered the
+nine direct-email timestamps. One law firm offered a brief free Monday intake
+call before a proposal; a reply requested available Central Time slots and call
+length while expressly authorizing no engagement or paid work. No tailored
+quote, referral, engagement, or payment is recorded. The exact tracker is
+`legal-site/PROFESSIONAL_REVIEW_OUTREACH.md`. App Store Connect now uses
 `https://getcutos.com` for the version Marketing URL, while the Support,
 Privacy, and Terms endpoints correctly remain unavailable until qualified
 approval.

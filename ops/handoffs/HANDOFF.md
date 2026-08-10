@@ -7,13 +7,18 @@
 
 - Working branch: `codex/app-store-v1`.
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
+- The exact code commit verified and deployed at this checkpoint is
+  `a83d5ea0ae4db5dc82884929fa9b4911314f4eae`; GitHub Actions run `31283711614`
+  reports **Success** for both **CI verify** and **Release evidence boundary** on
+  that commit. A later documentation-only commit may move the branch and pull-
+  request head without changing the deployed build.
 - Resolve the exact remote branch SHA and its required GitHub checks live before
   relying on a checkpoint. A commit ID embedded in this tracked handoff would
   become historical as soon as the handoff itself changes.
 - The agent must not self-merge the pull request; the owner merges or explicitly
   overrides that repository rule.
-- The current repository checkpoint passes **1,373 automated tests** (300 release
-  operations, 61 App Store, 33 domain, 4 database, 438 mobile, and 537 API), all
+- The deployed code checkpoint passes **1,392 automated tests** (300 release
+  operations, 61 App Store, 33 domain, 4 database, 438 mobile, and 556 API), all
   TypeScript checks, generated-code drift, working App Store validation,
   changed-file formatting, `.replit`/migration parsing and drift checks, Expo
   dependency health, and the clean zero-JavaScript Replit production-build
@@ -83,21 +88,27 @@
   verification at `2026-08-08T21:21:47Z` confirmed all five required Clerk
   CNAMEs through an authoritative nameserver, Cloudflare, and Google, and Clerk
   now shows the primary domain, DNS configuration, and proxy as Verified. No
-  apex A, TXT, or DMARC record changed and no charge was incurred. DNS is no
-  longer the blocker. At approximately `2026-08-08T21:27Z`, a user-provided
+  apex A, TXT, or DMARC record changed and no charge was incurred. At
+  approximately `2026-08-08T21:27Z`, a user-provided
   simulator observation confirmed real signup-email delivery, successful user
   entry of its verification code, and an authenticated session reaching
   `Apple age check needed`; no account detail is recorded. The authenticated
-  JavaScript path worked; that simulator native SDK retained a separate stale
-  DNS cache. A superseding EAS-production-environment arm64 Release simulator
+  JavaScript path worked. A superseding EAS-production-environment arm64 Release simulator
   build, signed locally, linked and resolved `CutDeclaredAgeRange`, preserved
   the authenticated session to the DOB gate, and returned `not_required` from
   `getStatusAsync()` without a crash or fatal configuration, module, or keychain
   error. No DOB or account data was entered, and its `/tmp` screenshot is
   ephemeral rather than release evidence. `ios-simulator` and `production`
   share the pinned 26.4 EAS image; the targeted native configuration suite
-  passes 15/15. Native password recovery and exact physical-device/TestFlight
-  Declared Age Range entitlement/API validation remain open.
+  passes 15/15. A bounded recheck at `2026-08-10T07:27:51Z` proved the
+  canonical proxy returns HTTP 200 with a valid certificate while the native
+  SDK's direct Frontend API host `clerk.getcutos.com` fails during the TLS
+  handshake before serving a certificate. Clerk shows the primary domain, DNS,
+  and proxy as Verified but marks that direct host Optional. An existing Clerk
+  support ticket was acknowledged on August 9, with no technical response yet.
+  Preserve the working proxy and instance. Native password recovery and exact
+  physical-device/TestFlight Declared Age Range entitlement/API validation
+  remain open.
 - App Review access is now a target-bound release gate: its controlled window
   requires Clerk production test mode, Client Trust, five reserved synthetic
   accounts, and exact-build new-device proof; public release separately
@@ -124,19 +135,19 @@
 - The owner approved Replit up to **$20/month before tax**: a $15 Reserved VM
   plus $5 of new usage-based headroom. Phone verification is complete. Replit
   now serves exact source commit
-  `891a9bb1fdd452a133bf4defa4db70d4592aa25e` as deployment `4186bf93`. Replit
-  reported successful Provision, Security, Build, Bundle, and Promote stages at
-  August 8, 2026, 5:31 PM America/Chicago. After publish, the
-  development-data-copy control remained off, critical-vulnerability publish
-  blocking remained on, and the production database was connected. Production
-  point-in-time recovery is on with a seven-day window; the available restore
-  action was not exercised, so the recovery drill remains open. At
-  `2026-08-08T22:33:05Z`, bounded live checks passed for the exact `/status`
-  `BUILD_SHA`, `/`, `/api/readyz`, and the canonical Clerk proxy. `/privacy`,
-  `/terms`, and `/support` each remain 503 fail-closed pending qualified
-  publication approval. CUT continues to require `sslmode=verify-full`; direct
-  production TLS-socket evidence and the restore drill remain open. This
-  handoff does not assert billing or charge status.
+  `a83d5ea0ae4db5dc82884929fa9b4911314f4eae` as Reserved VM deployment
+  `02619bd1`. After publish, development-data copy remained off, critical-
+  vulnerability publish blocking remained on, and the production database was
+  connected. The corrected startup logged direct client-side TLS attestation
+  **PASS** at August 8, 2026, 6:29:33.13 PM America/Chicago. Exact-build
+  `/status`, `/`, `/api/readyz`, and canonical Clerk proxy checks returned 200;
+  `/privacy`, `/terms`, and `/support` each remain 503 fail-closed pending
+  qualified publication approval. Point-in-time recovery is on with a seven-day
+  window. Replit Support confirmed its restore is in-place only, has no isolated
+  target, leaves app code unchanged, and cannot roll forward. The destructive
+  control remains untouched pending a separately approved recovery plan. See the single detailed
+  [production infrastructure incident record](../../app-store/evidence/production-launch-infrastructure-2026-08-08.md).
+  This handoff does not assert billing or charge status.
 - Apple Developer Program membership is active as an Individual account with
   Zarif Ahmed as Account Holder. App Store Connect access and the CUT OS app
   record are active. Paid Apps shows an August 4, 2026 through August 3, 2027
@@ -185,7 +196,7 @@
 1. Keep PR #9 draft and require exact GitHub CI success after every new commit;
    never rely on a green run from an older revision and never self-merge.
 2. Keep Replit on exact deployed commit
-   `891a9bb1fdd452a133bf4defa4db70d4592aa25e`, verify that the Publishing draft
+   `a83d5ea0ae4db5dc82884929fa9b4911314f4eae`, verify that the Publishing draft
    still says Reserved VM after every sync, and recheck that development-data
    copy remains off before every future publish.
 3. Keep the live active Apple membership, Paid Apps, banking, tax, and
@@ -196,8 +207,10 @@
    destinations. Keep server-notification delivery and exact-build purchase/
    restore as separate open gates.
 5. Preserve the passing Replit status/readiness and replacement-Clerk proxy
-   checks. Complete direct production TLS/recovery evidence and exact-build
-   Clerk/RevenueCat acceptance only when their remaining prerequisites can pass.
+   checks and direct production TLS attestation. Do not exercise the in-place-
+   only PITR control without a separately approved destructive recovery plan.
+   Complete exact-build Clerk/RevenueCat acceptance only when its remaining
+   prerequisites can pass.
 6. Build the exact signed TestFlight candidate and complete physical-iPhone
    authentication, recovery, purchase, restore, deletion, accessibility, and
    screenshot evidence before App Review.
@@ -247,6 +260,9 @@
   override, DSA status, copyright holder/year, content-rights declaration, and
   final product-name clearance.
 - Qualified legal/privacy and nutrition/allergen review.
+- Reviewer response state and non-binding scheduling boundaries are tracked in
+  `legal-site/PROFESSIONAL_REVIEW_OUTREACH.md`; no quote or engagement is yet
+  accepted.
 - App Review submission and manual public release.
 
 ## PERSISTENT REFERENCE

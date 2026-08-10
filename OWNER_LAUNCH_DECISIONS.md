@@ -244,7 +244,7 @@ name, GitHub account, or email display name. The owner-approved Replit hosting
 draft originally established `cut-ahmedzarif1.replit.app` as the working v1
 provider address. **Superseding verified state August 8, 2026:**
 `getcutos.com` is now the canonical live host and serves exact source commit
-`d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4`. Public legal-page publication on
+`a83d5ea0ae4db5dc82884929fa9b4911314f4eae`. Public legal-page publication on
 that domain still requires qualified approval and exact-live-page evidence.
 
 The draft Privacy, Terms, and Support pages cannot be published until the
@@ -359,8 +359,11 @@ Connect or approved secret storage.
 
 **Status:** Owner cost approval and private phone verification complete;
 production application live on the approved Reserved VM at `getcutos.com` from
-exact source commit `d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4`; direct
-production TLS and recovery evidence remain open.
+exact source commit `a83d5ea0ae4db5dc82884929fa9b4911314f4eae` as deployment
+`02619bd1`. Direct production TLS attestation is complete. Replit later
+confirmed that its PITR control restores the live production database in place,
+cannot restore to an isolated target, and cannot roll forward. The destructive
+restore drill remains open and is not authorized by the hosting ceiling.
 
 The API's current rate limits and account-deletion retry scheduler are
 process-local. The fastest safe launch topology therefore keeps exactly one API
@@ -372,8 +375,12 @@ maximum is one.
 Production also requires managed PostgreSQL with verified TLS, backups or
 point-in-time recovery, and a successful restore drill. Replit has now
 provisioned the production database and is running the exact deployment above.
-Bounded status and readiness checks pass, while direct exact-candidate TLS and
-recovery evidence remain incomplete.
+Bounded status, readiness, public-root, and Clerk proxy checks pass, and the
+corrected startup TLS attestation passed. Point-in-time recovery is on with a
+seven-day window. Replit Support confirmed that the restore action is in-place
+only and cannot roll forward, so it was not exercised. The detailed
+read-only incident record and sanitized evidence are in the
+[production infrastructure evidence](app-store/evidence/production-launch-infrastructure-2026-08-08.md).
 
 **Historical verification August 4, 2026, superseded by the live August 8
 deployment above:** Replit's live publishing screen offered a public
@@ -399,7 +406,7 @@ $15 Reserved VM, this enforces the newly approved ceiling from the approval
 point. At that time, publishing still had to wait for the exact
 Apple/RevenueCat/database production preflight. That wait instruction is the
 historical August 4 state; exact commit
-`d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4` is now live.
+`a83d5ea0ae4db5dc82884929fa9b4911314f4eae` is now live.
 Immediately before any future republish, verify that Replit's **Set up your
 production database with your current development data** control remains off
 because the UI can reset it after a reload.
@@ -419,9 +426,10 @@ rows. The provider exposes the credential-bearing connection value read-only
 with `sslmode=require`. CUT now implements and source-tests a fail-closed
 runtime adaptation of only that exact supported shape to
 `sslmode=verify-full`; malformed, ambiguous, credential-incomplete, and
-IP-literal URLs still fail validation. Bounded readiness now passes; direct
-exact-candidate TLS and recovery evidence remain required before release. This
-record makes no billing or charge-status claim.
+IP-literal URLs still fail validation. Bounded readiness and direct client-side
+TLS attestation now pass. A safe destructive-recovery plan and separate owner
+authorization are required before exercising the in-place-only restore control.
+This record makes no billing or charge-status claim.
 
 ## Decision 8 — Clerk production plan and billing
 
@@ -516,10 +524,13 @@ retainer, automatic renewal, or aggregate commitment above $3,000 before tax.
 Record the written scope and quote before payment, and continue to minimize cost
 without substituting an unqualified reviewer.
 
-Four bounded inquiries were sent on August 8 without payment or engagement:
-two Texas firms, the State Bar of Texas referral service, and a registered
-dietitian whose published basic package covers CUT's six-item catalog. See
-`legal-site/PROFESSIONAL_REVIEW_OUTREACH.md`.
+The initial four bounded inquiries were expanded on August 8 to the current ten
+routes: six legal/referral routes and four registered-dietitian candidates. One
+law firm offered a brief free intake call before providing a proposal; the
+owner requested available Monday time slots while expressly authorizing no
+engagement or paid work. No tailored quote, referral, engagement, or payment is
+recorded. See `legal-site/PROFESSIONAL_REVIEW_OUTREACH.md` for the current
+response tracker.
 
 ## Later explicit approvals
 

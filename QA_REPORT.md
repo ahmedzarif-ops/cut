@@ -4,10 +4,10 @@
 > exercised in the running iOS simulator; hardware behavior on a real iPhone.
 > This report does not claim PASS for anything that was not actually run.
 
-## Current launch addendum — August 4, 2026
+## Current launch addendum — August 8, 2026
 
-- **1,373/1,373 automated tests pass:** 300 release operations, 61 App Store, 33
-  domain, 4 database, 438 mobile, and 537 API.
+- **1,392/1,392 automated tests pass:** 300 release operations, 61 App Store, 33
+  domain, 4 database, 438 mobile, and 556 API.
 - Root TypeScript, generated-code drift, working App Store validation,
   changed-file formatting, `.replit` parsing, migration drift, Expo dependency
   health, and a non-secret production-profile Expo bundle rehearsal pass. The
@@ -51,14 +51,17 @@
   duration verifier mismatch is resolved. Exact-build native purchase and
   restore QA remain pending, so production continues to fail closed.
 - Replit now serves exact source commit
-  `d96b2599d1d29ebd0d66ac2c69dfbe1feeb099d4`; its development-data-copy control
-  was rechecked off before publish. Bounded live `/status` and `/api/readyz`
-  checks pass. The production schema remains distinct from development. CUT
-  source-tests a fail-closed runtime adaptation to `sslmode=verify-full` for the
-  provider-supported connection shape; invalid, ambiguous, credential-
-  incomplete, and IP-literal URLs remain rejected. Direct exact-candidate TLS
-  and recovery evidence remain pending. No billing or charge status is asserted
-  by this evidence.
+  `a83d5ea0ae4db5dc82884929fa9b4911314f4eae` as Reserved VM deployment
+  `02619bd1`. Exact-head GitHub Actions run `31283711614` reports both required
+  checks successful. Post-publish development-data copy remained off, critical-
+  vulnerability blocking remained on, and the production database was
+  connected. Corrected startup TLS attestation and the exact-build status,
+  readiness, root, and canonical Clerk proxy checks pass; legal routes remain
+  503 fail-closed. Replit Support confirmed PITR is in-place only and cannot
+  roll forward; the destructive restore remains unexercised. See the
+  [production infrastructure evidence](app-store/evidence/production-launch-infrastructure-2026-08-08.md)
+  for the read-only provider-proxy incident and fixed, sanitized attestation
+  result. No billing or charge status is asserted by this evidence.
 - App Store Connect app ID `6798020879`, subscription group ID `22286645`, and
   subscription ID `6798020349` are evidence-bound in the machine record. The
   factual credential-free subscription Review Notes are saved, but the product
@@ -114,14 +117,19 @@
   `2026-08-08T21:21:47Z` confirmed all five required Clerk CNAMEs through an
   authoritative nameserver, Cloudflare, and Google; Clerk now shows its primary
   domain, DNS configuration, and proxy as Verified. No apex A, TXT, or DMARC
-  record changed and no charge was incurred. DNS is no longer the blocker, but
-  DNS verification alone did not prove email or code behavior. At approximately
+  record changed and no charge was incurred. DNS verification alone did not
+  prove direct-host TLS, email, or code behavior. At approximately
   `2026-08-08T21:27Z`, a user-provided simulator observation confirmed real
   signup-email delivery, successful user entry of its verification code, and an
   authenticated session reaching `Apple age check needed`; no account detail is
   recorded. This closes signup email/code acceptance, not password recovery or
-  age verification. The authenticated JavaScript path worked; the simulator's
-  native SDK retained a separate stale DNS cache at that observation point.
+  age verification. The authenticated JavaScript path worked. At
+  `2026-08-10T07:27:51Z`, the canonical proxy returned HTTP 200 with a valid
+  certificate while `clerk.getcutos.com` failed its TLS handshake before
+  serving a certificate. The Clerk dashboard shows the primary domain, DNS, and
+  proxy as Verified but the direct host as Optional. This blocks native
+  recovery; it does not invalidate the working proxy or authenticated
+  JavaScript path. No proxy or instance change was made.
 - A superseding EAS-production-environment arm64 Release simulator build, signed
   locally, linked and resolved `CutDeclaredAgeRange`, preserved the authenticated
   session to the DOB gate, and returned `not_required` from `getStatusAsync()`
@@ -210,7 +218,7 @@ generated-code drift check and commit SHA are recorded separately.
 | App Store artifact gate             | PASS (fail closed) | The working metadata/privacy/screenshot records validate; release mode rejects 87 unresolved owner, live-service, security, declaration, evidence, and capture requirements.                                    |
 | Deployment evidence gate            | PASS (automated)   | Bounded sanitized probes cover liveness, readiness, auth guards, exact public indexing, internal noindex/robots behavior, redirects, timeouts, and response-size limits.                                        |
 | Database migration                  | PASS               | Blank PGlite builds all current tables; profile minimization, deletion lifecycle/hash, finite nutrition, replay tombstone, retry-index, and baseline reapply checks pass.                                       |
-| Production API readiness            | PASS (automated)   | Startup validates live config/TLS, migrates under a bounded advisory lock, verifies the exact latest revision before bind, and single-flights cached readiness probes.                                          |
+| Production API readiness            | PASS (automated)   | Exact-head startup tests enforce configuration normalization before pool creation and migration, readiness, then direct TLS attestation before bind; current live evidence is linked in the addendum.           |
 | Today state                         | PASS (automated)   | Request-scoped device-local day, two-device separation, private no-store/vary headers, and deterministic Next Action fixtures.                                                                                  |
 | Device timezone synchronization     | PASS (automated)   | Valid IANA resolution, serialized writes, foreground/one-minute rechecks, retry-loop prevention, response validation, account-switch fencing, and pre-purchase settings are covered.                            |
 | Timezone/local-midnight behavior    | PENDING NATIVE QA  | A real release build must prove first sync, relaunch persistence, travel/device-zone resync, and correct local-midnight rollover before daily screens unlock.                                                   |
