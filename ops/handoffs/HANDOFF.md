@@ -7,6 +7,16 @@
 
 - Working branch: `codex/app-store-v1`.
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
+- Exact release candidate build 4 is signed from commit
+  `b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4`, processed by Apple as **Ready
+  to Submit**, assigned to internal group `CUT OS Internal QA` with automatic
+  notifications off, and saved on App Store version 1.0.0. Its EAS build ID is
+  `dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4` and App Store Connect build ID is
+  `0b6ff58a-d236-4469-b471-8216cf5a91ee`. The exact evidence is
+  [apple-build-4-processing-and-assignment-2026-08-10.md](../../app-store/evidence/apple-build-4-processing-and-assignment-2026-08-10.md).
+- The same internal tester still shows `No Builds Available` after build 4 was
+  assigned. Apple Developer Support case `20000133994444` remains open; no
+  follow-up or second invitation was sent.
 - The exact code commit verified and deployed at this checkpoint is
   `08e62232db7f81047eec5b55a184f30fb7d4162a`; GitHub Actions run `31425815282`
   reports **Success** for both **CI verify** and **Release evidence boundary** on
@@ -44,7 +54,9 @@ Available` despite bidirectional group/build assignment. No second email was
   Release simulator candidate passed initial access, more-than-one-minute
   access, and cold relaunch after expiry on the preserved authenticated
   account; 462 mobile tests, 64 App Store/screenshot tests, the working
-  validator, and full TypeScript pass. The bounded evidence is
+  validator, and full TypeScript pass. Build 4 contains this repair and
+  supersedes build 3 as the exact release candidate. The bounded local evidence
+  is
   [local-auth-refresh-candidate-2026-08-10.md](../../app-store/evidence/local-auth-refresh-candidate-2026-08-10.md).
 - The credential-free App Review Notes template now has all stable build,
   category, product, price, URL, and network facts resolved. It remains unsaved
@@ -247,7 +259,8 @@ Available` despite bidirectional group/build assignment. No second email was
   exact-build restore-after-deletion QA remains required.
 - TestFlight group `CUT OS Internal QA` is configured with automatic
   distribution off, the authorized public feedback email, the exact beta
-  description, the Account Holder as its one internal tester, and exact build 3. The
+  description, the Account Holder as its one internal tester, and exact builds
+  3 and 4. Build 4 is the current candidate. The
   subscription's credential-free
   Review Notes are saved, but version attachment and its review screenshot are
   pending; no TestFlight QA or submission is claimed.
@@ -272,8 +285,8 @@ Available` despite bidirectional group/build assignment. No second email was
    only PITR control without a separately approved destructive recovery plan.
    Complete exact-build Clerk/RevenueCat acceptance only when its remaining
    prerequisites can pass.
-6. Commit the same-session refresh repair, require green exact-head CI, create
-   and assign a fresh production/TestFlight build, and complete physical-iPhone
+6. Preserve the green same-session refresh repair and exact build 4 identity,
+   then complete physical-iPhone
    authentication, recovery, purchase, restore, deletion, accessibility, and
    screenshot evidence before App Review.
 
@@ -284,10 +297,10 @@ Available` despite bidirectional group/build assignment. No second email was
 - The read-only verification was performed without logging in to Apple again;
   no push-notification key, local credentials file, or additional capability
   was created.
-- Exact EAS production build 3 is valid in App Store Connect, assigned to
-  internal TestFlight, and selected for version 1.0.0, but it predates the
-  session-refresh repair and is ineligible for release. Every pre-Clerk-cutover
-  binary is also ineligible.
+- Exact EAS production build 4 is processed in App Store Connect, assigned to
+  internal TestFlight, and selected for version 1.0.0. It contains the
+  session-refresh repair and is the current exact candidate. Build 3 and every
+  pre-Clerk-cutover binary remain ineligible.
 
 ## LOCKED SAFETY BOUNDARIES
 

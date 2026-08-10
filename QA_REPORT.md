@@ -9,6 +9,16 @@
 The following live checkpoint supersedes earlier build/deployment counts in this
 section:
 
+- Exact EAS production build `dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4`
+  produced version 1.0.0 build 4 from repaired commit
+  `b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4`. Apple processed App Store
+  Connect build `0b6ff58a-d236-4469-b471-8216cf5a91ee` as **Ready to Submit**.
+  Build 4 is assigned to the internal group with notifications off and saved
+  on the version 1.0.0 draft. It supersedes build 3 as the release candidate.
+- The tester still shows `No Builds Available` after build 4 assignment. This
+  independently reproduces the Apple-side TestFlight defect covered by support
+  case `20000133994444`. No new invitation or support follow-up was sent.
+
 - GitHub PR #9 is draft/open. Release code commit
   `08e62232db7f81047eec5b55a184f30fb7d4162a` has successful required checks and
   is the exact commit served by Replit; later evidence-only branch commits do
@@ -225,8 +235,9 @@ section:
 month` paywall, stayed there beyond token expiry, and returned there after a
   cold relaunch. The complete mobile suite passes 462/462, the App Store and
   screenshot suite passes 64/64, root TypeScript passes, and no fatal or crash
-  line was observed. Build 3 predates this repair and is ineligible; an exact
-  replacement EAS/TestFlight build remains required. See
+  line was observed. Build 3 predates this repair and is ineligible; exact build
+  4 contains the repair and is now processed and assigned. Physical TestFlight
+  acceptance remains required. See
   [local-auth-refresh-candidate-2026-08-10.md](app-store/evidence/local-auth-refresh-candidate-2026-08-10.md).
 - Clerk production now uses free-Hobby application
   `app_3HeFFYD0GpUEjcPIlOwNYXAKUmo`, production instance

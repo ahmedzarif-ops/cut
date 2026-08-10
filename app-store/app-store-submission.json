@@ -107,10 +107,10 @@
       "exactBuildClaimsReview": {
         "status": "pending",
         "appVersion": "1.0.0",
-        "buildNumber": "3",
-        "gitCommit": "08e62232db7f81047eec5b55a184f30fb7d4162a",
-        "easBuildId": "1fe435cf-9d8b-4eff-a1d3-bfb893b344a6",
-        "appStoreConnectBuildId": "dce1d8df-cd9e-46d7-8607-dcde9570df2e",
+        "buildNumber": "4",
+        "gitCommit": "b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4",
+        "easBuildId": "dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4",
+        "appStoreConnectBuildId": "0b6ff58a-d236-4469-b471-8216cf5a91ee",
         "verifiedAtUtc": null,
         "evidenceReference": null
       }
@@ -313,10 +313,10 @@
     },
     "exactBuild": {
       "appVersion": "1.0.0",
-      "buildNumber": "3",
-      "gitCommit": "08e62232db7f81047eec5b55a184f30fb7d4162a",
-      "easBuildId": "1fe435cf-9d8b-4eff-a1d3-bfb893b344a6",
-      "appStoreConnectBuildId": "dce1d8df-cd9e-46d7-8607-dcde9570df2e",
+      "buildNumber": "4",
+      "gitCommit": "b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4",
+      "easBuildId": "dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4",
+      "appStoreConnectBuildId": "0b6ff58a-d236-4469-b471-8216cf5a91ee",
       "verifiedAtUtc": null,
       "navigationEvidenceReference": null
     },
@@ -441,10 +441,10 @@
     },
     "exactBuildEvidence": {
       "appVersion": "1.0.0",
-      "buildNumber": "3",
-      "gitCommit": "08e62232db7f81047eec5b55a184f30fb7d4162a",
-      "easBuildId": "1fe435cf-9d8b-4eff-a1d3-bfb893b344a6",
-      "appStoreConnectBuildId": "dce1d8df-cd9e-46d7-8607-dcde9570df2e",
+      "buildNumber": "4",
+      "gitCommit": "b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4",
+      "easBuildId": "dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4",
+      "appStoreConnectBuildId": "0b6ff58a-d236-4469-b471-8216cf5a91ee",
       "storeKitOfferStatus": "pending",
       "purchaseQaStatus": "pending",
       "testFlightStatus": "pending",
@@ -613,7 +613,7 @@
   "regulatedMedicalDevice": {
     "status": "confirmed_in_app_store_connect",
     "workingPosition": "general_wellness_not_a_regulated_medical_device",
-    "basis": "Exact build 3 provides general fitness and nutrition information, not diagnosis, prevention, monitoring, treatment, clinical guidance, or regulated-device functionality. The owner approved the not-regulated declaration, and App Store Connect now confirms that answer for every country or region.",
+    "basis": "Exact build 4 provides general fitness and nutrition information, not diagnosis, prevention, monitoring, treatment, clinical guidance, or regulated-device functionality. The owner approved the not-regulated declaration, and App Store Connect now confirms that answer for every country or region.",
     "appleReference": "https://developer.apple.com/help/app-store-connect/manage-app-information/declare-regulated-medical-device-status",
     "regionalDeclarations": {
       "US": {
@@ -1028,7 +1028,7 @@
       {
         "id": "production_archive_and_embedded_sdks",
         "status": "verified",
-        "requiredEvidence": "Exact build 3 archive manifest inventory, embedded SDK privacy manifests, app-level data types, required-reason APIs, and production public configuration are recorded in the build evidence."
+        "requiredEvidence": "Exact build 4 archive manifest inventory, embedded SDK privacy manifests, app-level data types, required-reason APIs, and production public configuration are recorded in the build evidence."
       },
       {
         "id": "ip_network_metadata_mapping",
@@ -1038,12 +1038,12 @@
       {
         "id": "diagnostics_and_usage_data",
         "status": "verified",
-        "requiredEvidence": "Exact build 3 has no crash or general analytics SDK; Clerk production authentication activity is conservatively mapped to linked Product Interaction for App Functionality and Analytics."
+        "requiredEvidence": "Exact build 4 has no crash or general analytics SDK; Clerk production authentication activity is conservatively mapped to linked Product Interaction for App Functionality and Analytics."
       },
       {
         "id": "public_policy_reconciliation",
         "status": "verified",
-        "requiredEvidence": "The live Privacy Policy and in-app notice-at-collection were reconciled with exact build 3, production behavior, and the disclosed Apple, Clerk, RevenueCat, and Replit data paths."
+        "requiredEvidence": "The live Privacy Policy and in-app notice-at-collection were reconciled with exact build 4, production behavior, and the disclosed Apple, Clerk, RevenueCat, and Replit data paths."
       },
       {
         "id": "app_store_connect_reconciliation",

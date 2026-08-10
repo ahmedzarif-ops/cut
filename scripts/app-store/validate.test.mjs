@@ -3579,11 +3579,11 @@ test("TestFlight record distinguishes internal testing from external review", ()
     status: "configured",
     automaticDistribution: false,
     testerCount: 1,
-    buildCount: 1,
-    assignedAppStoreConnectBuildId: "dce1d8df-cd9e-46d7-8607-dcde9570df2e",
-    assignmentVerifiedAtUtc: "2026-08-10T20:56:38Z",
+    buildCount: 2,
+    assignedAppStoreConnectBuildId: "0b6ff58a-d236-4469-b471-8216cf5a91ee",
+    assignmentVerifiedAtUtc: "2026-08-10T23:36:12Z",
     assignmentEvidenceReference:
-      "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#testflight-and-version-assignment",
+      "app-store/evidence/apple-build-4-processing-and-assignment-2026-08-10.md#apple-processing-and-draft-selection",
     verifiedAtUtc: "2026-08-08T18:43:18Z",
     evidenceReference:
       "app-store/evidence/apple-live-configuration-2026-08-04.md#testflight-internal-configuration",

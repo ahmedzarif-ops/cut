@@ -11,7 +11,18 @@ Automated server/domain/mobile implementation is complete. Legal/privacy,
 native-device and live-service QA, and App Store completion remain open; this is
 not a public-launch readiness claim.
 
-## Current App Store launch checkpoint — 2026-08-10T22:22:22Z
+## Current App Store launch checkpoint — 2026-08-10T23:36:12Z
+
+- Exact EAS production build 4 for version 1.0.0 is signed from repaired commit
+  `b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4`. Apple processed it as **Ready
+  to Submit**, assigned it to `CUT OS Internal QA` with automatic notifications
+  off, and saved it as the selected build for App Store version 1.0.0. Build 4
+  supersedes build 3 as the exact release candidate. See
+  [apple-build-4-processing-and-assignment-2026-08-10.md](app-store/evidence/apple-build-4-processing-and-assignment-2026-08-10.md).
+- The internal tester row still says `No Builds Available` after build 4 was
+  assigned, reproducing the Apple-side problem with a second processed build.
+  Apple Developer Support case `20000133994444` remains open. No follow-up,
+  second invitation, or build-notification email was sent.
 
 - Exact EAS production build 3 for version 1.0.0 is signed from commit
   `08e62232db7f81047eec5b55a184f30fb7d4162a`, processed by Apple as `VALID`
@@ -67,9 +78,9 @@ not a public-launch readiness claim.
 per month` paywall beyond token expiry and returned to that screen after a
   cold relaunch, with 462/462 mobile tests, 64/64 App Store/screenshot tests,
   the working validator, and the full TypeScript check passing. Build 3 remains
-  valid Apple processing evidence but is no longer an eligible release
-  candidate. A fresh production build from the committed, green repair is
-  required. See
+  valid historical Apple processing evidence but is no longer an eligible
+  release candidate. Build 4 now contains the committed, green repair and is
+  the exact release candidate. See
   [local-auth-refresh-candidate-2026-08-10.md](app-store/evidence/local-auth-refresh-candidate-2026-08-10.md).
 - The credential-free App Review Notes template now pre-resolves every stable
   build, category, product, price, URL, and network fact. It is 3,156 UTF-8
@@ -464,9 +475,9 @@ launch gate.
 
 ## Highest-priority next slice
 
-1. Commit the authenticated-session refresh repair, require exact-head green
-   CI, then create a fresh production build. After Apple processes and assigns
-   that replacement, have the owner install the exact TestFlight binary on a
+1. Keep the authenticated-session refresh repair and exact build 4 identity
+   green and unchanged. After Apple makes the assigned build available, have
+   the owner install the exact TestFlight binary on a
    physical iPhone and run the credential-safe authentication, age, purchase,
    restore, deletion, accessibility, relaunch, offline, and account-switch
    matrix.
@@ -499,10 +510,10 @@ sensitive-data apps toward legal-entity submission. Preliminary name screening
 also found a crowded same-market `CUT` field, so qualified `CUT OS` clearance
 remains open. Apple's Paid Apps Agreement, banking, and U.S. Form W-9 are active
 and evidence-confirmed. RevenueCat Decision 3 owner authorization is also
-confirmed. Apple signing and EAS/Apple authentication are complete; build 3 is
-valid and assigned to internal TestFlight but is ineligible after the
-session-refresh repair, while replacement-build creation, physical-iPhone QA,
-screenshots, review access, Submit for Review, and public release remain
+confirmed. Apple signing and EAS/Apple authentication are complete; build 4 is
+processed, assigned to internal TestFlight, and selected for version 1.0.0,
+while Apple tester availability, physical-iPhone QA, screenshots, review
+access, Submit for Review, and public release remain
 owner-controlled gates. The approved App Privacy, content-rights, medical,
 tax, DSA, and Standard-EULA decisions are now live. The owner has confirmed an
 18+ launch position and App Store Connect now returns an effective 18+ rating.

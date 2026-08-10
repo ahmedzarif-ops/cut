@@ -237,11 +237,11 @@ candidate even if Apple repairs its internal tester availability. Do not use a
 successful build 3 installation as release acceptance and do not attach its
 screenshots or QA to the final submission record.
 
-The local replacement candidate and its bounded, non-TestFlight evidence are
-recorded in
+The replacement repair and its bounded local evidence are recorded in
 [local-auth-refresh-candidate-2026-08-10.md](local-auth-refresh-candidate-2026-08-10.md).
-A fresh production build must be created only after the repair is committed and
-the exact commit passes CI.
+The repair was committed, passed exact-head CI, and produced processed App Store
+build 4. Build 4 is now assigned and selected for version 1.0.0; see
+[apple-build-4-processing-and-assignment-2026-08-10.md](apple-build-4-processing-and-assignment-2026-08-10.md).
 
 ## Remaining release boundary
 

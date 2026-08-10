@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "planned_not_captured",
-  "updated": "2026-08-04",
+  "updated": "2026-08-10",
   "assetDirectory": "app-store/screenshots/files",
   "listingPaidDisclosure": {
     "shotId": "07-subscription-offer",
@@ -30,11 +30,11 @@
   },
   "captureDefaults": {
     "appVersion": "1.0.0",
-    "buildNumber": "3",
-    "gitCommit": "08e62232db7f81047eec5b55a184f30fb7d4162a",
-    "easBuildId": "1fe435cf-9d8b-4eff-a1d3-bfb893b344a6",
-    "appStoreConnectBuildId": "dce1d8df-cd9e-46d7-8607-dcde9570df2e",
-    "easBuildReference": "1fe435cf-9d8b-4eff-a1d3-bfb893b344a6",
+    "buildNumber": "4",
+    "gitCommit": "b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4",
+    "easBuildId": "dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4",
+    "appStoreConnectBuildId": "0b6ff58a-d236-4469-b471-8216cf5a91ee",
+    "easBuildReference": "dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4",
     "appStoreConnectDeviceSlot": "iPhone 6.9-inch portrait",
     "captureDevice": null,
     "iosVersion": null,
