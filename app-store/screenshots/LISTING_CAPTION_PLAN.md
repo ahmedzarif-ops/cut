@@ -23,7 +23,7 @@ app then launched to the real empty sign-in screen at the same pixel size
 without a crash or clipped control. That local app is not the App Store-signed
 TestFlight binary, and both temporary images remain outside the release assets;
 neither is a listing screenshot, App Review screenshot, PII review, or
-exact-build claim. Keep the manifest capture fields null until build 3 is
+exact-build claim. Keep the manifest capture-result fields null until build 4 is
 actually available through TestFlight and the two selected app screens are
 captured, prepared, hash-bound, and reviewed.
 

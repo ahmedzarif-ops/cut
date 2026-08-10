@@ -18,6 +18,12 @@ section:
 - The tester still shows `No Builds Available` after build 4 assignment. This
   independently reproduces the Apple-side TestFlight defect covered by support
   case `20000133994444`. No new invitation or support follow-up was sent.
+- Exact build 4's downloaded IPA passes strict signature verification, uses the
+  expected non-debug App Store profile and declared-age entitlement, embeds all
+  five EAS production public values and three legal URLs, contains the expected
+  12 privacy manifests, and passes the 123-file archive secret-boundary scan
+  with zero findings. This confirms archive and public-claim identity, not
+  physical-device behavior.
 
 - GitHub PR #9 is draft/open. Release code commit
   `08e62232db7f81047eec5b55a184f30fb7d4162a` has successful required checks and

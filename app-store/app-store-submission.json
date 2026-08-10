@@ -105,14 +105,14 @@
         "evidenceReference": "app-store/evidence/owner-deferred-professional-review-2026-08-10.md"
       },
       "exactBuildClaimsReview": {
-        "status": "pending",
+        "status": "confirmed",
         "appVersion": "1.0.0",
         "buildNumber": "4",
         "gitCommit": "b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4",
         "easBuildId": "dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4",
         "appStoreConnectBuildId": "0b6ff58a-d236-4469-b471-8216cf5a91ee",
-        "verifiedAtUtc": null,
-        "evidenceReference": null
+        "verifiedAtUtc": "2026-08-10T23:50:21Z",
+        "evidenceReference": "app-store/evidence/apple-build-4-processing-and-assignment-2026-08-10.md#exact-signed-archive-inspection"
       }
     }
   },
@@ -1048,7 +1048,7 @@
       {
         "id": "app_store_connect_reconciliation",
         "status": "verified",
-        "requiredEvidence": "The nine published App Store Connect data types, linkage, no-tracking answers, and purposes were reviewed against this matrix and exact build 3."
+        "requiredEvidence": "The nine published App Store Connect data types, linkage, no-tracking answers, and purposes were reviewed against this matrix and exact build 4."
       }
     ],
     "approval": {

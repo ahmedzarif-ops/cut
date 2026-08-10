@@ -23,6 +23,11 @@ not a public-launch readiness claim.
   assigned, reproducing the Apple-side problem with a second processed build.
   Apple Developer Support case `20000133994444` remains open. No follow-up,
   second invitation, or build-notification email was sent.
+- The exact build 4 IPA now passes strict signature/profile/entitlement,
+  privacy-manifest, public-configuration, legal-URL, and archive secret-boundary
+  inspection. The listing's exact-build claims review is confirmed against that
+  signed artifact; physical-device behavior, owner brand/name approval, and
+  submission approval remain separate.
 
 - Exact EAS production build 3 for version 1.0.0 is signed from commit
   `08e62232db7f81047eec5b55a184f30fb7d4162a`, processed by Apple as `VALID`

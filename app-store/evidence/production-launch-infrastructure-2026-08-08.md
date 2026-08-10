@@ -187,8 +187,9 @@ for Replit deployment `78b1854c`. Bounded live checks passed for the exact
 `/status` `BUILD_SHA`, `/`, `/api/readyz`, and the canonical Clerk proxy; the
 proxy check matched production domain ID
 `dmn_3HeFLeuWzWg9xKNeG4o6PUUVHlb`. Any binary created before this cutover is
-ineligible for release. Exact build 3 is assigned in internal TestFlight, but
-no physical-device authentication claim is made.
+ineligible for release. Exact builds 3 and 4 are assigned in internal
+TestFlight; build 4 is the current candidate, but no physical-device
+authentication claim is made.
 
 ### Bounded local iOS simulator rehearsal
 
@@ -376,8 +377,10 @@ Clerk session before the existing single forced token refresh and safe GET
 replay. Installed over the preserved authenticated simulator without an
 uninstall, it reached the real paywall, remained there beyond token expiry, and
 returned there after termination and cold launch. No token or personal datum
-was logged or recorded. Build 3 predates this repair and is ineligible; a fresh
-production/TestFlight build is required. Full bounded evidence is in
+was logged or recorded. Build 3 predates this repair and is ineligible; exact
+production build 4 now contains the repair, is processed by Apple, and is
+assigned to internal TestFlight. Physical-device access remains blocked by the
+Apple tester-availability defect. Full bounded evidence is in
 [local-auth-refresh-candidate-2026-08-10.md](local-auth-refresh-candidate-2026-08-10.md).
 
 ### Superseding native age-bridge simulator result — recorded `2026-08-08T21:46:02Z`

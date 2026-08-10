@@ -17,6 +17,11 @@
 - The same internal tester still shows `No Builds Available` after build 4 was
   assigned. Apple Developer Support case `20000133994444` remains open; no
   follow-up or second invitation was sent.
+- The exact build 4 IPA passes strict signature/profile/entitlement checks,
+  embeds the expected production public configuration and legal URLs, contains
+  the expected 12 privacy manifests, and passes the archive secret-boundary
+  scan with zero findings. The listing exact-build claims review is confirmed;
+  device QA and owner-controlled approvals remain open.
 - The exact code commit verified and deployed at this checkpoint is
   `08e62232db7f81047eec5b55a184f30fb7d4162a`; GitHub Actions run `31425815282`
   reports **Success** for both **CI verify** and **Release evidence boundary** on
