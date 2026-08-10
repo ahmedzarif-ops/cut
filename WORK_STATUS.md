@@ -171,8 +171,8 @@ durable-account-deletion, and adults-only eligibility foundations. It is not
 native/App Store acceptance.
 
 - `pnpm run typecheck`: **PASS**.
-- `pnpm run test`: **PASS — 1,392 tests** (release operations 300, App Store
-  artifacts 61, domain 33, database 4, mobile 438, API 556).
+- `pnpm run test`: **PASS — 1,417 tests** (release operations 303, App Store
+  artifacts 62, domain 33, database 4, mobile 459, API 556).
 - Expo dependency compatibility check: **PASS** with Expo `54.0.36`.
 - Expo Doctor `1.20.1`: **PASS — 18/18 checks**.
 - Frozen pnpm `10.34.5` install: **PASS** with the committed lockfile.
@@ -250,8 +250,8 @@ launch gate.
 
 - Source routing: draft pull request #9 remains unmerged on
   `codex/app-store-v1`. The exact code commit verified and deployed at this
-  checkpoint is `a83d5ea0ae4db5dc82884929fa9b4911314f4eae`; GitHub Actions run
-  `31283711614` reports **Success** for both **CI verify** and **Release evidence
+  checkpoint is `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`; GitHub Actions run
+  `31411665065` reports **Success** for both **CI verify** and **Release evidence
   boundary** on that commit. Documentation-only commits may move the branch and
   pull-request head without changing the deployed build, so re-resolve all three
   identities and checks before the next publish.
@@ -274,11 +274,11 @@ launch gate.
   assignment or QA is claimed.
 - Replit hosting is owner-approved up to **$20/month before tax** and phone
   verification is complete. Replit is now serving exact source commit
-  `a83d5ea0ae4db5dc82884929fa9b4911314f4eae` as Reserved VM deployment
-  `02619bd1`. After publish, development-data copy remained off, critical-
+  `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` as Reserved VM deployment
+  `6e48c23c`. After publish, development-data copy remained off, critical-
   vulnerability publish blocking remained on, and the production database was
   connected. The corrected startup logged direct client-side TLS attestation
-  **PASS** at August 8, 2026, 6:29:33.13 PM America/Chicago. Exact-build
+  **PASS** at August 10, 2026, 12:47:01.28 PM America/Chicago. Exact-build
   `/status`, `/`, `/api/readyz`, and canonical Clerk proxy checks returned 200;
   `/privacy`, `/terms`, and `/support` each remain 503 fail-closed pending
   qualified publication approval. Point-in-time recovery is on with a seven-day

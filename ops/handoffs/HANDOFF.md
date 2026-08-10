@@ -8,7 +8,7 @@
 - Working branch: `codex/app-store-v1`.
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
 - The exact code commit verified and deployed at this checkpoint is
-  `a83d5ea0ae4db5dc82884929fa9b4911314f4eae`; GitHub Actions run `31283711614`
+  `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`; GitHub Actions run `31411665065`
   reports **Success** for both **CI verify** and **Release evidence boundary** on
   that commit. A later documentation-only commit may move the branch and pull-
   request head without changing the deployed build.
@@ -17,8 +17,8 @@
   become historical as soon as the handoff itself changes.
 - The agent must not self-merge the pull request; the owner merges or explicitly
   overrides that repository rule.
-- The deployed code checkpoint passes **1,392 automated tests** (300 release
-  operations, 61 App Store, 33 domain, 4 database, 438 mobile, and 556 API), all
+- The deployed code checkpoint passes **1,417 automated tests** (303 release
+  operations, 62 App Store, 33 domain, 4 database, 459 mobile, and 556 API), all
   TypeScript checks, generated-code drift, working App Store validation,
   changed-file formatting, `.replit`/migration parsing and drift checks, Expo
   dependency health, and the clean zero-JavaScript Replit production-build
@@ -153,11 +153,11 @@
 - The owner approved Replit up to **$20/month before tax**: a $15 Reserved VM
   plus $5 of new usage-based headroom. Phone verification is complete. Replit
   now serves exact source commit
-  `a83d5ea0ae4db5dc82884929fa9b4911314f4eae` as Reserved VM deployment
-  `02619bd1`. After publish, development-data copy remained off, critical-
+  `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` as Reserved VM deployment
+  `6e48c23c`. After publish, development-data copy remained off, critical-
   vulnerability publish blocking remained on, and the production database was
   connected. The corrected startup logged direct client-side TLS attestation
-  **PASS** at August 8, 2026, 6:29:33.13 PM America/Chicago. Exact-build
+  **PASS** at August 10, 2026, 12:47:01.28 PM America/Chicago. Exact-build
   `/status`, `/`, `/api/readyz`, and canonical Clerk proxy checks returned 200;
   `/privacy`, `/terms`, and `/support` each remain 503 fail-closed pending
   qualified publication approval. Point-in-time recovery is on with a seven-day
@@ -214,7 +214,7 @@
 1. Keep PR #9 draft and require exact GitHub CI success after every new commit;
    never rely on a green run from an older revision and never self-merge.
 2. Keep Replit on exact deployed commit
-   `a83d5ea0ae4db5dc82884929fa9b4911314f4eae`, verify that the Publishing draft
+   `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`, verify that the Publishing draft
    still says Reserved VM after every sync, and recheck that development-data
    copy remains off before every future publish.
 3. Keep the live active Apple membership, Paid Apps, banking, tax, and

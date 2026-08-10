@@ -21,13 +21,13 @@ Certificate secrets and provisioning contents are intentionally excluded.
 ## Source and hosting
 
 - The exact `codex/app-store-v1` code commit verified and deployed as the live
-  build is `a83d5ea0ae4db5dc82884929fa9b4911314f4eae`.
-- GitHub Actions run `31283711614` reports **Success** for both required checks
+  build is `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`.
+- GitHub Actions run `31411665065` reports **Success** for both required checks
   on that code commit: **CI verify** and **Release evidence boundary**. A later
   evidence-only commit may move the branch and draft pull-request head without
   changing the deployed build.
 - The current Replit Reserved VM deployment and log deployment ID is
-  `02619bd1`.
+  `6e48c23c`.
 - Replit's development-to-production data-copy control remained **off** after
   publish, critical-vulnerability publish blocking remained **on**, and the
   production database was connected.
@@ -51,7 +51,7 @@ prove a restore drill.
 - A connect-only probe in the Replit editor reproduced the documented Helium
   behavior: the development endpoint rejects every forced SSL mode. That result
   is development evidence and is not evidence of a production TLS failure.
-- Current deployed build `a83d5ea0ae4db5dc82884929fa9b4911314f4eae`
+- Current deployed build `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`
   contains the production database normalization, validation, startup-migration
   path, direct TLS attestation, and migration files for the current candidate.
 - Its production entrypoint upgrades the one accepted provider URL shape from
@@ -59,7 +59,7 @@ prove a restore drill.
   configuration, creates the pool from the normalized URL, completes startup
   migrations and exact-revision readiness, attests the live pool client's TLS
   socket, and only then binds the listener.
-- At August 8, 2026, 6:29:33.13 PM America/Chicago, deployment `02619bd1`
+- At August 10, 2026, 12:47:01.28 PM America/Chicago, deployment `6e48c23c`
   logged `production_database_tls_attestation` with status `PASS`. Its fixed,
   non-secret evidence booleans were `readOnlyTransaction`,
   `verificationEnabled`, `socketEncrypted`, `peerAuthorized`,
@@ -181,8 +181,8 @@ control was rechecked **off** immediately before publishing. EAS production now
 targets this tenant and the exact same-origin proxy without recording any key
 material here.
 
-Commit `a83d5ea0ae4db5dc82884929fa9b4911314f4eae` is the deployed source identity
-for Replit deployment `02619bd1`. Bounded live checks passed for the exact
+Commit `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` is the deployed source identity
+for Replit deployment `6e48c23c`. Bounded live checks passed for the exact
 `/status` `BUILD_SHA`, `/`, `/api/readyz`, and the canonical Clerk proxy; the
 proxy check matched production domain ID
 `dmn_3HeFLeuWzWg9xKNeG4o6PUUVHlb`. Any binary created before this cutover is

@@ -244,7 +244,7 @@ name, GitHub account, or email display name. The owner-approved Replit hosting
 draft originally established `cut-ahmedzarif1.replit.app` as the working v1
 provider address. **Superseding verified state August 8, 2026:**
 `getcutos.com` is now the canonical live host and serves exact source commit
-`a83d5ea0ae4db5dc82884929fa9b4911314f4eae`. Public legal-page publication on
+`b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9`. Public legal-page publication on
 that domain still requires qualified approval and exact-live-page evidence.
 
 The draft Privacy, Terms, and Support pages cannot be published until the
@@ -359,8 +359,8 @@ Connect or approved secret storage.
 
 **Status:** Owner cost approval and private phone verification complete;
 production application live on the approved Reserved VM at `getcutos.com` from
-exact source commit `a83d5ea0ae4db5dc82884929fa9b4911314f4eae` as deployment
-`02619bd1`. Direct production TLS attestation is complete. Replit later
+exact source commit `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` as deployment
+`6e48c23c`. Direct production TLS attestation is complete. Replit later
 confirmed that its PITR control restores the live production database in place,
 cannot restore to an isolated target, and cannot roll forward. The destructive
 restore drill remains open and is not authorized by the hosting ceiling.
@@ -406,7 +406,7 @@ $15 Reserved VM, this enforces the newly approved ceiling from the approval
 point. At that time, publishing still had to wait for the exact
 Apple/RevenueCat/database production preflight. That wait instruction is the
 historical August 4 state; exact commit
-`a83d5ea0ae4db5dc82884929fa9b4911314f4eae` is now live.
+`b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` is now live.
 Immediately before any future republish, verify that Replit's **Set up your
 production database with your current development data** control remains off
 because the UI can reset it after a reload.

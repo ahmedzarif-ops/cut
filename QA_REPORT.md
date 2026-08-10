@@ -51,8 +51,8 @@
   duration verifier mismatch is resolved. Exact-build native purchase and
   restore QA remain pending, so production continues to fail closed.
 - Replit now serves exact source commit
-  `a83d5ea0ae4db5dc82884929fa9b4911314f4eae` as Reserved VM deployment
-  `02619bd1`. Exact-head GitHub Actions run `31283711614` reports both required
+  `b7157c5617c8aa1d7a56dfb5489ebeb8a5657af9` as Reserved VM deployment
+  `6e48c23c`. Exact-head GitHub Actions run `31411665065` reports both required
   checks successful. Post-publish development-data copy remained off, critical-
   vulnerability blocking remained on, and the production database was
   connected. Corrected startup TLS attestation and the exact-build status,
