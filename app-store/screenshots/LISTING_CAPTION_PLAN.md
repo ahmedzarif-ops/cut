@@ -12,6 +12,21 @@ internal capture-review labels, not text overlays:
 If exact-build marketing assets are ready without delaying submission, shots
 03 through 06 may be added later in their manifest order. They remain optional.
 
+## Capture-device preflight — not release evidence
+
+At `2026-08-10T22:31:48Z`, the dedicated local simulator
+`CUT App Store 6.9 QA` was booted as an iPhone 17 Pro Max on iOS 27.0. A
+temporary system-screen capture measured exactly `1320 × 2868` pixels, one of
+the manifest's accepted iPhone 6.9-inch portrait sizes. The temporary image did
+not show CUT OS. A separately installed, locally signed release-style simulator
+app then launched to the real empty sign-in screen at the same pixel size
+without a crash or clipped control. That local app is not the App Store-signed
+TestFlight binary, and both temporary images remain outside the release assets;
+neither is a listing screenshot, App Review screenshot, PII review, or
+exact-build claim. Keep the manifest capture fields null until build 3 is
+actually available through TestFlight and the two selected app screens are
+captured, prepared, hash-bound, and reviewed.
+
 The subscription-offer screen is part of the public listing selection, not only
 App Review evidence. Its exact-build capture must show an unmistakable paid or
 subscription cue and the StoreKit-localized offer details; do not imply that all

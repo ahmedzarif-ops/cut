@@ -2,7 +2,7 @@
 
 **Status:** Working review package; not approved or ready for submission
 
-**Updated:** August 4, 2026
+**Updated:** August 10, 2026
 
 Use this runbook to prepare the exact CUT OS 1.0 review path, capture truthful
 screenshots from the release build, and write the App Review notes. It does not
@@ -24,20 +24,21 @@ restaurant guidance, chat, or social features.
 
 ## Current audit
 
-| Surface            | Repository evidence                                                                                                                                                                       | Current release position                                                                                                                                                                                        |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Native identity    | `artifacts/cut-os/app.json` names CUT OS and bundle ID `com.zarifahmed.cut`                                                                                                               | Implemented in source; the App Store Connect record is not established by this file.                                                                                                                            |
-| Seller             | `company.yml` has no confirmed legal entity or domain, while CUT OS requires linked weight, body, fitness, and nutrition information                                                      | Counsel must resolve App Review Guideline 5.1.1(ix)'s legal-entity guidance for apps requiring sensitive user information before enrollment or submission.                                                      |
-| Routes             | Sign in, sign up, adult eligibility, subscription, onboarding, Today, balanced meals, and Settings exist under `artifacts/cut-os/app`                                                     | The navigation scripts below use only these built routes.                                                                                                                                                       |
-| Paid scope         | `ADR_004_SUBSCRIPTIONS.md` and `APP_STORE_READINESS.md` define the narrow v1 scope                                                                                                        | Keep listing copy, screenshots, and review notes inside that boundary.                                                                                                                                          |
-| Purchases          | The subscription screen reads StoreKit/RevenueCat plan title, localized price, period, and introductory text and exposes purchase, restore, manage, disclosure, and legal/support actions | Apple Sandbox and TestFlight acceptance remain required; do not claim a product, price, duration, or trial until verified in App Store Connect and the binary.                                                  |
-| Adults only        | Sign-up notice, server-authoritative `adult-18-v1` gate, restricted path, Settings, sign-out, and deletion paths are built                                                                | Owner selected an 18+ product position. The App Store questionnaire and higher-age override are not proven complete.                                                                                            |
-| Privacy            | `app.json` declares linked name, email, health, fitness, user ID, other data, and purchase history with tracking disabled; `PRIVACY_DATA_MAP.md` records the working inventory            | Reconcile the final archive, SDK privacy reports, production services, public policy, and current App Privacy questionnaire before submission.                                                                  |
-| Category           | `APP_STORE_METADATA.md` proposes Health & Fitness and not Made for Kids                                                                                                                   | Owner must confirm the category against the final binary and complete the then-current questionnaire.                                                                                                           |
-| Icon               | `artifacts/cut-os/assets/images/icon-v2.png` is a 1024×1024, 8-bit RGB PNG with no alpha; SHA-256 `58e807c4772180bb7a6b157d421ac77c8d4106c606c6fe3ad80b62569c22c07a`                      | Technically suitable as a candidate and configured for icon/splash/favicon. Native appearance and owner approval remain open.                                                                                   |
-| Minimum iOS        | `@clerk/expo` is explicitly applied with Apple sign-in disabled; its native SDK requires and configures iOS 17                                                                            | Confirm `MinimumOSVersion`/deployment target 17.0 in the signed archive and keep the App Store compatibility statement truthful.                                                                                |
-| Screenshots        | No release-build screenshots are established by repository evidence                                                                                                                       | Capture only after the final TestFlight/release build and production-like data are ready.                                                                                                                       |
-| Review credentials | No credentials belong in this repository                                                                                                                                                  | Put the primary account in App Store Connect's Sign-in Information. Apple provides only one username/password pair there, so put additional purpose-built review accounts in App Review Notes as Apple directs. |
+| Surface            | Repository evidence                                                                                                                                                                                            | Current release position                                                                                                                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Native identity    | App Store Connect app `6798020879` is CUT OS with bundle ID `com.zarifahmed.cut`; exact version 1.0.0 build 3 is processed, valid, assigned to internal TestFlight, and selected for the version               | The processed build is not an App Review submission or public release. Physical-iPhone exact-build QA remains pending.                                                                                          |
+| Seller             | Apple Developer membership is active as an Individual; `getcutos.com` is the canonical public domain; the owner explicitly deferred professional review until after launch                                     | Preserve the owner-deferred record without claiming counsel approval. Do not add a different legal operator or publish private address information.                                                             |
+| Routes             | Sign in, sign up, adult eligibility, subscription, onboarding, Today, balanced meals, and Settings exist under `artifacts/cut-os/app`                                                                          | The navigation scripts below use only these built routes.                                                                                                                                                       |
+| Paid scope         | `ADR_004_SUBSCRIPTIONS.md` and `APP_STORE_READINESS.md` define the narrow v1 scope                                                                                                                             | Keep listing copy, screenshots, and review notes inside that boundary.                                                                                                                                          |
+| Purchases          | Apple stores the exact one-month `com.zarifahmed.cut.pro.monthly` product at $4.99 in the U.S. only, with no trial, no introductory offer, and Family Sharing off; RevenueCat credentials and mapping validate | Exact TestFlight purchase, entitlement refresh, restore-after-deletion, and the subscription review screenshot remain required.                                                                                 |
+| Adults only        | The server-authoritative `adult-18-v1` gate ships in build 3; Apple's current questionnaire is saved with an effective 18+ higher-age override                                                                 | Physical-device Declared Age Range behavior and the exact-build adult/restricted flows remain pending.                                                                                                          |
+| Privacy            | The nine-type linked-to-user, no-tracking App Privacy disclosure is published; Privacy, Terms, and Support are live at the canonical domain                                                                    | Exact-build account deletion, native recovery, archive/privacy verification, and final owner review remain pending.                                                                                             |
+| Category           | Health & Fitness is saved as the primary category; Made for Kids is No; Content Rights is No; regulated medical device is No; DSA is active as non-trader/no EU distribution                                   | Final listing/owner approval remains pending; do not infer professional approval from these saved Apple fields.                                                                                                 |
+| Icon               | `artifacts/cut-os/assets/images/icon-v2.png` is a 1024×1024, 8-bit RGB PNG with no alpha; SHA-256 `58e807c4772180bb7a6b157d421ac77c8d4106c606c6fe3ad80b62569c22c07a`                                           | Technically suitable as a candidate and configured for icon/splash/favicon. Native appearance and owner approval remain open.                                                                                   |
+| Minimum iOS        | The exact build 3 archive passed the release configuration, signature, and entitlement checks with the iOS 17 minimum required by the configured native Clerk SDK                                              | Reconfirm the same behavior on a physical supported iPhone through TestFlight.                                                                                                                                  |
+| Screenshots        | The validated 6.9-inch capture plan selects the Today next-action screen and the real subscription offer; no release image is captured or uploaded                                                             | Capture only from exact build 3 after TestFlight access works, then bind PII review and upload evidence to the exact PNG hashes.                                                                                |
+| Review credentials | No credentials belong in this repository                                                                                                                                                                       | Put the primary account in App Store Connect's Sign-in Information. Apple provides only one username/password pair there, so put additional purpose-built review accounts in App Review Notes as Apple directs. |
+| TestFlight access  | Internal group `CUT OS Internal QA` shows one tester and build 3 as Testing, while the tester row still says No Builds Available; Apple Developer Support case `20000133994444` is pending                     | Do not resend invitations or mutate the group while Apple investigates. Installation and every exact-build device result remain pending.                                                                        |
 
 ### Corrected copy requiring native verification
 
@@ -360,9 +361,9 @@ CUT OS is an adults-only daily cut check-in for people who lift. It provides
 general fitness and nutrition information, not medical advice. Nutrition and
 allergen information is estimated, not an allergen-safety guarantee.
 
-Build under review: version [APP_VERSION], build [BUILD_NUMBER]
+Build under review: version 1.0.0, build 3
 Bundle ID: com.zarifahmed.cut
-Primary category: [OWNER_APPROVED_CATEGORY]
+Primary category: Health & Fitness
 Review contact: [REVIEW_CONTACT_NAME], [REVIEW_CONTACT_PHONE],
 [REVIEW_CONTACT_EMAIL]
 
@@ -382,18 +383,18 @@ Deletion: username [DELETION_REVIEW_USERNAME], password [DELETION_REVIEW_PASSWOR
 
 PRIMARY PATH
 1. Sign in; Today opens at Log your morning weigh-in.
-2. Enter [REVIEW_WEIGHT_AND_UNIT] and tap Log weigh-in.
+2. Enter 180 lb and tap Log weigh-in.
 3. Open balanced meals, select Lemon Herb Chicken Grain Bowl, and log it.
 4. Today shows estimated nutrition totals. Review logged meals allows serving
    adjustment and deletion. Settings provides Restore purchases, Manage App
    Store subscription, legal/support links, and Delete account.
 
 SUBSCRIPTION
-Product ID: [PRODUCT_ID]; duration: [DURATION]; introductory offer:
-[INTRODUCTORY_OFFER_OR_NONE]. StoreKit supplies the localized price, period,
+Product ID: com.zarifahmed.cut.pro.monthly; duration: one month; introductory
+offer: none. StoreKit supplies the localized price, period,
 and eligible offer through RevenueCat; none is hardcoded. Use the Purchase
 account, select the plan on CUT OS PRO, and tap Continue —
-[VERIFIED_LOCALIZED_PRICE_AND_PERIOD]. Paid screens open only after server
+$4.99 per month. Paid screens open only after server
 verification of CUT_OS_PRO. Restore is on the offer and Settings; Manage App
 Store subscription opens Apple's management page.
 
@@ -412,12 +413,12 @@ terminal completion. A minimal coordination record may remain for the approved
 retention period. Account deletion does not cancel Apple billing; Manage App
 Store subscription is provided separately.
 
-Production API: [PRODUCTION_API_HOST]
-Privacy: [PUBLIC_PRIVACY_URL]
-Terms/EULA: [PUBLIC_TERMS_URL]
-Support: [PUBLIC_SUPPORT_URL]
+Production API: https://getcutos.com
+Privacy: https://getcutos.com/privacy
+Terms/EULA: https://getcutos.com/terms
+Support: https://getcutos.com/support
 Backend, authentication, entitlement service, and public pages remain available
-during review. Network/VPN setup: [NONE_OR_EXACT_VERIFIED_REQUIREMENT].
+during review. Network/VPN setup: none.
 ```
 
 ## Age, privacy, and category checks
