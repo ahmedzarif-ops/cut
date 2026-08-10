@@ -11,7 +11,7 @@ Automated server/domain/mobile implementation is complete. Legal/privacy,
 native-device and live-service QA, and App Store completion remain open; this is
 not a public-launch readiness claim.
 
-## Current App Store launch checkpoint — 2026-08-10T21:42:15Z
+## Current App Store launch checkpoint — 2026-08-10T22:06:07Z
 
 - Exact EAS production build 3 for version 1.0.0 is signed from commit
   `08e62232db7f81047eec5b55a184f30fb7d4162a`, processed by Apple as `VALID`
@@ -25,7 +25,14 @@ not a public-launch readiness claim.
 - Apple's current age questionnaire is saved from the exact v1 scope. The
   calculated U.S. rating is 9+ before the higher-age override and 18+ after the
   owner-approved adults-only override. The override was restored and re-read
-  as `EIGHTEEN_PLUS`.
+  as `EIGHTEEN_PLUS`. A later read-only pass rechecked all seven questionnaire
+  steps, including the 2026 social-media questions, and found the stored
+  answers unchanged.
+- The exact monthly subscription now shows current U.S. pricing of $4.99,
+  availability in 1 of 175 storefronts, zero introductory offers, and zero
+  upcoming price changes. RevenueCat's Apple credentials and catalog mapping
+  are technically verified; real TestFlight purchase, entitlement, and restore
+  evidence remains pending.
 - The owner-approved nine-type App Privacy matrix is published as linked to the
   user and not used for tracking. Content Rights is saved as no third-party
   content; Standard EULA remains selected; the app is declared not a regulated

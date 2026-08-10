@@ -355,14 +355,14 @@
     "productReferenceName": "CUT OS Pro Monthly",
     "productId": "com.zarifahmed.cut.pro.monthly",
     "duration": "1_month",
-    "priceScheduleEvidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#subscription",
+    "priceScheduleEvidenceReference": "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#current-subscription-price-and-age-questionnaire-recheck",
     "usPricing": {
       "storefront": "US",
       "currency": "USD",
       "amount": "4.99",
-      "effectiveStatus": "pending",
-      "effectiveAtUtc": null,
-      "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#subscription",
+      "effectiveStatus": "effective",
+      "effectiveAtUtc": "2026-08-10T22:06:07Z",
+      "evidenceReference": "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#current-subscription-price-and-age-questionnaire-recheck",
       "ownerDecisionRevision": "owner-offer-2026-08-04-v2",
       "ownerDecisionEvidenceReference": "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription"
     },
@@ -454,7 +454,7 @@
     "approval": {
       "owner": true,
       "appStoreConnectConfirmed": true,
-      "revenueCatVerified": false,
+      "revenueCatVerified": true,
       "nativeQaVerified": false
     }
   },
@@ -638,14 +638,14 @@
   },
   "ageRating": {
     "targetAudience": "18_plus",
-    "questionnaireCheckedAt": "2026-08-03",
+    "questionnaireCheckedAt": "2026-08-10",
     "questionnaireSource": "https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/",
     "savedQuestionnaireEvidence": {
       "status": "confirmed_in_app_store_connect",
-      "questionnaireVersionOrRevision": "App Store Connect ageRatingDeclarations schema verified 2026-08-10",
+      "questionnaireVersionOrRevision": "App Store Connect seven-step questionnaire including 2026 social-media questions verified 2026-08-10",
       "calculatedRating": "9+",
       "effectiveRatingAfterOverride": "18+",
-      "confirmedAtUtc": "2026-08-10T20:56:38Z",
+      "confirmedAtUtc": "2026-08-10T22:06:07Z",
       "evidenceReference": "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#age-rating"
     },
     "workingAnswers": [

@@ -20,8 +20,13 @@
   Store version 1.0.0. The saved age declaration returns an effective 18+ U.S.
   rating. The nine-type no-tracking App Privacy label is published; content
   rights, regulated-medical-device, DSA, Standard EULA, and Fitness and Health
-  tax decisions are saved. Physical-iPhone QA, screenshots, review access, App
-  Review submission, and manual release remain open. After the correct tester
+  tax decisions are saved. The exact monthly product shows current U.S. pricing
+  of $4.99, availability in 1 of 175 storefronts, no introductory offer, and no
+  upcoming price change; RevenueCat's Apple credentials and catalog mapping are
+  technically verified. All seven saved age-questionnaire steps, including the
+  2026 social-media questions, were re-read without changes. Physical-iPhone QA,
+  purchase/restore evidence, screenshots, review access, App Review submission,
+  and manual release remain open. After the correct tester
   still showed `No Builds Available`, the owner approved exactly one Apple
   invitation email. The same internal Account Holder tester was removed and
   re-added, and App Store Connect reported one tester added. The owner then

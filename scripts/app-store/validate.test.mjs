@@ -254,8 +254,11 @@ test("committed working App Store records preserve approved and pending scopes",
     submission.subscription.appStoreConnect.reviewScreenshotUpload.status,
     "pending",
   );
-  assert.equal(submission.subscription.usPricing.effectiveStatus, "pending");
-  assert.equal(submission.subscription.usPricing.effectiveAtUtc, null);
+  assert.equal(submission.subscription.usPricing.effectiveStatus, "effective");
+  assert.equal(
+    submission.subscription.usPricing.effectiveAtUtc,
+    "2026-08-10T22:06:07Z",
+  );
   assert.equal(
     submission.subscription.revenueCat.customerReadWritePermissionStatus,
     "verified",
@@ -318,7 +321,7 @@ test("committed working App Store records preserve approved and pending scopes",
     "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat",
   );
   assert.equal(submission.subscription.approval.appStoreConnectConfirmed, true);
-  assert.equal(submission.subscription.approval.revenueCatVerified, false);
+  assert.equal(submission.subscription.approval.revenueCatVerified, true);
   assert.equal(
     submission.commercialAndLegal.appStoreServerNotifications.status,
     "not_configured_optional_for_initial_release",

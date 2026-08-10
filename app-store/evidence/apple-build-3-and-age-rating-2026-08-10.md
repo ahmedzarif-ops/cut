@@ -154,6 +154,32 @@ prepared decisions. App Store Connect was then changed only within that scope:
 No app version or subscription was added for review, no App Review submission
 was created, and manual public release remains separately owner-controlled.
 
+## Current subscription price and age-questionnaire recheck
+
+At `2026-08-10T22:06:07Z`, App Store Connect showed CUT OS Pro Monthly's
+**Current Pricing for New Subscribers** as **United States (USD) — $4.99**.
+The product remained available in exactly 1 of 175 countries or regions,
+Family Sharing remained off, and the current pricing table showed zero
+introductory offers and zero upcoming changes. This is current-price evidence,
+not a purchase or proceeds claim.
+
+The same live checkpoint walked all seven age-rating steps without changing an
+answer. The newly surfaced capability questions were already saved as no
+unrestricted web access, no public user-generated content, no social media, no
+under-13 social-media mode, no messaging or chat, and no advertising. Age
+Assurance remained yes; Health or Wellness Topics remained yes; Medical or
+Treatment Information and every mature, sexual, violent, gambling, contest,
+and loot-box frequency remained none/no. The calculated rating remained 9+,
+the higher-age override remained Age 18+, and the saved App Information result
+remained 18+ in 173 countries or regions and 19+ in Korea. The final Save
+button was disabled because the stored answers already matched this review.
+
+Direct RevenueCat verification already recorded in the Apple live evidence
+shows the production mapping, Apple subscription key, App Store Connect
+credential, entitlement, and current default offering as valid. The distinct
+native purchase, entitlement refresh, and restore-after-deletion QA gates
+remain pending.
+
 ## Internal TestFlight access check
 
 At the same checkpoint, internal group `CUT OS Internal QA` contained one
