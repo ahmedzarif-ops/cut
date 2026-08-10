@@ -402,7 +402,7 @@ ADULT 18+
 The gate is a self-declaration, not identity verification. The server uses the
 DOB only for its UTC adult-18-v1 decision, then discards it and retains status,
 policy version, and decision time. Use the Adult-gate account with
-[APPROVED_SYNTHETIC_ADULT_DOB]. The Restricted account opens CUT OS is for
+January 1, 1990. The Restricted account opens CUT OS is for
 adults with only account management/deletion and sign-out; it exposes no
 private guidance or purchase option.
 

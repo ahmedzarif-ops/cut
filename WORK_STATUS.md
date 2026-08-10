@@ -61,10 +61,10 @@ not a public-launch readiness claim.
   diagnosis of the contradictory internal tester/build relationship and did
   not send another invitation or change App Store state.
 - The credential-free App Review Notes template now pre-resolves every stable
-  build, category, product, price, URL, and network fact. It is 3,171 UTF-8
-  bytes with 13 placeholders remaining only for sensitive contact/review-
-  account data, the verified entitlement method, and the synthetic adult DOB;
-  it is not saved in App Store Connect. A dedicated iPhone 17 Pro Max / iOS
+  build, category, product, price, URL, and network fact. It is 3,156 UTF-8
+  bytes with 12 placeholders remaining only for sensitive contact/review-
+  account data and the verified entitlement method; it is not saved in App
+  Store Connect. A dedicated iPhone 17 Pro Max / iOS
   27.0 simulator preflight produced the accepted 6.9-inch `1320 × 2868` capture
   size, and a locally signed release-style app launched to the empty sign-in
   screen without a crash or clipped control. That app is not build 3's

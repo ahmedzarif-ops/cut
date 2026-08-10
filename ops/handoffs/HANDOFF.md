@@ -40,9 +40,9 @@ Available` despite bidirectional group/build assignment. No second email was
   exact-build installation remain open.
 - The credential-free App Review Notes template now has all stable build,
   category, product, price, URL, and network facts resolved. It remains unsaved
-  with 13 placeholders only for sensitive contact/review-account data, the
-  verified entitlement method, and the synthetic adult DOB. The dedicated
-  `CUT App Store 6.9 QA` iPhone 17 Pro Max / iOS 27.0 simulator produced the
+  with 12 placeholders only for sensitive contact/review-account data and the
+  verified entitlement method. The dedicated `CUT App Store 6.9 QA` iPhone 17
+  Pro Max / iOS 27.0 simulator produced the
   accepted `1320 × 2868` preflight size, and a locally signed release-style app
   launched to the empty sign-in screen. It is not the App Store-signed
   TestFlight binary; no CUT OS release screenshot is retained, hash-bound,
