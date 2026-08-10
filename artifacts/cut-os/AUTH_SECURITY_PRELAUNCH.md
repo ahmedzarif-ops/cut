@@ -139,6 +139,11 @@ Record sanitized exact-build evidence for all of the following:
 - the proxy abuse signal contains only the fixed event name and no raw reset
   codes, passwords, email identifiers, Clerk resource IDs, or provider errors.
 
+The executable, credential-safe procedure and evidence schema are defined in
+`AUTH_SECURITY_PRODUCTION_QA_PROTOCOL.md`. That protocol is intentionally
+fail-closed and still requires independent security-reviewer approval before
+the exact TestFlight run.
+
 Source inspection, TypeScript, unit tests, and an unsigned simulator are
 insufficient. The exact signed TestFlight candidate must pass the proxy-backed
 custom recovery flow on a physical iPhone, including the Get help entry point,

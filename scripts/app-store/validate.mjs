@@ -767,6 +767,8 @@ const SUPPORTED_RECOVERY_ARCHITECTURES = Object.freeze([
 
 const AUTHENTICATION_SECURITY_SOURCE =
   "artifacts/cut-os/AUTH_SECURITY_PRELAUNCH.md";
+const AUTHENTICATION_SECURITY_QA_PROTOCOL =
+  "artifacts/cut-os/AUTH_SECURITY_PRODUCTION_QA_PROTOCOL.md";
 const AUTHENTICATION_SECURITY_RISK =
   "password_reset_account_enumeration_timing";
 const AUTHENTICATION_SECURITY_PENDING_STATUS =
@@ -1396,6 +1398,13 @@ function validateAuthenticationSecurity({ value, release, check }) {
       `authenticationSecurity.${field} must be null or a non-empty evidence reference`,
     );
   }
+  check(
+    value.implementationEvidenceReference === null ||
+      value.implementationEvidenceReference.includes(
+        AUTHENTICATION_SECURITY_QA_PROTOCOL,
+      ),
+    "authenticationSecurity must retain the production QA protocol reference",
+  );
 
   const productionEvidence = value.productionTenantEvidence;
   check(

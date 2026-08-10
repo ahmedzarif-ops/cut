@@ -1784,7 +1784,8 @@ test("authentication security release gate requires supported architecture and p
   gate.selectedRecoveryArchitecture =
     "clerk_supported_server_or_proxy_recovery";
   gate.clerkSupportEvidenceReference = "security/clerk-support-review";
-  gate.implementationEvidenceReference = "security/recovery-build-review";
+  gate.implementationEvidenceReference =
+    "security/recovery-build-review; artifacts/cut-os/AUTH_SECURITY_PRODUCTION_QA_PROTOCOL.md";
   gate.productionTenantEvidence.clerkTenantAlias = "clerk-production";
   gate.productionTenantEvidence.testedAtUtc = "2026-08-03T23:59:00Z";
   for (const [key, evidence] of Object.entries(
@@ -1802,6 +1803,24 @@ test("authentication security release gate requires supported architecture and p
       release: true,
     }).filter((error) => error.includes("authenticationSecurity")),
     [],
+  );
+});
+
+test("authentication security retains the credential-safe production QA protocol", () => {
+  const inputs = validationInputs();
+  const missingProtocol = clone(inputs.submission);
+  missingProtocol.authenticationSecurity.implementationEvidenceReference =
+    "artifacts/cut-os/app/(auth)/forgot-password.tsx";
+
+  assert.ok(
+    validateMetadata({
+      ...inputs,
+      submission: missingProtocol,
+    }).some(
+      (error) =>
+        error ===
+        "authenticationSecurity must retain the production QA protocol reference",
+    ),
   );
 });
 
