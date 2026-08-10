@@ -624,7 +624,7 @@ test("the initial listing screenshot story includes a clear paid subscription of
   );
 });
 
-test("release mode stays fail closed while privacy, screenshot, and downstream launch gates are open", () => {
+test("release mode stays fail closed while screenshot and downstream launch gates are open", () => {
   const errors = validateBundle({ release: true });
   assert.ok(errors.length > 20);
   assert.ok(
@@ -669,15 +669,26 @@ test("release mode stays fail closed while privacy, screenshot, and downstream l
       "release mode requires image file for 01-today-next-action",
     ),
   );
-  assert.ok(
+  assert.equal(
     errors.includes(
       "release mode requires privacy gate production_archive_and_embedded_sdks",
     ),
+    false,
+    "the exact build 3 privacy archive gate must remain verified",
   );
-  assert.ok(
+  assert.equal(
+    errors.includes(
+      "release mode requires privacy gate public_policy_reconciliation",
+    ),
+    false,
+    "the published privacy-policy reconciliation gate must remain verified",
+  );
+  assert.equal(
     errors.includes(
       "release mode requires commercialAndLegal.status confirmed_in_app_store_connect",
     ),
+    false,
+    "the saved App Store commerce and legal declarations must remain confirmed",
   );
   assert.equal(
     errors.some((error) => error.includes("appleCommerceReadiness")),
@@ -765,7 +776,6 @@ test("release mode stays fail closed while privacy, screenshot, and downstream l
   }
 
   for (const retainedGate of [
-    "release mode requires a boolean content-rights declaration",
     "release mode requires screenshots.captureDefaults.capturedAtUtc as a UTC ISO timestamp",
   ]) {
     assert.ok(errors.includes(retainedGate), retainedGate);
@@ -778,6 +788,8 @@ test("metadata validation catches listing and privacy-manifest drift", () => {
   submission.listing.subtitle = "x".repeat(31);
   submission.listing.promotionalText = "metadata drift";
   submission.privacy.dataTypes[0].tracking = true;
+  submission.privacy.thirdPartyDataTypes[0].tracking = true;
+  submission.privacy.thirdPartyDataTypes[1].ascPurposes = ["Analytics"];
   submission.privacy.requiredReasonApis[0].reasons = ["invented.1"];
   submission.privacy.engineeringEvidenceReference = "PRIVACY_DATA_MAP.md";
 
@@ -798,6 +810,17 @@ test("metadata validation catches listing and privacy-manifest drift", () => {
   );
   assert.ok(
     errors.includes("every current privacy row must remain tracking No"),
+  );
+  assert.ok(
+    errors.includes("privacy.thirdPartyDataTypes[0] must remain tracking No"),
+  );
+  assert.ok(
+    errors.includes("every third-party privacy row must remain tracking No"),
+  );
+  assert.ok(
+    errors.includes(
+      "privacy.thirdPartyDataTypes[1] must retain the verified purposes",
+    ),
   );
   assert.ok(
     errors.includes(
@@ -1348,9 +1371,12 @@ test("records cannot claim approval without satisfying release evidence", () => 
 
   const privacyClaim = clone(inputs.submission);
   privacyClaim.privacy.status = "confirmed_for_submission";
+  privacyClaim.privacy.externalVerificationGates.find(
+    (gate) => gate.id === "public_policy_reconciliation",
+  ).status = "pending";
   assert.ok(
     validateMetadata({ ...inputs, submission: privacyClaim }).includes(
-      "release mode requires privacy gate production_archive_and_embedded_sdks",
+      "release mode requires privacy gate public_policy_reconciliation",
     ),
   );
 
@@ -2178,6 +2204,9 @@ test("Health & Fitness release requires confirmed regional medical-device declar
     submission.availability.status = "confirmed_in_app_store_connect";
     submission.availability.approval.owner = true;
     submission.availability.approval.appStoreConnectConfirmed = true;
+    submission.regulatedMedicalDevice.approval.owner = false;
+    submission.regulatedMedicalDevice.regionalDeclarations[region].status =
+      "pending";
 
     const errors = validateMetadata({
       ...inputs,

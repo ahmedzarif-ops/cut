@@ -559,6 +559,25 @@ availability until the issue is addressed.
 This decision does not authorize email or other external contact. Immediate
 owner confirmation remains required before any message is sent.
 
+## Decision 13 — final App Store declaration bundle
+
+**Status:** Approved and saved August 10, 2026; submission and public release
+remain separately controlled.
+
+After receiving one exact list, the owner replied **approve all**. App Store
+Connect now records: no third-party content under Content Rights; Apple's
+Standard License Agreement; not a regulated medical device in any country or
+region; DSA non-trader or no planned EU distribution; **Fitness and Health** as
+both the parent-app and CUT OS Pro Monthly tax category; and the exact
+nine-type App Privacy matrix as linked to the user and not used for tracking.
+The published privacy purposes match the exact build 3 manifest plus the
+conservative Clerk partner rows. Professional approval is not claimed; the
+owner-deferred review disposition in Decision 12 remains in force.
+
+This decision authorizes only those saved declarations. It does not authorize
+an App Review submission, a tester/invitation email, external TestFlight
+distribution, automatic release, or manual public release.
+
 ## Later explicit approvals
 
 These are intentionally deferred until the prerequisites are ready:
@@ -569,15 +588,9 @@ These are intentionally deferred until the prerequisites are ready:
   exact green commit and production preflight passes.
 - Any Clerk trial, billing method, or paid-plan upgrade if production cannot use
   the existing no-cost plan.
-- EULA, app tax category, optional subscription tax override, and DSA status.
-  The free-download, optional-notification omission, and subscription App Name
-  Display choices are recorded.
 - Any future Accessibility Nutrition Label publication and any external
   TestFlight review.
 - Final `CUT OS` name-clearance decision or owner-approved replacement name.
-- Final App Privacy and age-rating answers; professional-review fields may use
-  only the explicit owner-deferred disposition recorded in Decision 12 and may
-  never be represented as professionally approved.
 - Submit for Review.
 - Manual public release.
 

@@ -105,16 +105,16 @@ invent a value.
 | Age Suitability URL        | Omit unless owner approves one                             | Optional; if supplied, it must describe the self-declared 18+ gate accurately.                                                  |
 | Seller/legal operator      | Zarif Ahmed; active Individual Account Holder              | Verify Apple's eventual public seller display and obtain counsel review before submission.                                      |
 | SKU                        | `cut-ios-v1`; immutable app record created                 | Must match the existing App Store Connect record.                                                                               |
-| Copyright                  | Unresolved                                                 | Owner supplies the correct year and rights holder.                                                                              |
-| Content-rights declaration | Unresolved                                                 | Owner/counsel answer from the final catalog, artwork, copy, and licensed content.                                               |
+| Copyright                  | `2026 Zarif Ahmed`; saved                                  | Reconfirm only if the rights holder changes before submission.                                                                  |
+| Content-rights declaration | No third-party content; saved                              | Exact owner-approved App Store Connect answer for build 3.                                                                      |
 | Initial territories        | United States only (`US`); saved                           | Controlled evidence retained; keep other storefronts unavailable for v1.                                                        |
 | App distribution method    | Public; saved                                              | Controlled evidence retained; signed-build and submission gates remain open.                                                    |
 | Apple silicon Mac          | Do Not Make Available; saved                               | Keep disabled until platform-specific QA is approved.                                                                           |
 | Apple Vision Pro           | Do Not Make Available; saved                               | Keep disabled until platform-specific QA is approved.                                                                           |
 | App download price         | Free download; saved                                       | Paid Apps Agreement, banking, and W-9 are active; subscription release remains open.                                            |
-| License agreement          | Unresolved                                                 | Owner/counsel chooses Apple's standard EULA or an approved custom EULA.                                                         |
-| App tax category           | Unresolved                                                 | Owner/counsel/finance confirms the value; the subscription inherits it unless an explicit override is approved.                 |
-| DSA trader status          | Unresolved                                                 | Owner/counsel confirms trader or non-trader; Apple still requires the declaration when distribution excludes the EU.            |
+| License agreement          | Apple Standard EULA; saved                                 | Owner-approved; no custom EULA was entered.                                                                                     |
+| App tax category           | Fitness and Health; saved                                  | Owner-approved parent-app category.                                                                                             |
+| DSA trader status          | Non-trader or no planned EU distribution; active           | Owner-approved; v1 storefront availability remains United States only.                                                          |
 | Server Notifications       | Omit for initial v1                                        | Optional. If added later, use RevenueCat's full production URL; Apple's sandbox field may be empty and fall back to production. |
 | Release method             | Manual release; saved                                      | Keep manual until the owner explicitly approves both submission and public release in App Store Connect.                        |
 
@@ -346,9 +346,9 @@ initially approved 54-character sentence must not be entered. The exact
 corrected offer is bound to its recorded decision by working validation. The
 U.S. $4.99 Starting Price record and U.S.-only availability are saved with
 controlled evidence; no defensible effective timestamp is recorded and
-public/effective revenue status remains pending. The subscription tax category
-inherits the required app-level category unless an explicit override is
-approved.
+public/effective revenue status remains pending. Both the parent app and the
+monthly subscription now use the owner-approved **Fitness and Health** tax
+category.
 RevenueCat production Apple app “app8feee0dfba” is created for
 “com.zarifahmed.cut”; its Apple subscription key is valid. Product
 “prod66e8dc0083” maps to “CUT_OS_PRO”. The “default” offering uses its

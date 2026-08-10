@@ -75,7 +75,7 @@
     "sellerLegalOperator": "Zarif Ahmed",
     "sku": "cut-ios-v1",
     "copyright": "2026 Zarif Ahmed",
-    "contentRightsDeclaration": null,
+    "contentRightsDeclaration": false,
     "initialTerritories": ["US"],
     "approval": {
       "status": "pending",
@@ -172,11 +172,11 @@
     }
   },
   "commercialAndLegal": {
-    "status": "pending_owner_legal_and_app_store_connect",
+    "status": "confirmed_in_app_store_connect",
     "appDownloadPrice": "free_download",
     "licenseAgreement": "standard_apple_eula",
-    "appTaxCategory": null,
-    "dsaStatus": null,
+    "appTaxCategory": "Fitness and Health",
+    "dsaStatus": "non_trader",
     "appleCommerceReadiness": {
       "status": "confirmed",
       "developerProgramMembership": {
@@ -213,9 +213,9 @@
       "evidenceReference": null
     },
     "approval": {
-      "owner": false,
+      "owner": true,
       "legal": false,
-      "appStoreConnectConfirmed": false
+      "appStoreConnectConfirmed": true
     }
   },
   "appReview": {
@@ -376,7 +376,7 @@
       "evidenceReference": null
     },
     "familySharingDecision": "disabled",
-    "taxCategory": null,
+    "taxCategory": "Fitness and Health",
     "localizations": {
       "en-US": {
         "groupDisplayName": "CUT OS Pro",
@@ -611,29 +611,29 @@
     }
   },
   "regulatedMedicalDevice": {
-    "status": "provisional_pending_territories_and_confirmation",
+    "status": "confirmed_in_app_store_connect",
     "workingPosition": "general_wellness_not_a_regulated_medical_device",
-    "basis": "CUT OS currently provides general fitness and nutrition information, not diagnosis, prevention, monitoring, treatment, clinical guidance, or regulated-device functionality. The final binary, claims, territories, and live regional declarations still require qualified review and confirmation.",
+    "basis": "Exact build 3 provides general fitness and nutrition information, not diagnosis, prevention, monitoring, treatment, clinical guidance, or regulated-device functionality. The owner approved the not-regulated declaration, and App Store Connect now confirms that answer for every country or region.",
     "appleReference": "https://developer.apple.com/help/app-store-connect/manage-app-information/declare-regulated-medical-device-status",
     "regionalDeclarations": {
       "US": {
         "workingAnswer": "not_regulated_medical_device",
-        "status": "provisional_pending_confirmation"
+        "status": "confirmed_in_app_store_connect"
       },
       "EU_EEA": {
         "workingAnswer": "not_regulated_medical_device",
-        "status": "provisional_pending_confirmation"
+        "status": "confirmed_in_app_store_connect"
       },
       "UK": {
         "workingAnswer": "not_regulated_medical_device",
-        "status": "provisional_pending_confirmation"
+        "status": "confirmed_in_app_store_connect"
       }
     },
     "approval": {
-      "owner": false,
+      "owner": true,
       "legalOrQualifiedRegulatoryReviewer": false,
-      "finalBinaryVerified": false,
-      "appStoreConnectConfirmed": false
+      "finalBinaryVerified": true,
+      "appStoreConnectConfirmed": true
     }
   },
   "ageRating": {
@@ -881,9 +881,9 @@
     }
   },
   "privacy": {
-    "status": "provisional_pending_production_reconciliation",
+    "status": "confirmed_for_submission",
     "manifestPath": "artifacts/cut-os/app.json",
-    "engineeringEvidenceReference": "PRIVACY_DATA_MAP.md; app-store/evidence/production-launch-infrastructure-2026-08-08.md; app-store/evidence/apple-live-configuration-2026-08-04.md",
+    "engineeringEvidenceReference": "PRIVACY_DATA_MAP.md; app-store/evidence/production-launch-infrastructure-2026-08-08.md; app-store/evidence/apple-live-configuration-2026-08-04.md; app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md",
     "tracking": false,
     "trackingDomains": [],
     "requiredReasonApis": [
@@ -995,40 +995,69 @@
         "v1Data": "Apple and RevenueCat subscription, renewal, expiry, refund, and entitlement state."
       }
     ],
+    "thirdPartyDataTypes": [
+      {
+        "ascDataType": "Identifiers - Device ID",
+        "partners": ["Clerk"],
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "ascPurposes": ["App Functionality"],
+        "v1Data": "Clerk may process device identifiers and trusted client IP metadata to authenticate sessions, prevent abuse, and apply account-security controls.",
+        "evidence": [
+          "https://clerk.com/legal/dpa",
+          "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#privacy-archive-and-vendor-reconciliation"
+        ]
+      },
+      {
+        "ascDataType": "Usage Data - Product Interaction",
+        "partners": ["Clerk"],
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "ascPurposes": ["App Functionality", "Analytics"],
+        "v1Data": "Clerk records production authentication and session activity such as sign-ups, sign-ins, active usage, and retention for authentication operation and service analytics.",
+        "evidence": [
+          "https://clerk.com/legal/dpa",
+          "https://clerk.com/docs/guides/dashboard/analytics",
+          "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#privacy-archive-and-vendor-reconciliation"
+        ]
+      }
+    ],
     "externalVerificationGates": [
       {
         "id": "production_archive_and_embedded_sdks",
-        "status": "pending",
-        "requiredEvidence": "Final xcarchive privacy report, embedded SDK inventory, required-reason APIs, and production configuration."
+        "status": "verified",
+        "requiredEvidence": "Exact build 3 archive manifest inventory, embedded SDK privacy manifests, app-level data types, required-reason APIs, and production public configuration are recorded in the build evidence."
       },
       {
         "id": "ip_network_metadata_mapping",
-        "status": "pending",
-        "requiredEvidence": "Hosting and Clerk category, linkage, purpose, and retention confirmation."
+        "status": "verified",
+        "requiredEvidence": "Trusted client IP and Clerk device-identifier handling are conservatively mapped to linked Device ID for App Functionality using exact production behavior and Clerk's current DPA."
       },
       {
         "id": "diagnostics_and_usage_data",
-        "status": "pending",
-        "requiredEvidence": "Final SDK/archive and production collection behavior, including purpose and linkage."
+        "status": "verified",
+        "requiredEvidence": "Exact build 3 has no crash or general analytics SDK; Clerk production authentication activity is conservatively mapped to linked Product Interaction for App Functionality and Analytics."
       },
       {
         "id": "public_policy_reconciliation",
-        "status": "pending",
-        "requiredEvidence": "Published Privacy Policy and notice-at-collection reconciled with production behavior and vendors."
+        "status": "verified",
+        "requiredEvidence": "The live Privacy Policy and in-app notice-at-collection were reconciled with exact build 3, production behavior, and the disclosed Apple, Clerk, RevenueCat, and Replit data paths."
       },
       {
         "id": "app_store_connect_reconciliation",
-        "status": "pending",
-        "requiredEvidence": "Saved App Store Connect answers reviewed against this matrix and the submitted archive."
+        "status": "verified",
+        "requiredEvidence": "The nine published App Store Connect data types, linkage, no-tracking answers, and purposes were reviewed against this matrix and exact build 3."
       }
     ],
     "approval": {
-      "owner": false,
+      "owner": true,
       "legal": false,
-      "productionArchiveVerified": false,
-      "vendorsVerified": false,
-      "publicPolicyVerified": false,
-      "appStoreConnectConfirmed": false
+      "productionArchiveVerified": true,
+      "vendorsVerified": true,
+      "publicPolicyVerified": true,
+      "appStoreConnectConfirmed": true
     }
   }
 }

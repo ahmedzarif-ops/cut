@@ -102,9 +102,9 @@ social features. Those are backlog, not submission truth.
       requires coordinated source, release-record, configuration, and test
       updates before a signed build.
 - [x] Owner approved a free app download and Family Sharing disabled.
-- [ ] Approve the standard-versus-custom EULA, app tax category, and DSA
-      position. The subscription inherits the app category unless an explicit
-      override is later approved.
+- [x] Owner approved and Apple saved the Standard EULA, Fitness and Health
+      parent-app and subscription tax categories, and DSA non-trader/no-EU
+      position.
 - [x] The Subscription Group Reference Name, Subscription Product Reference
       Name, English (U.S.) group/product display names, exact 45-character
       replacement description, and `use_app_name` option are recorded. The
@@ -188,16 +188,18 @@ social features. Those are backlog, not submission truth.
 - [ ] Form/confirm the selling legal entity and public contact information, or
       obtain counsel's written rationale for accepting the Apple review risk of
       an individual seller for this sensitive-data app.
-- [ ] Publish functional HTTPS Privacy Policy, Terms/EULA, and Support pages.
+- [x] Publish functional HTTPS Privacy Policy, Terms/EULA, and Support pages.
 - [ ] Owner verifies the sign-up Terms assent and Privacy acknowledgment against
       the final public pages and exact build. Qualified counsel review is
       deferred under the bounded August 10 post-launch decision.
 - [ ] Initiate qualified counsel review of adults-only eligibility, notice,
       retention, account deletion, subscriptions, launch jurisdictions, and
       store copy within three calendar days after public release.
-- [ ] Privacy Policy names RevenueCat and explains linked User ID and Purchase
+- [x] Privacy Policy names RevenueCat and explains linked User ID and Purchase
       History, purposes, retention/deletion, and no tracking.
-- [ ] Final App Privacy answers match the production archive and backend.
+- [x] Final App Privacy answers match the production archive and backend; the
+      exact nine-type linked/no-tracking matrix is published in App Store
+      Connect.
 - [ ] Every meal has fixed ingredient quantities/yield, nutrition source and
       calculation method, substantiated common-allergen/dietary labels,
       qualified reviewer, and review date.
@@ -219,19 +221,19 @@ social features. Those are backlog, not submission truth.
       optional marketing or internal review aids, not release blockers. Do not
       mock unbuilt screens.
 - [ ] Owner/reviewers approve the focused copy in `APP_STORE_METADATA.md`.
-- [ ] Complete the current age-rating questionnaire truthfully, choose Health &
+- [x] Complete the current age-rating questionnaire truthfully, choose Health &
       Fitness if still accurate, do not mark Made for Kids, and apply the
       owner/legal-approved 18+ override when required.
-- [ ] Save evidence of the complete current age questionnaire, its version or
+- [x] Save evidence of the complete current age questionnaire, its version or
       revision, current-system calculated rating, effective post-override 18+
       rating, UTC confirmation time, and App Store Connect state. `Unrated`
       cannot release. The repository's 24 provisional descriptors are not
       approval.
-- [ ] Confirm the current App Store Connect regulated-medical-device declaration
+- [x] Confirm the current App Store Connect regulated-medical-device declaration
       for every selected US, EU/EEA, or UK territory. The working position is
-      general wellness/not a regulated medical device, but owner, qualified
-      review, final-binary review, and live App Store Connect confirmation are
-      still required.
+      general wellness/not a regulated medical device; owner, final-binary, and
+      live App Store Connect confirmation are recorded, while professional
+      review remains explicitly deferred rather than claimed.
 - [ ] Provide an eligible adult review account, exact full-access/purchase
       navigation, and a controlled restricted-path test with no real minor data.
 - [ ] Fresh-test the full-access, purchase, adult-gate, restricted, and deletion

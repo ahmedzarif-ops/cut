@@ -79,6 +79,101 @@ launch to proceed as soon as the remaining technical and App Store requirements
 are satisfied. Legal and qualified health/nutrition review remain explicitly
 deferred post-launch and are not claimed by this record.
 
+## Privacy archive and vendor reconciliation
+
+The exact uploaded IPA has SHA-256
+`9b75a01f4e541c98aea56efa93d2f431c8137117410bad80170e411944938b49`.
+Its app-level privacy manifest has SHA-256
+`6f68287b8b8883e5b02705dd94370c54cc0024e037b4255d901cd8df8eab4091`.
+The extracted signed bundle contains 12 privacy manifests: the app-level
+manifest plus Expo Constants, Expo File System, Expo System UI, PhoneNumberKit,
+PurchasesHybridCommon, React Core, React cxxreact, RevenueCat, and the three
+React Native dependency resource bundles for Boost, Folly, and glog.
+
+The app-level manifest matches the committed release configuration exactly:
+
+- tracking is false and tracking domains are empty;
+- collected first-party types are Name, Email Address, Health, Fitness, User
+  ID, Other Data Types, and Purchase History;
+- every first-party row is linked to the account and not used for tracking; and
+- required-reason API declarations cover File Timestamp, Disk Space, User
+  Defaults, and System Boot Time with the committed approved reasons.
+
+RevenueCat's embedded manifest declares unlinked Purchase History for App
+Functionality and no tracking. The exact archive has no general crash-reporting
+or product-analytics SDK. Clerk's native bundle is present but does not include
+its own privacy manifest in this candidate. Apple requires the App Store privacy
+answers to include third-party partner practices even when those practices are
+not represented by an embedded SDK manifest. Clerk's current DPA says its
+configured service may process IP addresses, device identifiers, and usage
+data. Its current production analytics documentation describes sign-ups,
+sign-ins, active usage, and retention.
+
+The copy-ready working position therefore adds two conservative partner rows to
+the seven first-party rows:
+
+- **Identifiers — Device ID:** linked, no tracking, App Functionality; covers
+  Clerk device identifiers and trusted client IP used for authentication,
+  security, and abuse prevention.
+- **Usage Data — Product Interaction:** linked, no tracking, App Functionality
+  and Analytics; covers Clerk authentication and session activity.
+
+No Crash Data, Performance Data, or Other Diagnostic Data is declared because
+the exact archive contains no such SDK and CUT's production application logs
+use fixed coarse operational fields rather than user-linked device diagnostics.
+Raw date of birth remains excluded because CUT discards it immediately after
+the eligibility decision and neither CUT nor its partners retain it. These
+classifications formed the owner-approved App Store questionnaire. At
+`2026-08-10T21:42:15Z`, App Store Connect showed all nine data types published
+as linked to the user, with the exact purposes above and no tracking.
+
+Authoritative references:
+
+- <https://developer.apple.com/app-store/app-privacy-details/>
+- <https://developer.apple.com/documentation/bundleresources/privacy-manifest-files>
+- <https://clerk.com/legal/dpa>
+- <https://clerk.com/docs/guides/dashboard/analytics>
+
+## Owner-approved App Store declarations
+
+The owner replied **approve all** after receiving one bounded list of the exact
+prepared decisions. App Store Connect was then changed only within that scope:
+
+- Content Rights: **No**, the app does not contain, show, or access third-party
+  content.
+- License Agreement: Apple's Standard License Agreement remains selected.
+- Regulated Medical Device: **No** in every country or region.
+- Digital Services Act: **not a trader or not planning EU distribution**; the
+  DSA agreement record became active without publishing trader contact data.
+- Parent-app tax category: **Fitness and Health**.
+- CUT OS Pro Monthly tax category: **Fitness and Health**.
+- App Privacy: the nine exact data types were published as linked to the user,
+  for their recorded functionality, personalization, and analytics purposes,
+  with tracking set to No.
+
+No app version or subscription was added for review, no App Review submission
+was created, and manual public release remains separately owner-controlled.
+
+## Internal TestFlight access check
+
+At the same checkpoint, internal group `CUT OS Internal QA` contained one
+tester and exact build `1.0.0 (3)`, which showed **Testing** with 90 days
+remaining. The tester row nevertheless showed **No Builds Available**, and the
+owner-provided iPhone screenshot showed TestFlight's generic **Ready To Test**
+screen rather than CUT OS. Apple did not expose or require a redemption code
+for this internal setup. No invitation or notification email was sent during
+that initial check. The owner later confirmed the iPhone Media & Purchases
+Apple Account matched the tester record and explicitly approved exactly one
+Apple invitation email. The same internal Account Holder tester was removed
+and re-added; App Store Connect reported that one tester was added to the
+group. The owner subsequently reported that no invitation had arrived. A live
+read-only recheck at `2026-08-10T21:55:27Z` confirmed that the group lists exact
+build `1.0.0 (3)` as Testing and the build detail lists the internal group with
+one tester, but the tester row still says **No Builds Available**. No second
+email was sent. Apple-side availability, invitation acceptance, and exact-build
+installation remain pending. No additional email is authorized by this
+evidence.
+
 ## Remaining release boundary
 
 Build processing and the age questionnaire are complete, but this evidence does
@@ -86,8 +181,6 @@ not approve or satisfy:
 
 - physical-device exact-build QA;
 - listing and subscription review screenshots;
-- App Privacy publication;
-- content-rights, regulated-medical-device, or DSA owner declarations;
 - App Review contact and purpose-built review-account configuration;
 - the first-subscription review attachment;
 - final owner approval to submit for App Review; or

@@ -9,9 +9,10 @@
 The following live checkpoint supersedes earlier build/deployment counts in this
 section:
 
-- GitHub PR #9 is draft/open and clean at exact head
-  `08e62232db7f81047eec5b55a184f30fb7d4162a`; CI run `31425815282` reports both
-  required checks successful. Replit serves that exact commit, and the root,
+- GitHub PR #9 is draft/open. Release code commit
+  `08e62232db7f81047eec5b55a184f30fb7d4162a` has successful required checks and
+  is the exact commit served by Replit; later evidence-only branch commits do
+  not change that deployed build. The root,
   status, readiness, canonical Clerk proxy, Privacy, Terms, and Support routes
   pass.
 - EAS production build `1fe435cf-9d8b-4eff-a1d3-bfb893b344a6` produced version
@@ -22,6 +23,19 @@ section:
 - The exact archive passes strict signature and entitlement checks. Apple now
   stores the v1 age questionnaire, calculates 9+ before the higher-age override,
   and returns an effective 18+ rating after the restored adults-only override.
+- The exact nine-type, linked-to-user, no-tracking App Privacy disclosure is
+  published. Content rights is No, the Standard Apple EULA remains selected,
+  the parent app and monthly subscription use Fitness and Health tax treatment,
+  the regulated-medical-device declaration is No, and the DSA record is active
+  as non-trader/no planned EU distribution.
+- Exact build 1.0.0 (3) is assigned to the internal group. After a
+  notification-free rebind left the tester at `No Builds Available`, the owner
+  approved exactly one Apple invitation email and the same internal Account
+  Holder tester was re-added. App Store Connect reported one tester added, but
+  the owner then reported no invitation received and the live tester row still
+  showed `No Builds Available` despite bidirectional group/build assignment. No
+  second email was sent. Apple-side availability, acceptance, and exact-build
+  installation remain pending.
 - Physical-iPhone exact-build authentication, purchase, restore, age, deletion,
   accessibility, and screenshot QA remain open. No App Review submission or
   public release is claimed.
@@ -90,8 +104,11 @@ section:
   review screenshot, and without a defensible price-effective timestamp.
 - The `CUT OS Internal QA` TestFlight group is configured with automatic
   distribution off, the approved public feedback email, and the repository beta
-  description. The Account Holder is its one internal tester and it has 0
-  builds; no TestFlight or exact-build QA is claimed.
+  description. The Account Holder is its one internal tester and exact build
+  1.0.0 (3) is assigned. The one owner-approved tester re-add was performed, but
+  Apple has not yet surfaced the build or delivered an invitation according to
+  the owner's latest check. No second email was sent; acceptance, installation,
+  and exact-build QA are not yet claimed.
 - Database statements, startup migrations, API/public-server shutdown, and
   readiness recovery now have cross-tested timeout boundaries. Metro receives
   an allowlist with dotenv loading disabled instead of the server environment.

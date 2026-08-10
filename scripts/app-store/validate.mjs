@@ -265,6 +265,7 @@ const EXPECTED_PRIVACY_KEYS = Object.freeze([
   "trackingDomains",
   "requiredReasonApis",
   "dataTypes",
+  "thirdPartyDataTypes",
   "externalVerificationGates",
   "approval",
 ]);
@@ -272,6 +273,7 @@ const REQUIRED_PRIVACY_ENGINEERING_EVIDENCE_REFERENCES = Object.freeze([
   "PRIVACY_DATA_MAP.md",
   "app-store/evidence/production-launch-infrastructure-2026-08-08.md",
   "app-store/evidence/apple-live-configuration-2026-08-04.md",
+  "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md",
 ]);
 
 const AGE_QUESTIONNAIRE_SOURCE =
@@ -712,6 +714,35 @@ const EXPECTED_EXTERNAL_PRIVACY_GATES = Object.freeze([
   "diagnostics_and_usage_data",
   "public_policy_reconciliation",
   "app_store_connect_reconciliation",
+]);
+
+const EXPECTED_THIRD_PARTY_PRIVACY_DATA_TYPE_KEYS = Object.freeze([
+  "ascDataType",
+  "partners",
+  "collected",
+  "linked",
+  "tracking",
+  "ascPurposes",
+  "v1Data",
+  "evidence",
+]);
+
+const EXPECTED_THIRD_PARTY_PRIVACY_DATA_TYPES = Object.freeze([
+  Object.freeze({
+    ascDataType: "Identifiers - Device ID",
+    partners: Object.freeze(["Clerk"]),
+    ascPurposes: Object.freeze(["App Functionality"]),
+    evidence: Object.freeze(["https://clerk.com/legal/dpa"]),
+  }),
+  Object.freeze({
+    ascDataType: "Usage Data - Product Interaction",
+    partners: Object.freeze(["Clerk"]),
+    ascPurposes: Object.freeze(["App Functionality", "Analytics"]),
+    evidence: Object.freeze([
+      "https://clerk.com/legal/dpa",
+      "https://clerk.com/docs/guides/dashboard/analytics",
+    ]),
+  }),
 ]);
 
 const EXPECTED_AGE_APPROVAL_KEYS = Object.freeze([
@@ -5182,6 +5213,60 @@ export function validateMetadata({
     check(
       workingDataTypes.every((entry) => entry?.tracking === false),
       "every current privacy row must remain tracking No",
+    );
+
+    const thirdPartyDataTypes = Array.isArray(privacy.thirdPartyDataTypes)
+      ? privacy.thirdPartyDataTypes
+      : [];
+    check(
+      thirdPartyDataTypes.length ===
+        EXPECTED_THIRD_PARTY_PRIVACY_DATA_TYPES.length,
+      "privacy.thirdPartyDataTypes must contain the exact verified partner rows",
+    );
+    EXPECTED_THIRD_PARTY_PRIVACY_DATA_TYPES.forEach((expected, index) => {
+      const entry = thirdPartyDataTypes[index];
+      check(
+        hasExactKeys(entry, EXPECTED_THIRD_PARTY_PRIVACY_DATA_TYPE_KEYS),
+        `privacy.thirdPartyDataTypes[${index}] must contain exactly the required keys`,
+      );
+      check(
+        entry?.ascDataType === expected.ascDataType,
+        `privacy.thirdPartyDataTypes[${index}] must use ${expected.ascDataType}`,
+      );
+      check(
+        arraysEqual(entry?.partners, expected.partners),
+        `privacy.thirdPartyDataTypes[${index}] must retain the verified partner`,
+      );
+      check(
+        entry?.collected === true,
+        `privacy.thirdPartyDataTypes[${index}] must be marked collected`,
+      );
+      check(
+        entry?.linked === true,
+        `privacy.thirdPartyDataTypes[${index}] must remain linked to the user`,
+      );
+      check(
+        entry?.tracking === false,
+        `privacy.thirdPartyDataTypes[${index}] must remain tracking No`,
+      );
+      check(
+        arraysEqual(entry?.ascPurposes, expected.ascPurposes),
+        `privacy.thirdPartyDataTypes[${index}] must retain the verified purposes`,
+      );
+      check(
+        typeof entry?.v1Data === "string" && entry.v1Data.length > 20,
+        `privacy.thirdPartyDataTypes[${index}] must describe the v1 data`,
+      );
+      check(
+        expected.evidence.every((reference) =>
+          entry?.evidence?.includes(reference),
+        ),
+        `privacy.thirdPartyDataTypes[${index}] must retain the vendor evidence`,
+      );
+    });
+    check(
+      thirdPartyDataTypes.every((entry) => entry?.tracking === false),
+      "every third-party privacy row must remain tracking No",
     );
 
     const externalGates = Array.isArray(privacy.externalVerificationGates)

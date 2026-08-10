@@ -18,8 +18,17 @@
   `dce1d8df-cd9e-46d7-8607-dcde9570df2e` as valid, assigned it to the internal
   TestFlight group with automatic notifications off, and selected it for App
   Store version 1.0.0. The saved age declaration returns an effective 18+ U.S.
-  rating. Physical-iPhone QA, screenshots, privacy, remaining owner
-  declarations, App Review submission, and manual release remain open.
+  rating. The nine-type no-tracking App Privacy label is published; content
+  rights, regulated-medical-device, DSA, Standard EULA, and Fitness and Health
+  tax decisions are saved. Physical-iPhone QA, screenshots, review access, App
+  Review submission, and manual release remain open. After the correct tester
+  still showed `No Builds Available`, the owner approved exactly one Apple
+  invitation email. The same internal Account Holder tester was removed and
+  re-added, and App Store Connect reported one tester added. The owner then
+  reported no invitation received, and the live tester row remained `No Builds
+Available` despite bidirectional group/build assignment. No second email was
+  sent. Apple-side availability, acceptance, and exact-build installation
+  remain open.
 - Resolve the exact remote branch SHA and its required GitHub checks live before
   relying on a checkpoint. A commit ID embedded in this tracked handoff would
   become historical as soon as the handoff itself changes.
@@ -283,9 +292,10 @@
   counsel and a qualified registered dietitian reviewer.
 - Final public seller-display verification and qualified-counsel review of the
   individual seller path.
-- Standard-versus-custom EULA, app tax category, optional subscription tax
-  override, DSA status, copyright holder/year, content-rights declaration, and
-  final product-name clearance.
+- Copyright holder/year and final product-name clearance. Standard EULA,
+  Fitness and Health app/subscription tax categories, DSA non-trader/no-EU
+  status, and the no-third-party-content declaration are owner-approved and
+  saved.
 - Qualified legal/privacy and nutrition/allergen review.
 - Reviewer response state and non-binding scheduling boundaries are tracked in
   `legal-site/PROFESSIONAL_REVIEW_OUTREACH.md`; no quote or engagement is yet

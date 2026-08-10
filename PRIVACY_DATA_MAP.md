@@ -12,21 +12,23 @@ This checkpoint separates verified engineering behavior from the remaining
 legal, vendor-retention, and exact-archive decisions. Detailed infrastructure
 and commerce evidence remains in
 `app-store/evidence/production-launch-infrastructure-2026-08-08.md` and
-`app-store/evidence/apple-live-configuration-2026-08-04.md`; those records are
-linked here instead of duplicated.
+`app-store/evidence/apple-live-configuration-2026-08-04.md`. Exact build 3
+archive evidence is in
+`app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md`; those records
+are linked here instead of duplicated.
 
-| Processor or surface                      | Verified engineering evidence                                                                                                                                                                                                                                                                                                            | Still unresolved before submission                                                                                                                                                                                                                                                |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CUT API and production database on Replit | The exact backend deployment is public on the approved Reserved VM, the production database is connected, development-data copy is off, application-to-database TLS verification passes, and app-owned logs use fixed sanitized fields. Point-in-time recovery is on with a seven-day in-place restore window; no restore was exercised. | Replit/provider access-log fields and retention, support-access controls, backup deletion/expiry treatment, and contractual/regional processing terms require vendor and legal confirmation. A production restore remains destructive and needs a separately approved drill plan. |
-| Clerk production identity                 | The replacement production tenant, primary domain, five DNS records, same-origin proxy, Native API registration, Strict enumeration posture, and Client Trust are configured. CUT forwards the trusted client IP only through the bounded Clerk proxy and does not log provider bodies or credentials.                                   | Clerk IP, device, event, sign-in, retention, support-access, and linkage treatment must be reconciled with the final questionnaire and public policy. Exact signed-build recovery, rate-limit, and deletion evidence remains pending.                                             |
-| RevenueCat and Apple commerce             | The production Apple app, monthly product, entitlement, and default offering are mapped; both Apple credential configurations validate. CUT is designed to identify RevenueCat customers only by the internal CUT UUID. No production transactions exist yet.                                                                            | The final SDK/archive inventory, exact purchase/restore/account-deletion behavior, transaction retention, analytics/diagnostics categories, and public disclosure require exact TestFlight evidence and reviewer confirmation.                                                    |
-| Apple, TestFlight, and App Store Connect  | The app record and U.S.-only subscription record exist, but no build has been uploaded and the privacy questionnaire has not been saved. Apple retains its own transaction and platform records.                                                                                                                                         | The exact processed build, App Store privacy answers, Apple retention treatment, review accounts, screenshots, and final reviewer approvals remain pending.                                                                                                                       |
-| Expo/EAS build service                    | EAS is configured for the CUT project and the client-facing production variable names are controlled; no production iOS build exists. Build systems are not part of the runtime user-data path.                                                                                                                                          | The final `.xcarchive`, embedded privacy manifests, SDK signatures, build diagnostics, and any provider retention must be inspected from the exact candidate rather than inferred from the simulator or package graph.                                                            |
-| Support and crash/usage tooling           | The app has no general product-analytics or crash-reporting SDK in its direct runtime dependency list. The public Support route remains unpublished and fail-closed; CUT has no in-app support-ticket database.                                                                                                                          | Final transitive SDK/archive inspection is required. The support-email workflow, correspondence retention, and any future crash/analytics provider require separate disclosure review before activation.                                                                          |
+| Processor or surface                      | Verified engineering evidence                                                                                                                                                                                                                                                                                                                                                                               | Still unresolved before submission                                                                                                                                                                                                                                                |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CUT API and production database on Replit | The exact backend deployment is public on the approved Reserved VM, the production database is connected, development-data copy is off, application-to-database TLS verification passes, and app-owned logs use fixed sanitized fields. Point-in-time recovery is on with a seven-day in-place restore window; no restore was exercised.                                                                    | Replit/provider access-log fields and retention, support-access controls, backup deletion/expiry treatment, and contractual/regional processing terms require vendor and legal confirmation. A production restore remains destructive and needs a separately approved drill plan. |
+| Clerk production identity                 | The replacement production tenant, primary domain, five DNS records, same-origin proxy, Native API registration, Strict enumeration posture, and Client Trust are configured. CUT forwards the trusted client IP only through the bounded Clerk proxy and does not log provider bodies or credentials. Clerk's DPA and analytics documentation support conservative Device ID and Product Interaction rows. | Vendor retention, support access, public-policy wording, and exact signed-build recovery/deletion QA remain pending. The App Store working matrix treats both partner rows as linked, no tracking.                                                                                |
+| RevenueCat and Apple commerce             | The production Apple app, monthly product, entitlement, and default offering are mapped; both Apple credential configurations validate. The exact archive contains RevenueCat's privacy manifest. CUT identifies RevenueCat customers only by the internal CUT UUID. No production transactions exist yet.                                                                                                  | Exact purchase/restore/account-deletion behavior, transaction retention, and the subscription review screenshot require exact TestFlight evidence.                                                                                                                                |
+| Apple, TestFlight, and App Store Connect  | Exact version 1.0.0 build 3 is processed as valid, assigned to internal TestFlight, and selected for the app version. Its age questionnaire is saved at an effective 18+. Apple retains its own transaction and platform records.                                                                                                                                                                           | App Privacy answers are not saved or published. Review access, physical-device QA, screenshots, and final owner approvals remain pending.                                                                                                                                         |
+| Expo/EAS build service                    | Exact EAS production build 3 is complete from the release commit. The signed IPA, app-level privacy manifest, 11 embedded SDK/resource privacy manifests, signature, entitlements, required-reason APIs, and production public configuration were inspected directly.                                                                                                                                       | Build-provider retention is separate from the runtime user-data path. Any replacement candidate must repeat the archive audit rather than inherit this evidence.                                                                                                                  |
+| Support and crash/usage tooling           | The exact archive contains no general product-analytics or crash-reporting SDK. Privacy, Terms, and Support routes are live under the owner-deferred professional-review decision; CUT has no in-app support-ticket database.                                                                                                                                                                               | Support correspondence retention and any future crash/analytics provider require separate disclosure review before activation.                                                                                                                                                    |
 
-This table is evidence preparation only. It does not change any
-`privacy.externalVerificationGates` status, does not approve an App Store
-answer, and does not authorize publication of the Privacy Policy.
+This table is evidence preparation only. The archive, IP/device mapping, and
+usage-data gates are now engineering-verified in the machine record. It does
+not approve or publish an App Store answer.
 
 ## Current data inventory
 
@@ -51,8 +53,8 @@ answer, and does not authorize publication of the Privacy Policy.
 
 CUT OS currently has no advertising SDK or general product-analytics SDK in
 the application dependency list. RevenueCat provides purchase/subscription
-analytics and is disclosed separately above. The inventory must be rechecked
-against the final production archive rather than assumed from this document.
+analytics and is disclosed separately above. The inventory was checked against
+exact signed build 3. Any replacement candidate must repeat that check.
 
 ## App privacy manifest baseline
 
@@ -79,29 +81,31 @@ types and reason arrays to `artifacts/cut-os/app.json`; a missing, added,
 reordered, or changed reason fails validation. That drift check does not replace
 the final archive/embedded-SDK review.
 
-This is an engineering baseline, not final App Store disclosure evidence. The
-generated `.xcarchive` privacy report, final dependency graph, production vendor
-behavior, public Privacy Policy, and App Store Connect answers must still be
-reconciled. Raw DOB remains excluded from the manifest under the implemented
-immediate-discard request behavior, subject to owner/counsel confirmation.
+Exact build 3 contains 12 privacy manifests and matches this first-party
+baseline. Clerk's native bundle does not contain its own manifest, so its
+current DPA and analytics documentation are used for the conservative partner
+rows below. Public-policy wording and App Store Connect answers remain pending.
+Raw DOB remains excluded under the implemented immediate-discard behavior.
 
 ## App Store disclosure working position
 
 Apple's final questionnaire must be answered from the shipped behavior and
-every third-party SDK. The table below is the copy-ready **provisional
-first-party baseline** represented by `artifacts/cut-os/app.json` and
-`app-store/app-store-submission.json`. It is deliberately exact rather than a
-list of possible categories.
+every third-party SDK. The table below is the copy-ready working position
+represented by the app manifest, exact build 3, production behavior, and current
+vendor documentation. It is deliberately exact rather than a list of possible
+categories.
 
-| App Store data type          | Manifest type                               | Collected | Linked | Tracking | Purposes                                   | Current v1 data                                                                                  |
-| ---------------------------- | ------------------------------------------- | --------- | ------ | -------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| Contact Info — Name          | `NSPrivacyCollectedDataTypeName`            | Yes       | Yes    | No       | App Functionality; Product Personalization | Display name used for account setup and the user-directed greeting.                              |
-| Contact Info — Email Address | `NSPrivacyCollectedDataTypeEmailAddress`    | Yes       | Yes    | No       | App Functionality                          | Clerk sign-in and account support.                                                               |
-| Health & Fitness — Health    | `NSPrivacyCollectedDataTypeHealth`          | Yes       | Yes    | No       | App Functionality; Product Personalization | Start/goal weight, daily weigh-ins, and nutrition records that ship in v1.                       |
-| Health & Fitness — Fitness   | `NSPrivacyCollectedDataTypeFitness`         | Yes       | Yes    | No       | App Functionality; Product Personalization | Adults-who-lift goal context and current fitness-related check-in data; no workout logger ships. |
-| Identifiers — User ID        | `NSPrivacyCollectedDataTypeUserID`          | Yes       | Yes    | No       | App Functionality                          | Internal user UUID and authentication/account linkage.                                           |
-| Other Data Types             | `NSPrivacyCollectedDataTypeOtherDataTypes`  | Yes       | Yes    | No       | App Functionality; Product Personalization | Eligibility result/version/time, timezone, unit preference, goal, and records mapped here.       |
-| Purchases — Purchase History | `NSPrivacyCollectedDataTypePurchaseHistory` | Yes       | Yes    | No       | App Functionality; Analytics               | Apple/RevenueCat subscription, renewal, expiry, refund, and entitlement state.                   |
+| App Store data type              | Manifest type                               | Collected | Linked | Tracking | Purposes                                   | Current v1 data                                                                                         |
+| -------------------------------- | ------------------------------------------- | --------- | ------ | -------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| Contact Info — Name              | `NSPrivacyCollectedDataTypeName`            | Yes       | Yes    | No       | App Functionality; Product Personalization | Display name used for account setup and the user-directed greeting.                                     |
+| Contact Info — Email Address     | `NSPrivacyCollectedDataTypeEmailAddress`    | Yes       | Yes    | No       | App Functionality                          | Clerk sign-in and account support.                                                                      |
+| Health & Fitness — Health        | `NSPrivacyCollectedDataTypeHealth`          | Yes       | Yes    | No       | App Functionality; Product Personalization | Start/goal weight, daily weigh-ins, and nutrition records that ship in v1.                              |
+| Health & Fitness — Fitness       | `NSPrivacyCollectedDataTypeFitness`         | Yes       | Yes    | No       | App Functionality; Product Personalization | Adults-who-lift goal context and current fitness-related check-in data; no workout logger ships.        |
+| Identifiers — User ID            | `NSPrivacyCollectedDataTypeUserID`          | Yes       | Yes    | No       | App Functionality                          | Internal user UUID and authentication/account linkage.                                                  |
+| Identifiers — Device ID          | Partner evidence; no Clerk manifest         | Yes       | Yes    | No       | App Functionality                          | Clerk device identifiers and trusted client IP used for authentication, security, and abuse prevention. |
+| Other Data Types                 | `NSPrivacyCollectedDataTypeOtherDataTypes`  | Yes       | Yes    | No       | App Functionality; Product Personalization | Eligibility result/version/time, timezone, unit preference, goal, and records mapped here.              |
+| Purchases — Purchase History     | `NSPrivacyCollectedDataTypePurchaseHistory` | Yes       | Yes    | No       | App Functionality; Analytics               | Apple/RevenueCat subscription, renewal, expiry, refund, and entitlement state.                          |
+| Usage Data — Product Interaction | Partner evidence; no Clerk manifest         | Yes       | Yes    | No       | App Functionality; Analytics               | Clerk production sign-ups, sign-ins, active session usage, and retention activity.                      |
 
 Paid v1 does not collect workout logs. Do not add workout collection to the
 questionnaire merely because the audience lifts or because Apple groups Health
@@ -109,16 +113,16 @@ and Fitness data together. Paid v1 also no longer collects sex, height,
 activity level, training experience, or target date; migration
 `0010_minimize_v1_profile.sql` clears any legacy values before launch.
 
-Two external-service classifications remain intentionally outside the
-copy-ready disclosure table until final vendor and exact-build evidence exists:
+Client IP/network metadata is processed for service delivery, one-minute abuse
+throttling, and Clerk authentication. The working App Store position maps it
+conservatively with Clerk device identifiers to linked Device ID for App
+Functionality. Clerk production session analytics is mapped to linked Product
+Interaction for App Functionality and Analytics. Neither row is tracking.
 
-- Client IP/network metadata is processed for service delivery, one-minute
-  abuse throttling, and Clerk authentication. Confirm the exact App Store
-  category, linkage, and vendor retention from the final hosting and Clerk
-  configuration. Do not mark it as tracking.
-- Add Diagnostics or Usage Data only if the final archive, SDKs, or production
-  configuration collect them. Record their real purpose, linkage, and vendor
-  retention rather than inferring them from development tooling.
+Do not add Crash Data, Performance Data, or Other Diagnostic Data unless the
+candidate or production configuration changes. Exact build 3 has no general
+crash/analytics SDK and CUT-owned logs contain fixed coarse operational fields,
+not user-linked device diagnostics.
 
 If the live App Store questionnaire maps any current user-entered meal or
 fitness record to User Content rather than the manifest baseline above, stop,
@@ -141,31 +145,31 @@ Primary Apple references:
 
 ## Native SDK inventory gate
 
-Before the first TestFlight upload:
+Exact build 3 completed the first-candidate gate:
 
-1. Generate the native iOS project/production archive and inventory embedded SDKs.
-2. Verify every required privacy manifest and required-reason API declaration.
+1. The production IPA and its 12 privacy manifests were inventoried directly.
+2. Every included privacy manifest and required-reason API declaration was
+   parsed and matched to the committed configuration.
 3. Keep unused native packages out of the binary. `expo-location`,
    `expo-image-picker`, `expo-blur`, `expo-glass-effect`, `expo-image`,
    `expo-linear-gradient`, `expo-symbols`, `expo-auth-session`,
    `@react-native-async-storage/async-storage`, and `react-native-svg` were
    removed from the app's direct dependency set on August 3, 2026 because the
-   current product does not use them. Recheck transitive native modules in the
-   signed archive.
-4. Confirm permissions shown in the built `Info.plist`; the app must not request location, camera, or photo access without a shipped feature and clear purpose string.
-5. Reconcile vendor data handling for Clerk, the hosting/database provider,
-   RevenueCat, crash reporting when added, email/support tooling, and any
-   analytics provider. Confirm CUT sends RevenueCat only the internal UUID and
-   no customer attributes containing health, fitness, DOB, name, or email.
+   current product does not use them. Exact build 3 contains none of these
+   packages as direct app features.
+4. Exact build permissions and entitlements were checked; it does not request
+   location, camera, or photo access.
+5. Clerk and RevenueCat collection were reconciled to the working matrix. CUT
+   sends RevenueCat only the internal UUID and no customer attributes containing
+   health, fitness, DOB, name, or email.
 
 The production checkpoint above now records the bounded engineering state for
 database recovery, CUT-owned application logs, Clerk, RevenueCat, support, and
-the absence of a direct crash/analytics SDK. It does **not** establish provider
-access-log fields or retention, Clerk event retention, support-correspondence
-retention, backup deletion treatment, transitive archive contents, or
-build/archive diagnostics. Each unresolved item must be reconciled against the
-exact production configuration, vendor terms, public policy, and submitted
-archive before the App Store disclosures are finalized.
+the absence of a direct crash/analytics SDK. Exact build 3 now establishes the
+transitive archive contents and privacy manifests. It does **not** establish
+provider retention, Clerk event retention, support-correspondence retention, or
+backup deletion treatment. Those remain public-policy and post-launch
+professional-review items under the owner's explicit deferral.
 
 Apple reference: [Adding a privacy manifest](https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk).
 

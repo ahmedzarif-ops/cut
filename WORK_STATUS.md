@@ -11,7 +11,7 @@ Automated server/domain/mobile implementation is complete. Legal/privacy,
 native-device and live-service QA, and App Store completion remain open; this is
 not a public-launch readiness claim.
 
-## Current App Store launch checkpoint — 2026-08-10T20:56:38Z
+## Current App Store launch checkpoint — 2026-08-10T21:42:15Z
 
 - Exact EAS production build 3 for version 1.0.0 is signed from commit
   `08e62232db7f81047eec5b55a184f30fb7d4162a`, processed by Apple as `VALID`
@@ -26,16 +26,29 @@ not a public-launch readiness claim.
   calculated U.S. rating is 9+ before the higher-age override and 18+ after the
   owner-approved adults-only override. The override was restored and re-read
   as `EIGHTEEN_PLUS`.
+- The owner-approved nine-type App Privacy matrix is published as linked to the
+  user and not used for tracking. Content Rights is saved as no third-party
+  content; Standard EULA remains selected; the app is declared not a regulated
+  medical device; DSA is active as non-trader/no planned EU distribution; and
+  both parent-app and monthly-subscription tax categories are Fitness and
+  Health.
 - Replit serves the exact release commit, and `/`, `/status`, `/api/readyz`,
   `/privacy`, `/terms`, `/support`, and the canonical Clerk proxy pass. Detailed
   build and age evidence is in
   [apple-build-3-and-age-rating-2026-08-10.md](app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md).
 - Remaining gates are exact-build physical-iPhone authentication, age,
   purchase/restore, deletion, and accessibility QA; 6.9-inch listing and
-  subscription screenshots; App Privacy; content-rights, medical-device, tax,
-  and DSA owner declarations; review-account/contact configuration; first-
+  subscription screenshots; review-account/contact configuration; first-
   subscription attachment; and explicit confirmation before App Review
-  submission and later manual public release.
+  submission and later manual public release. After a notification-free build
+  rebind left the tester at `No Builds Available`, the owner approved exactly
+  one Apple invitation email. The same internal Account Holder tester was
+  removed and re-added, and App Store Connect reported that one tester was
+  added. The owner then reported that no invitation had arrived, and the live
+  tester row still showed `No Builds Available` even though the group and exact
+  build each cross-reference the other. No second email was sent. Apple-side
+  availability, invitation acceptance, and exact-build installation remain
+  pending.
 
 ## What now works
 
@@ -423,10 +436,9 @@ launch gate.
    accessibility, relaunch, offline, and account-switch matrix.
 2. Capture the exact-build 6.9-inch listing set and subscription review image,
    inspect every image for personal data, and upload only approved PNG bytes.
-3. Finish and save App Privacy against the exact archive and production vendor
-   behavior. Complete the remaining owner declarations for content rights,
-   regulated-medical-device status, tax category, DSA status, and App Review
-   contact/review-account access without claiming professional approval.
+3. Keep the published App Privacy and approved content, medical, tax, DSA, and
+   EULA declarations bound to exact build 3. Complete only the remaining App
+   Review contact/review-account access without claiming professional approval.
 4. Attach the first subscription to version 1.0.0 only after its review image
    and exact-build purchase/restore evidence are complete.
 5. Resolve every release validator error, obtain explicit owner confirmation,
@@ -452,8 +464,9 @@ remains open. Apple's Paid Apps Agreement, banking, and U.S. Form W-9 are active
 and evidence-confirmed. RevenueCat Decision 3 owner authorization is also
 confirmed. Apple signing and EAS/Apple authentication are complete; exact build
 3 is valid and assigned to internal TestFlight, while physical-iPhone QA,
-screenshots, App Privacy, the remaining owner declarations, Submit for Review,
-and public release remain owner-controlled gates. The owner has confirmed an
+screenshots, review access, Submit for Review, and public release remain
+owner-controlled gates. The approved App Privacy, content-rights, medical,
+tax, DSA, and Standard-EULA decisions are now live. The owner has confirmed an
 18+ launch position and App Store Connect now returns an effective 18+ rating.
 Legal and nutrition review remain explicitly deferred until the first three
 calendar days after public release and are not claimed complete.
