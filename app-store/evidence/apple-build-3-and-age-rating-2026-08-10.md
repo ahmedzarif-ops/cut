@@ -218,6 +218,15 @@ send another TestFlight invitation, change the group/build assignment, submit
 the app for review, or release it. Apple's reply and a successful exact-build
 installation remain pending; Apple supplied no response-time guarantee.
 
+A later read-only check of [Apple Developer System
+Status](https://developer.apple.com/system-status/) found one recent TestFlight
+event: scheduled maintenance from August 8, 2026 at 05:30 through 08:00 PDT,
+message ID `2000005559`, which Apple says affected all users and included App
+Store Connect - TestFlight. Apple marks that event completed. The contradictory
+tester status remained present on August 10 after the maintenance window, so
+the current evidence does not attribute CUT's problem to an active reported
+platform incident.
+
 ## Remaining release boundary
 
 Build processing and the age questionnaire are complete, but this evidence does
