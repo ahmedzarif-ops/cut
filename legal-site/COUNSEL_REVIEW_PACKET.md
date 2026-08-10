@@ -1,10 +1,18 @@
 # CUT OS — counsel review packet
 
 **Prepared:** August 10, 2026<br>
-**Status:** Engineering and compliance-review packet; not legal advice<br>
+**Status:** Post-launch remediation packet under the August 10 owner-risk
+decision; not legal advice<br>
 **Requested outcome:** Written approval or redlines for the exact launch scope,
 public legal pages, App Store disclosures, and operating procedures described
 below.
+
+The owner decided on August 10, 2026 to proceed to launch before qualified
+review and to initiate counsel and dietitian review within three calendar days
+after public release. That decision is recorded in
+`app-store/evidence/owner-deferred-professional-review-2026-08-10.md`. Nothing
+in this packet claims counsel approval, and no external message may be sent
+without the owner's immediate confirmation.
 
 This packet is designed to let qualified U.S. technology/privacy counsel review
 CUT OS without first reconstructing the product from the repository. Counsel
@@ -106,9 +114,11 @@ adequately described and whether additional subprocessor disclosure is needed.
 
 ### Summary
 
-**Proceed only with conditions.** The technical publication lock, age gate,
-purchase controls, and data minimization reduce risk, but the launch should not
-proceed until the decisions and approvals below are resolved in writing.
+**Owner proceeding with conditions.** The technical publication lock, age gate,
+purchase controls, and data minimization reduce risk. The earlier internal
+recommendation was to delay launch until the decisions below were resolved in
+writing; the owner has superseded that sequencing through the bounded August 10
+risk-acceptance record. These questions remain urgent post-launch remediation.
 
 ### Applicable rules and policies for counsel to assess
 

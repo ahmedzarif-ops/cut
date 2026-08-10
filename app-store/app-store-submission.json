@@ -18,6 +18,28 @@
     "verifiedAtUtc": "2026-08-04T22:13:34Z",
     "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#canonical-apple-identifiers"
   },
+  "professionalReviewDisposition": {
+    "status": "owner_deferred_post_launch",
+    "decisionAtUtc": "2026-08-10T18:54:19Z",
+    "evidenceReference": "app-store/evidence/owner-deferred-professional-review-2026-08-10.md",
+    "ownerRiskAccepted": true,
+    "professionalApprovalClaimed": false,
+    "initiationDeadlinePolicy": "within_3_calendar_days_after_public_release",
+    "safetyControls": {
+      "noMedicalOrOutcomeClaims": true,
+      "estimatedNutritionDisclosure": true,
+      "suspendSalesOnCriticalFinding": true,
+      "suspendSalesIfReviewNotInitiatedByDeadline": true
+    },
+    "legalReview": {
+      "status": "deferred",
+      "approvalClaimed": false
+    },
+    "nutritionReview": {
+      "status": "deferred",
+      "approvalClaimed": false
+    }
+  },
   "listing": {
     "appName": "CUT OS",
     "bundleId": "com.zarifahmed.cut",
@@ -25,7 +47,7 @@
     "initialRelease": true,
     "primaryLanguage": "en-US",
     "subtitle": "Daily weigh-ins & meal logging",
-    "description": "CUT OS brings daily weigh-ins, balanced meals, and estimated nutrition totals\ninto one focused check-in for adults who lift.\n\n- See one clear next action for today.\n- Log or update one daily weigh-in.\n- Choose from six curated balanced-meal options.\n- Review ingredients, common allergens, portions, and estimated nutrition.\n- Log, edit, or delete meals and see today's estimated nutrition totals.\n- Keep account data synced and delete the account in-app.\n\nCUT OS provides general fitness and nutrition information, not medical advice.\nMeal nutrition is estimated. Ingredient and common-allergen lists must be\nreviewed against the exact products you use and are not an allergen-safety\nguarantee.\n\nCUT OS is for adults age 18 and older. Paid access uses an auto-renewable Apple\nsubscription. The exact localized price and billing period appear before you\nconfirm purchase. You can restore purchases in the app and manage or cancel the\nsubscription through Apple.",
+    "description": "CUT OS brings daily weigh-ins, balanced meals, and estimated nutrition totals\ninto one focused check-in for adults who lift.\n\n- See one clear next action for today.\n- Log or update one daily weigh-in.\n- Choose from six curated balanced-meal options.\n- Review ingredients, common allergens, portions, and estimated nutrition.\n- Log, edit, or delete meals and see today's estimated nutrition totals.\n- Keep account data synced and delete the account in-app.\n\nCUT OS provides general fitness and nutrition information, not medical advice.\nMeal nutrition is estimated. Ingredient and common-allergen lists must be\nreviewed against the exact products you use and are not an allergen-safety\nguarantee.\n\nCUT OS is for adults age 18 and older. Paid access uses an auto-renewable Apple\nsubscription. The exact localized price and billing period appear before you\nconfirm purchase. You can restore purchases in the app and manage or cancel the\nsubscription through Apple.\n\nTerms: https://getcutos.com/terms",
     "keywords": "weight,meal,protein,macros,lifting,nutrition,weigh-in,tracker,calorie,food,diet,bodybuilding,fiber",
     "primaryCategory": "Health & Fitness",
     "secondaryCategory": null,
@@ -35,9 +57,9 @@
     "whatsNew": null,
     "whatsNewPosition": "not_applicable_initial_release",
     "releaseMethod": "manual",
-    "supportUrl": null,
-    "privacyPolicyUrl": null,
-    "termsUrl": null,
+    "supportUrl": "https://getcutos.com/support",
+    "privacyPolicyUrl": "https://getcutos.com/privacy",
+    "termsUrl": "https://getcutos.com/terms",
     "legalUrlPlacement": {
       "privacyPolicy": "pending",
       "privacyPolicySubmittedUrl": null,
@@ -73,14 +95,14 @@
         "evidenceReference": null
       },
       "legalReview": {
-        "status": "pending",
-        "verifiedAtUtc": null,
-        "evidenceReference": null
+        "status": "owner_deferred_post_launch",
+        "verifiedAtUtc": "2026-08-10T18:54:19Z",
+        "evidenceReference": "app-store/evidence/owner-deferred-professional-review-2026-08-10.md"
       },
       "nutritionReview": {
-        "status": "pending",
-        "verifiedAtUtc": null,
-        "evidenceReference": null
+        "status": "owner_deferred_post_launch",
+        "verifiedAtUtc": "2026-08-10T18:54:19Z",
+        "evidenceReference": "app-store/evidence/owner-deferred-professional-review-2026-08-10.md"
       },
       "exactBuildClaimsReview": {
         "status": "pending",
@@ -152,7 +174,7 @@
   "commercialAndLegal": {
     "status": "pending_owner_legal_and_app_store_connect",
     "appDownloadPrice": "free_download",
-    "licenseAgreement": null,
+    "licenseAgreement": "standard_apple_eula",
     "appTaxCategory": null,
     "dsaStatus": null,
     "appleCommerceReadiness": {

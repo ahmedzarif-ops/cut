@@ -131,8 +131,17 @@ if (mode === "draft") {
     if (!html.includes('data-publication-status="approved"')) {
       errors.push(`${name}: publication status is not approved`);
     }
-    if (!html.includes('data-counsel-approved="true"')) {
-      errors.push(`${name}: counsel approval is not recorded`);
+    const counselApproved = html.includes('data-counsel-approved="true"');
+    const ownerDeferred =
+      html.includes('data-counsel-approved="false"') &&
+      html.includes('data-owner-risk-accepted="true"') &&
+      html.includes(
+        'data-professional-review-status="owner-deferred-post-launch"',
+      );
+    if (!counselApproved && !ownerDeferred) {
+      errors.push(
+        `${name}: neither counsel approval nor the owner-deferred review disposition is recorded`,
+      );
     }
     if (html.includes("data-draft-banner") || html.includes("data-blocker")) {
       errors.push(`${name}: a draft banner or blocker remains`);
@@ -192,7 +201,7 @@ if (mode === "draft") {
     `Draft validation passed. Publication remains blocked by ${placeholders.length} unresolved placeholder${placeholders.length === 1 ? "" : "s"}.`,
   );
   console.log(
-    "Draft routes must return 503. Run with --release only after documented owner and counsel approval.",
+    "Draft routes must return 503. Run with --release only after documented publication approval.",
   );
 } else {
   console.log("Legal-site release validation passed.");

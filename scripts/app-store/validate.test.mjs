@@ -764,7 +764,6 @@ test("release mode stays fail closed while privacy, screenshot, and downstream l
 
   for (const retainedGate of [
     "release mode requires a boolean content-rights declaration",
-    "listing.supportUrl must be public HTTPS without credentials",
     "appReview.exactBuild.buildNumber is required",
     "screenshots.captureDefaults.buildNumber is required",
     "release mode requires screenshots.captureDefaults.capturedAtUtc as a UTC ISO timestamp",
@@ -944,6 +943,8 @@ test("release and confirmed listings bind exact legal URLs to Apple-accepted met
     "listing.legalUrlPlacement.appStoreConnectConfirmation";
 
   const confirmedListing = clone(inputs.submission);
+  confirmedListing.listing.privacyPolicyUrl = null;
+  confirmedListing.listing.termsUrl = null;
   const confirmedApproval = confirmedListing.listing.approval;
   confirmedApproval.status = "confirmed";
   for (const field of [
@@ -1254,6 +1255,68 @@ test("listing approvals require name, owner, legal, nutrition, and exact-build e
   assert.ok(
     validateMetadata({ ...inputs, submission }).includes(
       "listing.approval.legalReview confirmed status requires evidenceReference",
+    ),
+  );
+});
+
+test("owner-deferred professional review is explicit, bounded, and cannot claim approval", () => {
+  const inputs = validationInputs();
+  const valid = clone(inputs.submission);
+  const validErrors = validateMetadata({
+    ...inputs,
+    submission: valid,
+    release: true,
+    releaseTarget: "app_review",
+  });
+
+  for (const professionalGate of [
+    "listing.approval.legalReview.status confirmed",
+    "listing.approval.nutritionReview.status confirmed",
+    "commercialAndLegal.approval.legal or a valid owner-deferred",
+    "regulatedMedicalDevice.approval.legalOrQualifiedRegulatoryReviewer or a valid owner-deferred",
+    "ageRating.approval.legal or a valid owner-deferred",
+    "ageRating.approval.qualifiedHealthNutritionReviewer or a valid owner-deferred",
+    "privacy.approval.legal or a valid owner-deferred",
+  ]) {
+    assert.equal(
+      validErrors.some((error) => error.includes(professionalGate)),
+      false,
+      `valid owner deferral should satisfy only ${professionalGate}`,
+    );
+  }
+
+  const invalid = clone(inputs.submission);
+  invalid.professionalReviewDisposition.ownerRiskAccepted = false;
+  invalid.professionalReviewDisposition.professionalApprovalClaimed = true;
+  const invalidErrors = validateMetadata({
+    ...inputs,
+    submission: invalid,
+    release: true,
+    releaseTarget: "app_review",
+  });
+  assert.ok(
+    invalidErrors.includes(
+      "professionalReviewDisposition.ownerRiskAccepted must be true",
+    ),
+  );
+  assert.ok(
+    invalidErrors.includes(
+      "professionalReviewDisposition must not claim professional approval",
+    ),
+  );
+  assert.ok(
+    invalidErrors.includes(
+      "release mode requires listing.approval.legalReview.status confirmed",
+    ),
+  );
+  assert.ok(
+    invalidErrors.includes(
+      "release mode requires listing.approval.nutritionReview.status confirmed",
+    ),
+  );
+  assert.ok(
+    invalidErrors.includes(
+      "release mode requires commercialAndLegal.approval.legal or a valid owner-deferred professional-review disposition",
     ),
   );
 });
@@ -2197,6 +2260,20 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
     verifiedAtUtc: evidenceTime,
     evidenceReference: "evidence/listing-exact-build-claims",
   });
+  Object.assign(submission.listing.legalUrlPlacement, {
+    privacyPolicy: "app_store_connect_privacy_policy_url",
+    privacyPolicySubmittedUrl: submission.listing.privacyPolicyUrl,
+    terms: "listing_description",
+    termsSubmittedUrl: submission.listing.termsUrl,
+  });
+  Object.assign(
+    submission.listing.legalUrlPlacement.appStoreConnectConfirmation,
+    {
+      status: "confirmed",
+      verifiedAtUtc: evidenceTime,
+      evidenceReference: "evidence/app-store-legal-url-placement",
+    },
+  );
 
   const commercial = submission.commercialAndLegal;
   commercial.status = "confirmed_in_app_store_connect";

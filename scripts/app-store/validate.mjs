@@ -143,6 +143,7 @@ const EXPECTED_SUBMISSION_KEYS = Object.freeze([
   "updated",
   "references",
   "appleIdentifiers",
+  "professionalReviewDisposition",
   "listing",
   "ownerControlledFields",
   "availability",
@@ -164,6 +165,32 @@ const EXPECTED_SUBMISSION_REFERENCE_KEYS = Object.freeze([
   "testFlightRecord",
   "screenshotManifest",
 ]);
+const EXPECTED_PROFESSIONAL_REVIEW_DISPOSITION_KEYS = Object.freeze([
+  "status",
+  "decisionAtUtc",
+  "evidenceReference",
+  "ownerRiskAccepted",
+  "professionalApprovalClaimed",
+  "initiationDeadlinePolicy",
+  "safetyControls",
+  "legalReview",
+  "nutritionReview",
+]);
+const EXPECTED_PROFESSIONAL_REVIEW_SAFETY_KEYS = Object.freeze([
+  "noMedicalOrOutcomeClaims",
+  "estimatedNutritionDisclosure",
+  "suspendSalesOnCriticalFinding",
+  "suspendSalesIfReviewNotInitiatedByDeadline",
+]);
+const EXPECTED_DEFERRED_REVIEW_KEYS = Object.freeze([
+  "status",
+  "approvalClaimed",
+]);
+const OWNER_DEFERRED_REVIEW_STATUS = "owner_deferred_post_launch";
+const OWNER_DEFERRED_REVIEW_EVIDENCE =
+  "app-store/evidence/owner-deferred-professional-review-2026-08-10.md";
+const OWNER_DEFERRED_REVIEW_DEADLINE =
+  "within_3_calendar_days_after_public_release";
 const EXPECTED_LISTING_KEYS = Object.freeze([
   "appName",
   "bundleId",
@@ -997,6 +1024,8 @@ function validateApprovalRecord({
   expectedKeys,
   label,
   release,
+  deferredKeys = [],
+  professionalReviewDeferred = false,
   check,
 }) {
   check(
@@ -1009,9 +1038,99 @@ function validateApprovalRecord({
       `${label}.${key} must be a boolean`,
     );
     if (release) {
-      check(approval?.[key] === true, `release mode requires ${label}.${key}`);
+      if (deferredKeys.includes(key)) {
+        const validOwnerDeferral =
+          professionalReviewDeferred && approval?.[key] === false;
+        check(
+          approval?.[key] === true || validOwnerDeferral,
+          `release mode requires ${label}.${key} or a valid owner-deferred professional-review disposition`,
+        );
+      } else {
+        check(
+          approval?.[key] === true,
+          `release mode requires ${label}.${key}`,
+        );
+      }
     }
   }
+}
+
+function validateProfessionalReviewDisposition({ value, check }) {
+  check(
+    hasExactKeys(value, EXPECTED_PROFESSIONAL_REVIEW_DISPOSITION_KEYS),
+    "professionalReviewDisposition must contain exactly the required keys",
+  );
+  if (!isObject(value)) return false;
+
+  check(
+    value.status === OWNER_DEFERRED_REVIEW_STATUS,
+    `professionalReviewDisposition.status must be ${OWNER_DEFERRED_REVIEW_STATUS}`,
+  );
+  check(
+    validIsoTimestamp(value.decisionAtUtc),
+    "professionalReviewDisposition.decisionAtUtc must be a UTC ISO timestamp",
+  );
+  check(
+    value.evidenceReference === OWNER_DEFERRED_REVIEW_EVIDENCE,
+    `professionalReviewDisposition.evidenceReference must remain ${OWNER_DEFERRED_REVIEW_EVIDENCE}`,
+  );
+  check(
+    value.ownerRiskAccepted === true,
+    "professionalReviewDisposition.ownerRiskAccepted must be true",
+  );
+  check(
+    value.professionalApprovalClaimed === false,
+    "professionalReviewDisposition must not claim professional approval",
+  );
+  check(
+    value.initiationDeadlinePolicy === OWNER_DEFERRED_REVIEW_DEADLINE,
+    `professionalReviewDisposition.initiationDeadlinePolicy must remain ${OWNER_DEFERRED_REVIEW_DEADLINE}`,
+  );
+  check(
+    hasExactKeys(
+      value.safetyControls,
+      EXPECTED_PROFESSIONAL_REVIEW_SAFETY_KEYS,
+    ),
+    "professionalReviewDisposition.safetyControls must contain exactly the required keys",
+  );
+  for (const key of EXPECTED_PROFESSIONAL_REVIEW_SAFETY_KEYS) {
+    check(
+      value.safetyControls?.[key] === true,
+      `professionalReviewDisposition.safetyControls.${key} must be true`,
+    );
+  }
+  for (const review of ["legalReview", "nutritionReview"]) {
+    const record = value[review];
+    check(
+      hasExactKeys(record, EXPECTED_DEFERRED_REVIEW_KEYS),
+      `professionalReviewDisposition.${review} must contain exactly the required keys`,
+    );
+    check(
+      record?.status === "deferred",
+      `professionalReviewDisposition.${review}.status must be deferred`,
+    );
+    check(
+      record?.approvalClaimed === false,
+      `professionalReviewDisposition.${review} must not claim approval`,
+    );
+  }
+
+  return (
+    value.status === OWNER_DEFERRED_REVIEW_STATUS &&
+    validIsoTimestamp(value.decisionAtUtc) &&
+    value.evidenceReference === OWNER_DEFERRED_REVIEW_EVIDENCE &&
+    value.ownerRiskAccepted === true &&
+    value.professionalApprovalClaimed === false &&
+    value.initiationDeadlinePolicy === OWNER_DEFERRED_REVIEW_DEADLINE &&
+    EXPECTED_PROFESSIONAL_REVIEW_SAFETY_KEYS.every(
+      (key) => value.safetyControls?.[key] === true,
+    ) &&
+    ["legalReview", "nutritionReview"].every(
+      (review) =>
+        value[review]?.status === "deferred" &&
+        value[review]?.approvalClaimed === false,
+    )
+  );
 }
 
 function validateConfirmationEvidenceRecord({
@@ -1028,9 +1147,11 @@ function validateConfirmationEvidenceRecord({
   );
   check(
     allowedStatuses.includes(value?.status),
-    allowedStatuses.includes("processing")
-      ? `${label}.status must be pending, processing, or confirmed`
-      : `${label}.status must be pending or confirmed`,
+    allowedStatuses.includes(OWNER_DEFERRED_REVIEW_STATUS)
+      ? `${label}.status must be pending, confirmed, or owner_deferred_post_launch`
+      : allowedStatuses.includes("processing")
+        ? `${label}.status must be pending, processing, or confirmed`
+        : `${label}.status must be pending or confirmed`,
   );
   check(
     value?.verifiedAtUtc === null || validIsoTimestamp(value?.verifiedAtUtc),
@@ -1516,7 +1637,13 @@ function validateAuthenticationSecurity({ value, release, check }) {
   }
 }
 
-function validateListingApproval({ value, listing, release, check }) {
+function validateListingApproval({
+  value,
+  listing,
+  release,
+  professionalReviewDeferred,
+  check,
+}) {
   check(isObject(value), "listing.approval must be an object");
   if (!isObject(value)) return;
 
@@ -1544,8 +1671,6 @@ function validateListingApproval({ value, listing, release, check }) {
     "nameClearance",
     "appStoreConnectNameAcceptance",
     "ownerApproval",
-    "legalReview",
-    "nutritionReview",
   ]) {
     validateConfirmationEvidenceRecord({
       value: value[field],
@@ -1554,6 +1679,30 @@ function validateListingApproval({ value, listing, release, check }) {
       requirementLabel,
       check,
     });
+  }
+  for (const field of ["legalReview", "nutritionReview"]) {
+    const deferred =
+      professionalReviewDeferred &&
+      value[field]?.status === OWNER_DEFERRED_REVIEW_STATUS;
+    validateConfirmationEvidenceRecord({
+      value: value[field],
+      label: `listing.approval.${field}`,
+      required: approvalRequired && !deferred,
+      requirementLabel,
+      allowedStatuses: ["pending", "confirmed", OWNER_DEFERRED_REVIEW_STATUS],
+      check,
+    });
+    if (value[field]?.status === OWNER_DEFERRED_REVIEW_STATUS) {
+      check(
+        professionalReviewDeferred,
+        `listing.approval.${field} owner deferral requires a valid professionalReviewDisposition`,
+      );
+      check(
+        validIsoTimestamp(value[field]?.verifiedAtUtc) &&
+          value[field]?.evidenceReference === OWNER_DEFERRED_REVIEW_EVIDENCE,
+        `listing.approval.${field} owner deferral requires the dated owner-decision evidence`,
+      );
+    }
   }
 
   const exactBuild = value.exactBuildClaimsReview;
@@ -1655,7 +1804,12 @@ function validateAppleCommerceReadiness({
   }
 }
 
-function validateCommercialAndLegal({ value, release, check }) {
+function validateCommercialAndLegal({
+  value,
+  release,
+  professionalReviewDeferred,
+  check,
+}) {
   check(isObject(value), "submission.commercialAndLegal must be an object");
   if (!isObject(value)) return;
 
@@ -1779,6 +1933,8 @@ function validateCommercialAndLegal({ value, release, check }) {
     expectedKeys: EXPECTED_COMMERCIAL_LEGAL_APPROVAL_KEYS,
     label: "commercialAndLegal.approval",
     release: approvalRequired,
+    deferredKeys: ["legal"],
+    professionalReviewDeferred,
     check,
   });
   if (!approvalRequired) return;
@@ -4169,6 +4325,10 @@ export function validateMetadata({
       appleIdentifiers.evidenceReference.trim().length > 0,
     "submission.appleIdentifiers.evidenceReference must be non-empty",
   );
+  const professionalReviewDeferred = validateProfessionalReviewDisposition({
+    value: submission.professionalReviewDisposition,
+    check,
+  });
   const listing = submission?.listing;
   check(isObject(listing), "submission.listing must be an object");
   if (!isObject(listing)) return errors;
@@ -4444,6 +4604,7 @@ export function validateMetadata({
     value: listing.approval,
     listing,
     release,
+    professionalReviewDeferred,
     check,
   });
   const initialTerritories = listing.initialTerritories;
@@ -4595,6 +4756,7 @@ export function validateMetadata({
   validateCommercialAndLegal({
     value: submission.commercialAndLegal,
     release,
+    professionalReviewDeferred,
     check,
   });
   validateAppReview({
@@ -4687,6 +4849,8 @@ export function validateMetadata({
       expectedKeys: EXPECTED_MEDICAL_DEVICE_APPROVAL_KEYS,
       label: "regulatedMedicalDevice.approval",
       release: requiresMedicalDeviceConfirmation,
+      deferredKeys: ["legalOrQualifiedRegulatoryReviewer"],
+      professionalReviewDeferred,
       check,
     });
     if (requiresMedicalDeviceConfirmation) {
@@ -4874,9 +5038,13 @@ export function validateMetadata({
         "release mode requires the 18+ override to be confirmed in App Store Connect",
       );
       for (const approval of EXPECTED_AGE_APPROVAL_KEYS) {
+        const validOwnerDeferral =
+          professionalReviewDeferred &&
+          ["legal", "qualifiedHealthNutritionReviewer"].includes(approval) &&
+          ageRating.approval?.[approval] === false;
         check(
-          ageRating.approval?.[approval] === true,
-          `release mode requires ageRating.approval.${approval}`,
+          ageRating.approval?.[approval] === true || validOwnerDeferral,
+          `release mode requires ageRating.approval.${approval} or a valid owner-deferred professional-review disposition`,
         );
       }
     } else {
@@ -5061,9 +5229,13 @@ export function validateMetadata({
         );
       }
       for (const approval of EXPECTED_PRIVACY_APPROVAL_KEYS) {
+        const validOwnerDeferral =
+          professionalReviewDeferred &&
+          approval === "legal" &&
+          privacy.approval?.[approval] === false;
         check(
-          privacy.approval?.[approval] === true,
-          `release mode requires privacy.approval.${approval}`,
+          privacy.approval?.[approval] === true || validOwnerDeferral,
+          `release mode requires privacy.approval.${approval} or a valid owner-deferred professional-review disposition`,
         );
       }
     } else {

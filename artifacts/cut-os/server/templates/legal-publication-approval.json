@@ -1,20 +1,28 @@
 {
   "schemaVersion": 1,
-  "publicationStatus": "draft",
+  "publicationStatus": "approved",
   "approvalScope": "Exact rendered privacy, terms, support, and legal stylesheet contents recorded by SHA-256.",
   "counselApproval": {
     "approvedBy": null,
     "approvedAt": null,
     "evidenceReference": null
   },
+  "ownerRiskAcceptance": {
+    "acceptedBy": "Zarif Ahmed",
+    "acceptedAt": "2026-08-10T18:54:19.000Z",
+    "evidenceReference": "app-store/evidence/owner-deferred-professional-review-2026-08-10.md",
+    "professionalReviewStatus": "owner_deferred_post_launch",
+    "professionalApprovalClaimed": false,
+    "initiationDeadlinePolicy": "within_3_calendar_days_after_public_release"
+  },
   "rendering": {
     "appName": "CUT OS",
     "basePath": ""
   },
   "sha256": {
-    "/privacy": null,
-    "/terms": null,
-    "/support": null,
-    "/legal.css": null
+    "/privacy": "7f422d609b67fcf79a1902cfe567d5ec5af61cfb328d7559ed621e8f54ddca37",
+    "/terms": "e88d9a37bbb62e827243216e71fc574ed825f0cf281e824dc7bb3b45fa8c8fe9",
+    "/support": "98f8d43ae2d9a0b1291396b05d92635d1442f2be60fe075b5fd441399f271b56",
+    "/legal.css": "4ec4eb3c09f7c40571f4423e98d8119b216d376a176f2974d3c45a5a8772bc78"
   }
 }

@@ -204,8 +204,17 @@ function assertApprovedTemplates(
     if (!template.includes('data-publication-status="approved"')) {
       issues.push(`${route} is not marked approved`);
     }
-    if (!template.includes('data-counsel-approved="true"')) {
-      issues.push(`${route} does not record counsel approval`);
+    const counselApproved = template.includes('data-counsel-approved="true"');
+    const ownerDeferred =
+      template.includes('data-counsel-approved="false"') &&
+      template.includes('data-owner-risk-accepted="true"') &&
+      template.includes(
+        'data-professional-review-status="owner-deferred-post-launch"',
+      );
+    if (!counselApproved && !ownerDeferred) {
+      issues.push(
+        `${route} records neither counsel approval nor the owner-deferred review disposition`,
+      );
     }
     if (
       template.includes("data-draft-banner") ||

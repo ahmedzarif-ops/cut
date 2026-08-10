@@ -26,9 +26,9 @@ nonce-authorized inline script and the pinned QR dependency. The production
 launch page has no script or QR dependency.
 
 The longer review packet in the repository's `legal-site/` folder is a working
-source for owner and counsel review. The templates here are the deployable
-surface. Counsel approval must cover the **exact rendered contents of these
-templates**, not only the longer packet or an earlier draft.
+source for owner and professional review. The templates here are the deployable
+surface. Publication approval must cover the **exact rendered contents of these
+templates**, not only the longer packet or an earlier version.
 
 ## Safe default
 
@@ -55,9 +55,9 @@ pnpm run validate:legal-site:release
 pnpm run validate:legal-site:live
 ```
 
-The first command verifies the draft safety markers and zero-JavaScript
-boundary. It should pass. The release command should fail until all owner and
-counsel work is complete. The live command uses the configured production URLs
+The first command verifies the unavailable-mode safety markers and
+zero-JavaScript boundary. The release command fails until an authorized
+publication path is complete. The live command uses the configured production URLs
 and fails unless the exact approved pages and stylesheet are publicly served.
 The EAS pre-install hook always validates release configuration; production also
 runs both approved-source and live-site checks, while development and preview do
@@ -65,7 +65,7 @@ not require approved legal pages.
 
 The server itself repeats the important release checks. If
 `LEGAL_SITE_PUBLICATION_STATUS=approved` is set while a placeholder, draft
-marker, `noindex`, unapproved counsel flag, incomplete/non-binding wording, or
+marker, `noindex`, missing publication disposition, incomplete/non-binding wording, or
 canonical URL that differs from the runtime origin/base path remains, server
 creation fails instead of exposing a draft or misbound policy as `200`.
 
@@ -73,16 +73,17 @@ creation fails instead of exposing a draft or misbound policy as `200`.
 gate. It starts in `draft` and records no approval. For an approved release it
 must record:
 
-- the qualified counsel approver, an ISO-8601 approval time, and a durable
-  reference to the written approval evidence;
+- either a qualified-counsel approval or the exact August 10, 2026 owner-risk
+  acceptance that defers professional review for no more than three calendar
+  days after public release;
 - the exact app name and normalized `BASE_PATH` used to render the pages; and
 - a SHA-256 hash for the rendered `/privacy`, `/terms`, `/support`, and
   `/legal.css` responses.
 
 Approved startup recomputes all four hashes. Any edit to approved page copy or
-styles, or any app-name/base-path change, blocks startup until counsel reviews
-the new rendering and a new approval is recorded. Changing only the HTML
-`data-counsel-approved` attribute is not sufficient. The approval evidence
+styles, or any app-name/base-path change, blocks startup until the rendering is
+reviewed under the selected publication path and a new approval is recorded.
+Changing only the HTML publication attributes is not sufficient. The evidence
 itself should remain in the owner's controlled legal records; the repository
 stores only its reference.
 
@@ -91,18 +92,20 @@ stores only its reference.
 1. Decide the legal operator, monitored support contact, public HTTPS domain,
    launch jurisdictions, retention schedule, and support process.
 2. Reconcile the final binary and production vendors against the Privacy draft.
-3. Obtain qualified nutrition review where required and qualified legal review
-   of the adults-only, nutrition, privacy, subscription, and deletion positions.
-4. Have qualified counsel draft or approve the complete policies. Do not fill an
-   unknown placeholder with a guess.
+3. Record either qualified review or an explicit owner-risk acceptance. The
+   August 10 owner decision requires review initiation within three calendar
+   days after public release and stop-sales action if the deadline is missed or
+   a critical issue is identified.
+4. Resolve every public statement against current implementation and vendor
+   evidence. Never represent owner acceptance as professional approval.
 5. Remove each draft banner and blocker, replace `noindex` with the approved
    indexing position, set the body attributes to
-   `data-publication-status="approved"` and `data-counsel-approved="true"`, and
-   add exactly one canonical URL to each template using the final
+   `data-publication-status="approved"` and the exact selected approval-path
+   attributes, and add exactly one canonical URL to each template using the final
    `PUBLIC_APP_ORIGIN`, normalized `BASE_PATH`, and route.
 6. Render the three deployable templates with the final app name and base path.
-   Have counsel approve those exact rendered pages and stylesheet in writing.
-7. Record the approver, timestamp, evidence reference, rendering inputs, and
+   Bind the exact rendered pages and stylesheet to the selected approval record.
+7. Record the approval path, timestamp, evidence reference, rendering inputs, and
    exact SHA-256 values in `legal-publication-approval.json`. Do not carry hashes
    forward after any content or rendering change.
 8. Run the release validator, route tests, full mobile tests, and live URL checks.

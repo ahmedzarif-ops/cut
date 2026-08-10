@@ -495,7 +495,7 @@ describe("CUT OS public server", () => {
   });
 
   it.each(["/privacy", "/terms/", "/support"])(
-    "serves %s as a zero-JavaScript blocked draft",
+    "keeps %s unavailable with no-store and noindex until publication is enabled",
     async (pathname) => {
       const staticRoot = await createStaticRoot();
       const { port } = await listen({ staticRoot, appName: "CUT OS" });
@@ -511,11 +511,35 @@ describe("CUT OS public server", () => {
       expect(response.headers["permissions-policy"]).toContain(
         "geolocation=()",
       );
-      expect(response.body).toContain('data-publication-status="draft"');
-      expect(response.body).toContain("Draft only");
+      expect(response.body).toContain('data-publication-status="approved"');
+      expect(response.body).toContain('data-owner-risk-accepted="true"');
+      expect(response.body).not.toContain("data-draft-banner");
       expect(response.body).not.toMatch(/<script(?:\s|>)/iu);
     },
   );
+
+  it("serves the exact owner-deferred publication after the approved-mode switch", async () => {
+    const staticRoot = await createStaticRoot();
+    const { port } = await listen({
+      staticRoot,
+      appName: "CUT OS",
+      publicationStatus: "approved",
+      publicAppOrigin: "https://getcutos.com",
+    });
+
+    const response = await request(port, "/privacy");
+    expect(response.status).toBe(200);
+    expect(response.headers["cache-control"]).toContain("public");
+    expect(response.body).toContain('data-publication-status="approved"');
+    expect(response.body).toContain('data-counsel-approved="false"');
+    expect(response.body).toContain('data-owner-risk-accepted="true"');
+    expect(response.body).toContain(
+      'data-professional-review-status="owner-deferred-post-launch"',
+    );
+    expect(response.body).toContain(
+      '<link rel="canonical" href="https://getcutos.com/privacy"',
+    );
+  });
 
   it("serves legal styles and renders links beneath the configured base path", async () => {
     const staticRoot = await createStaticRoot();
@@ -628,7 +652,9 @@ describe("CUT OS public server", () => {
         appName: "CUT OS",
         publicAppOrigin: DEFAULT_PUBLIC_APP_ORIGIN,
       }),
-    ).toThrow(/privacy content changed after the recorded counsel approval/u);
+    ).toThrow(
+      /privacy content changed after the recorded publication approval/u,
+    );
   });
 
   it("refuses a runtime URL base path that counsel did not approve", async () => {

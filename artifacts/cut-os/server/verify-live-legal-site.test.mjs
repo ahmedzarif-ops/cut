@@ -205,7 +205,7 @@ describe("live legal-site verifier", () => {
     expect(privacySignal?.aborted).toBe(true);
   });
 
-  it("rejects changed bytes and draft, counsel, noindex, and canonical tampering", async () => {
+  it("rejects changed bytes and publication, review, noindex, and canonical tampering", async () => {
     const { contents, approvalRecord } = fixture();
     contents["/privacy"] = contents["/privacy"]
       .replace(
@@ -232,7 +232,8 @@ describe("live legal-site verifier", () => {
         },
         {
           resource: "/privacy",
-          reason: "counsel approval attribute is missing",
+          reason:
+            "neither counsel approval nor the owner-deferred review attributes are present",
         },
         { resource: "/privacy", reason: "noindex remains enabled" },
         {

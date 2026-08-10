@@ -116,8 +116,10 @@ social features. Those are backlog, not submission truth.
       tests now enforce the in-app purchase fields. Continue to avoid guessing
       undocumented group-field limits.
 - [ ] Complete `listing.approval` only after controlled evidence exists for name
-      clearance, App Store Connect exact-name acceptance, owner approval, legal
-      review, qualified nutrition review, and exact-build claims review.
+      clearance, App Store Connect exact-name acceptance, owner approval, and
+      exact-build claims review. Legal and nutrition fields may remain only as
+      `owner_deferred_post_launch` under the August 10 risk-acceptance record;
+      they must not claim professional approval.
 - [ ] Approve App Review submission and later public release.
 - [x] United States-only initial availability is owner-approved and saved in
       App Store Connect.
@@ -187,19 +189,21 @@ social features. Those are backlog, not submission truth.
       obtain counsel's written rationale for accepting the Apple review risk of
       an individual seller for this sensitive-data app.
 - [ ] Publish functional HTTPS Privacy Policy, Terms/EULA, and Support pages.
-- [ ] Counsel approves the sign-up Terms assent and Privacy acknowledgment
-      design; the current age confirmation alone is not documented consent to
-      the Terms.
-- [ ] Qualified counsel approves adults-only eligibility, notice, retention,
-      account deletion, subscriptions, launch jurisdictions, and store copy.
+- [ ] Owner verifies the sign-up Terms assent and Privacy acknowledgment against
+      the final public pages and exact build. Qualified counsel review is
+      deferred under the bounded August 10 post-launch decision.
+- [ ] Initiate qualified counsel review of adults-only eligibility, notice,
+      retention, account deletion, subscriptions, launch jurisdictions, and
+      store copy within three calendar days after public release.
 - [ ] Privacy Policy names RevenueCat and explains linked User ID and Purchase
       History, purposes, retention/deletion, and no tracking.
 - [ ] Final App Privacy answers match the production archive and backend.
 - [ ] Every meal has fixed ingredient quantities/yield, nutrition source and
       calculation method, substantiated common-allergen/dietary labels,
       qualified reviewer, and review date.
-- [ ] Qualified nutrition/health and legal reviewers approve catalog copy,
-      estimated-nutrition warning, and non-medical claims.
+- [ ] Initiate qualified nutrition/health and legal review of catalog copy,
+      estimated-nutrition warning, and non-medical claims within three calendar
+      days after public release; do not represent this item as approved.
 - [ ] Completed identity tombstone, backups, RevenueCat, and support-record
       retention/deletion policies are documented.
 

@@ -4,6 +4,11 @@ const APPROVAL_RECORD_FILENAME = "legal-publication-approval.json";
 const APPROVAL_SCHEMA_VERSION = 1;
 const APPROVAL_SCOPE =
   "Exact rendered privacy, terms, support, and legal stylesheet contents recorded by SHA-256.";
+const OWNER_DEFERRED_REVIEW_STATUS = "owner_deferred_post_launch";
+const OWNER_DEFERRED_REVIEW_DEADLINE =
+  "within_3_calendar_days_after_public_release";
+const OWNER_DEFERRED_REVIEW_EVIDENCE =
+  "app-store/evidence/owner-deferred-professional-review-2026-08-10.md";
 const APPROVED_RESOURCE_NAMES = [
   "/privacy",
   "/terms",
@@ -102,6 +107,14 @@ function isFilledApprovalValue(value) {
   );
 }
 
+function isIsoTimestamp(value) {
+  return (
+    typeof value === "string" &&
+    !Number.isNaN(Date.parse(value)) &&
+    new Date(value).toISOString() === value
+  );
+}
+
 function validateApprovalRecord(
   approvalRecord,
   templates,
@@ -126,19 +139,24 @@ function validateApprovalRecord(
   }
 
   const counselApproval = approvalRecord.counselApproval;
-  if (!isFilledApprovalValue(counselApproval?.approvedBy)) {
-    issues.push("approval record has no qualified-counsel approver");
-  }
-  if (!isFilledApprovalValue(counselApproval?.evidenceReference)) {
-    issues.push("approval record has no counsel-approval evidence reference");
-  }
-  if (
-    typeof counselApproval?.approvedAt !== "string" ||
-    Number.isNaN(Date.parse(counselApproval.approvedAt)) ||
-    new Date(counselApproval.approvedAt).toISOString() !==
-      counselApproval.approvedAt
-  ) {
-    issues.push("approval record approvedAt must be an ISO-8601 timestamp");
+  const counselApprovalValid =
+    isFilledApprovalValue(counselApproval?.approvedBy) &&
+    isFilledApprovalValue(counselApproval?.evidenceReference) &&
+    isIsoTimestamp(counselApproval?.approvedAt);
+  const ownerRiskAcceptance = approvalRecord.ownerRiskAcceptance;
+  const ownerRiskAcceptanceValid =
+    ownerRiskAcceptance?.acceptedBy === "Zarif Ahmed" &&
+    isIsoTimestamp(ownerRiskAcceptance?.acceptedAt) &&
+    ownerRiskAcceptance?.evidenceReference === OWNER_DEFERRED_REVIEW_EVIDENCE &&
+    ownerRiskAcceptance?.professionalReviewStatus ===
+      OWNER_DEFERRED_REVIEW_STATUS &&
+    ownerRiskAcceptance?.professionalApprovalClaimed === false &&
+    ownerRiskAcceptance?.initiationDeadlinePolicy ===
+      OWNER_DEFERRED_REVIEW_DEADLINE;
+  if (!counselApprovalValid && !ownerRiskAcceptanceValid) {
+    issues.push(
+      "approval record requires either qualified-counsel approval or the exact owner-deferred professional-review risk acceptance",
+    );
   }
 
   const recordedAppName = approvalRecord.rendering?.appName;
@@ -148,7 +166,7 @@ function validateApprovalRecord(
   }
   if (recordedAppName !== runtimeAppName) {
     issues.push(
-      "runtime app name does not match the counsel-approved rendering",
+      "runtime app name does not match the publication-approved rendering",
     );
   }
   if (
@@ -158,7 +176,7 @@ function validateApprovalRecord(
     issues.push("approval record base path is not normalized");
   } else if (recordedBasePath !== runtimeBasePath) {
     issues.push(
-      "runtime base path does not match the counsel-approved rendering",
+      "runtime base path does not match the publication-approved rendering",
     );
   }
 
@@ -179,7 +197,7 @@ function validateApprovalRecord(
         issues.push(`${resourceName} has no recorded SHA-256 approval hash`);
       } else if (recordedHash !== expectedHashes[resourceName]) {
         issues.push(
-          `${resourceName} content changed after the recorded counsel approval`,
+          `${resourceName} content changed after the recorded publication approval`,
         );
       }
     }
@@ -201,6 +219,9 @@ module.exports = {
   APPROVAL_RECORD_FILENAME,
   APPROVAL_SCHEMA_VERSION,
   APPROVAL_SCOPE,
+  OWNER_DEFERRED_REVIEW_DEADLINE,
+  OWNER_DEFERRED_REVIEW_EVIDENCE,
+  OWNER_DEFERRED_REVIEW_STATUS,
   APPROVED_RESOURCE_NAMES,
   buildResourceHashes,
   findBlockedReleaseCopy,

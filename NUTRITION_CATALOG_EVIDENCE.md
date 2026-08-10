@@ -1,8 +1,11 @@
 # CUT OS nutrition catalog evidence ledger
 
-**Release status:** STOP — reproducible technical recipes and calculations are
-complete, but qualified nutrition, allergen, dietary-label, cultural, and legal
-review is not.
+**Release status:** OWNER-DEFERRED — reproducible technical recipes and
+calculations are complete, but qualified nutrition, allergen, dietary-label,
+cultural, and legal review is not. The owner accepted this risk on August 10,
+2026, subject to estimate/claim limitations, exact-build QA, review initiation
+within three calendar days after public release, and stop-sales triggers. See
+`app-store/evidence/owner-deferred-professional-review-2026-08-10.md`.
 
 **Catalog documented:** `2026-08-03.2`
 **Source access and calculation date:** August 3, 2026
@@ -317,22 +320,26 @@ app may not claim directly. “Estimated,” “general wellness,” and “not 
 advice” do not make an otherwise unsupported outcome or safety claim
 acceptable.
 
-## Exact stop-the-line gaps before App Store submission
+## Owner-deferred gaps and post-launch remediation
 
 The technical source/calculation gaps are materially reduced, but every item
-below remains open. If any remains open, the catalog and related App Store
-claims are not approved for submission.
+below remains open. None is professionally approved. Under the owner's August
+10 decision, the listed review gaps do not independently block submission when
+all mandatory safety controls and exact-build gates pass; they become urgent
+post-launch remediation. Failure to initiate qualified review within three
+calendar days after public release, or a critical reviewer finding, triggers the
+recorded stop-sales policy.
 
-| Gate      | Current gap                                                                                                                                                                            | Evidence required to clear it                                                                                                                                             |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NUT-04`  | Generic FDC-to-recipe equivalence, cooking-retention treatment, recipe method, serving suitability, and rounding have no qualified nutrition approval.                                 | Qualified reviewer signs the exact `2026-08-03.2` recipes, sources, method, calculations, uncertainties, and displayed values, with corrections versioned before release. |
-| `ALG-01`  | The arrays map obvious generic-recipe ingredients only; actual product labels, subingredients, preparation aids, launch-market allergen rules, and cross-contact are unreviewed.       | Documented product/package/preparation review and qualified allergen/legal signoff; empty arrays remain explicitly non-safety claims.                                     |
-| `DIET-01` | Remaining `vegetarian`, `pescatarian`, and `vegan` composition tags are not professionally or legally approved and do not control substitutions/brands.                                | Approved tag definitions, per-template ingredient evidence, jurisdiction review, and conditions; otherwise remove the tags.                                               |
-| `CULT-01` | Bengali, Desi, Mediterranean-inspired, and East Asian-inspired naming has no recorded cultural/culinary review.                                                                        | Named reviewer with documented scope approves or corrects the final recipes, methods, and naming without fabricating authenticity.                                        |
-| `COPY-01` | “Balanced options,” deterministic sorting, numeric fit text, allergen wording, disclosures, accessibility labels, and App Store nutrition copy have no final qualified/legal approval. | Review and signoff of the exact release binary and metadata, or removal/neutralization of unsupported wording.                                                            |
-| `REV-01`  | No reviewer identity, qualification, jurisdiction, scope, decision, date, or signed record exists for any template.                                                                    | Completed signoff table and linked signed records for all six templates.                                                                                                  |
-| `CFG-01`  | The calculation is synchronized to source and code locally, but it is not frozen to a signed production binary/API deployment and archived release record.                             | Verify catalog `2026-08-03.2` in the production API and signed build, then archive source evidence, calculation test output, approvals, and screenshots.                  |
-| `QA-01`   | There is no final-device acceptance record for the revised long ingredient copy, scaled servings, disclosures, allergen wording, and accessibility output.                             | Release-build device checks and screenshots for all six templates at supported serving increments, including VoiceOver and narrow-screen review.                          |
+| Gate      | Current gap                                                                                                                                                                            | Evidence required to clear it                                                                                                                                                                                           |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NUT-04`  | Generic FDC-to-recipe equivalence, cooking-retention treatment, recipe method, serving suitability, and rounding have no qualified nutrition approval.                                 | Initiate qualified review within three calendar days after public release; sign the exact `2026-08-03.2` recipes, sources, method, calculations, uncertainties, and displayed values, and version corrections promptly. |
+| `ALG-01`  | The arrays map obvious generic-recipe ingredients only; actual product labels, subingredients, preparation aids, launch-market allergen rules, and cross-contact are unreviewed.       | Documented product/package/preparation review and qualified allergen/legal signoff; empty arrays remain explicitly non-safety claims.                                                                                   |
+| `DIET-01` | Remaining `vegetarian`, `pescatarian`, and `vegan` composition tags are not professionally or legally approved and do not control substitutions/brands.                                | Approved tag definitions, per-template ingredient evidence, jurisdiction review, and conditions; otherwise remove the tags.                                                                                             |
+| `CULT-01` | Bengali, Desi, Mediterranean-inspired, and East Asian-inspired naming has no recorded cultural/culinary review.                                                                        | Named reviewer with documented scope approves or corrects the final recipes, methods, and naming without fabricating authenticity.                                                                                      |
+| `COPY-01` | “Balanced options,” deterministic sorting, numeric fit text, allergen wording, disclosures, accessibility labels, and App Store nutrition copy have no final qualified/legal approval. | Review and signoff of the exact release binary and metadata, or removal/neutralization of unsupported wording.                                                                                                          |
+| `REV-01`  | No reviewer identity, qualification, jurisdiction, scope, decision, date, or signed record exists for any template.                                                                    | Completed signoff table and linked signed records for all six templates.                                                                                                                                                |
+| `CFG-01`  | The calculation is synchronized to source and code locally, but it is not frozen to a signed production binary/API deployment and archived release record.                             | Verify catalog `2026-08-03.2` in the production API and signed build, then archive source evidence, calculation test output, approvals, and screenshots.                                                                |
+| `QA-01`   | There is no final-device acceptance record for the revised long ingredient copy, scaled servings, disclosures, allergen wording, and accessibility output.                             | Release-build device checks and screenshots for all six templates at supported serving increments, including VoiceOver and narrow-screen review.                                                                        |
 
 This ledger covers only the nutrition-catalog evidence gate. Subscription,
 privacy/legal, production-service, device-QA, App Store account, and submission

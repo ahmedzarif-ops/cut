@@ -532,6 +532,30 @@ engagement or paid work. No tailored quote, referral, engagement, or payment is
 recorded. See `legal-site/PROFESSIONAL_REVIEW_OUTREACH.md` for the current
 response tracker.
 
+## Decision 12 — launch before professional review
+
+**Status:** Approved August 10, 2026; supersedes only the earlier requirement
+that qualified legal and nutrition review be completed before launch.
+
+The owner directed CUT OS to launch as soon as the remaining technical and App
+Store requirements are satisfied and to hold lawyer and dietitian discussions
+within the first few days after public release. The repository implements
+"first few days" as **within three calendar days after public release**. The
+full dated decision, risk treatment, safety controls, and stop-sales triggers
+are in
+`app-store/evidence/owner-deferred-professional-review-2026-08-10.md`.
+
+This is an owner risk acceptance, not a professional approval. No lawyer,
+dietitian, clinician, regulator, or other professional may be named or implied
+as approving the app until a documented decision exists. The public pages,
+Apple declarations, exact-build QA, and no-medical/outcome/allergen-safety-claim
+rules remain mandatory. If either review is not initiated within the three-day
+window, or a critical finding is raised, stop new subscription sales and public
+availability until the issue is addressed.
+
+This decision does not authorize email or other external contact. Immediate
+owner confirmation remains required before any message is sent.
+
 ## Later explicit approvals
 
 These are intentionally deferred until the prerequisites are ready:
@@ -548,7 +572,9 @@ These are intentionally deferred until the prerequisites are ready:
 - Any future Accessibility Nutrition Label publication and any external
   TestFlight review.
 - Final `CUT OS` name-clearance decision or owner-approved replacement name.
-- Final App Privacy and age-rating answers.
+- Final App Privacy and age-rating answers; professional-review fields may use
+  only the explicit owner-deferred disposition recorded in Decision 12 and may
+  never be represented as professionally approved.
 - Submit for Review.
 - Manual public release.
 

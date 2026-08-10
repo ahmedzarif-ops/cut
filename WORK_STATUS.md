@@ -392,16 +392,15 @@ launch gate.
 Close the public-launch safety and native acceptance gates before collecting
 more sensitive preference data:
 
-Non-binding fixed-fee quote requests are now out to six Texas legal routes and
-four registered-dietitian candidates. Authenticated Sent evidence recovered the
-nine direct-email timestamps. One law firm offered a brief free Monday intake
-call before a proposal; a reply requested available Central Time slots and call
-length while expressly authorizing no engagement or paid work. No tailored
-quote, referral, engagement, or payment is recorded. The exact tracker is
-`legal-site/PROFESSIONAL_REVIEW_OUTREACH.md`. App Store Connect now uses
-`https://getcutos.com` for the version Marketing URL, while the Support,
-Privacy, and Terms endpoints correctly remain unavailable until qualified
-approval.
+On August 10 the owner explicitly changed launch sequencing: qualified legal
+and nutrition review will be initiated within three calendar days after public
+release rather than completed before submission. This is a documented owner
+risk acceptance, not professional approval, and it does not authorize any new
+email or external contact. The exact disposition and stop-sales triggers are in
+`app-store/evidence/owner-deferred-professional-review-2026-08-10.md`. App Store
+Connect uses `https://getcutos.com` for the version Marketing URL; Support,
+Privacy, and Terms must now be finalized accurately under owner responsibility,
+published, and verified before the production build.
 
 1. Preserve the bounded RevenueCat live preflight and direct **Valid
    credentials** evidence for both Apple credential configurations. Keep the
@@ -410,12 +409,13 @@ approval.
    evidence current. Do not infer Apple server-notification delivery or exact-
    build purchase/restore success from credential validity.
 2. Retain the confirmed active Paid Apps Agreement, banking, and W-9 evidence.
-   Have qualified counsel review the selected individual-seller/Texas-sole-
-   proprietor path before submission.
-3. Publish owner/counsel-approved Privacy, Terms, and Support pages and supply
-   their final HTTPS destinations to the production EAS environment.
+   Record the individual-seller/Texas-sole-proprietor position truthfully and
+   preserve qualified counsel review as the three-day post-launch remediation.
+3. Finalize and publish accurate owner-approved Privacy, Terms, and Support
+   pages, then supply their exact HTTPS destinations to production EAS.
 4. Complete the still-provisional age-rating and regulated-medical-device
-   answers only after legal, qualified health/nutrition, and final-binary review.
+   answers against the exact binary and Apple UI. Use only the recorded owner-
+   deferred professional-review disposition; do not claim professional review.
 5. Link the intended Apple and Expo/EAS projects, configure the validated
    production values, and upload a build into the already configured internal
    TestFlight group after the remaining public-key/EAS configuration and public
@@ -423,8 +423,9 @@ approval.
 6. Complete native-device acceptance for `adult-18-v1`, including deep links,
    offline/relaunch, shared-device account switching, stale-cache clearing,
    deletion in every eligibility state, legal/support links, and VoiceOver.
-7. Produce reproducible recipes, nutrition methodology/sources, allergen
-   substantiation, and qualified review records for every public meal template.
+7. Preserve the reproducible recipes, nutrition methodology/sources, estimate
+   and allergen limitations, and no-medical/outcome-claim controls. Initiate and
+   record qualified review within three calendar days after public release.
 
 The owner-approved one-time Expo browser login is complete. Read-only EAS checks
 confirmed `@zee-digipit/cut`, the expected project ID, and zero iOS builds.

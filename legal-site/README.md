@@ -5,6 +5,13 @@ pages. It is intentionally **not publishable**. The visible banners,
 `noindex` metadata, placeholder tokens, and validator are safety gates, not
 finished legal controls.
 
+As of August 10, 2026, the owner has accepted the risk of launching before
+qualified legal and nutrition review and will initiate both reviews within
+three calendar days after public release. This longer folder remains the
+post-launch professional-review packet. The exact owner-approved deployable
+pages and publication gate are in `artifacts/cut-os/server/templates/`; no
+professional approval is claimed.
+
 Start qualified review with [`COUNSEL_REVIEW_PACKET.md`](COUNSEL_REVIEW_PACKET.md),
 which consolidates the exact launch facts, open compliance decisions,
 publication placeholders, requested deliverables, and supporting evidence.

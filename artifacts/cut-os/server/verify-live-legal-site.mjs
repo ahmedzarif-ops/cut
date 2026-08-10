@@ -69,11 +69,22 @@ function inspectHtml(resource, html, expectedUrl, stylesheetUrl) {
   ) {
     issues.push(issue(resource, "approved publication attribute is missing"));
   }
-  if (
-    !bodyTag ||
-    !/\bdata-counsel-approved\s*=\s*["']true["']/iu.test(bodyTag)
-  ) {
-    issues.push(issue(resource, "counsel approval attribute is missing"));
+  const counselApproved =
+    bodyTag && /\bdata-counsel-approved\s*=\s*["']true["']/iu.test(bodyTag);
+  const ownerDeferred =
+    bodyTag &&
+    /\bdata-counsel-approved\s*=\s*["']false["']/iu.test(bodyTag) &&
+    /\bdata-owner-risk-accepted\s*=\s*["']true["']/iu.test(bodyTag) &&
+    /\bdata-professional-review-status\s*=\s*["']owner-deferred-post-launch["']/iu.test(
+      bodyTag,
+    );
+  if (!counselApproved && !ownerDeferred) {
+    issues.push(
+      issue(
+        resource,
+        "neither counsel approval nor the owner-deferred review attributes are present",
+      ),
+    );
   }
   if (/\bnoindex\b/iu.test(html)) {
     issues.push(issue(resource, "noindex remains enabled"));
@@ -81,7 +92,6 @@ function inspectHtml(resource, html, expectedUrl, stylesheetUrl) {
   if (
     /\bdata-(?:draft-banner|blocker)\b/iu.test(html) ||
     /\bdata-publication-status\s*=\s*["']draft["']/iu.test(html) ||
-    /\bdata-counsel-approved\s*=\s*["']false["']/iu.test(html) ||
     /\{\{[A-Z0-9_]+\}\}/u.test(html) ||
     findBlockedReleaseCopy(html).length > 0
   ) {

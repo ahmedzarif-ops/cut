@@ -3,16 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex, nofollow, noarchive" />
     <meta name="color-scheme" content="light" />
-    <title>Privacy Policy draft · APP_NAME_PLACEHOLDER</title>
+    <title>Privacy Policy · APP_NAME_PLACEHOLDER</title>
+    <link rel="canonical" href="https://getcutos.com/privacy" />
     <link rel="stylesheet" href="LEGAL_BASE_PATH_PLACEHOLDER/legal.css" />
   </head>
-  <body data-publication-status="draft" data-counsel-approved="false">
+  <body
+    data-publication-status="approved"
+    data-counsel-approved="false"
+    data-owner-risk-accepted="true"
+    data-professional-review-status="owner-deferred-post-launch"
+  >
     <a class="skip-link" href="#main">Skip to content</a>
-    <div class="draft-banner" data-draft-banner role="status">
-      Draft only — unavailable for public reliance
-    </div>
     <header class="site-header">
       <a class="wordmark" href="LEGAL_BASE_PATH_PLACEHOLDER/">CUT OS</a>
       <nav aria-label="Legal and support">
@@ -26,47 +28,41 @@
 
     <main id="main" class="page-shell">
       <section class="hero">
-        <p class="eyebrow">Working draft</p>
+        <p class="eyebrow">CUT OS</p>
         <h1>Privacy Policy</h1>
         <p class="lede">
-          This page translates the current CUT OS engineering data map into
-          user-facing language. It is incomplete and has not been approved.
+          This policy explains how CUT OS processes information when you use the
+          iPhone app, paid features, website, or support.
         </p>
         <dl class="metadata">
-          <div data-blocker>
-            <dt>Legal operator</dt>
-            <dd><code>Zarif Ahmed</code></dd>
+          <div>
+            <dt>Operator</dt>
+            <dd>Zarif Ahmed</dd>
           </div>
-          <div data-blocker>
+          <div>
             <dt>Effective date</dt>
-            <dd><code>{{POLICY_EFFECTIVE_DATE}}</code></dd>
+            <dd>August 10, 2026</dd>
           </div>
-          <div data-blocker>
+          <div>
             <dt>Privacy contact</dt>
-            <dd><code>ahmed.zarif@gmail.com</code></dd>
+            <dd>
+              <a href="mailto:ahmed.zarif@gmail.com">ahmed.zarif@gmail.com</a>
+            </dd>
           </div>
         </dl>
       </section>
 
-      <aside class="notice danger" aria-label="Publication blocker">
-        <strong>Do not publish this draft.</strong>
-        Production configuration, vendor terms, launch regions, retention,
-        rights handling, and current legal requirements still need verification
-        and qualified counsel approval.
-      </aside>
-
       <section aria-labelledby="scope">
-        <h2 id="scope">Scope and audience</h2>
+        <h2 id="scope">Scope and age limit</h2>
         <p>
-          This draft covers information processed through the CUT OS mobile app,
-          account service, paid features, and support. CUT OS is intended only
-          for people age 18 or older. The repository records a United States
-          working launch position; final availability has not been approved.
+          This policy covers CUT OS services offered in the United States. CUT
+          OS is intended only for people age 18 or older. Do not create or use
+          an account if you are under 18.
         </p>
       </section>
 
       <section aria-labelledby="information">
-        <h2 id="information">Information CUT OS processes</h2>
+        <h2 id="information">Information we process</h2>
         <div
           class="table-wrap"
           tabindex="0"
@@ -78,247 +74,271 @@
               <tr>
                 <th scope="col">Category</th>
                 <th scope="col">Examples</th>
-                <th scope="col">Current purpose</th>
+                <th scope="col">Purpose</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <th scope="row">Account and settings</th>
+                <th scope="row">Account and contact</th>
                 <td>
-                  Internal and Clerk user IDs, email, timezone, metric or
-                  imperial unit preference, onboarding state, and account
-                  timestamps
+                  Email address, display name, internal user ID, account state,
+                  timezone, and unit preference
                 </td>
                 <td>
-                  Authentication, account linking, local-day calculations,
-                  display preferences, setup, and support
+                  Authentication, account setup, personalization, support, and
+                  service operation
                 </td>
               </tr>
               <tr>
-                <th scope="row">Profile</th>
-                <td>Display name, goal, and start and goal weight</td>
-                <td>Set up and operate the user’s account and daily flow</td>
+                <th scope="row">Health and fitness</th>
+                <td>
+                  Start and goal weight, daily weigh-ins, and fitness-related
+                  goal context
+                </td>
+                <td>Provide weigh-in and user-directed wellness features</td>
               </tr>
               <tr>
-                <th scope="row">Network and security</th>
+                <th scope="row">Meals and nutrition</th>
                 <td>
-                  Client IP, request time, route, method, status, and a
-                  short-lived rate-limit key
+                  Meal selection, serving amount, calories, protein,
+                  carbohydrates, fat, fiber, and local day
                 </td>
                 <td>
-                  Deliver and protect the service, limit abuse, and support
-                  authentication through Clerk
+                  Meal logging, estimated daily totals, recovery of interrupted
+                  writes, and personalization
                 </td>
               </tr>
               <tr>
                 <th scope="row">Age decision</th>
                 <td>
-                  Full date of birth submitted to make the eligibility decision;
-                  it may be resubmitted if no terminal result is confirmed;
-                  eligibility result, policy version, and decision time
+                  A self-declared date of birth used for one eligibility
+                  decision, plus the stored result, policy version, and decision
+                  time
                 </td>
-                <td>Enforce the adults-only rule</td>
+                <td>Restrict the service to adults</td>
               </tr>
               <tr>
-                <th scope="row">Body and fitness</th>
-                <td>Daily weigh-ins and their local calendar dates</td>
-                <td>Daily weigh-in and user-directed context</td>
-              </tr>
-              <tr>
-                <th scope="row">Meals and nutrition</th>
-                <td>
-                  Meal choice, serving amount, calories, protein, carbohydrates,
-                  fat, and fiber
-                </td>
-                <td>Meal tracking, daily totals, and the next-action flow</td>
-              </tr>
-              <tr>
-                <th scope="row">Meal deletion safeguard</th>
-                <td>Opaque meal request UUID and deletion timestamp</td>
-                <td>
-                  Prevent a delayed write retry from recreating a deleted meal;
-                  the safeguard stores no template, serving, or nutrition values
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">Device and recovery</th>
-                <td>
-                  Secure session token, deletion marker, and pending meal-write
-                  recovery record
-                </td>
-                <td>Maintain sessions and recover interrupted actions</td>
-              </tr>
-              <tr>
-                <th scope="row">Subscription</th>
+                <th scope="row">Purchases</th>
                 <td>
                   Product, purchase, renewal, expiration, refund, and
-                  entitlement state
+                  entitlement status
                 </td>
-                <td>Paid access, restore, management, and support</td>
+                <td>
+                  Provide paid access, restore purchases, manage entitlements,
+                  and support subscription operation
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Device, network, and security</th>
+                <td>
+                  Session and recovery records, IP address, request time, route,
+                  method, status, and abuse-prevention events
+                </td>
+                <td>
+                  Maintain sessions, deliver requests, recover interrupted
+                  actions, prevent abuse, and protect accounts
+                </td>
               </tr>
               <tr>
                 <th scope="row">Deletion coordination</th>
                 <td>
-                  Identity hash, temporary Clerk ID while pending, status,
-                  timestamps, attempts, and sanitized error code
+                  A one-way identity hash, temporary provider ID while deletion
+                  is running, status, timestamps, attempt count, and sanitized
+                  error code
                 </td>
                 <td>
-                  Finish deletion after an interruption or partial failure
+                  Complete account deletion and prevent an old identity from
+                  recreating deleted data
                 </td>
+              </tr>
+              <tr>
+                <th scope="row">Support</th>
+                <td>Messages and information you choose to send by email</td>
+                <td>Respond to requests and protect the service</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <section aria-labelledby="age">
-        <h2 id="age">Date-of-birth processing</h2>
+      <section aria-labelledby="dob">
+        <h2 id="dob">Date-of-birth processing</h2>
         <p>
-          CUT OS sends a self-declared full date of birth to its server to make
-          a terminal decision under <code>adult-18-v1</code>. A request may be
-          retried if the app has not confirmed a terminal result. The raw date
-          is designed to exist only in memory for each request and not be
-          persisted, logged, cached, returned, added to Clerk, or sent to
-          analytics or crash reporting. The account stores only the result,
-          policy version, and decision time. An eligible result is not identity
-          or age verification.
-        </p>
-      </section>
-
-      <section aria-labelledby="use">
-        <h2 id="use">How information is used</h2>
-        <ul>
-          <li>Authenticate users and separate account data.</li>
-          <li>Enforce account-deletion status and adults-only access.</li>
-          <li>
-            Provide weigh-in, meal, daily-total, and next-action features.
-          </li>
-          <li>Verify paid access and restore or manage purchases.</li>
-          <li>Protect action integrity and recover interrupted actions.</li>
-          <li>Deliver requests, limit abuse, and protect authentication.</li>
-          <li>Respond to account and product support requests.</li>
-        </ul>
-        <p>
-          The current product rule prohibits body weight, calories, macros,
-          measurements, or raw date of birth in URLs, routine logs, analytics
-          events, or third-party customer attributes. Final production behavior
-          must be tested against that rule.
+          CUT OS sends the date you enter to its server to decide whether the
+          account is eligible under the adults-only rule. The raw date is
+          designed to be used in memory for that request and discarded after the
+          decision. It is not designed to be stored in the CUT OS database,
+          added to your authentication profile, placed in URLs, or included in
+          analytics. CUT OS stores only the eligibility result, policy version,
+          and decision time. This process is not identity verification.
         </p>
       </section>
 
       <section aria-labelledby="providers">
-        <h2 id="providers">Platforms and providers</h2>
+        <h2 id="providers">Service providers</h2>
         <ul>
           <li>
-            <strong>Clerk</strong> provides authentication and account identity.
+            <strong>Clerk</strong> provides authentication, identity,
+            verification emails, sessions, and account-security services.
           </li>
           <li>
-            <strong>Apple</strong> provides App Store distribution and
-            subscription transactions.
+            <strong>Replit and its database infrastructure</strong> host the CUT
+            OS API, public website, and production PostgreSQL database. The
+            current database service uses Neon infrastructure.
           </li>
           <li>
-            <strong>RevenueCat</strong> provides subscription entitlement and
-            purchase status. CUT OS is designed to identify the customer with
-            only an internal CUT OS UUID, not a Clerk ID, email, name, date of
-            birth, weight, measurements, meal data, or nutrition values.
+            <strong>Apple</strong> distributes the app and processes App Store
+            subscriptions and related transaction records.
           </li>
-          <li data-blocker>
-            <strong>Production hosting and database:</strong>
-            <code>{{HOSTING_AND_DATABASE_PROVIDER}}</code>
+          <li>
+            <strong>RevenueCat</strong> manages subscription entitlements and
+            purchase status. CUT OS identifies the RevenueCat customer with an
+            internal CUT OS user ID rather than sending weight, meal,
+            date-of-birth, name, or email fields as customer attributes.
           </li>
-          <li data-blocker>
-            <strong>Public support tooling:</strong>
-            <code>{{SUPPORT_TOOLING}}</code>
+          <li>
+            <strong>Expo Application Services</strong> is used to build and
+            deliver app binaries and is not part of the ordinary in-app
+            customer-data path.
+          </li>
+          <li>
+            <strong>Email providers</strong> process support messages that you
+            choose to send.
           </li>
         </ul>
         <p>
-          The current dependency inventory contains no advertising SDK or
-          general product-analytics SDK. RevenueCat supplies purchase and
-          subscription analytics. The final production archive and live vendor
-          configuration remain the evidence.
+          These providers process information under their own terms and privacy
+          practices and may keep records needed for security, transactions,
+          fraud prevention, legal compliance, and service operation.
         </p>
       </section>
 
       <section aria-labelledby="tracking">
         <h2 id="tracking">Tracking and advertising</h2>
         <p>
-          The current app configuration has tracking disabled and no tracking
-          domains. CUT OS does not use body, fitness, meal, nutrition, purchase,
-          or eligibility data for advertising audiences or tracking. Final App
-          Store privacy answers must match the shipped app and its providers.
+          CUT OS does not use your body, fitness, meal, nutrition, purchase, or
+          eligibility information for third-party advertising or cross-app
+          tracking. The current app configuration contains no advertising SDK
+          and has Apple tracking disabled. RevenueCat provides subscription
+          analytics used to operate paid access.
         </p>
       </section>
 
       <section aria-labelledby="retention">
-        <h2 id="retention">Security and retention</h2>
-        <p>
-          The current design uses server-side account boundaries, secure device
-          storage for session and recovery state, and avoids routine logging of
-          request bodies and sensitive fitness values. No security method can
-          guarantee absolute protection.
-        </p>
-        <p data-blocker>
-          <strong>Retention is unresolved:</strong>
-          <code>{{RETENTION_SCHEDULE}}</code>. The final schedule must cover
-          active-account data, database backups, hosting logs, Clerk and
-          RevenueCat records, support messages, deletion tombstones, and build
-          or crash diagnostics. The linked meal deletion safeguard is designed
-          to delete with the CUT OS user; backup handling remains part of this
-          open schedule.
-        </p>
+        <h2 id="retention">Retention and deletion</h2>
+        <ul>
+          <li>
+            Account, profile, weight, meal, preference, and linked entitlement
+            data are kept while the account is active and are removed from the
+            live CUT OS database through the in-app deletion workflow.
+          </li>
+          <li>
+            The raw date of birth is designed to be discarded immediately after
+            each server decision and not persisted by CUT OS.
+          </li>
+          <li>
+            The in-app IP-based abuse limiter expires its key after
+            approximately one minute. Hosting and authentication providers may
+            retain separate network and security records under their policies.
+          </li>
+          <li>
+            The production database currently has a seven-day point-in-time
+            recovery window. Deleted information may remain in rolling backups
+            until those backups expire.
+          </li>
+          <li>
+            A minimal deletion-coordination record may remain after account
+            deletion to prevent recreation by an old identity and to recover
+            deletion failures. It contains a one-way identity hash rather than
+            the completed account's email, weight, meal, or nutrition data.
+          </li>
+          <li>
+            Apple and RevenueCat may retain transaction records for billing,
+            fraud prevention, tax, accounting, dispute, and legal purposes.
+            Deleting CUT OS does not erase records controlled by Apple.
+          </li>
+          <li>
+            Support messages and security records are kept only as long as
+            reasonably needed to respond, protect the service, resolve disputes,
+            and meet legal obligations.
+          </li>
+        </ul>
       </section>
 
-      <section aria-labelledby="deletion">
-        <h2 id="deletion">Account deletion</h2>
+      <section aria-labelledby="account-deletion">
+        <h2 id="account-deletion">Account deletion</h2>
         <p>
-          A signed-in user can request deletion in Settings. The current
-          workflow is designed to delete the Clerk identity, CUT OS account and
-          linked profile, weight, and meal records, and the RevenueCat customer
-          linked to the internal CUT OS UUID. A minimal coordination record may
-          remain to prevent account recreation and finish interrupted deletion;
-          its retention period is not approved.
+          A signed-in user can request deletion in Settings. The workflow is
+          designed to delete the Clerk identity, CUT OS account, linked profile,
+          weight and meal records, and the RevenueCat customer linked to the
+          internal CUT OS user ID. A minimal coordination record may remain as
+          described above.
         </p>
         <p>
-          Deleting a CUT OS account does not cancel an Apple subscription or
-          erase transaction records held by Apple. Subscription management is a
-          separate Apple action at
-          <a href="https://apps.apple.com/account/subscriptions">
-            Apple’s subscription management page</a
+          Deleting a CUT OS account does not cancel an Apple subscription. You
+          can manage or cancel Apple subscriptions at
+          <a href="https://apps.apple.com/account/subscriptions"
+            >Apple's subscription management page</a
           >.
         </p>
       </section>
 
-      <section aria-labelledby="choices">
-        <h2 id="choices">Choices and contact</h2>
+      <section aria-labelledby="security">
+        <h2 id="security">Security</h2>
         <p>
-          Users can edit supported profile, weight, and meal information in the
-          app and can delete the account in Settings. Apple manages purchase
-          cancellation.
+          CUT OS uses authenticated account boundaries, encrypted network
+          connections, secure device storage for session and recovery state,
+          access controls, abuse limits, and minimized application logging. No
+          security method can guarantee absolute protection.
         </p>
-        <p data-blocker>
-          The final request, verification, correction, complaint, and
-          region-specific rights process is pending counsel review. Contact:
-          <code>ahmed.zarif@gmail.com</code>.
-        </p>
-        <address data-blocker>
-          <strong>Legal operator:</strong> <code>Zarif Ahmed</code><br />
-          <strong>Public domain:</strong> <code>{{PUBLIC_DOMAIN}}</code><br />
-          <strong>Privacy contact:</strong> <code>ahmed.zarif@gmail.com</code>
-        </address>
       </section>
 
-      <aside class="notice">
-        This engineering draft is not legal advice. Qualified counsel must
-        verify the final policy against the production service, selected launch
-        regions, and current authoritative sources.
-      </aside>
+      <section aria-labelledby="choices">
+        <h2 id="choices">Your choices and privacy requests</h2>
+        <p>
+          You can edit supported profile, weight, and meal information in the
+          app, delete individual records where controls are provided, manage
+          Apple billing through Apple, and request account deletion in Settings.
+        </p>
+        <p>
+          Depending on where you live, you may have rights to access, correct,
+          delete, or obtain information about personal data. Email
+          <a href="mailto:ahmed.zarif@gmail.com">ahmed.zarif@gmail.com</a> with
+          the subject “Privacy request.” We may ask for reasonable account
+          verification. If a request is denied, you may reply to appeal the
+          decision. We do not discriminate for exercising applicable privacy
+          rights.
+        </p>
+      </section>
+
+      <section aria-labelledby="changes">
+        <h2 id="changes">Changes to this policy</h2>
+        <p>
+          We may update this policy as CUT OS, its providers, or applicable
+          requirements change. The effective date above will be updated. If a
+          change materially affects how existing account data is used, CUT OS
+          will provide an appropriate notice in the app, on this website, or by
+          email before the change takes effect when required.
+        </p>
+      </section>
+
+      <section aria-labelledby="contact">
+        <h2 id="contact">Contact</h2>
+        <address>
+          <strong>Operator:</strong> Zarif Ahmed<br />
+          <strong>Website:</strong>
+          <a href="https://getcutos.com">https://getcutos.com</a><br />
+          <strong>Email:</strong>
+          <a href="mailto:ahmed.zarif@gmail.com">ahmed.zarif@gmail.com</a>
+        </address>
+      </section>
     </main>
 
     <footer class="site-footer">
       <a href="LEGAL_BASE_PATH_PLACEHOLDER/">Home</a> ·
-      <a href="LEGAL_BASE_PATH_PLACEHOLDER/terms">Terms draft</a> ·
-      <a href="LEGAL_BASE_PATH_PLACEHOLDER/support">Support draft</a>
-      <p>CUT OS privacy draft · Updated August 3, 2026</p>
+      <a href="LEGAL_BASE_PATH_PLACEHOLDER/terms">Terms</a> ·
+      <a href="LEGAL_BASE_PATH_PLACEHOLDER/support">Support</a>
+      <p>CUT OS Privacy Policy · Effective August 10, 2026</p>
     </footer>
   </body>
 </html>
