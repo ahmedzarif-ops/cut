@@ -143,9 +143,15 @@
 - Native configuration now keeps the dark launch screen's status bar readable
   and uses Clerk Expo 4.2.0 without the optional Google Sign-In package or pod.
   Expo introspection and native autolinking checks enforce both conditions.
-- App Store password recovery now uses Clerk's prebuilt sign-in-only native
-  `AuthView`; public web uses Clerk's prebuilt `SignIn` with sign-up and transfer
-  disabled. The development tenant has Strict enumeration protection enabled.
+- App Store password recovery now resolves to Clerk's documented custom
+  email-code flow on native and uses CUT's verified same-origin Clerk proxy;
+  the direct-host native `AuthView` override has been removed. Public web keeps
+  Clerk's prebuilt `SignIn` with sign-up and transfer disabled. Source and
+  auth-flow regression tests pass. A production-environment iOS Hermes export
+  also contains the generic custom-recovery and session-isolation code while
+  excluding the removed native instructions; this is an unsigned structural
+  rehearsal, not TestFlight evidence. An exact signed physical-device reset
+  remains pending. The development tenant has Strict enumeration protection enabled.
 - Clerk production now uses free-Hobby application
   `app_3HeFFYD0GpUEjcPIlOwNYXAKUmo`, production instance
   `ins_3HeFLfOAbfStrVB4eW5b7sYOeAq`, and domain record

@@ -49,37 +49,37 @@ Official provider references:
 
 ### Selected App Store architecture
 
-The iOS and Android recovery route now uses Clerk's prebuilt native
-`<AuthView mode="signIn" />` from `@clerk/expo/native`:
+The iOS and Android recovery route now uses Clerk's documented custom
+email-code password-reset sequence through CUT's verified same-origin proxy:
 
-- implementation: `app/(auth)/forgot-password.native.tsx`;
-- configuration: the `@clerk/expo` native config plugin in `app.json`; and
-- regression boundary: `lib/__tests__/password-recovery-native.test.ts`.
+- implementation: `app/(auth)/forgot-password.tsx`;
+- proxy binding: `app/_layout.tsx` passes the validated proxy URL to
+  `ClerkProvider`;
+- bounded provider operations: `lib/auth-flow.ts`; and
+- regression boundary: `lib/__tests__/password-recovery-native.test.ts` plus
+  `lib/__tests__/auth-flow.test.ts`.
 
-This is the selected `clerk_hosted_or_prebuilt_recovery` architecture. Clerk's
-current Expo SDK documentation says that `AuthView` supports password recovery,
-and the native component reference documents `mode="signIn"`. CUT deliberately
-does not use `signInOrUp`: Clerk documents that mode as incompatible with Strict
-user enumeration protection. Clerk's `AuthView` reference says `signIn` mode
-restricts the interface to existing-account authentication, so it cannot create
-an account or bypass CUT's separate tested adult/terms sign-up flow.
+There is deliberately no `forgot-password.native.tsx` override. Expo native
+resolution therefore uses the common JavaScript screen instead of Clerk's beta
+native `AuthView`, whose direct Frontend API host failed TLS while CUT's proxy
+remained healthy. This is the selected
+`clerk_supported_server_or_proxy_recovery` architecture. It uses Clerk's
+official `useSignIn` reset-password methods and cannot transfer into sign-up or
+bypass CUT's separate adult/Terms sign-up route.
 
 Official provider references:
 
-- https://clerk.com/docs/reference/expo/overview
-- https://clerk.com/docs/reference/expo/native-components/auth-view
+- https://clerk.com/docs/guides/development/custom-flows/authentication/forgot-password
 - https://clerk.com/docs/guides/secure/user-enumeration-protection
 
-**Provider-support verification — August 4, 2026; reviewer: Codex
-release-readiness audit.** Clerk's current official Expo overview identifies
-native `AuthView` as a prebuilt component that supports password recovery. The
-current native-component reference documents `mode="signIn"` and states that it
-restricts the interface to existing-account sign-in. Clerk's current security
-guide states that Strict user-enumeration protection hides whether accounts
-exist. This verifies the selected provider-supported recovery architecture
-only. Owner approval, independent security review, production Strict/Native API
-configuration, production-tenant behavior, and exact signed-device evidence
-remain pending.
+**Provider-support verification — August 10, 2026; reviewer: Codex
+release-readiness audit.** Clerk's current official custom-flow guide includes
+the Expo `useSignIn` implementation and the same `sendCode`, `verifyCode`, and
+`submitPassword` sequence CUT uses, including the option to sign out other
+sessions. Clerk's security guide states that Strict user-enumeration protection
+hides whether accounts exist. This verifies the selected provider-supported
+architecture only. Owner approval, independent security review,
+production-tenant behavior, and exact signed-device evidence remain pending.
 
 The public Expo web route uses Clerk's prebuilt web `<SignIn />`, sets
 `transferable={false}`, and explicitly pins `signUpUrl="/sign-up"`. Live testing
@@ -87,17 +87,19 @@ of CUT's locked Clerk SDK showed that `withSignUp={false}` alone does not remove
 the component's footer sign-up link. The explicit URL keeps that link on CUT's
 separately tested adult-confirmation and Terms-assent route instead of Clerk's
 hosted sign-up page. Release QA must verify this destination in the exact web
-build; do not infer it from `withSignUp` or `transferable`. The universal
-`forgot-password.tsx` custom flow is now only a non-launch fallback for other
-platform resolution; it must not be published or used as enumeration evidence.
+build; do not infer it from `withSignUp` or `transferable`.
 
 ### Protections implemented in code
 
-- The native recovery route contains no custom reset endpoint, raw provider
-  error rendering, or recovery-event logging. Provider failures remain inside
-  Clerk's prebuilt flow.
-- Expo web Clerk Frontend API traffic is routed through CUT's bounded Clerk
-  proxy. The per-IP proxy limiter returns one generic 429 envelope.
+- The native recovery route calls only Clerk's supported client SDK operations;
+  it contains no CUT reset endpoint, raw provider-error rendering, sign-up
+  transfer, or recovery-event logging.
+- The request step shows the same generic notice regardless of whether Clerk
+  accepted the identifier. Code and password failures are bounded user-action
+  errors without provider response bodies.
+- Native and Expo web Clerk Frontend API traffic is routed through CUT's
+  bounded Clerk proxy. The per-IP proxy limiter returns one generic 429
+  envelope.
 - A proxy throttle records only the fixed
   `clerk_frontend_api_rate_limited` security event. The request logger collapses
   every dynamic Clerk path to `/api/__clerk`, so sign-in attempt IDs, email
@@ -106,14 +108,6 @@ platform resolution; it must not be published or used as enumeration evidence.
 - Proxy timeouts, upstream failures, and oversized responses return the same
   bounded `Authentication service unavailable` envelope without relaying a
   partial Clerk response.
-
-The native `AuthView` is a separate SwiftUI/Jetpack Compose integration. In
-CUT's locked `@clerk/expo` 3.7.4 bridge, native initialization receives the
-publishable key and native bearer token, not the React `ClerkProvider` proxy
-URL. Native recovery must therefore be treated as direct Clerk Native API
-traffic: CUT's proxy throttle and proxy logs are not its security boundary.
-Clerk Strict protection, Clerk's provider-side rate limits, and production
-tenant evidence are the real native boundary.
 
 These app and web-edge controls preserve safe CUT-owned logging, but they do not
 replace Clerk's provider-side protections. A client-side delay is not a
@@ -145,13 +139,12 @@ Record sanitized exact-build evidence for all of the following:
 - the proxy abuse signal contains only the fixed event name and no raw reset
   codes, passwords, email identifiers, Clerk resource IDs, or provider errors.
 
-Because Clerk marks Expo native components as beta, source inspection,
-TypeScript, unit tests, and an unsigned simulator are insufficient. The exact
-signed TestFlight candidate must pass recovery on a physical iPhone, including
-the Get help entry point, known/unknown identifier parity, resend/rate-limit
-behavior, provider failure, invalid/expired code, new-password submission,
-session synchronization back to Expo, and confirmation that no sign-up affordance
-appears in `mode="signIn"`.
+Source inspection, TypeScript, unit tests, and an unsigned simulator are
+insufficient. The exact signed TestFlight candidate must pass the proxy-backed
+custom recovery flow on a physical iPhone, including the Get help entry point,
+known/unknown identifier parity, resend/rate-limit behavior, provider failure,
+invalid/expired code, new-password submission, session synchronization back to
+Expo, and confirmation that no sign-up transfer appears.
 
 Do not store test identifiers, reset codes, passwords, response bodies, raw
 per-identifier timings, provider credentials, or unsanitized log exports in the

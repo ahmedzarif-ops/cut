@@ -1,10 +1,16 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-const nativeRecoverySource = readFileSync(
-  resolve(process.cwd(), "app", "(auth)", "forgot-password.native.tsx"),
+const nativeRecoveryOverride = resolve(
+  process.cwd(),
+  "app",
+  "(auth)",
+  "forgot-password.native.tsx",
+);
+const customRecoverySource = readFileSync(
+  resolve(process.cwd(), "app", "(auth)", "forgot-password.tsx"),
   "utf8",
 );
 const webRecoverySource = readFileSync(
@@ -14,27 +20,41 @@ const webRecoverySource = readFileSync(
 const appConfig = JSON.parse(
   readFileSync(resolve(process.cwd(), "app.json"), "utf8"),
 );
+const appLayoutSource = readFileSync(
+  resolve(process.cwd(), "app", "_layout.tsx"),
+  "utf8",
+);
 
 describe("native password recovery boundary", () => {
-  it("uses Clerk's prebuilt native sign-in view for App Store recovery", () => {
-    expect(nativeRecoverySource).toContain(
-      'import { AuthView } from "@clerk/expo/native";',
+  it("uses Clerk's supported JavaScript custom recovery flow on native", () => {
+    expect(existsSync(nativeRecoveryOverride)).toBe(false);
+    expect(customRecoverySource).toContain(
+      'import { useSignIn } from "@clerk/expo";',
     );
-    expect(nativeRecoverySource).toContain("<AuthView");
-    expect(nativeRecoverySource).toContain('mode="signIn"');
-    expect(nativeRecoverySource).toContain("isDismissible");
+    expect(customRecoverySource).toContain(
+      "signIn.resetPasswordEmailCode.sendCode()",
+    );
+    expect(customRecoverySource).toContain(
+      "signIn.resetPasswordEmailCode.verifyCode",
+    );
+    expect(customRecoverySource).toContain(
+      "signIn.resetPasswordEmailCode.submitPassword",
+    );
   });
 
-  it("does not reimplement or log native provider recovery operations", () => {
-    expect(nativeRecoverySource).not.toMatch(/useSignIn/);
-    expect(nativeRecoverySource).not.toMatch(/resetPasswordEmailCode/);
-    expect(nativeRecoverySource).not.toMatch(/console\./);
+  it("routes native recovery through the same verified ClerkProvider proxy", () => {
+    expect(appLayoutSource).toContain(
+      "proxyUrl={launchDecision.config.clerkProxyUrl}",
+    );
+    expect(customRecoverySource).not.toMatch(/@clerk\/expo\/native/);
   });
 
-  it("cannot transfer native recovery into sign-up", () => {
-    expect(nativeRecoverySource).toContain('mode="signIn"');
-    expect(nativeRecoverySource).not.toMatch(/signInOrUp/);
-    expect(nativeRecoverySource).not.toMatch(/mode="signUp"/);
+  it("preserves enumeration protection and cannot transfer into sign-up", () => {
+    expect(customRecoverySource).toContain("PASSWORD_RESET_REQUEST_NOTICE");
+    expect(customRecoverySource).not.toMatch(/\/sign-up/);
+    expect(customRecoverySource).not.toMatch(/useSignUp/);
+    expect(customRecoverySource).not.toMatch(/console\./);
+    expect(customRecoverySource).toContain("signOutOfOtherSessions: true");
   });
 
   it("keeps public web recovery behind CUT's guarded sign-up route", () => {

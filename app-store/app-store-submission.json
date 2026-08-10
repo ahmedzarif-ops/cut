@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "working_not_approved",
-  "updated": "2026-08-08",
+  "updated": "2026-08-10",
   "references": {
     "humanRecord": "APP_STORE_METADATA.md",
     "appConfig": "artifacts/cut-os/app.json",
@@ -548,9 +548,9 @@
     "status": "pending_supported_recovery_architecture_and_production_evidence",
     "source": "artifacts/cut-os/AUTH_SECURITY_PRELAUNCH.md",
     "risk": "password_reset_account_enumeration_timing",
-    "selectedRecoveryArchitecture": "clerk_hosted_or_prebuilt_recovery",
-    "clerkSupportEvidenceReference": "https://clerk.com/docs/reference/expo/overview; https://clerk.com/docs/reference/expo/native-components/auth-view; https://clerk.com/docs/guides/secure/user-enumeration-protection",
-    "implementationEvidenceReference": "artifacts/cut-os/app/(auth)/forgot-password.native.tsx; artifacts/cut-os/app/(auth)/forgot-password.web.tsx; artifacts/cut-os/lib/__tests__/password-recovery-native.test.ts",
+    "selectedRecoveryArchitecture": "clerk_supported_server_or_proxy_recovery",
+    "clerkSupportEvidenceReference": "https://clerk.com/docs/guides/development/custom-flows/authentication/forgot-password; https://clerk.com/docs/guides/secure/user-enumeration-protection",
+    "implementationEvidenceReference": "artifacts/cut-os/app/(auth)/forgot-password.tsx; artifacts/cut-os/app/(auth)/forgot-password.web.tsx; artifacts/cut-os/app/_layout.tsx; artifacts/cut-os/lib/auth-flow.ts; artifacts/cut-os/lib/__tests__/password-recovery-native.test.ts; artifacts/cut-os/lib/__tests__/auth-flow.test.ts",
     "productionTenantEvidence": {
       "clerkTenantAlias": "clerk-cut-os-getcutos-production-v2",
       "testedAtUtc": null,

@@ -64,8 +64,10 @@
   an unsigned generic-iPhone Xcode 27 Release archive and its 118-file secret
   scan also pass. This is a local structural rehearsal, not a signed EAS archive,
   physical-device flow, or full tap-through.
-- CUT password recovery now uses Clerk's prebuilt sign-in-only native and web
-  flows. The Clerk development tenant has Strict enumeration protection,
+- CUT native password recovery now uses Clerk's documented custom email-code
+  flow through the verified same-origin proxy; the direct-host native
+  `AuthView` override has been removed. Web recovery keeps Clerk's prebuilt
+  non-transferable sign-in flow. The Clerk development tenant has Strict enumeration protection,
   Client Trust, bot protection, and lockout protection enabled. Production now
   uses free-Hobby application `app_3HeFFYD0GpUEjcPIlOwNYXAKUmo`, instance
   `ins_3HeFLfOAbfStrVB4eW5b7sYOeAq`, and domain record
@@ -106,7 +108,7 @@
   handshake before serving a certificate. Clerk shows the primary domain, DNS,
   and proxy as Verified but marks that direct host Optional. An existing Clerk
   support ticket was acknowledged on August 9, with no technical response yet.
-  Preserve the working proxy and instance. Native password recovery and exact
+  Preserve the working proxy and instance. Exact signed-device password recovery and
   physical-device/TestFlight Declared Age Range entitlement/API validation
   remain open.
 - App Review access is now a target-bound release gate: its controlled window

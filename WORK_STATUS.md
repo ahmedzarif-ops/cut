@@ -328,9 +328,14 @@ launch gate.
   certificate. Clerk shows the primary domain, DNS, and proxy as Verified but
   marks that direct host Optional. An existing Clerk ticket titled **Native
   AuthView TLS error** was acknowledged on August 9; no technical response is
-  recorded. Do not remove the working proxy or change the instance. Native
-  recovery remains blocked pending a supported no-downtime resolution.
-  Pre-cutover binaries are ineligible and TestFlight still has zero builds.
+  recorded. Do not remove the working proxy or change the instance. The native
+  route now avoids that failing direct-host path by resolving to Clerk's
+  documented custom email-code flow through CUT's verified proxy. Source-level
+  regression coverage and a production-environment iOS Hermes export confirm
+  the custom flow is bundled and the removed native instructions are absent;
+  exact signed-device request, code, password, session, and no-sign-up-transfer
+  QA remains pending. Pre-cutover binaries are ineligible and TestFlight still
+  has zero builds.
 - Replit contains the exact CUT project, Apple app, entitlement, and offering
   REST IDs as non-secret configurations and the RevenueCat server API v2
   replacement secret saved masked. Replacement key

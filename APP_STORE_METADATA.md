@@ -258,16 +258,15 @@ support.
 ## Authentication security prelaunch gate
 
 `artifacts/cut-os/AUTH_SECURITY_PRELAUNCH.md` is a public-launch blocker, not a
-future hardening suggestion. The App Store recovery route now delegates to
-Clerk's documented prebuilt native `AuthView` in sign-in-only mode. CUT's
-browser/development fallback still uses one generic message, but it is not the
-release architecture and a client-side delay is not an enumeration defense.
-The Expo web recovery route also uses Clerk's prebuilt non-transferable sign-in
-component and explicitly routes any sign-up link to CUT's guarded `/sign-up`
-screen. CUT's remaining custom reset screen is a non-launch fallback.
+future hardening suggestion. The App Store recovery route now uses Clerk's
+documented custom email-code password-reset flow through the same verified
+same-origin proxy configured on CUT's `ClerkProvider`. The request step always
+shows one generic public notice and never renders raw provider errors. The Expo
+web recovery route remains Clerk's prebuilt non-transferable sign-in component
+and explicitly routes any sign-up link to CUT's guarded `/sign-up` screen.
 
 `app-store/app-store-submission.json` records
-`clerk_hosted_or_prebuilt_recovery` with official Clerk documentation and exact
+`clerk_supported_server_or_proxy_recovery` with official Clerk documentation and exact
 implementation references. Authentication security remains
 `pending_supported_recovery_architecture_and_production_evidence`, with every
 approval false. Release validation must remain blocked until all of the
@@ -275,8 +274,9 @@ following are recorded:
 
 - production Clerk **Attack protection → User enumeration protection →
   Strict**, plus Native API/application registration for the exact build;
-- physical-iPhone verification of Clerk's beta native `AuthView`, including
-  password recovery, session synchronization, and no sign-up affordance;
+- physical-iPhone verification of the proxy-backed reset request, email-code
+  verification, new-password completion, session synchronization, and absence
+  of any sign-up transfer;
 - production Clerk tenant evidence for the same generic public response,
   response-envelope parity, timing parity, enumeration-resistant rate limits,
   provider-failure behavior, and abuse logging that excludes raw reset codes and

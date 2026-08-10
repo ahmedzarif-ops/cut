@@ -267,6 +267,29 @@ this gap. An existing Clerk support ticket titled **Native AuthView TLS error**
 was acknowledged at `2026-08-09T16:17:44Z`; no technical response is recorded.
 No secret, account detail, or certificate body is stored here.
 
+### Superseding proxy-backed native recovery architecture — 2026-08-10
+
+The native-only `forgot-password.native.tsx` override that invoked Clerk's beta
+`AuthView` has been removed. Native route resolution now uses CUT's existing
+`forgot-password.tsx` implementation, which follows Clerk's documented custom
+email-code reset sequence with `useSignIn` and inherits the verified
+`ClerkProvider` proxy URL. The request response remains generic regardless of
+provider outcome, raw provider errors are not shown or logged, sign-up transfer
+is absent, and a successful password submission requests sign-out of other
+sessions. Web resolution remains separately pinned to Clerk's prebuilt web
+`SignIn` component.
+
+This source change removes the known direct-host TLS dependency from the native
+recovery route; it does not claim completed recovery. Focused architecture and
+auth-flow tests pass. At `2026-08-10T07:53:20Z`, a local iOS Hermes export made
+under the EAS production environment contained the generic custom-recovery copy
+and session-isolation option and did not contain the removed native `AuthView`
+instructions. The export remained in `/tmp` and is structural rehearsal only,
+not a signed binary or durable App Store artifact. An exact signed
+physical-device/TestFlight reset request, real user-entered code, new-password
+completion, session result, provider-failure behavior, and no-sign-up-transfer
+observation remain required release evidence.
+
 ### Superseding native age-bridge simulator result — recorded `2026-08-08T21:46:02Z`
 
 An arm64 Release simulator build, signed locally and built with the EAS

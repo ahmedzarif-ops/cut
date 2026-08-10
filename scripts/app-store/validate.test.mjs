@@ -1781,7 +1781,8 @@ test("authentication security release gate requires supported architecture and p
   const approved = clone(inputs.submission);
   const gate = approved.authenticationSecurity;
   gate.status = "approved_for_release";
-  gate.selectedRecoveryArchitecture = "clerk_hosted_or_prebuilt_recovery";
+  gate.selectedRecoveryArchitecture =
+    "clerk_supported_server_or_proxy_recovery";
   gate.clerkSupportEvidenceReference = "security/clerk-support-review";
   gate.implementationEvidenceReference = "security/recovery-build-review";
   gate.productionTenantEvidence.clerkTenantAlias = "clerk-production";
