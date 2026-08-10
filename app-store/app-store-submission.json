@@ -861,6 +861,7 @@
   "privacy": {
     "status": "provisional_pending_production_reconciliation",
     "manifestPath": "artifacts/cut-os/app.json",
+    "engineeringEvidenceReference": "PRIVACY_DATA_MAP.md; app-store/evidence/production-launch-infrastructure-2026-08-08.md; app-store/evidence/apple-live-configuration-2026-08-04.md",
     "tracking": false,
     "trackingDomains": [],
     "requiredReasonApis": [

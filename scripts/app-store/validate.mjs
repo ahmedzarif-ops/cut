@@ -233,12 +233,18 @@ const EXPECTED_AGE_ANSWER_KEYS = Object.freeze([
 const EXPECTED_PRIVACY_KEYS = Object.freeze([
   "status",
   "manifestPath",
+  "engineeringEvidenceReference",
   "tracking",
   "trackingDomains",
   "requiredReasonApis",
   "dataTypes",
   "externalVerificationGates",
   "approval",
+]);
+const REQUIRED_PRIVACY_ENGINEERING_EVIDENCE_REFERENCES = Object.freeze([
+  "PRIVACY_DATA_MAP.md",
+  "app-store/evidence/production-launch-infrastructure-2026-08-08.md",
+  "app-store/evidence/apple-live-configuration-2026-08-04.md",
 ]);
 
 const AGE_QUESTIONNAIRE_SOURCE =
@@ -4902,6 +4908,12 @@ export function validateMetadata({
     check(
       privacy.manifestPath === "artifacts/cut-os/app.json",
       "privacy.manifestPath must remain artifacts/cut-os/app.json",
+    );
+    check(
+      REQUIRED_PRIVACY_ENGINEERING_EVIDENCE_REFERENCES.every((reference) =>
+        String(privacy.engineeringEvidenceReference ?? "").includes(reference),
+      ),
+      "privacy must retain the production engineering evidence references",
     );
     check(
       privacy.tracking === appManifest.NSPrivacyTracking,

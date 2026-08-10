@@ -2,9 +2,31 @@
 
 **Status:** Engineering draft for App Store privacy review
 
-**Updated:** August 3, 2026
+**Updated:** August 10, 2026
 
 This inventory describes the current repository, not a completed legal disclosure. The production binary, backend configuration, vendor contracts, retention policy, and public Privacy Policy must be checked again immediately before App Store submission.
+
+## Production vendor reconciliation checkpoint
+
+This checkpoint separates verified engineering behavior from the remaining
+legal, vendor-retention, and exact-archive decisions. Detailed infrastructure
+and commerce evidence remains in
+`app-store/evidence/production-launch-infrastructure-2026-08-08.md` and
+`app-store/evidence/apple-live-configuration-2026-08-04.md`; those records are
+linked here instead of duplicated.
+
+| Processor or surface                      | Verified engineering evidence                                                                                                                                                                                                                                                                                                            | Still unresolved before submission                                                                                                                                                                                                                                                |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CUT API and production database on Replit | The exact backend deployment is public on the approved Reserved VM, the production database is connected, development-data copy is off, application-to-database TLS verification passes, and app-owned logs use fixed sanitized fields. Point-in-time recovery is on with a seven-day in-place restore window; no restore was exercised. | Replit/provider access-log fields and retention, support-access controls, backup deletion/expiry treatment, and contractual/regional processing terms require vendor and legal confirmation. A production restore remains destructive and needs a separately approved drill plan. |
+| Clerk production identity                 | The replacement production tenant, primary domain, five DNS records, same-origin proxy, Native API registration, Strict enumeration posture, and Client Trust are configured. CUT forwards the trusted client IP only through the bounded Clerk proxy and does not log provider bodies or credentials.                                   | Clerk IP, device, event, sign-in, retention, support-access, and linkage treatment must be reconciled with the final questionnaire and public policy. Exact signed-build recovery, rate-limit, and deletion evidence remains pending.                                             |
+| RevenueCat and Apple commerce             | The production Apple app, monthly product, entitlement, and default offering are mapped; both Apple credential configurations validate. CUT is designed to identify RevenueCat customers only by the internal CUT UUID. No production transactions exist yet.                                                                            | The final SDK/archive inventory, exact purchase/restore/account-deletion behavior, transaction retention, analytics/diagnostics categories, and public disclosure require exact TestFlight evidence and reviewer confirmation.                                                    |
+| Apple, TestFlight, and App Store Connect  | The app record and U.S.-only subscription record exist, but no build has been uploaded and the privacy questionnaire has not been saved. Apple retains its own transaction and platform records.                                                                                                                                         | The exact processed build, App Store privacy answers, Apple retention treatment, review accounts, screenshots, and final reviewer approvals remain pending.                                                                                                                       |
+| Expo/EAS build service                    | EAS is configured for the CUT project and the client-facing production variable names are controlled; no production iOS build exists. Build systems are not part of the runtime user-data path.                                                                                                                                          | The final `.xcarchive`, embedded privacy manifests, SDK signatures, build diagnostics, and any provider retention must be inspected from the exact candidate rather than inferred from the simulator or package graph.                                                            |
+| Support and crash/usage tooling           | The app has no general product-analytics or crash-reporting SDK in its direct runtime dependency list. The public Support route remains unpublished and fail-closed; CUT has no in-app support-ticket database.                                                                                                                          | Final transitive SDK/archive inspection is required. The support-email workflow, correspondence retention, and any future crash/analytics provider require separate disclosure review before activation.                                                                          |
+
+This table is evidence preparation only. It does not change any
+`privacy.externalVerificationGates` status, does not approve an App Store
+answer, and does not authorize publication of the Privacy Policy.
 
 ## Current data inventory
 
@@ -87,8 +109,8 @@ and Fitness data together. Paid v1 also no longer collects sex, height,
 activity level, training experience, or target date; migration
 `0010_minimize_v1_profile.sql` clears any legacy values before launch.
 
-Two external-service mappings remain intentionally outside the table until
-production evidence exists:
+Two external-service classifications remain intentionally outside the
+copy-ready disclosure table until final vendor and exact-build evidence exists:
 
 - Client IP/network metadata is processed for service delivery, one-minute
   abuse throttling, and Clerk authentication. Confirm the exact App Store
@@ -136,10 +158,14 @@ Before the first TestFlight upload:
    analytics provider. Confirm CUT sends RevenueCat only the internal UUID and
    no customer attributes containing health, fitness, DOB, name, or email.
 
-The current draft does not yet inventory database backups, hosting request
-logs, Clerk records/events, support tooling, crash reporting, or build/archive
-diagnostics. Each must be reconciled against production configuration and vendor
-terms before TestFlight/App Store disclosures are finalized.
+The production checkpoint above now records the bounded engineering state for
+database recovery, CUT-owned application logs, Clerk, RevenueCat, support, and
+the absence of a direct crash/analytics SDK. It does **not** establish provider
+access-log fields or retention, Clerk event retention, support-correspondence
+retention, backup deletion treatment, transitive archive contents, or
+build/archive diagnostics. Each unresolved item must be reconciled against the
+exact production configuration, vendor terms, public policy, and submitted
+archive before the App Store disclosures are finalized.
 
 Apple reference: [Adding a privacy manifest](https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk).
 

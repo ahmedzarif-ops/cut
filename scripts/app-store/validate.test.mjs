@@ -781,6 +781,7 @@ test("metadata validation catches listing and privacy-manifest drift", () => {
   submission.listing.promotionalText = "metadata drift";
   submission.privacy.dataTypes[0].tracking = true;
   submission.privacy.requiredReasonApis[0].reasons = ["invented.1"];
+  submission.privacy.engineeringEvidenceReference = "PRIVACY_DATA_MAP.md";
 
   const errors = validateMetadata({ ...inputs, submission });
   assert.ok(errors.includes("listing.subtitle must be 30 characters or fewer"));
@@ -803,6 +804,11 @@ test("metadata validation catches listing and privacy-manifest drift", () => {
   assert.ok(
     errors.includes(
       "privacy.requiredReasonApis[0] reasons must match app.json",
+    ),
+  );
+  assert.ok(
+    errors.includes(
+      "privacy must retain the production engineering evidence references",
     ),
   );
 });
