@@ -1,15 +1,18 @@
 # CUT OS — release operations runbook
 
-**Updated:** August 4, 2026
+**Updated:** August 10, 2026
 **Scope:** Staging, production, database recovery, monitoring, TestFlight, and
 App Review handoff for the paid adults-only v1 release.
 
-This runbook is an execution control, not authorization to deploy. The owner,
-qualified counsel, privacy reviewer, and health/nutrition reviewer retain every
-approval gate in `OWNER_LAUNCH_DECISIONS.md`, `APP_STORE_READINESS.md`, and
-`EAS_RELEASE_RUNBOOK.md`. Never enroll, accept an agreement, spend paid quota,
-publish legal copy, create a production subscription, upload a build, submit to
-App Review, or release publicly without the recorded approval for that action.
+This runbook is an execution control, not authorization to deploy. The owner
+retains every launch authorization in `OWNER_LAUNCH_DECISIONS.md`,
+`APP_STORE_READINESS.md`, and `EAS_RELEASE_RUNBOOK.md`. Decision 12 explicitly
+defers qualified legal/privacy and nutrition review until within three calendar
+days after public release, with no professional-approval claim and with the
+recorded stop-sales triggers. Never enroll, accept an agreement, spend paid
+quota, publish legal copy, create a production subscription, upload a build,
+submit to App Review, or release publicly without the recorded authorization
+for that action.
 
 ## Release invariants
 

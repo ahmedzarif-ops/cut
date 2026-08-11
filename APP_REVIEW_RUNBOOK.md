@@ -26,7 +26,7 @@ restaurant guidance, chat, or social features.
 
 | Surface            | Repository evidence                                                                                                                                                                                            | Current release position                                                                                                                                                                                        |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Native identity    | App Store Connect app `6798020879` is CUT OS with bundle ID `com.zarifahmed.cut`; exact version 1.0.0 build 4 is processed, assigned to internal TestFlight, and selected for the version                      | The processed build is not an App Review submission or public release. Physical-iPhone exact-build QA remains pending.                                                                                          |
+| Native identity    | App Store Connect app `6798020879` is CUT OS with bundle ID `com.zarifahmed.cut`; version 1.0.0 build 4 is processed, assigned to internal TestFlight, and selected as the signed QA candidate                 | Build 4 is not the final immutable submission build. Finish its physical QA, resolve any issue, then cut the final build from the stabilized head containing both pre-created evidence drafts.                  |
 | Seller             | Apple Developer membership is active as an Individual; `getcutos.com` is the canonical public domain; the owner explicitly deferred professional review until after launch                                     | Preserve the owner-deferred record without claiming counsel approval. Do not add a different legal operator or publish private address information.                                                             |
 | Routes             | Sign in, sign up, adult eligibility, subscription, onboarding, Today, balanced meals, and Settings exist under `artifacts/cut-os/app`                                                                          | The navigation scripts below use only these built routes.                                                                                                                                                       |
 | Paid scope         | `ADR_004_SUBSCRIPTIONS.md` and `APP_STORE_READINESS.md` define the narrow v1 scope                                                                                                                             | Keep listing copy, screenshots, and review notes inside that boundary.                                                                                                                                          |
@@ -36,7 +36,7 @@ restaurant guidance, chat, or social features.
 | Category           | Health & Fitness is saved as the primary category; Made for Kids is No; Content Rights is No; regulated medical device is No; DSA is active as non-trader/no EU distribution                                   | Final listing/owner approval remains pending; do not infer professional approval from these saved Apple fields.                                                                                                 |
 | Icon               | `artifacts/cut-os/assets/images/icon-v2.png` is a 1024×1024, 8-bit RGB PNG with no alpha; SHA-256 `58e807c4772180bb7a6b157d421ac77c8d4106c606c6fe3ad80b62569c22c07a`                                           | Technically suitable as a candidate and configured for icon/splash/favicon. Native appearance and owner approval remain open.                                                                                   |
 | Minimum iOS        | The exact build 4 archive passed strict signature, profile, entitlement, privacy-manifest, configuration, and secret-boundary checks with the iOS 17 minimum required by the configured native Clerk SDK       | Reconfirm the same behavior on a physical supported iPhone through TestFlight.                                                                                                                                  |
-| Screenshots        | The validated 6.9-inch capture plan selects the Today next-action screen and the real subscription offer; no release image is captured or uploaded                                                             | Capture only from exact build 4 after TestFlight access works, then bind PII review and upload evidence to the exact PNG hashes.                                                                                |
+| Screenshots        | The validated 6.9-inch capture plan selects the Today next-action screen and the real subscription offer; no release image is captured or uploaded                                                             | Capture only from the fresh final immutable build after build 4 device QA stabilizes the runtime, then bind PII review and upload evidence to the exact PNG hashes.                                             |
 | Review credentials | No credentials belong in this repository                                                                                                                                                                       | Put the primary account in App Store Connect's Sign-in Information. Apple provides only one username/password pair there, so put additional purpose-built review accounts in App Review Notes as Apple directs. |
 | TestFlight access  | Internal group `CUT OS Internal QA` shows one tester and builds 3 and 4, while the tester row still says No Builds Available; build 4 independently reproduces Apple Developer Support case `20000133994444`   | Do not resend invitations or mutate the group while Apple investigates. Installation and every exact-build device result remain pending.                                                                        |
 
@@ -447,27 +447,31 @@ during review. Network/VPN setup: none.
 
 ### Privacy
 
-- [ ] Qualified counsel approves the seller/legal-operator position under App
-      Review Guideline 5.1.1(ix); the owner accepts any documented residual
-      review risk before enrollment or submission.
-- [ ] Public Privacy Policy, Terms/EULA, and Support URLs are approved,
+- [x] The owner selected the individual seller/legal-operator path and accepted
+      the bounded temporary professional-review risk in Decision 12. Counsel
+      review remains due within three calendar days after public release; no
+      counsel approval is claimed.
+- [x] Public Privacy Policy, Terms/EULA, and Support URLs are owner-approved,
       functional over HTTPS, and open from sign-up, adult gate, subscription,
       and Settings as applicable.
-- [ ] Reconcile the final archive privacy report, required-reason APIs, SDK
-      inventory, backend/database/logs/backups, Clerk, RevenueCat, hosting,
-      analytics/crash, and support tools against `PRIVACY_DATA_MAP.md`.
-- [ ] App Privacy answers cover the data actually collected, including linked
+- [ ] Reconcile the final immutable archive privacy report, required-reason
+      APIs, SDK inventory, backend/database/logs/backups, Clerk, RevenueCat,
+      hosting, analytics/crash, and support tools against
+      `PRIVACY_DATA_MAP.md`. Build 4 passed this as a signed preflight only.
+- [x] App Privacy answers cover the data actually collected, including linked
       name/display name, email, internal user ID, profile/body/weight/nutrition
       data, adult-eligibility result, and purchase history with their actual
       purposes and linkage.
-- [ ] Confirm tracking remains off in the binary, vendor settings, and answers;
+- [x] Confirm tracking remains off in the binary, vendor settings, and answers;
       no health/fitness/eligibility data is used for ads or tracking audiences.
-- [ ] Explain transient raw-DOB processing accurately. Do not call it retained
+- [x] Explain transient raw-DOB processing accurately. Do not call it retained
       DOB or verified age, and do not omit it from the public notice merely
       because it is discarded after the request.
-- [ ] Qualified privacy/legal review approves retention/deletion, account
-      tombstones, backups, underage attempts, RevenueCat records, support
-      records, jurisdictions, and notice timing.
+- [ ] Initiate the owner-deferred qualified privacy/legal review of
+      retention/deletion, account tombstones, backups, underage attempts,
+      RevenueCat records, support records, jurisdictions, and notice timing
+      within three calendar days after public release. Do not claim approval
+      before it occurs.
 - [ ] No personal data, production/reused credential, DOB, body metric, meal
       value, receipt, or internal user ID appears in screenshots or App Review
       Notes. The only permitted credentials in Notes are the additional
@@ -476,20 +480,24 @@ during review. Network/VPN setup: none.
 
 ### Category, claims, and content
 
-- [ ] Owner confirms Health & Fitness remains the correct primary category for
+- [x] Owner confirms Health & Fitness remains the correct primary category for
       the submitted feature set.
-- [ ] Listing and screenshots use only the launch-truth paragraph above.
+- [x] Listing copy and the controlled screenshot plan use only the launch-truth
+      paragraph above; final screenshots remain uncaptured.
 - [x] Remove the onboarding claim about daily calorie and training targets from
       source and align the Today/domain setup action with the truthful v1 scope.
 - [x] Remove unused sex, height, activity-level, training-experience, and hidden
       target-date collection from the paid-v1 form/API; add a prelaunch
       migration that clears legacy values while preserving the start/goal
       weights the app displays.
-- [ ] Verify the corrected onboarding and Today copy in the release build before
-      capture.
-- [ ] Qualified nutrition/health and legal reviewers approve the six recipes,
-      ingredient quantities/yields, nutrition source/calculation, common-
-      allergen/dietary substantiation, estimate warning, and non-medical claims.
+- [ ] Re-verify the corrected onboarding and Today copy in the final immutable
+      build before capture. The signed build 4 archive contains the required
+      copy and no forbidden target claim.
+- [ ] Initiate the owner-deferred qualified nutrition/health and legal review of
+      the six recipes, ingredient quantities/yields, nutrition
+      source/calculation, common-allergen/dietary substantiation, estimate
+      warning, and non-medical claims within three calendar days after public
+      release. Do not claim approval before it occurs.
 - [ ] Do not claim diagnosis, treatment, clinical outcomes, guaranteed weight
       loss, adaptive coaching, personalization that is not built, or allergen
       safety.

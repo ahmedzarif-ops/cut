@@ -17,7 +17,11 @@ not a public-launch readiness claim.
   `b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4`. Apple processed it as **Ready
   to Submit**, assigned it to `CUT OS Internal QA` with automatic notifications
   off, and saved it as the selected build for App Store version 1.0.0. Build 4
-  supersedes build 3 as the exact release candidate. See
+  supersedes build 3 as the exact signed QA candidate. It is not the final
+  immutable submission build because two documentation checkpoints follow its
+  build commit; the no-rewrite path is to finish device QA, then cut the final
+  build from the stabilized head with the paired evidence drafts already
+  present. See
   [apple-build-4-processing-and-assignment-2026-08-10.md](app-store/evidence/apple-build-4-processing-and-assignment-2026-08-10.md).
 - The internal tester row still says `No Builds Available` after build 4 was
   assigned, reproducing the Apple-side problem with a second processed build.
@@ -85,7 +89,7 @@ per month` paywall beyond token expiry and returned to that screen after a
   the working validator, and the full TypeScript check passing. Build 3 remains
   valid historical Apple processing evidence but is no longer an eligible
   release candidate. Build 4 now contains the committed, green repair and is
-  the exact release candidate. See
+  the exact signed QA candidate. See
   [local-auth-refresh-candidate-2026-08-10.md](app-store/evidence/local-auth-refresh-candidate-2026-08-10.md).
 - The credential-free App Review Notes template now pre-resolves every stable
   build, category, product, price, URL, and network fact. It is 3,156 UTF-8
@@ -481,12 +485,12 @@ launch gate.
 ## Highest-priority next slice
 
 1. Keep the authenticated-session refresh repair and exact build 4 identity
-   green and unchanged. After Apple makes the assigned build available, have
-   the owner install the exact TestFlight binary on a
-   physical iPhone and run the credential-safe authentication, age, purchase,
-   restore, deletion, accessibility, relaunch, offline, and account-switch
-   matrix.
-2. Capture the exact-build 6.9-inch listing set and subscription review image,
+   green and unchanged. After Apple makes the assigned build available, use it
+   for the physical-iPhone authentication, age, purchase, restore, deletion,
+   accessibility, relaunch, offline, and account-switch matrix. Resolve any
+   issue, then cut the fresh final immutable build from the stabilized head; do
+   not rewrite the pushed branch history.
+2. Capture the final-build 6.9-inch listing set and subscription review image,
    inspect every image for personal data, and upload only approved PNG bytes.
 3. Keep the published App Privacy and approved content, medical, tax, DSA, and
    EULA declarations bound to the replacement exact build. Complete only the

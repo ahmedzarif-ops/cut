@@ -23,9 +23,10 @@ app then launched to the real empty sign-in screen at the same pixel size
 without a crash or clipped control. That local app is not the App Store-signed
 TestFlight binary, and both temporary images remain outside the release assets;
 neither is a listing screenshot, App Review screenshot, PII review, or
-exact-build claim. Keep the manifest capture-result fields null until build 4 is
-actually available through TestFlight and the two selected app screens are
-captured, prepared, hash-bound, and reviewed.
+exact-build claim. Keep the manifest capture-result fields null while build 4
+is used for physical QA. After that QA stabilizes the runtime, cut the fresh
+final immutable build and capture, prepare, hash-bind, and review the two
+selected screens only from that final build.
 
 The subscription-offer screen is part of the public listing selection, not only
 App Review evidence. Its exact-build capture must show an unmistakable paid or

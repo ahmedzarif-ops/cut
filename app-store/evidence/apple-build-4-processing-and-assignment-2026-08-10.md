@@ -2,7 +2,7 @@
 
 **Latest live verification:** `2026-08-10T23:36:12Z`
 
-## Exact candidate identity
+## Exact signed QA-candidate identity
 
 - **App version:** `1.0.0`
 - **Build number:** `4`
@@ -110,10 +110,21 @@ database, development-data-copy setting, Clerk configuration, or billing.
 
 ## Release boundary
 
-Build 4 supersedes build 3 as the exact release candidate, but processing and
-assignment do not prove physical-device behavior. The following remain open:
+Build 4 supersedes build 3 as the exact signed QA candidate, but it is not the
+final immutable submission build. The repository recorded two documentation
+checkpoints after build 4's source commit; CUT's release-integrity rule permits
+only one machine-allowlisted App Review evidence commit directly after a final
+`BUILD_SHA`. No history rewrite is authorized. Use build 4 to expose and fix
+physical-device issues, then cut a fresh final build from the stabilized green
+head containing the pre-created paired App Review/public-release evidence
+drafts. After that build, allow only the single evidence commit specified by
+the release runbook.
 
-- installation through TestFlight on the owner's physical iPhone;
+Processing and assignment also do not prove physical-device behavior. The
+following remain open:
+
+- installation through TestFlight on the owner's physical iPhone and, after
+  this QA stabilizes the runtime, creation of the final immutable build;
 - exact-build authentication, age, purchase, entitlement refresh, restore,
   deletion, relaunch, offline, account-switch, and accessibility QA;
 - approved 6.9-inch listing screenshots and the private subscription review

@@ -14,7 +14,10 @@ section:
   `b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4`. Apple processed App Store
   Connect build `0b6ff58a-d236-4469-b471-8216cf5a91ee` as **Ready to Submit**.
   Build 4 is assigned to the internal group with notifications off and saved
-  on the version 1.0.0 draft. It supersedes build 3 as the release candidate.
+  on the version 1.0.0 draft. It supersedes build 3 as the exact signed QA
+  candidate. Two later documentation checkpoints mean a fresh immutable build
+  is still required after build 4 device QA; no branch-history rewrite is
+  authorized.
 - The tester still shows `No Builds Available` after build 4 assignment. This
   independently reproduces the Apple-side TestFlight defect covered by support
   case `20000133994444`. No new invitation or support follow-up was sent.

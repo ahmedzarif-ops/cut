@@ -7,7 +7,7 @@
 
 - Working branch: `codex/app-store-v1`.
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
-- Exact release candidate build 4 is signed from commit
+- Exact signed QA candidate build 4 is signed from commit
   `b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4`, processed by Apple as **Ready
   to Submit**, assigned to internal group `CUT OS Internal QA` with automatic
   notifications off, and saved on App Store version 1.0.0. Its EAS build ID is
@@ -17,6 +17,11 @@
 - The same internal tester still shows `No Builds Available` after build 4 was
   assigned. Apple Developer Support case `20000133994444` remains open; no
   follow-up or second invitation was sent.
+- Build 4 is not the final immutable submission build: two documentation
+  checkpoints follow its build commit, while the release boundary allows only
+  one constrained App Review evidence commit directly after `BUILD_SHA`. Use
+  build 4 for device QA, then cut the final build from the stabilized head with
+  the paired evidence drafts already present. Do not rewrite the pushed branch.
 - The exact build 4 IPA passes strict signature/profile/entitlement checks,
   embeds the expected production public configuration and legal URLs, contains
   the expected 12 privacy manifests, and passes the archive secret-boundary
@@ -60,7 +65,7 @@ Available` despite bidirectional group/build assignment. No second email was
   access, and cold relaunch after expiry on the preserved authenticated
   account; 462 mobile tests, 64 App Store/screenshot tests, the working
   validator, and full TypeScript pass. Build 4 contains this repair and
-  supersedes build 3 as the exact release candidate. The bounded local evidence
+  supersedes build 3 as the exact signed QA candidate. The bounded local evidence
   is
   [local-auth-refresh-candidate-2026-08-10.md](../../app-store/evidence/local-auth-refresh-candidate-2026-08-10.md).
 - The credential-free App Review Notes template now has all stable build,
@@ -265,7 +270,7 @@ Available` despite bidirectional group/build assignment. No second email was
 - TestFlight group `CUT OS Internal QA` is configured with automatic
   distribution off, the authorized public feedback email, the exact beta
   description, the Account Holder as its one internal tester, and exact builds
-  3 and 4. Build 4 is the current candidate. The
+  3 and 4. Build 4 is the current signed QA candidate. The
   subscription's credential-free
   Review Notes are saved, but version attachment and its review screenshot are
   pending; no TestFlight QA or submission is claimed.
@@ -304,8 +309,10 @@ Available` despite bidirectional group/build assignment. No second email was
   was created.
 - Exact EAS production build 4 is processed in App Store Connect, assigned to
   internal TestFlight, and selected for version 1.0.0. It contains the
-  session-refresh repair and is the current exact candidate. Build 3 and every
-  pre-Clerk-cutover binary remain ineligible.
+  session-refresh repair and is the current exact signed QA candidate. After
+  device QA, cut a fresh immutable build from the stabilized head before final
+  screenshots and submission. Build 3 and every pre-Clerk-cutover binary remain
+  ineligible.
 
 ## LOCKED SAFETY BOUNDARIES
 

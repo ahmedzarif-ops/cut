@@ -200,12 +200,13 @@ social features. Those are backlog, not submission truth.
 - [x] Final App Privacy answers match the production archive and backend; the
       exact nine-type linked/no-tracking matrix is published in App Store
       Connect.
-- [ ] Every meal has fixed ingredient quantities/yield, nutrition source and
-      calculation method, substantiated common-allergen/dietary labels,
-      qualified reviewer, and review date.
+- [x] Every meal has fixed ingredient quantities/yield, nutrition source and
+      calculation method, and bounded common-allergen/dietary labels in the
+      exact shipped catalog. No professional approval is claimed.
 - [ ] Initiate qualified nutrition/health and legal review of catalog copy,
       estimated-nutrition warning, and non-medical claims within three calendar
-      days after public release; do not represent this item as approved.
+      days after public release; record the qualified reviewer and review date
+      only after that work occurs, and do not represent this item as approved.
 - [ ] Completed identity tombstone, backups, RevenueCat, and support-record
       retention/deletion policies are documented.
 
