@@ -30,11 +30,14 @@ not a public-launch readiness claim.
 - Provider-backed AI remains disabled. It requires a separate owner-approved
   hard spend limit and CUT-only credential before configuration or use. The
   deterministic private-catalog fallback is functional without a provider.
-- The current candidate passes 1,469/1,469 automated tests, the full TypeScript
+- The current candidate passes 1,470/1,470 automated tests, the full TypeScript
   check, generated-code drift check, production build, working App Store
   validator, non-billable production topology dry run, and `git diff --check`.
   These results do not prove signed-in visual behavior, production deployment,
   TestFlight, App Review, or public-release acceptance.
+- Native camera permission is limited to barcode scanning. The unused
+  microphone and Android audio-recording permissions are disabled, and no
+  photo-library permission is requested. Photo-AI remains unshipped.
 - The latest signed Apple build is build 5, EAS ID
   `be50e881-c04e-4710-9a28-e218cc6f2e38`, from old source commit `b4871b8`.
   It is not the redesigned database-catalog candidate and must not be submitted.

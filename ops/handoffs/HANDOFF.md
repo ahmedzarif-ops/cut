@@ -23,11 +23,14 @@
   limit and CUT-only credential. The model adapter cannot invent catalog IDs or
   nutrition; the server validates ingredients and computes all macros. The
   deterministic catalog fallback remains available while AI is off.
-- Current automated evidence: 1,469/1,469 tests, full TypeScript, codegen drift,
+- Current automated evidence: 1,470/1,470 tests, full TypeScript, codegen drift,
   production build, working App Store validation, non-billable topology dry
   run, and diff formatting all pass. Signed-in Simulator visual QA, deployment,
   migration, fresh EAS/TestFlight build, App Review submission, and public
   release remain separate gates.
+- Camera access is scoped to barcode scanning. The unused microphone and
+  Android audio-recording permissions are disabled, no photo-library permission
+  is requested, and photo-AI remains explicitly unshipped.
 - Build 5 (`be50e881-c04e-4710-9a28-e218cc6f2e38`) was created from old commit
   `b4871b8`; it must not be submitted as the redesigned app. Create a fresh
   build only after the candidate is committed, pushed, deployed, migrated, and

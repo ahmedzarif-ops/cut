@@ -354,6 +354,21 @@ describe("native release configuration", () => {
     expect(appConfig.expo.ios.config.usesNonExemptEncryption).toBe(false);
   });
 
+  it("requests camera access only for barcode scanning", () => {
+    const cameraPlugin = appConfig.expo.plugins.find(
+      (plugin: unknown) => Array.isArray(plugin) && plugin[0] === "expo-camera",
+    );
+
+    expect(cameraPlugin).toEqual([
+      "expo-camera",
+      {
+        cameraPermission: "Allow CUT OS to scan food barcodes.",
+        microphonePermission: false,
+        recordAudioAndroid: false,
+      },
+    ]);
+  });
+
   it("runs the profile-aware release gate before EAS installs dependencies", () => {
     expect(packageConfig.scripts["eas-build-pre-install"]).toBe(
       "node scripts/eas-build-pre-install.mjs",
