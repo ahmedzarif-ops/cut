@@ -13,6 +13,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
+import { reloadAppAsync } from "expo";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
@@ -67,6 +68,7 @@ if (runtimeConfig.ok) {
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+const ASSET_LOADING_TIMEOUT_MS = 10_000;
 
 function RootLayoutNav() {
   return (
@@ -119,6 +121,67 @@ function LaunchLoadingScreen() {
       />
       <Text style={launchStyles.loadingText}>Loading CUT OS</Text>
     </View>
+  );
+}
+
+function AssetLaunchScreen({ timedOut }: { timedOut: boolean }) {
+  const [restartFailed, setRestartFailed] = React.useState(false);
+
+  const restart = async () => {
+    setRestartFailed(false);
+    try {
+      await reloadAppAsync();
+    } catch {
+      setRestartFailed(true);
+    }
+  };
+
+  return (
+    <React.Fragment>
+      <StatusBar style="light" />
+      <View
+        accessibilityRole={timedOut ? "alert" : undefined}
+        style={launchStyles.fallback}
+      >
+        {timedOut ? (
+          <React.Fragment>
+            <Text style={launchStyles.systemEyebrow}>CUT OS</Text>
+            <Text style={launchStyles.systemTitle}>Startup needs a retry</Text>
+            <Text style={launchStyles.systemMessage}>
+              CUT OS could not finish loading its display resources. Restart the
+              app to try again.
+            </Text>
+            <Pressable
+              accessibilityLabel="Restart CUT OS after startup timeout"
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                launchStyles.retryButton,
+                pressed && launchStyles.retryButtonPressed,
+              ]}
+              onPress={() => void restart()}
+            >
+              <Text style={launchStyles.systemRetryButtonText}>
+                Restart CUT OS
+              </Text>
+            </Pressable>
+            {restartFailed ? (
+              <Text accessibilityRole="alert" style={launchStyles.systemError}>
+                Close CUT OS from the app switcher, then open it again.
+              </Text>
+            ) : null}
+          </React.Fragment>
+        ) : (
+          <React.Fragment>
+            <ActivityIndicator
+              accessibilityLabel="Loading CUT OS display"
+              color="#64D8CB"
+              size="large"
+            />
+            <Text style={launchStyles.systemLoadingText}>Loading CUT OS</Text>
+          </React.Fragment>
+        )}
+      </View>
+    </React.Fragment>
   );
 }
 
@@ -198,6 +261,20 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+  const [assetLoadingTimedOut, setAssetLoadingTimedOut] = React.useState(false);
+
+  useEffect(() => {
+    if (!runtimeConfig.ok || fontsLoaded || fontError) {
+      setAssetLoadingTimedOut(false);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setAssetLoadingTimedOut(true);
+      void SplashScreen.hideAsync();
+    }, ASSET_LOADING_TIMEOUT_MS);
+    return () => clearTimeout(timeout);
+  }, [fontsLoaded, fontError]);
 
   useEffect(() => {
     if (!runtimeConfig.ok || fontsLoaded || fontError) {
@@ -247,7 +324,7 @@ export default function RootLayout() {
   }
 
   if (launchDecision.surface === "asset_loading") {
-    return <StatusBar style="light" />;
+    return <AssetLaunchScreen timedOut={assetLoadingTimedOut} />;
   }
 
   const launchFallback = resolveClerkLaunchFallback(clerkLaunch);
@@ -317,6 +394,45 @@ const launchStyles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
     fontSize: 16,
     marginTop: 16,
+  },
+  systemLoadingText: {
+    color: "#B4C1D1",
+    fontSize: 16,
+    fontWeight: "500",
+    marginTop: 16,
+  },
+  systemEyebrow: {
+    color: "#64D8CB",
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 2,
+    marginBottom: 14,
+  },
+  systemTitle: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  systemMessage: {
+    color: "#B4C1D1",
+    fontSize: 16,
+    lineHeight: 24,
+    maxWidth: 420,
+    textAlign: "center",
+  },
+  systemRetryButtonText: {
+    color: "#07111F",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  systemError: {
+    color: "#FFB4AB",
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 16,
+    textAlign: "center",
   },
   eyebrow: {
     color: "#64D8CB",

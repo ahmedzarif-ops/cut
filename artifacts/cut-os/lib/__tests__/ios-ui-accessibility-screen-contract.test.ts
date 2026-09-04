@@ -54,8 +54,17 @@ describe("iOS UI accessibility screen contracts", () => {
     expect(rootLayoutSource.slice(launchErrorStart, rootLayoutStart)).toContain(
       '<StatusBar style="light" />',
     );
-    expect(rootLayoutSource).toContain(
+    expect(rootLayoutSource).not.toContain(
       'if (launchDecision.surface === "asset_loading") {\n    return <StatusBar style="light" />;',
+    );
+    expect(rootLayoutSource).toContain(
+      "<AssetLaunchScreen timedOut={assetLoadingTimedOut} />",
+    );
+    expect(rootLayoutSource).toContain(
+      'accessibilityLabel="Loading CUT OS display"',
+    );
+    expect(rootLayoutSource).toContain(
+      'accessibilityLabel="Restart CUT OS after startup timeout"',
     );
   });
 
@@ -109,7 +118,9 @@ describe("iOS UI accessibility screen contracts", () => {
       'accessibilityLabel={today.nextAction.title}\n            accessibilityHint="Opens the next recommended action"\n            accessibilityRole="button"',
     );
     expect(todaySource).toContain("onPress={openNextAction}");
-    expect(todaySource).toContain('case "weigh_in":\n        openWeightEditor();');
+    expect(todaySource).toContain(
+      'case "weigh_in":\n        openWeightEditor();',
+    );
     expect(todaySource).toContain(
       'case "first_meal":\n      case "review_meals":\n        router.push("/meal-one");',
     );

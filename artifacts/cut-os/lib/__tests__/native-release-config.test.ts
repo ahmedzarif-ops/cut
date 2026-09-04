@@ -213,6 +213,20 @@ describe("native release configuration", () => {
     );
   });
 
+  it("embeds every Inter weight needed by native launch and app screens", () => {
+    expect(appConfig.expo.plugins).toContainEqual([
+      "expo-font",
+      {
+        fonts: [
+          "./node_modules/@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf",
+          "./node_modules/@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf",
+          "./node_modules/@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf",
+          "./node_modules/@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf",
+        ],
+      },
+    ]);
+  });
+
   it("declares first-party collection as linked and never tracked", () => {
     const manifest = appConfig.expo.ios.privacyManifests;
     const collected = manifest.NSPrivacyCollectedDataTypes;
