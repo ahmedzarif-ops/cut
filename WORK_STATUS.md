@@ -11,7 +11,7 @@ Automated server/domain/mobile implementation is complete. Legal/privacy,
 native-device and live-service QA, and App Store completion remain open; this is
 not a public-launch readiness claim.
 
-## Current App Store launch checkpoint — 2026-08-10T23:36:12Z
+## Current App Store launch checkpoint — 2026-08-11T00:09:20Z
 
 - Exact EAS production build 4 for version 1.0.0 is signed from repaired commit
   `b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4`. Apple processed it as **Ready
@@ -23,10 +23,15 @@ not a public-launch readiness claim.
   build from the stabilized head with the paired evidence drafts already
   present. See
   [apple-build-4-processing-and-assignment-2026-08-10.md](app-store/evidence/apple-build-4-processing-and-assignment-2026-08-10.md).
-- The internal tester row still says `No Builds Available` after build 4 was
-  assigned, reproducing the Apple-side problem with a second processed build.
-  Apple Developer Support case `20000133994444` remains open. No follow-up,
-  second invitation, or build-notification email was sent.
+- Build 4's canonical **What to Test** copy is now saved in App Store Connect.
+  Immediately after that metadata save, the same internal tester row advanced
+  from `No Builds Available` to `Invited` while the group retained one tester
+  and builds 3 and 4. Apple Developer Support case `20000133994444` remains
+  open as the record of the earlier contradictory state. With explicit owner
+  approval, Apple's `Reinvite` action was used once without removing the tester
+  or either build. No support follow-up, tester replacement, external-beta
+  invitation, App Review submission, or public release occurred. Acceptance,
+  installation, and physical-device QA remain pending.
 - The exact build 4 IPA now passes strict signature/profile/entitlement,
   privacy-manifest, public-configuration, legal-URL, and archive secret-boundary
   inspection. The listing's exact-build claims review is confirmed against that
@@ -73,9 +78,14 @@ not a public-launch readiness claim.
   removed and re-added, and App Store Connect reported that one tester was
   added. The owner then reported that no invitation had arrived, and the live
   tester row still showed `No Builds Available` even though the group and exact
-  build each cross-reference the other. No second email was sent. Apple-side
-  availability, invitation acceptance, and exact-build installation remain
-  pending. With explicit owner approval, Apple Developer Support case
+  build each cross-referenced the other. Saving build 4's previously blank but
+  already-approved canonical **What to Test** copy advanced that row to
+  `Invited` at `2026-08-11T00:09:20Z` without changing the assignment. After a
+  stale invitation link failed, the owner approved one fresh email and Apple's
+  `Reinvite` action was used once without removing the tester or builds. No
+  second tester addition occurred. Invitation acceptance and exact-build
+  installation remain pending. With explicit owner approval, Apple
+  Developer Support case
   `20000133994444` was submitted at `2026-08-10T22:22:22Z`; Apple will reply by
   email and gave no response-time guarantee. The case requested repair or
   diagnosis of the contradictory internal tester/build relationship and did

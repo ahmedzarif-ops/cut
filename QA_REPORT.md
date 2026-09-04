@@ -18,9 +18,14 @@ section:
   candidate. Two later documentation checkpoints mean a fresh immutable build
   is still required after build 4 device QA; no branch-history rewrite is
   authorized.
-- The tester still shows `No Builds Available` after build 4 assignment. This
-  independently reproduces the Apple-side TestFlight defect covered by support
-  case `20000133994444`. No new invitation or support follow-up was sent.
+- Build 4's canonical **What to Test** copy was saved at
+  `2026-08-11T00:09:20Z`. The same tester row then advanced from `No Builds
+Available` to `Invited` while the internal group retained one tester and both
+  builds. This advances invitation generation but does not prove acceptance,
+  installation, or device behavior. After the owner approved one fresh
+  invitation, Apple's `Reinvite` action was used once without removing the
+  tester or builds. Support case `20000133994444` remains open; no support
+  follow-up, external beta, submission, or release occurred.
 - Exact build 4's downloaded IPA passes strict signature verification, uses the
   expected non-debug App Store profile and declared-age entitlement, embeds all
   five EAS production public values and three legal URLs, contains the expected
@@ -53,7 +58,11 @@ section:
   Holder tester was re-added. App Store Connect reported one tester added, but
   the owner then reported no invitation received and the live tester row still
   showed `No Builds Available` despite bidirectional group/build assignment. No
-  second email was sent. With explicit owner approval, Apple Developer Support
+  second email was sent then. Saving build 4's canonical **What to Test** copy
+  later advanced the same tester row to `Invited` without changing the
+  group/build assignment. After a stale link failed, the owner approved one
+  fresh invitation and Apple's `Reinvite` action was used once. With explicit
+  owner approval, Apple Developer Support
   case `20000133994444` was submitted at `2026-08-10T22:22:22Z` to request
   repair or diagnosis of that contradictory internal tester/build state. Apple
   will reply by email and provided no response-time guarantee. Apple-side

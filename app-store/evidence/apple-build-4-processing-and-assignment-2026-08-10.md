@@ -1,6 +1,6 @@
 # Apple build 4 processing and assignment — August 10, 2026
 
-**Latest live verification:** `2026-08-10T23:36:12Z`
+**Latest live verification:** `2026-08-11T00:09:20Z`
 
 ## Exact signed QA-candidate identity
 
@@ -36,12 +36,25 @@
   version draft re-read showed build 4. No App Review submission, external beta
   distribution, or public release occurred.
 
-## Persistent TestFlight defect
+## TestFlight invitation gate advanced
 
 After build 4 was assigned, the same eligible Account Holder tester row still
-showed **No Builds Available**. This reproduces the Apple-side issue with a
-second valid assigned build and keeps the existing support case relevant. No
-follow-up message was sent to Apple without a separate owner confirmation.
+showed **No Builds Available**, reproducing the Apple-side issue with a second
+valid assigned build. At `2026-08-11T00:09:20Z`, an authenticated recheck found
+that build 4's **What to Test** field was blank even though the canonical copy
+was already approved and recorded in `app-store/testflight-submission.json`.
+The canonical copy was saved on build 4 without changing the group, build
+assignment, tester, automatic-distribution setting, or external-beta scope.
+
+After that save, the same internal tester row changed from **No Builds
+Available** to **Invited**. Build 4 still showed one internal group with one
+tester, and the group still showed two builds. Apple Developer Support case
+`20000133994444` remains open as the record of the earlier contradictory state,
+but no support follow-up, second tester addition, external-beta invitation, App
+Review submission, or public release occurred. After the owner explicitly
+approved one fresh invitation, Apple's **Reinvite** action was used once without
+removing the tester or either build. Invitation acceptance, TestFlight
+installation, and all physical-device QA remain pending.
 
 ## Exact signed archive inspection
 
@@ -123,8 +136,9 @@ the release runbook.
 Processing and assignment also do not prove physical-device behavior. The
 following remain open:
 
-- installation through TestFlight on the owner's physical iPhone and, after
-  this QA stabilizes the runtime, creation of the final immutable build;
+- acceptance of the now-generated internal TestFlight invitation, installation
+  on the owner's physical iPhone, and, after this QA stabilizes the runtime,
+  creation of the final immutable build;
 - exact-build authentication, age, purchase, entitlement refresh, restore,
   deletion, relaunch, offline, account-switch, and accessibility QA;
 - approved 6.9-inch listing screenshots and the private subscription review

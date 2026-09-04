@@ -14,9 +14,13 @@
   `dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4` and App Store Connect build ID is
   `0b6ff58a-d236-4469-b471-8216cf5a91ee`. The exact evidence is
   [apple-build-4-processing-and-assignment-2026-08-10.md](../../app-store/evidence/apple-build-4-processing-and-assignment-2026-08-10.md).
-- The same internal tester still shows `No Builds Available` after build 4 was
-  assigned. Apple Developer Support case `20000133994444` remains open; no
-  follow-up or second invitation was sent.
+- Build 4's canonical **What to Test** copy is saved. At
+  `2026-08-11T00:09:20Z`, the same internal tester advanced from `No Builds
+Available` to `Invited` while the group retained one tester and builds 3 and 4. Apple Developer Support case `20000133994444` remains open as the earlier
+  defect record. After owner approval, Apple's `Reinvite` action was used once
+  without removing the tester or either build. No support follow-up, external
+  beta, App Review submission, or release occurred. Acceptance and installation
+  remain pending.
 - Build 4 is not the final immutable submission build: two documentation
   checkpoints follow its build commit, while the release boundary allows only
   one constrained App Review evidence commit directly after `BUILD_SHA`. Use
@@ -51,8 +55,12 @@
   invitation email. The same internal Account Holder tester was removed and
   re-added, and App Store Connect reported one tester added. The owner then
   reported no invitation received, and the live tester row remained `No Builds
-Available` despite bidirectional group/build assignment. No second email was
-  sent. With explicit owner approval, Apple Developer Support case
+Available` despite bidirectional group/build assignment. Saving build 4's
+  canonical **What to Test** copy later advanced the row to `Invited` without an
+  assignment change. After a stale link failed, the owner approved one fresh
+  invitation and Apple's `Reinvite` action was used once without removing the
+  tester or builds. With explicit owner approval, Apple
+  Developer Support case
   `20000133994444` was submitted at `2026-08-10T22:22:22Z`; Apple will reply by
   email and gave no response-time guarantee. The case requests repair or
   diagnosis of the contradictory tester/build relationship without another
