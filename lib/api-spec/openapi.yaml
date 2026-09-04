@@ -433,7 +433,7 @@ paths:
             application/json:
               schema:
                 type: array
-                maxItems: 35
+                maxItems: 200
                 items:
                   $ref: "#/components/schemas/FoodLibraryItem"
         "400":

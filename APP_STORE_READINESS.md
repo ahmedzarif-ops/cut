@@ -11,8 +11,8 @@ people who lift while cutting or recomping. The exact submitted binary may
 advertise only the features verified in that build:
 
 - Today, Food, Training, and Progress navigation plus a center Add action.
-- A database-backed free catalog of 35 source-linked foods and 18 balanced
-  meals, including 11 Desi/Bengali options.
+- A database-backed free catalog of 99 source-linked foods and 89 balanced
+  meals, including 82 Bengali, Bangladeshi, Desi, and South Asian options.
 - Free supported barcode, manual, saved-food, meal, weigh-in, and training
   logging plus nutrition and progress views.
 - Optional Pro meal fits based on explicit preferences, direct feedback,
@@ -37,7 +37,7 @@ the launch claim.
 - [x] Server-enforced `adult-18-v1` eligibility before private guidance.
 - [x] Durable in-app account deletion foundation with Clerk deletion, local
       cascade, retry worker, and device recovery marker.
-- [x] Today/Food/Training/Progress navigation, a 35-food and 18-meal free
+- [x] Today/Food/Training/Progress navigation, a 99-food and 89-meal free
       catalog, barcode/manual/saved food paths, retry-safe logging and deletion,
       nutrition totals, weigh-ins, workouts, and progress views.
 - [x] PostgreSQL catalog tables and idempotent startup synchronization preserve

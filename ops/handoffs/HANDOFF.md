@@ -13,21 +13,38 @@
   use. The remote draft branch remains at `b4871b8`; production remains
   at `08e62232db7f81047eec5b55a184f30fb7d4162a`. Do not treat an older signed
   build as the redesigned release candidate.
-- The candidate introduces migration 0014 and database runtime tables for 35
-  source-linked foods and 18 reviewed meals, including 11 Desi or Bengali
+- The candidate introduces migration 0014 and database runtime tables for 99
+  source-linked foods and 89 meals, including 82 Bengali, Bangladeshi, Desi, or South Asian
   options. All current static content is free. Pro supplies adaptive ranking and
   constrained on-demand meal drafting based on explicit preferences, feedback,
   confirmed history, and remaining targets. The database catalog contains
   global product content only, not user history.
-- Provider AI is disabled until separate owner approval covers the hard spend
-  limit and CUT-only credential. The model adapter cannot invent catalog IDs or
-  nutrition; the server validates ingredients and computes all macros. The
-  deterministic catalog fallback remains available while AI is off.
-- Current automated evidence: 1,470/1,470 tests, full TypeScript, codegen drift,
-  production build, working App Store validation, non-billable topology dry
-  run, and diff formatting all pass. Signed-in Simulator visual QA, deployment,
-  migration, fresh EAS/TestFlight build, App Review submission, and public
-  release remain separate gates.
+- Provider AI is disabled. The owner accepted a $1 estimated model-cost ceiling
+  per subscriber per calendar month and a $10 total provider ceiling for the
+  first private beta, but did not authorize a key, provider funding, or enabling
+  production AI. Before activation, enforce the per-user ceiling from the
+  server token ledger and the account ceiling at the provider. The adapter
+  cannot invent catalog IDs or nutrition; the server validates ingredients and
+  computes all macros. The deterministic catalog fallback remains available
+  while AI is off. The launch recommendation is `gpt-5.6-luna` with low
+  reasoning and five text requests per subscriber per UTC day under the
+  existing $4.99 monthly offer; `AI_PREMIUM_PRICING.md` records the assumptions
+  and approval boundary.
+- Current automated evidence: the complete repository test command, full
+  TypeScript check, production API build, working App Store validation,
+  non-billable topology dry run, and diff formatting pass. Generated output is
+  current; repeat the Git-based codegen drift check after committing the
+  candidate. Deployment, migration, fresh EAS/TestFlight build, App Review
+  submission, and public release remain separate gates.
+- September 4 signed-in visual evidence: a Release Simulator build signed by
+  Xcode to run locally preserved the existing authenticated session and rendered
+  the redesigned Home and meal-review flows. The top-right scan control,
+  five-tab navigation, meal search, Bengali & Desi and protein/diet filters,
+  compact cards, expanded serving/nutrition/log controls, and back action were
+  visible and interactive without a Clerk keychain error. Production correctly
+  exposed the remaining version split by returning only its old 6 meals, 2 of
+  them Bengali/Desi; the new 99-food/89-meal database catalog is not live or
+  TestFlight-verified.
 - Camera access is scoped to barcode scanning. The unused microphone and
   Android audio-recording permissions are disabled, no photo-library permission
   is requested, and photo-AI remains explicitly unshipped.
@@ -40,7 +57,7 @@
 - App Store version 1.0.0 still selects build 4. Listing screenshots and the
   subscription review screenshot remain empty. The local release record now
   corrects the misleading old paid-description copy to `Adaptive meal fits and
-  on-demand meal drafts.` and resets the subscription Review Notes gate pending
+on-demand meal drafts.` and resets the subscription Review Notes gate pending
   an explicitly approved App Store Connect metadata update. See
   [apple-live-readonly-2026-09-04.md](../../app-store/evidence/apple-live-readonly-2026-09-04.md).
 - No external email/contact, spend, push, deployment, production migration,

@@ -34,8 +34,10 @@ describe("database-backed nutrition catalog", () => {
       meals.every((item) => item.accessTier === "free" && item.isActive),
     ).toBe(true);
     expect(
-      meals.filter((item) => /bengali|desi/iu.test(item.cuisine)),
-    ).toHaveLength(11);
+      meals.filter((item) =>
+        /bengali|bangladeshi|desi|south asian/iu.test(item.cuisine),
+      ),
+    ).toHaveLength(82);
   });
 
   it("is idempotent and preserves deterministic database ordering", async () => {

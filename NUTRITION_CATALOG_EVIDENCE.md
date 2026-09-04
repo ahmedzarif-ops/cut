@@ -7,12 +7,15 @@ cultural, and legal review is not. The owner accepted this risk on August 10,
 within three calendar days after public release, and stop-sales triggers. See
 `app-store/evidence/owner-deferred-professional-review-2026-08-10.md`.
 
-**Catalog documented:** `2026-09-04.1`
-**Source access and calculation date:** August 3, 2026
+**Catalog documented:** `2026-09-04.2`
+**Source access and calculation dates:** August 3 and September 4, 2026
 **Canonical implementation:**
-[`lib/domain/src/balancedMeals.ts`](lib/domain/src/balancedMeals.ts)
+[`lib/domain/src/balancedMeals.ts`](lib/domain/src/balancedMeals.ts),
+[`lib/domain/src/diasporaMeals.ts`](lib/domain/src/diasporaMeals.ts), and
+[`lib/domain/src/foodCatalog.ts`](lib/domain/src/foodCatalog.ts)
 **Automated calculation check:**
 [`lib/domain/src/balancedMealNutritionEvidence.test.ts`](lib/domain/src/balancedMealNutritionEvidence.test.ts)
+and [`lib/domain/src/diasporaMeals.test.ts`](lib/domain/src/diasporaMeals.test.ts)
 
 This ledger distinguishes engineering evidence from professional approval. The
 fixed recipes, exact FoodData Central (FDC) records, gram weights, formula, and
@@ -21,9 +24,10 @@ food exactly matches every product or preparation, that the allergen mapping is
 complete, that a dietary/cultural label is appropriate in every jurisdiction,
 or that a qualified professional has approved the result.
 
-## Current runtime ledger
+## Original six runtime ledger
 
-Every nutrition number is for the entire fixed single-serving recipe. `P`, `C`,
+The table below preserves the original six records. Every nutrition number is
+for the entire fixed single-serving recipe. `P`, `C`,
 `F`, and `Fi` mean protein, carbohydrate, fat, and fiber in grams. Empty
 allergen arrays mean only that none of the app's typed common allergens was
 identified from the written recipe; they are not allergen-free claims.
@@ -211,7 +215,7 @@ cooking fat, or sweetener is included.
 - **Catalog value after specified rounding:** 473 kcal; P 34.2 g; C 72.0 g; F
   7.3 g; Fi 12.4 g.
 
-## September 4 catalog expansion
+## Earlier September 4 catalog expansion
 
 Catalog `2026-09-04.1` keeps the original six recipes unchanged and adds 12
 fixed single-serving templates. Every added value is computed by the same
@@ -239,11 +243,48 @@ cultural-review, legal-review, and medical-claim limitation in this ledger.
 | `salmon-quinoa-vegetable-bowl`      | `175168:140`; `168917:150`; `169967:120`; `170108:100`; `167747:20`; `171413:5`; `746775:1`                                                  | 585 kcal; P 41.5 g; C 48.0 g; F 26.0 g; Fi 10.3 g |
 | `tofu-edamame-quinoa-bowl`          | `172475:150`; `168411:100`; `168917:140`; `169967:100`; `169977:75`; `171016:5`; `169231:5`; `746775:1`                                      | 611 kcal; P 47.5 g; C 56.5 g; F 26.5 g; Fi 17.5 g |
 
-The free searchable food catalog also exposes 35 source-linked single foods
-from this same FDC registry using fixed gram servings, multilingual search
+### Catalog `2026-09-04.2` food and diaspora expansion
+
+This version retains all 18 earlier recipes and adds 71 deliberate Bengali,
+Bangladeshi, South Asian, and North American diaspora combinations. The source
+recipes store exact catalog food IDs and gram weights in
+`DIASPORA_MEAL_SOURCE_RECIPES`. Runtime nutrition, diet tags, and common-allergen
+arrays are derived from those source-linked foods rather than typed separately.
+The diaspora evidence test checks all 71 ID/weight recipes, independently
+recalculates all five displayed nutrition fields, and verifies representative
+allergen and dietary results.
+
+The food-pattern research used to choose combinations includes:
+
+- Banglapedia's overview of rice, fish, dal, bhorta, bhaji, jhol, and vegetable
+  structures in Bengali food habits:
+  https://en.banglapedia.org/index.php/Food_Habits
+- A Canadian study reporting that South Asian immigrants often retained core
+  food practices while increasing vegetables and using grilling, baking, and
+  other lower-frying methods:
+  https://pmc.ncbi.nlm.nih.gov/articles/PMC3928252/
+- A U.S. study describing continued use of rice, chapati, vegetables, and
+  yogurt alongside varied acculturation:
+  https://pmc.ncbi.nlm.nih.gov/articles/PMC7968473/
+- A New York City study of Bengali Muslim women describing bhorta as a cultural
+  continuity food alongside brown-rice, portion, and grilling adaptations:
+  https://pmc.ncbi.nlm.nih.gov/articles/PMC6579396/
+- A current North American Bangladeshi market example pairing curry, fish
+  dopeyaaja, dal, bhorta, vegetables, and salad in a home-style thali:
+  https://www.bdfr.ca/
+
+These sources support meal structures and diaspora adaptation; they do not make
+the 71 CUT recipes universally authentic. Names use `home-style`, `diaspora`,
+`weeknight`, or `-style` where appropriate. No qualified cultural or culinary
+review has occurred.
+
+The free searchable food catalog now exposes 99 source-linked single foods
+using fixed gram servings, multilingual search
 aliases, and explicit common-allergen arrays. Its canonical implementation and
 calculation test are `lib/domain/src/foodCatalog.ts` and
-`lib/domain/src/foodCatalog.test.ts`. Migration 0014 creates the
+`lib/domain/src/foodCatalog.test.ts`. New records were selected from USDA FoodData
+Central SR Legacy and FNDDS bulk downloads documented at
+https://fdc.nal.usda.gov/download-datasets/. Migration 0014 creates the
 `catalog_foods` and `catalog_meals` runtime tables, and the API idempotently
 mirrors these reviewed source values before accepting traffic. It is a
 versioned database-backed catalog, not a claim that the generic source matches
@@ -251,14 +292,16 @@ a person's exact brand or preparation.
 
 ## What this engineering pass closed
 
-- All 18 templates now have fixed, complete, single-serving recipes with
-  material oils, seasonings, exact edible weights, preparation state, and a
-  one-recipe yield.
+- All 89 templates have fixed single-serving ingredient lists and exact gram
+  weights. The original six retain detailed method/yield evidence, the next 12
+  retain their frozen calculation records, and the added 71 are practical
+  combinations whose `-style` naming avoids claiming a fully specified
+  traditional method.
 - All five runtime nutrition fields trace to exact current FDC records and a
   documented formula. The domain evidence test independently recomputes every
   published estimate from those values and gram weights.
-- Catalog version `2026-09-04.1` supersedes the unsupported prior placeholders,
-  including the earlier conflicting Bengali values.
+- Catalog version `2026-09-04.2` supersedes the smaller catalog while retaining
+  the earlier 18 recipe records and their evidence.
 - `high-protein`, `high-fiber`, `dairy-free`, and `gluten-free` tags were
   removed. The remaining `vegetarian`, `pescatarian`, and `vegan` tags describe
   only the listed recipe ingredients; they are not certification or
@@ -382,14 +425,14 @@ recorded stop-sales policy.
 
 | Gate      | Current gap                                                                                                                                                                            | Evidence required to clear it                                                                                                                                                                                           |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NUT-04`  | Generic FDC-to-recipe equivalence, cooking-retention treatment, recipe method, serving suitability, and rounding have no qualified nutrition approval.                                 | Initiate qualified review within three calendar days after public release; sign the exact `2026-09-04.1` recipes, sources, method, calculations, uncertainties, and displayed values, and version corrections promptly. |
+| `NUT-04`  | Generic FDC-to-recipe equivalence, cooking-retention treatment, recipe method, serving suitability, and rounding have no qualified nutrition approval.                                 | Initiate qualified review within three calendar days after public release; sign the exact `2026-09-04.2` recipes, sources, method, calculations, uncertainties, and displayed values, and version corrections promptly. |
 | `ALG-01`  | The arrays map obvious generic-recipe ingredients only; actual product labels, subingredients, preparation aids, launch-market allergen rules, and cross-contact are unreviewed.       | Documented product/package/preparation review and qualified allergen/legal signoff; empty arrays remain explicitly non-safety claims.                                                                                   |
 | `DIET-01` | Remaining `vegetarian`, `pescatarian`, and `vegan` composition tags are not professionally or legally approved and do not control substitutions/brands.                                | Approved tag definitions, per-template ingredient evidence, jurisdiction review, and conditions; otherwise remove the tags.                                                                                             |
 | `CULT-01` | Bengali, Desi, Mediterranean-inspired, and East Asian-inspired naming has no recorded cultural/culinary review.                                                                        | Named reviewer with documented scope approves or corrects the final recipes, methods, and naming without fabricating authenticity.                                                                                      |
 | `COPY-01` | “Balanced options,” deterministic sorting, numeric fit text, allergen wording, disclosures, accessibility labels, and App Store nutrition copy have no final qualified/legal approval. | Review and signoff of the exact release binary and metadata, or removal/neutralization of unsupported wording.                                                                                                          |
-| `REV-01`  | No reviewer identity, qualification, jurisdiction, scope, decision, date, or signed record exists for any template.                                                                    | Completed signoff table and linked signed records for all 18 templates.                                                                                                                                                 |
-| `CFG-01`  | The calculation is synchronized to source and code locally, but it is not frozen to a signed production binary/API deployment and archived release record.                             | Verify catalog `2026-09-04.1` in the production API and signed build, then archive source evidence, calculation test output, approvals, and screenshots.                                                                |
-| `QA-01`   | There is no final-device acceptance record for the revised long ingredient copy, scaled servings, disclosures, allergen wording, and accessibility output.                             | Release-build device checks and screenshots for all 18 templates at supported serving increments, including VoiceOver and narrow-screen review.                                                                         |
+| `REV-01`  | No reviewer identity, qualification, jurisdiction, scope, decision, date, or signed record exists for any template.                                                                    | Completed signoff table and linked signed records for all 89 templates.                                                                                                                                                 |
+| `CFG-01`  | The calculation is synchronized to source and code locally, but it is not frozen to a signed production binary/API deployment and archived release record.                             | Verify catalog `2026-09-04.2` in the production API and signed build, then archive source evidence, calculation test output, approvals, and screenshots.                                                                |
+| `QA-01`   | There is no final-device acceptance record for the revised long ingredient copy, scaled servings, disclosures, allergen wording, and accessibility output.                             | Release-build device checks across representative templates and supported serving increments, including VoiceOver and narrow-screen review.                                                                             |
 
 This ledger covers only the nutrition-catalog evidence gate. Subscription,
 privacy/legal, production-service, device-QA, App Store account, and submission

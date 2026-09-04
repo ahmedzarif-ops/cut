@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  AI_MEAL_RECOMMENDED_MODEL,
   AiMealConfigurationError,
   readAiMealConfiguration,
   validateAiMealConfiguration,
@@ -30,12 +31,12 @@ describe("AI meal configuration", () => {
     const configuration = readAiMealConfiguration({
       CUT_AI_MEALS_ENABLED: "true",
       OPENAI_API_KEY: ["sk", "proj", "ProviderKeyForCUTMeals1234"].join("-"),
-      CUT_AI_MEAL_MODEL: "gpt-5-mini",
+      CUT_AI_MEAL_MODEL: AI_MEAL_RECOMMENDED_MODEL,
       CUT_AI_MEAL_USER_DAILY_LIMIT: "5",
     });
     expect(configuration).toMatchObject({
       enabled: true,
-      model: "gpt-5-mini",
+      model: "gpt-5.6-luna",
       userDailyLimit: 5,
     });
   });

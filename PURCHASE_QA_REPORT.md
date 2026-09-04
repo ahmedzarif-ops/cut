@@ -178,9 +178,10 @@ match the selected build:
 Beta App Description
 
 CUT OS is an adults-only food, training, and progress tracker for people who
-lift. Free users can search 35 foods, browse 18 balanced meals including 11 Desi
-and Bengali options, use supported barcode lookup, add custom foods, log meals,
-record weigh-ins and training, and review progress. CUT OS Pro is optional and
+lift. Free users can search 99 foods and browse 89 balanced meals, including 82
+Bengali, Bangladeshi, Desi, and South Asian options; use supported barcode
+lookup; add custom foods; log meals; record weigh-ins and training; and review
+progress. CUT OS Pro is optional and
 adds meal fits based on remaining goals, preferences, and confirmed logs. CUT OS
 provides general fitness and nutrition information, not medical advice. Food,
 meal, and common-allergen information is estimated.
@@ -189,7 +190,7 @@ What to Test
 
 Use the purpose-built beta account supplied through the approved tester channel.
 Please test sign-in and the 18+ gate; the Today, Food, Training, and Progress
-tabs; free food search; all 18 meal templates; supported barcode lookup; custom
+tabs; free food search; all 89 meal templates; supported barcode lookup; custom
 and saved foods; meal add, edit, and delete; weigh-in and training logs; and
 progress charts. Confirm the top-right scan control and center Add action always
 have a clear back path. Test purchase, cancellation, restore, subscription

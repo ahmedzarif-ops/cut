@@ -1,8 +1,9 @@
 # CUT OS
 
 An adults-only food, training, and progress app for people who lift while
-cutting or recomping. The free iOS core includes a database-backed 35-food
-library, 18 balanced meals including 11 Desi/Bengali options, food and barcode
+cutting or recomping. The free iOS core includes a database-backed 99-food
+library, 89 balanced meals including 82 Bengali, Bangladeshi, Desi, and South
+Asian options, food and barcode
 logging, daily nutrition totals, weigh-ins, training logs, and progress. CUT OS
 Pro adds adaptive meal fits and bounded on-demand meal creation. Native mobile
 app (React Native + Expo) + Express API + PostgreSQL.

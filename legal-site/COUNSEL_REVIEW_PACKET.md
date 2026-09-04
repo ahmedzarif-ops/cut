@@ -39,8 +39,8 @@ and the exact signed iOS build before approval.
 | General analytics SDK      | None in the current application dependency inventory                                           |
 | Medical positioning        | General wellness only; no diagnosis, cure, mitigation, prevention, or treatment claim intended |
 
-The free app includes a database-backed 35-food library, 18 balanced meal
-templates including 11 Desi/Bengali options, supported barcode/manual/saved
+The free app includes a database-backed 99-food library and 89 balanced meal
+templates, including 82 Bengali, Bangladeshi, Desi, and South Asian options; supported barcode/manual/saved
 food logging, daily nutrition totals, weigh-ins, training logs, and progress.
 CUT OS Pro is optional and adds adaptive meal fits and bounded on-demand meal
 drafts. External provider AI and photo estimation must not be claimed unless

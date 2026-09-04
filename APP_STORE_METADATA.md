@@ -51,8 +51,8 @@ training move together.
 
 Free features:
 
-- Search a 35-food nutrition library.
-- Explore 18 balanced meals, including 11 Desi and Bengali options.
+- Search a 99-food nutrition library.
+- Explore 89 balanced meals, including 82 Bengali, Bangladeshi, Desi, and South Asian options.
 - Scan supported food barcodes or add and save custom foods.
 - Log meals, daily nutrition totals, weigh-ins, and training sessions.
 - Review weight and training progress in clear charts.
@@ -75,7 +75,7 @@ Terms: https://getcutos.com/terms
 
 **Keywords draft:** calorie,protein,macros,food,meal,Desi,Bengali,lifting,weight,workout,cut,recomp,tracker,nutrition
 
-**Promotional text draft:** Track food, training, and progress in one focused app. Search 35 foods and explore 18 balanced meals, including Desi and Bengali options.
+**Promotional text draft:** Track food, training, and progress. Search 99 foods and explore 89 meals, including Bengali, Bangladeshi, Desi, and South Asian options.
 
 The owner must approve this copy after exact-build review. Professional legal
 and nutrition review is explicitly deferred under the August 10 owner-risk
@@ -449,7 +449,7 @@ no-media state, and retain attributable saved evidence.
   the subscription screen appears, how to purchase/restore/manage it, and that
   the app reads localized price and duration from StoreKit.
 - Describe the free scope accurately: food search, barcode/manual/saved-food
-  logging, 18 meal templates, nutrition totals, weigh-ins, training, and
+  logging, 89 meal templates, nutrition totals, weigh-ins, training, and
   progress.
 - Describe the current paid scope narrowly: meal fits based on remaining
   targets, explicit food preferences, and confirmed logs. Mention

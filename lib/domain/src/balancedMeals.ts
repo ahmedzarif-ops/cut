@@ -1,3 +1,5 @@
+import { DIASPORA_MEAL_CATALOG } from "./diasporaMeals";
+
 export const MIN_MEAL_SERVINGS = 0.25;
 export const MAX_MEAL_SERVINGS = 4;
 
@@ -6,7 +8,7 @@ export const MAX_MEAL_SERVINGS = 4;
  * IDs remain stable; logged entries keep snapshots so their history never
  * changes when the catalog does.
  */
-export const BALANCED_MEAL_CATALOG_VERSION = "2026-09-04.1";
+export const BALANCED_MEAL_CATALOG_VERSION = "2026-09-04.2";
 
 export function isCurrentBalancedMealCatalogVersion(
   catalogVersion: string,
@@ -46,13 +48,13 @@ export interface BalancedMealTemplate {
 }
 
 /**
- * A deliberately small launch catalog. Nutrition is an estimate for the stated
- * serving, not clinical advice; users still need to review ingredients and
- * packaging for their own restrictions. The fixed recipes, FoodData Central
- * inputs, calculation method, and unresolved review gates are recorded in
- * NUTRITION_CATALOG_EVIDENCE.md.
+ * The original launch recipes remain first and stable for logged-history
+ * evidence. Nutrition is an estimate for the stated serving, not clinical
+ * advice; users still need to review ingredients and packaging for their own
+ * restrictions. The FoodData Central inputs, calculation method, and unresolved
+ * review gates are recorded in NUTRITION_CATALOG_EVIDENCE.md.
  */
-export const BALANCED_MEAL_CATALOG: readonly BalancedMealTemplate[] = [
+const ORIGINAL_LAUNCH_MEAL_CATALOG: readonly BalancedMealTemplate[] = [
   {
     id: "bengali-chicken-curry-plate",
     name: "Bengali Chicken Curry Plate",
@@ -538,6 +540,11 @@ export const BALANCED_MEAL_CATALOG: readonly BalancedMealTemplate[] = [
       fiberG: 17.5,
     },
   },
+];
+
+export const BALANCED_MEAL_CATALOG: readonly BalancedMealTemplate[] = [
+  ...ORIGINAL_LAUNCH_MEAL_CATALOG,
+  ...DIASPORA_MEAL_CATALOG,
 ];
 
 export interface BalancedMealScore {

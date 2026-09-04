@@ -10,9 +10,9 @@ import {
 
 describe("curated food catalog", () => {
   it("ships a substantial free, source-linked food library", () => {
-    expect(CURATED_FOOD_CATALOG_VERSION).toBe("2026-09-04.1");
-    expect(CURATED_FOOD_CATALOG).toHaveLength(35);
-    expect(new Set(CURATED_FOOD_CATALOG.map(({ id }) => id)).size).toBe(35);
+    expect(CURATED_FOOD_CATALOG_VERSION).toBe("2026-09-04.2");
+    expect(CURATED_FOOD_CATALOG).toHaveLength(99);
+    expect(new Set(CURATED_FOOD_CATALOG.map(({ id }) => id)).size).toBe(99);
 
     for (const food of CURATED_FOOD_CATALOG) {
       expect(food.source).toBe("USDA FoodData Central");
@@ -37,6 +37,16 @@ describe("curated food catalog", () => {
     expect(searchCuratedFoods("palak").map(({ id }) => id)).toContain(
       "spinach-cooked",
     );
+    expect(searchCuratedFoods("lau").map(({ id }) => id)).toContain(
+      "bottle-gourd-cooked",
+    );
+    expect(searchCuratedFoods("chingri").map(({ id }) => id)).toContain(
+      "shrimp-cooked",
+    );
+    expect(searchCuratedFoods("peyara").map(({ id }) => id)).toContain(
+      "guava-raw",
+    );
+    expect(searchCuratedFoods("roti").map(({ id }) => id)).toContain("roti");
     expect(searchCuratedFoods("desi chicken").map(({ id }) => id)).toEqual(
       expect.arrayContaining([
         "chicken-breast-roasted",
@@ -46,7 +56,7 @@ describe("curated food catalog", () => {
   });
 
   it("returns the full library for an empty query", () => {
-    expect(searchCuratedFoods(" ")).toHaveLength(35);
+    expect(searchCuratedFoods(" ")).toHaveLength(99);
   });
 
   it("exposes explicit diet compatibility for bounded meal generation", () => {

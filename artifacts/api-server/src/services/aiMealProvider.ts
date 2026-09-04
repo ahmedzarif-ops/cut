@@ -257,11 +257,12 @@ export class OpenAiMealProvider implements AiMealProvider {
             model: this.config.model,
             store: false,
             max_output_tokens: AI_MEAL_MAX_OUTPUT_TOKENS,
+            reasoning: { effort: "low" },
             safety_identifier: createHash("sha256")
               .update(`cut-ai-meal:${input.userId}`)
               .digest("hex"),
             instructions:
-              "Create 1 to 3 practical meal drafts. Use only the provided allowedFoods IDs. Never infer allergies, diagnoses, religion, ethnicity, or identity. Treat avoided ingredients as preferences, not allergy guarantees. Respect the requested diet and prep limit. Nutrition will be calculated by CUT OS, so do not provide calorie or macro totals. Keep instructions simple. Every result is a draft that the user must review.",
+              "Create 1 to 3 practical meal drafts. Use only the provided allowedFoods IDs. Never infer allergies, diagnoses, religion, ethnicity, or identity. Treat avoided ingredients as preferences, not allergy guarantees. Respect the requested diet and prep limit. When the user explicitly requests Bengali, Bangladeshi, Desi, or South Asian food, prefer recognizable home-style structures such as rice or roti with dal, protein, and vegetables, using only the provided foods. Do not invent cultural authenticity or label a meal culturally just because it contains spices; use '-style' when the exact regional method is unknown. Nutrition will be calculated by CUT OS, so do not provide calorie or macro totals. Keep instructions simple. Every result is a draft that the user must review.",
             input: JSON.stringify({
               request: input.request,
               preferences: input.context,

@@ -3,6 +3,8 @@ import { parseBoundedInteger } from "./boundedInteger";
 export const AI_MEAL_DAILY_LIMIT_MAXIMUM = 20;
 export const AI_MEAL_TIMEOUT_MS = 20_000;
 export const AI_MEAL_MAX_OUTPUT_TOKENS = 1_600;
+/** Recommended after the owner separately approves provider spend and a key. */
+export const AI_MEAL_RECOMMENDED_MODEL = "gpt-5.6-luna";
 
 export type AiMealConfigurationIssue =
   | "CUT_AI_MEALS_ENABLED"

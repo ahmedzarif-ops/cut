@@ -9,6 +9,10 @@ const creator = readFileSync(
   resolve(directory, "../../app/(app)/meal-creator.tsx"),
   "utf8",
 );
+const mealOne = readFileSync(
+  resolve(directory, "../../app/(app)/meal-one.tsx"),
+  "utf8",
+);
 const food = readFileSync(
   resolve(directory, "../../app/(app)/(tabs)/food.tsx"),
   "utf8",
@@ -43,5 +47,17 @@ describe("personalized meal creator screen contract", () => {
     for (const goal of ["desi", "high_protein", "balanced", "quick"]) {
       expect(creator).toContain(`value: "${goal}"`);
     }
+  });
+
+  it("keeps the fixed catalog searchable, filterable, compact, and reversible", () => {
+    expect(mealOne).toContain('accessibilityLabel="Back to Today"');
+    expect(mealOne).toContain('accessibilityLabel="Search balanced meals"');
+    expect(mealOne).toContain('{ id: "cultural", label: "Bengali & Desi" }');
+    expect(mealOne).toContain('{ id: "high-protein", label: "40g+ protein" }');
+    expect(mealOne).toContain('numberOfLines={selected ? undefined : 2}');
+    expect(mealOne).toContain('Showing {visibleOptions.length} of {options.length} meals');
+    expect(mealOne).toContain('onPress={() => setMealFilter(filter.id)}');
+    expect(mealOne).toContain('{selected && preview ? (');
+    expect(mealOne).toContain('No meals match this search and filter.');
   });
 });

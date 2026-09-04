@@ -4,6 +4,7 @@ import {
   OpenAiMealProvider,
   type AiMealGenerationInput,
 } from "./aiMealProvider";
+import { AI_MEAL_RECOMMENDED_MODEL } from "../lib/aiMealConfig";
 
 const input: AiMealGenerationInput = {
   userId: "40d65cff-a87f-4c3e-b758-d9576d08159b",
@@ -55,7 +56,7 @@ function openAiProvider(fetcher: typeof fetch) {
     {
       enabled: true,
       apiKey: ["sk", "proj", "ProviderKeyForCUTMeals1234"].join("-"),
-      model: "gpt-5-mini",
+      model: AI_MEAL_RECOMMENDED_MODEL,
       userDailyLimit: 5,
     },
     fetcher,
@@ -108,9 +109,10 @@ describe("OpenAI meal provider adapter", () => {
     expect(url).toBe("https://api.openai.com/v1/responses");
     const body = JSON.parse(init.body as string) as Record<string, unknown>;
     expect(body).toMatchObject({
-      model: "gpt-5-mini",
+      model: "gpt-5.6-luna",
       store: false,
       max_output_tokens: 1600,
+      reasoning: { effort: "low" },
       text: {
         format: {
           type: "json_schema",
@@ -122,6 +124,8 @@ describe("OpenAI meal provider adapter", () => {
     expect(body.safety_identifier).toMatch(/^[a-f0-9]{64}$/u);
     expect(body.safety_identifier).not.toBe(input.userId);
     expect(JSON.stringify(body)).not.toContain("ProviderKeyForCUTMeals");
+    expect(body.instructions).toContain("explicitly requests Bengali");
+    expect(body.instructions).toContain("Do not invent cultural authenticity");
   });
 
   it("rejects malformed provider output without exposing it", async () => {

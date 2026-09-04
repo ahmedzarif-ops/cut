@@ -14,8 +14,8 @@ exists. Record those items only after direct verification.
 
 CUT OS is an adults-only food, training, and progress tracker for people who
 lift while cutting or recomping. The free iOS core includes Today, Food,
-Training, and Progress tabs; daily weigh-ins; a 35-food library; 18 balanced
-meal templates including 11 Desi and Bengali options; supported barcode,
+Training, and Progress tabs; daily weigh-ins; a 99-food library; 89 balanced
+meal templates including 82 Bengali, Bangladeshi, Desi, and South Asian options; supported barcode,
 manual, and saved-food logging; estimated nutrition totals; training logs; and
 weight progress. CUT OS Pro is optional and adds meal fits shaped by remaining
 goals, explicit preferences, direct feedback, and confirmed logs. The app also
@@ -45,8 +45,8 @@ recognition unless each is enabled and verified in the exact submitted build.
 
 The current source makes the free app usable without purchasing Pro, adds the
 four-tab navigation and center Add action, and keeps the top-right scan control
-available across the core screens. Verify those behaviors, the 35-food and
-18-meal counts, all 11 Desi/Bengali templates, and the explicit unavailable
+available across the core screens. Verify those behaviors, the 99-food and
+89-meal counts, the 82 Bengali/Bangladeshi/Desi/South Asian templates, and the explicit unavailable
 photo state in the release build before capturing screenshots or submitting.
 
 ## Review-account matrix
@@ -155,8 +155,8 @@ weigh-in, food, or training log for the current server-resolved day.
 3. Under **Quick log**, open **Weight**, enter the approved synthetic value
    `[REVIEW_WEIGHT_AND_UNIT]`, and tap **Save weigh-in**.
 4. Open **Food**. Confirm **Barcode**, **Manual**, and **Saved** are free, the
-   screen can show all 35 built-in foods, and **Balanced meal ideas** can show
-   all 18 templates. Confirm 11 options carry Desi or Bengali content.
+   screen can show all 99 built-in foods, and **Balanced meal ideas** can show
+   all 89 templates. Confirm 82 options carry Bengali, Bangladeshi, Desi, or South Asian content.
 5. Search for a known catalog food and open it. Verify the portion and estimated
    calories, protein, carbohydrates, fat, and fiber are editable before tapping
    **Add to today**.
@@ -188,8 +188,8 @@ Apple product is cleared for review with the build.
    profile** with synthetic values: display name **Reviewer**, goal **Cut**,
    start weight **85 kg**, and goal weight **78 kg**. Tap **Save profile** and
    verify **Today** opens with the free core available.
-3. Open **Food** and confirm search, barcode, manual food, saved foods, all 35
-   built-in foods, all 18 meal templates, Today totals, Training, and Progress
+3. Open **Food** and confirm search, barcode, manual food, saved foods, all 99
+   built-in foods, all 89 meal templates, Today totals, Training, and Progress
    remain usable without Pro.
 4. Tap **Meals that adapt to your logs**. CUT OS opens **CUT OS PRO** with the
    heading **Make meal choices faster.**
@@ -329,7 +329,7 @@ file's pixel dimensions before upload.
 | ---------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `01-today-next-action`       | `/today`; full-access account, onboarding complete, empty current day | **Today**, current calorie/macro totals, **NEXT ACTION**, quick-log controls, top-right scan control, and the five-item bottom navigation                                                                     | Listing candidate and review evidence                   |
 | `02-today-weigh-in-complete` | `/today`; current-day synthetic weigh-in saved, no food logs          | Current weigh-in, calorie/macro totals, next action, quick-log controls, and the five-item bottom navigation                                                                                                  | Optional listing candidate                              |
-| `03-balanced-options`        | `/food`; all library queries loaded                                   | **Everyday foods**, **View all 35**, **Balanced meal ideas**, **View all 18**, free capture/manual/saved controls, and optional Pro section                                                                   | Optional listing candidate                              |
+| `03-balanced-options`        | `/food`; all library queries loaded                                   | **Everyday foods**, **View all 99**, **Balanced meal ideas**, **View all 89**, free capture/manual/saved controls, and optional Pro section                                                                   | Optional listing candidate                              |
 | `04-meal-preview`            | `/meal-one`; **Lemon Herb Chicken Grain Bowl** selected               | **YOUR MEAL**, serving control, estimated calories/protein/carbs/fat/fiber, estimate warning, and log button                                                                                                  | Optional listing candidate                              |
 | `05-today-nutrition-logged`  | `/food`; one synthetic food and meal logged                           | **Today**, actual calorie/protein totals, logged entries, food search, and the free food library                                                                                                              | Optional listing candidate                              |
 | `06-logged-meal-controls`    | `/meal-one`; one meal logged                                          | **Logged today**, actual totals, meal name, serving, **Adjust serving**, and **Delete**                                                                                                                       | Optional listing candidate                              |
@@ -399,7 +399,7 @@ Deletion: username [DELETION_REVIEW_USERNAME], password [DELETION_REVIEW_PASSWOR
 PRIMARY PATH
 1. Sign in; Today opens with Today, Food, Add, Training, and Progress navigation.
 2. Log 180 lb from Quick log > Weight.
-3. Open Food. Search the 35-food free library, review all 18 meal templates,
+3. Open Food. Search the 99-food free library, review all 89 meal templates,
    select Lemon Herb Chicken Grain Bowl, and log one serving.
 4. Food and Today show estimated nutrition totals. Logged entries allow serving
    adjustment and deletion. Training accepts a synthetic session, and Progress
@@ -516,7 +516,7 @@ during review. Network/VPN setup: none.
       state in the final immutable build before capture. Previous signed builds
       do not cover this redesign.
 - [ ] Initiate the owner-deferred qualified nutrition/health and legal review of
-      all 18 meal templates, ingredient quantities/yields, nutrition
+      all 89 meal templates, ingredient quantities/yields, nutrition
       source/calculation, common-allergen/dietary substantiation, estimate
       warning, and non-medical claims within three calendar days after public
       release. Do not claim approval before it occurs.

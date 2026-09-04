@@ -12,17 +12,23 @@ import {
 } from "./balancedMeals";
 
 describe("balanced meal catalog", () => {
-  it("ships eighteen durable, unique options with Bengali and Desi choices", () => {
-    expect(BALANCED_MEAL_CATALOG_VERSION).toBe("2026-09-04.1");
+  it("ships a large durable catalog with Bengali and Desi choices", () => {
+    expect(BALANCED_MEAL_CATALOG_VERSION).toBe("2026-09-04.2");
     expect(BALANCED_MEAL_CATALOG_VERSION).toMatch(/^\d{4}-\d{2}-\d{2}\.\d+$/);
     expect(
       isCurrentBalancedMealCatalogVersion(BALANCED_MEAL_CATALOG_VERSION),
     ).toBe(true);
     expect(isCurrentBalancedMealCatalogVersion("2026-08-02.9")).toBe(false);
-    expect(BALANCED_MEAL_CATALOG).toHaveLength(18);
-    expect(new Set(BALANCED_MEAL_CATALOG.map(({ id }) => id)).size).toBe(18);
+    expect(BALANCED_MEAL_CATALOG).toHaveLength(89);
+    expect(new Set(BALANCED_MEAL_CATALOG.map(({ id }) => id)).size).toBe(89);
     expect(BALANCED_MEAL_CATALOG.map(({ cuisine }) => cuisine)).toEqual(
-      expect.arrayContaining(["Bengali", "Desi"]),
+      expect.arrayContaining([
+        "Bengali",
+        "Desi",
+        "Bengali home-style",
+        "Bangladeshi diaspora",
+        "North American Desi weeknight",
+      ]),
     );
 
     for (const template of BALANCED_MEAL_CATALOG) {

@@ -83,7 +83,7 @@ describe("Balanced meal service", () => {
     expect(
       options.find(({ id }) => id === "bengali-chicken-curry-plate"),
     ).toMatchObject({
-      catalogVersion: "2026-09-04.1",
+      catalogVersion: "2026-09-04.2",
       servingDescription:
         "Entire recipe: 150 g chicken, 160 g rice, curry vegetables, spinach and cucumber",
       ingredients: expect.arrayContaining([

@@ -24,6 +24,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -73,6 +74,23 @@ function nutritionAccessibilityLabel(nutrition: MealNutrition): string {
   return `${compactNumber(nutrition.caloriesKcal)} calories, ${compactNumber(nutrition.proteinG)} grams protein, ${compactNumber(nutrition.carbsG)} grams carbohydrates, ${compactNumber(nutrition.fatG)} grams fat, and ${compactNumber(nutrition.fiberG)} grams fiber`;
 }
 
+function allergenReviewText(allergens: readonly string[]): string {
+  return allergens.length > 0
+    ? `Recipe ingredients include these common allergens: ${allergens.join(", ")}. Cross-contact is not assessed; review every ingredient and package label.`
+    : "No common allergens are identified from this recipe. This is not an allergen-free or cross-contact claim; review every ingredient and package label.";
+}
+
+const MEAL_FILTERS = [
+  { id: "all", label: "All" },
+  { id: "cultural", label: "Bengali & Desi" },
+  { id: "high-protein", label: "40g+ protein" },
+  { id: "vegetarian", label: "Vegetarian" },
+  { id: "pescatarian", label: "Pescatarian" },
+  { id: "vegan", label: "Vegan" },
+] as const;
+
+type MealFilter = (typeof MEAL_FILTERS)[number]["id"];
+
 export default function MealOneScreen() {
   const { userId, sessionId } = useAuth();
   const { session } = useSession();
@@ -105,6 +123,8 @@ export default function MealOneScreen() {
   const [selectedId, setSelectedId] = React.useState<string | null>(() =>
     typeof params.mealTemplateId === "string" ? params.mealTemplateId : null,
   );
+  const [mealQuery, setMealQuery] = React.useState("");
+  const [mealFilter, setMealFilter] = React.useState<MealFilter>("all");
   const [servings, setServings] = React.useState(() => {
     const suggested = Number(params.servings);
     return Number.isFinite(suggested) ? clampMealServings(suggested) : 1;
@@ -156,6 +176,35 @@ export default function MealOneScreen() {
     hasLoggedMeals: loggedMeals.length > 0,
   });
   const options = screenState.catalogState === "ready" ? catalogOptions : [];
+  const visibleOptions = React.useMemo(() => {
+    const query = mealQuery.trim().toLocaleLowerCase();
+    return options.filter((option) => {
+      const matchesQuery =
+        query.length === 0 ||
+        [option.name, option.cuisine, ...option.ingredients]
+          .join(" ")
+          .toLocaleLowerCase()
+          .includes(query);
+      if (!matchesQuery) return false;
+      if (mealFilter === "cultural") {
+        return /bengali|bangladeshi|desi|south asian/iu.test(option.cuisine);
+      }
+      if (mealFilter === "high-protein") return option.proteinG >= 40;
+      if (mealFilter === "vegan") return option.dietaryTags.includes("vegan");
+      if (mealFilter === "vegetarian") {
+        return (
+          option.dietaryTags.includes("vegetarian") ||
+          option.dietaryTags.includes("vegan")
+        );
+      }
+      if (mealFilter === "pescatarian") {
+        return option.dietaryTags.some((tag) =>
+          ["pescatarian", "vegetarian", "vegan"].includes(tag),
+        );
+      }
+      return true;
+    });
+  }, [mealFilter, mealQuery, options]);
   const selectedOption = options.find((option) => option.id === selectedId);
   const preview = selectedOption
     ? scaleMealNutrition(nutritionFromOption(selectedOption), servings)
@@ -898,149 +947,250 @@ export default function MealOneScreen() {
               </Pressable>
             </View>
           ) : (
-            <View accessibilityRole="radiogroup" style={s.optionStack}>
-              {options.map((option) => {
-                const selected = option.id === selectedId;
-                const optionNutrition = nutritionFromOption(option);
-                const allergenText =
-                  option.allergens.length > 0
-                    ? `Recipe ingredients include these common allergens: ${option.allergens.join(", ")}. Cross-contact is not assessed; review every ingredient and package label`
-                    : "No common allergens are identified from this recipe. This is not an allergen-free or cross-contact claim; review every ingredient and package label";
-                return (
+            <View>
+              <View style={s.mealSearchRow}>
+                <TextInput
+                  accessibilityLabel="Search balanced meals"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  clearButtonMode="while-editing"
+                  placeholder="Search meals or ingredients"
+                  placeholderTextColor={c.mutedForeground}
+                  returnKeyType="search"
+                  style={s.mealSearchInput}
+                  value={mealQuery}
+                  onChangeText={setMealQuery}
+                />
+                {mealQuery ? (
                   <Pressable
-                    key={option.id}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: selected, disabled: busy }}
-                    accessibilityLabel={`${option.name}. ${option.cuisine}. ${option.description}. Ingredients: ${option.ingredients.join(", ")}. ${nutritionAccessibilityLabel(optionNutrition)}. ${allergenText}. ${option.fitReason}. Estimated nutrition.`}
-                    accessibilityHint="Select this meal"
-                    disabled={busy}
-                    style={({ pressed }) => [
-                      s.optionCard,
-                      selected && s.optionCardSelected,
-                      busy && s.controlDisabled,
-                      pressed && !busy && s.buttonPressed,
-                    ]}
-                    onPress={() => selectOption(option.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear meal search"
+                    hitSlop={6}
+                    style={s.clearSearchButton}
+                    onPress={() => setMealQuery("")}
                   >
-                    <View style={s.optionHeader}>
-                      <View style={s.optionTitleWrap}>
-                        <Text style={s.cardTitle}>{option.name}</Text>
-                      </View>
-                      <View
-                        style={[s.radioMark, selected && s.radioMarkSelected]}
-                      >
-                        {selected ? <Text style={s.checkMark}>✓</Text> : null}
-                      </View>
-                    </View>
-                    <Text style={s.cuisineLabel}>{option.cuisine}</Text>
-                    <Text style={s.cardDescription}>{option.description}</Text>
-                    <Text style={s.optionMacros}>
-                      {compactNumber(option.caloriesKcal)} kcal ·{" "}
-                      {compactNumber(option.proteinG)}g protein
-                    </Text>
-                    <Text style={s.optionDetails}>
-                      {compactNumber(option.carbsG)}g carbs ·{" "}
-                      {compactNumber(option.fatG)}g fat ·{" "}
-                      {compactNumber(option.fiberG)}g fiber
-                    </Text>
-                    <Text style={s.ingredients}>
-                      Per 1× recipe: {option.ingredients.join(", ")}
-                    </Text>
-                    <Text style={s.allergens}>{allergenText}</Text>
-                    <Text style={s.fitReason}>{option.fitReason}</Text>
+                    <Text style={s.clearSearchText}>Clear</Text>
                   </Pressable>
-                );
-              })}
+                ) : null}
+              </View>
+              <ScrollView
+                horizontal
+                accessibilityLabel="Meal filters"
+                contentContainerStyle={s.filterRow}
+                showsHorizontalScrollIndicator={false}
+              >
+                {MEAL_FILTERS.map((filter) => {
+                  const active = mealFilter === filter.id;
+                  return (
+                    <Pressable
+                      key={filter.id}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                      style={[s.filterChip, active && s.filterChipActive]}
+                      onPress={() => setMealFilter(filter.id)}
+                    >
+                      <Text
+                        style={[
+                          s.filterChipText,
+                          active && s.filterChipTextActive,
+                        ]}
+                      >
+                        {filter.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+              <Text accessibilityLiveRegion="polite" style={s.resultCount}>
+                Showing {visibleOptions.length} of {options.length} meals
+              </Text>
+
+              {visibleOptions.length === 0 ? (
+                <View style={s.catalogStateCard}>
+                  <Text style={s.catalogStateText}>
+                    No meals match this search and filter.
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    style={s.catalogRetryButton}
+                    onPress={() => {
+                      setMealQuery("");
+                      setMealFilter("all");
+                    }}
+                  >
+                    <Text style={s.secondaryButtonText}>Show all meals</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+
+              <View accessibilityRole="radiogroup" style={s.optionStack}>
+                {visibleOptions.map((option) => {
+                  const selected = option.id === selectedId;
+                  const optionNutrition = nutritionFromOption(option);
+                  const allergenText = allergenReviewText(option.allergens);
+                  return (
+                    <View
+                      key={option.id}
+                      style={[
+                        s.optionCard,
+                        selected && s.optionCardSelected,
+                        busy && s.controlDisabled,
+                      ]}
+                    >
+                      <Pressable
+                        accessibilityRole="radio"
+                        accessibilityState={{
+                          checked: selected,
+                          disabled: busy,
+                        }}
+                        accessibilityLabel={`${option.name}. ${option.cuisine}. ${option.description}. ${nutritionAccessibilityLabel(optionNutrition)}. ${selected ? `Selected. Ingredients: ${option.ingredients.join(", ")}. ${allergenText}. ${option.fitReason}.` : "Double tap to review ingredients, servings, and logging."} Estimated nutrition.`}
+                        accessibilityHint={
+                          selected
+                            ? "Selected. Review and log this meal below."
+                            : "Select and open this meal"
+                        }
+                        disabled={busy}
+                        style={({ pressed }) => [
+                          s.optionSelectSurface,
+                          pressed && !busy && s.buttonPressed,
+                        ]}
+                        onPress={() => selectOption(option.id)}
+                      >
+                        <View style={s.optionHeader}>
+                          <View style={s.optionTitleWrap}>
+                            <Text style={s.cardTitle}>{option.name}</Text>
+                          </View>
+                          <View
+                            style={[
+                              s.radioMark,
+                              selected && s.radioMarkSelected,
+                            ]}
+                          >
+                            {selected ? (
+                              <Text style={s.checkMark}>✓</Text>
+                            ) : null}
+                          </View>
+                        </View>
+                        <Text style={s.cuisineLabel}>{option.cuisine}</Text>
+                        <Text
+                          numberOfLines={selected ? undefined : 2}
+                          style={s.cardDescription}
+                        >
+                          {option.description}
+                        </Text>
+                        <Text style={s.optionMacros}>
+                          {compactNumber(option.caloriesKcal)} kcal ·{" "}
+                          {compactNumber(option.proteinG)}g protein
+                        </Text>
+                        <Text style={s.optionDetails}>
+                          {compactNumber(option.carbsG)}g carbs ·{" "}
+                          {compactNumber(option.fatG)}g fat ·{" "}
+                          {compactNumber(option.fiberG)}g fiber
+                        </Text>
+                      </Pressable>
+
+                      {selected && preview ? (
+                        <View style={s.selectedMealDetails}>
+                          <Text style={s.overline}>YOUR MEAL</Text>
+                          <Text style={s.ingredients}>
+                            Per 1× recipe: {option.ingredients.join(", ")}
+                          </Text>
+                          <Text style={s.allergens}>{allergenText}</Text>
+                          <Text style={s.fitReason}>{option.fitReason}</Text>
+
+                          <ServingStepper
+                            label="Servings"
+                            value={servings}
+                            disabled={busy}
+                            onDecrease={() =>
+                              adjustNewMealServings(-MEAL_SERVING_STEP)
+                            }
+                            onIncrease={() =>
+                              adjustNewMealServings(MEAL_SERVING_STEP)
+                            }
+                            c={c}
+                            s={s}
+                          />
+
+                          <View
+                            accessible
+                            accessibilityLiveRegion="polite"
+                            accessibilityLabel={`Meal preview, ${formatMealServings(servings)}, ${nutritionAccessibilityLabel(preview)}. Estimated nutrition.`}
+                            style={s.previewGrid}
+                          >
+                            <MacroMetric
+                              label="Calories"
+                              value={compactNumber(preview.caloriesKcal)}
+                              suffix="kcal"
+                              s={s}
+                            />
+                            <MacroMetric
+                              label="Protein"
+                              value={compactNumber(preview.proteinG)}
+                              suffix="g"
+                              s={s}
+                            />
+                            <MacroMetric
+                              label="Carbs"
+                              value={compactNumber(preview.carbsG)}
+                              suffix="g"
+                              s={s}
+                            />
+                            <MacroMetric
+                              label="Fat"
+                              value={compactNumber(preview.fatG)}
+                              suffix="g"
+                              s={s}
+                            />
+                            <MacroMetric
+                              label="Fiber"
+                              value={compactNumber(preview.fiberG)}
+                              suffix="g"
+                              s={s}
+                            />
+                          </View>
+
+                          <Text style={s.estimateDisclosure}>
+                            Estimated nutrition. Review every ingredient and
+                            package label; cross-contact is not assessed.
+                          </Text>
+
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Log ${option.name}`}
+                            accessibilityState={{
+                              disabled: busy,
+                              busy: createBusy,
+                            }}
+                            disabled={busy}
+                            style={({ pressed }) => [
+                              s.button,
+                              busy && s.controlDisabled,
+                              pressed && !busy && s.buttonPressed,
+                            ]}
+                            onPress={() => void handleCreate()}
+                          >
+                            {createBusy ? (
+                              <View style={s.savingRow}>
+                                <ActivityIndicator
+                                  color={c.primaryForeground}
+                                />
+                                <Text style={s.buttonText}>Logging meal…</Text>
+                              </View>
+                            ) : (
+                              <Text style={s.buttonText}>
+                                Log {option.name}
+                              </Text>
+                            )}
+                          </Pressable>
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
+              </View>
             </View>
           )}
-        </View>
-      ) : null}
-
-      {!recoveryLocked &&
-      screenState.catalogState === "ready" &&
-      selectedOption &&
-      preview ? (
-        <View style={[s.optionCard, s.reviewCard]}>
-          <Text style={s.overline}>YOUR MEAL</Text>
-          <Text style={s.cardTitle}>{selectedOption.name}</Text>
-          <Text style={s.servingDescription}>
-            {selectedOption.servingDescription}
-          </Text>
-
-          <ServingStepper
-            label="Servings"
-            value={servings}
-            disabled={busy}
-            onDecrease={() => adjustNewMealServings(-MEAL_SERVING_STEP)}
-            onIncrease={() => adjustNewMealServings(MEAL_SERVING_STEP)}
-            c={c}
-            s={s}
-          />
-
-          <View
-            accessible
-            accessibilityLiveRegion="polite"
-            accessibilityLabel={`Meal preview, ${formatMealServings(servings)}, ${nutritionAccessibilityLabel(preview)}. Estimated nutrition.`}
-            style={s.previewGrid}
-          >
-            <MacroMetric
-              label="Calories"
-              value={compactNumber(preview.caloriesKcal)}
-              suffix="kcal"
-              s={s}
-            />
-            <MacroMetric
-              label="Protein"
-              value={compactNumber(preview.proteinG)}
-              suffix="g"
-              s={s}
-            />
-            <MacroMetric
-              label="Carbs"
-              value={compactNumber(preview.carbsG)}
-              suffix="g"
-              s={s}
-            />
-            <MacroMetric
-              label="Fat"
-              value={compactNumber(preview.fatG)}
-              suffix="g"
-              s={s}
-            />
-            <MacroMetric
-              label="Fiber"
-              value={compactNumber(preview.fiberG)}
-              suffix="g"
-              s={s}
-            />
-          </View>
-
-          <Text style={s.estimateDisclosure}>
-            Estimated nutrition. Review every ingredient and package label;
-            cross-contact is not assessed.
-          </Text>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Log ${selectedOption.name}`}
-            accessibilityState={{ disabled: busy, busy: createBusy }}
-            disabled={busy}
-            style={({ pressed }) => [
-              s.button,
-              busy && s.controlDisabled,
-              pressed && !busy && s.buttonPressed,
-            ]}
-            onPress={() => void handleCreate()}
-          >
-            {createBusy ? (
-              <View style={s.savingRow}>
-                <ActivityIndicator color={c.primaryForeground} />
-                <Text style={s.buttonText}>Logging meal…</Text>
-              </View>
-            ) : (
-              <Text style={s.buttonText}>Log {selectedOption.name}</Text>
-            )}
-          </Pressable>
         </View>
       ) : null}
     </ScrollView>
@@ -1220,6 +1370,63 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       marginBottom: 12,
     },
     optionStack: { gap: 12 },
+    mealSearchRow: {
+      minHeight: 48,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: c.card,
+      borderColor: c.inputBorder,
+      borderWidth: 1,
+      borderRadius: c.radius,
+      paddingLeft: 14,
+      marginBottom: 10,
+    },
+    mealSearchInput: {
+      flex: 1,
+      minHeight: 48,
+      color: c.foreground,
+      fontFamily: "Inter_400Regular",
+      fontSize: 16,
+    },
+    clearSearchButton: {
+      minWidth: 52,
+      minHeight: 44,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 10,
+    },
+    clearSearchText: {
+      color: c.primary,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 13,
+    },
+    filterRow: { gap: 8, paddingBottom: 10 },
+    filterChip: {
+      minHeight: 40,
+      alignItems: "center",
+      justifyContent: "center",
+      borderColor: c.border,
+      borderWidth: 1,
+      borderRadius: 20,
+      paddingHorizontal: 14,
+      backgroundColor: c.card,
+    },
+    filterChipActive: {
+      backgroundColor: c.primary,
+      borderColor: c.primary,
+    },
+    filterChipText: {
+      color: c.cardForeground,
+      fontFamily: "Inter_600SemiBold",
+      fontSize: 13,
+    },
+    filterChipTextActive: { color: c.primaryForeground },
+    resultCount: {
+      color: c.mutedForeground,
+      fontFamily: "Inter_500Medium",
+      fontSize: 13,
+      marginBottom: 10,
+    },
     catalogStateCard: {
       minHeight: 96,
       alignItems: "center",
@@ -1253,6 +1460,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       padding: 18,
     },
     optionCardSelected: { borderColor: c.primary, borderWidth: 2 },
+    optionSelectSurface: { minHeight: 44 },
     optionHeader: {
       flexDirection: "row",
       alignItems: "flex-start",
@@ -1331,7 +1539,12 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       lineHeight: 19,
       marginTop: 8,
     },
-    reviewCard: { borderColor: c.primary, marginBottom: 8 },
+    selectedMealDetails: {
+      borderTopColor: c.border,
+      borderTopWidth: 1,
+      marginTop: 16,
+      paddingTop: 16,
+    },
     overline: {
       color: c.primary,
       fontFamily: "Inter_700Bold",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { BALANCED_MEAL_CATALOG } from "./balancedMeals";
 import { rankAdaptiveMealFits } from "./mealPersonalization";
 
 describe("adaptive meal fits", () => {
@@ -81,19 +82,21 @@ describe("adaptive meal fits", () => {
     expect(result[0]?.template.cuisine).toBe("Mediterranean-inspired");
     expect(result[0]?.reason).not.toContain("confirmed Desi");
     expect(
-      result.some(
-        ({ template }) => template.id === "tofu-edamame-rice-bowl",
-      ),
+      result.some(({ template }) => template.id === "tofu-edamame-rice-bowl"),
     ).toBe(false);
   });
 
   it("matches avoided foods by words rather than partial words", () => {
+    const wordBoundaryCatalog = BALANCED_MEAL_CATALOG.filter(({ id }) =>
+      ["tofu-edamame-rice-bowl", "egg-masoor-spinach-plate"].includes(id),
+    );
     const partialWord = rankAdaptiveMealFits(
       {
         confirmedTemplateIds: [],
         avoidedIngredients: ["to"],
       },
-      10,
+      wordBoundaryCatalog.length,
+      wordBoundaryCatalog,
     );
     expect(
       partialWord.some(({ template }) =>
@@ -108,13 +111,12 @@ describe("adaptive meal fits", () => {
         confirmedTemplateIds: [],
         avoidedIngredients: ["egg"],
       },
-      10,
+      wordBoundaryCatalog.length,
+      wordBoundaryCatalog,
     );
     expect(
       wholeWord.some(({ template }) =>
-        template.ingredients.some((ingredient) =>
-          /\begg\b/iu.test(ingredient),
-        ),
+        template.ingredients.some((ingredient) => /\begg\b/iu.test(ingredient)),
       ),
     ).toBe(false);
   });

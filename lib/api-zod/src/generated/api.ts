@@ -310,7 +310,7 @@ export const ListMyFoodLibraryResponseItem = zod.object({
   "source": zod.enum(['USDA FoodData Central']),
   "sourceId": zod.number().min(1)
 })
-export const ListMyFoodLibraryResponse = zod.array(ListMyFoodLibraryResponseItem).max(35)
+export const ListMyFoodLibraryResponse = zod.array(ListMyFoodLibraryResponseItem).max(200)
 
 
 /**

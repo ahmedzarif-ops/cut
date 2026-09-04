@@ -7,9 +7,9 @@
 ## Context
 
 CUT OS needs a nutrition foundation that is useful without a subscription and
-can grow beyond the launch catalog. The launch source already contains 35
-source-linked foods and 18 reviewed meal templates, including 11 Desi or
-Bengali options. Keeping the only runtime copy inside application code would
+can grow beyond the launch catalog. The current source contains 99
+source-linked foods and 89 meal templates, including 82 Bengali, Bangladeshi,
+Desi, or South Asian options. Keeping the only runtime copy inside application code would
 make later catalog growth, search, and content operations unnecessarily tied to
 mobile releases. A fully live editor would add an admin surface and an
 unreviewed-content risk that is not justified before launch.

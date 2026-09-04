@@ -172,17 +172,19 @@ describe("Balanced meal API", () => {
       .get("/api/me/food-library?query=dal")
       .set(headers);
     expect(dal.status).toBe(200);
-    expect(dal.body).toEqual([
-      expect.objectContaining({
-        id: "lentils-cooked",
-        catalogVersion: "2026-09-04.1",
-        servingDescription: "180 g",
-        source: "USDA FoodData Central",
-        sourceId: 172421,
-        caloriesKcal: 209,
-        proteinG: 16.2,
-      }),
-    ]);
+    expect(dal.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "lentils-cooked",
+          catalogVersion: "2026-09-04.2",
+          servingDescription: "180 g",
+          source: "USDA FoodData Central",
+          sourceId: 172421,
+          caloriesKcal: 209,
+          proteinG: 16.2,
+        }),
+      ]),
+    );
 
     const bengaliRice = await request(ctx.app)
       .get("/api/me/food-library?query=bhaat")
