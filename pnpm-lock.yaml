@@ -1474,7 +1474,10 @@ packages:
 
   "@clerk/clerk-js@https://pkg.pr.new/clerk/javascript/@clerk/clerk-js@cfb6495":
     resolution:
-      { tarball: https://pkg.pr.new/clerk/javascript/@clerk/clerk-js@cfb6495 }
+      {
+        integrity: sha512-6iny37Jg507ww3QUBQYJxI6eypFv16NlGCXYFePPdbpmDK4PeKRkixn7aIzyWhD3K2QzJjwspufdLM6WwVqD7g==,
+        tarball: https://pkg.pr.new/clerk/javascript/@clerk/clerk-js@cfb6495,
+      }
     version: 6.27.1
     engines: { node: ">=20.9.0" }
 
@@ -1533,7 +1536,10 @@ packages:
 
   "@clerk/react@https://pkg.pr.new/clerk/javascript/@clerk/react@cfb6495":
     resolution:
-      { tarball: https://pkg.pr.new/clerk/javascript/@clerk/react@cfb6495 }
+      {
+        integrity: sha512-w2sx6Ph6/P4FI+pSNFckdiEKkGvYKZSY3bRorYQSEJzVeQudTvDCRM9vsinh2CM0IABaXoEQv8yEYetxuR5esQ==,
+        tarball: https://pkg.pr.new/clerk/javascript/@clerk/react@cfb6495,
+      }
     version: 6.13.1
     engines: { node: ">=20.9.0" }
     peerDependencies:
@@ -1557,7 +1563,10 @@ packages:
 
   "@clerk/shared@https://pkg.pr.new/clerk/javascript/@clerk/shared@cfb6495":
     resolution:
-      { tarball: https://pkg.pr.new/clerk/javascript/@clerk/shared@cfb6495 }
+      {
+        integrity: sha512-Hf109+dZwEkQtZEOQvkPkLWqEvt+j/9r6Qg8ZohbZ/HUb/kKkreozEmVdggpnWofk9xlOc+XGIW3GUP9zxFADA==,
+        tarball: https://pkg.pr.new/clerk/javascript/@clerk/shared@cfb6495,
+      }
     version: 4.27.1
     engines: { node: ">=20.9.0" }
     peerDependencies:
