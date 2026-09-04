@@ -72,6 +72,20 @@ describe("iOS UI accessibility screen contracts", () => {
     );
   });
 
+  it("cancels stale onboarding queries before navigating to Today", () => {
+    const cancelStart = onboardingSource.indexOf(
+      "await Promise.all([\n        qc.cancelQueries({ queryKey: getGetMeQueryKey() })",
+    );
+    const accountCommit = onboardingSource.indexOf(
+      "qc.setQueryData(getGetMeQueryKey(), saved.account)",
+    );
+    const navigation = onboardingSource.indexOf('router.replace("/today")');
+
+    expect(cancelStart).toBeGreaterThan(-1);
+    expect(accountCommit).toBeGreaterThan(cancelStart);
+    expect(navigation).toBeGreaterThan(accountCommit);
+  });
+
   it("names Today actions and guarantees the cancel target is 44 points", () => {
     for (const label of [
       "Cancel editing weigh-in",
