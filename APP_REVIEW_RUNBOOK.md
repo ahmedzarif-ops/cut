@@ -361,7 +361,7 @@ CUT OS is an adults-only daily cut check-in for people who lift. It provides
 general fitness and nutrition information, not medical advice. Nutrition and
 allergen information is estimated, not an allergen-safety guarantee.
 
-Build under review: version 1.0.0, build 4
+Build under review: version 1.0.0, build 5
 Bundle ID: com.zarifahmed.cut
 Primary category: Health & Fitness
 Review contact: [REVIEW_CONTACT_NAME], [REVIEW_CONTACT_PHONE],
