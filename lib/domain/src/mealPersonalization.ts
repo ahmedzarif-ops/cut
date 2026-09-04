@@ -166,6 +166,7 @@ function targetFitScore(
 export function rankAdaptiveMealFits(
   signalsOrTemplateIds: MealPersonalizationSignals | readonly string[],
   limit = 3,
+  catalog: readonly BalancedMealTemplate[] = BALANCED_MEAL_CATALOG,
 ): AdaptiveMealFit[] {
   const signals: MealPersonalizationSignals = Array.isArray(
     signalsOrTemplateIds,
@@ -182,9 +183,12 @@ export function rankAdaptiveMealFits(
   const dietStyle = signals.dietStyle ?? "no_preference";
   const templateCounts = new Map<string, number>();
   const cuisineCounts = new Map<string, number>();
+  const templateById = new Map(
+    catalog.map((template) => [template.id, template]),
+  );
 
   for (const id of confirmedTemplateIds) {
-    const template = getBalancedMealTemplate(id);
+    const template = templateById.get(id) ?? getBalancedMealTemplate(id);
     if (!template) continue;
     templateCounts.set(id, (templateCounts.get(id) ?? 0) + 1);
     cuisineCounts.set(
@@ -198,12 +202,13 @@ export function rankAdaptiveMealFits(
       countB - countA || nameA.localeCompare(nameB),
   )[0]?.[0];
 
-  return BALANCED_MEAL_CATALOG.filter(
-    (template) =>
-      feedback[template.id] !== "not_for_me" &&
-      supportsDiet(template, dietStyle) &&
-      !includesAvoidedIngredient(template, avoidedIngredients),
-  )
+  return catalog
+    .filter(
+      (template) =>
+        feedback[template.id] !== "not_for_me" &&
+        supportsDiet(template, dietStyle) &&
+        !includesAvoidedIngredient(template, avoidedIngredients),
+    )
     .map((template) => {
       const cuisineSignal = Math.min(
         cuisineCounts.get(template.cuisine) ?? 0,

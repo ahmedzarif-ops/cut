@@ -4,7 +4,10 @@ import { aiMealUsageTable } from "@workspace/db";
 import { createTestContext, type TestContext } from "../test/helpers";
 import type { AiMealGenerationInput, AiMealProvider } from "./aiMealProvider";
 import { createMyMealDrafts } from "./mealDraftService";
-import { upsertMyNutritionPreferences } from "./nutritionService";
+import {
+  upsertMyMealFeedback,
+  upsertMyNutritionPreferences,
+} from "./nutritionService";
 import { provisionUser } from "./userService";
 
 let ctx: TestContext;
@@ -86,6 +89,11 @@ describe("personalized meal draft service", () => {
       avoidedIngredients: ["peanut"],
       learningEnabled: true,
     });
+    await upsertMyMealFeedback(
+      owner.id,
+      "bengali-chicken-curry-plate",
+      "liked",
+    );
     const generate = vi.fn(async (input: AiMealGenerationInput) => {
       expect(input.userId).toBe(owner.id);
       expect(input.request).toEqual({
@@ -97,6 +105,8 @@ describe("personalized meal draft service", () => {
         dietStyle: "omnivore",
         preferredCuisines: ["Desi"],
         avoidedIngredients: ["peanut"],
+        likedMeals: ["Bengali Chicken Curry Plate"],
+        notForMeMeals: [],
       });
       expect(
         input.allowedFoods.some((food) => food.id === "chicken-breast-roasted"),

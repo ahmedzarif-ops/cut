@@ -3,7 +3,7 @@
 **Status:** Automated implementation verification complete; native purchase
 acceptance not yet run
 
-**Updated:** August 4, 2026
+**Updated:** September 4, 2026
 
 This is an evidence log, not a promise. Check an item only after recording the
 build, environment, tester, date, and result. Expo Go preview mode cannot satisfy
@@ -177,23 +177,29 @@ match the selected build:
 ```text
 Beta App Description
 
-CUT OS is an adults-only daily cut check-in for people who lift. Testers can
-record a daily weigh-in, choose and log one of six curated balanced meals, view
-estimated nutrition totals, and manage their account and CUT OS Pro
-subscription. It provides general fitness and nutrition information, not
-medical advice. Nutrition and common-allergen information is estimated.
+CUT OS is an adults-only food, training, and progress tracker for people who
+lift. Free users can search 35 foods, browse 18 balanced meals including 11 Desi
+and Bengali options, use supported barcode lookup, add custom foods, log meals,
+record weigh-ins and training, and review progress. CUT OS Pro is optional and
+adds meal fits based on remaining goals, preferences, and confirmed logs. CUT OS
+provides general fitness and nutrition information, not medical advice. Food,
+meal, and common-allergen information is estimated.
 
 What to Test
 
 Use the purpose-built beta account supplied through the approved tester channel.
-Please test sign-in and the 18+ gate; purchase, cancellation, restore, and
-subscription management; daily weigh-in; balanced-meal selection and logging;
-serving adjustment and meal deletion; relaunch and account switching; legal and
-support links; and in-app account deletion. Verify that paid screens open only
-after server-confirmed access, prices and periods match Apple's purchase sheet,
-and deleting the CUT OS account does not claim to cancel Apple billing. Also
-complete these common tasks with VoiceOver and large text and report any unclear
-label, focus-order issue, clipped text, low contrast, or unusable control.
+Please test sign-in and the 18+ gate; the Today, Food, Training, and Progress
+tabs; free food search; all 18 meal templates; supported barcode lookup; custom
+and saved foods; meal add, edit, and delete; weigh-in and training logs; and
+progress charts. Confirm the top-right scan control and center Add action always
+have a clear back path. Test purchase, cancellation, restore, subscription
+management, relaunch, account switching, legal and support links, and in-app
+account deletion. Verify that free tools stay usable without Pro, Pro meal fits
+open only after server-confirmed access, prices and periods match Apple's
+purchase sheet, and deleting the CUT OS account does not claim to cancel Apple
+billing. Also complete these common tasks with VoiceOver and large text and
+report any unclear label, focus-order issue, clipped text, low contrast, or
+unusable control.
 
 When reporting an issue, include the selected TestFlight version/build,
 device/iOS, account-state alias, steps, expected result, and observed result.

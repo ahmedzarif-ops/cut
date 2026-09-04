@@ -36,6 +36,7 @@ import {
   type SubscriptionCustomerDeletionPoller,
   type SubscriptionCustomerDeleter,
 } from "../services/accountDeletionService";
+import { syncNutritionCatalog } from "../services/nutritionCatalogService";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = path.resolve(__dirname, "../../../../lib/db/migrations");
@@ -141,6 +142,7 @@ export async function createTestContext(
   // PGlite's Drizzle instance is a different driver flavor than node-postgres
   // but exposes the identical query API the routes use.
   setDb(db as unknown as Db);
+  await syncNutritionCatalog(db as unknown as Db);
   setSubscriptionStatusProviderForTesting(
     options.subscriptionStatusProvider ?? entitledTestSubscriptionProvider,
   );

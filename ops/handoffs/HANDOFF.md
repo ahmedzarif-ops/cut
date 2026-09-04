@@ -7,6 +7,36 @@
 
 - Working branch: `codex/app-store-v1`.
 - Draft pull request: [#9 — harden CUT OS App Store launch path](https://github.com/ahmedzarif-ops/cut/pull/9).
+- **September 4 superseding local checkpoint:** the fully automated-green
+  database nutrition candidate is the local commit containing this checkpoint,
+  directly after redesigned app commit `917237a`. Resolve the local SHA before
+  use. The remote draft branch remains at `b4871b8`; production remains
+  at `08e62232db7f81047eec5b55a184f30fb7d4162a`. Do not treat an older signed
+  build as the redesigned release candidate.
+- The candidate introduces migration 0014 and database runtime tables for 35
+  source-linked foods and 18 reviewed meals, including 11 Desi or Bengali
+  options. All current static content is free. Pro supplies adaptive ranking and
+  constrained on-demand meal drafting based on explicit preferences, feedback,
+  confirmed history, and remaining targets. The database catalog contains
+  global product content only, not user history.
+- Provider AI is disabled until separate owner approval covers the hard spend
+  limit and CUT-only credential. The model adapter cannot invent catalog IDs or
+  nutrition; the server validates ingredients and computes all macros. The
+  deterministic catalog fallback remains available while AI is off.
+- Current automated evidence: 1,469/1,469 tests, full TypeScript, codegen drift,
+  production build, working App Store validation, non-billable topology dry
+  run, and diff formatting all pass. Signed-in Simulator visual QA, deployment,
+  migration, fresh EAS/TestFlight build, App Review submission, and public
+  release remain separate gates.
+- Build 5 (`be50e881-c04e-4710-9a28-e218cc6f2e38`) was created from old commit
+  `b4871b8`; it must not be submitted as the redesigned app. Create a fresh
+  build only after the candidate is committed, pushed, deployed, migrated, and
+  explicitly approved for upload.
+- No external email/contact, spend, push, deployment, production migration,
+  Apple upload, App Review submission, or public release was performed in this
+  September 4 work.
+- The remainder of this handoff preserves historical August 10 evidence. Where
+  it conflicts with this superseding checkpoint, this checkpoint controls.
 - Exact signed QA candidate build 4 is signed from commit
   `b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4`, processed by Apple as **Ready
   to Submit**, assigned to internal group `CUT OS Internal QA` with automatic

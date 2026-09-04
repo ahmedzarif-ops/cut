@@ -1,17 +1,53 @@
 # CUT OS — Work Status
 
-**Updated:** August 10, 2026
+**Updated:** September 4, 2026
 
 **Working branch:** `codex/app-store-v1`
 
-**Base:** `origin/main` at `70dc1cf`
+**Remote branch checkpoint:** `origin/codex/app-store-v1` at `b4871b8`
 
 **Adult policy:** Owner-approved adults-only 18+ policy `adult-18-v1`.
 Automated server/domain/mobile implementation is complete. Legal/privacy,
 native-device and live-service QA, and App Store completion remain open; this is
 not a public-launch readiness claim.
 
-## Current App Store launch checkpoint — 2026-08-11T00:09:20Z
+## Current product and launch checkpoint — 2026-09-04
+
+- The database-catalog candidate is the local commit containing this checkpoint,
+  directly after redesigned app commit `917237a`. Resolve the current local SHA
+  before use. Nothing in this candidate has been pushed, deployed, migrated in
+  production, uploaded to Apple, submitted for review, or released.
+- CUT now has a database-backed, source-audited nutrition catalog: 35 foods and
+  18 meal templates, including 11 Desi or Bengali options. Every current catalog
+  item is free to search, customize, save, and log. Migration 0014 creates the
+  global catalog tables, and startup synchronization is idempotent and retains
+  removed IDs as inactive so historical logs keep their meaning.
+- Pro adds adaptive meal fits and on-demand meal drafts based on goals, targets,
+  food preferences, direct liked/not-for-me feedback, confirmed meal history,
+  and the current day's remaining calories and protein. The server constrains
+  model output to active catalog IDs and gram amounts and calculates nutrition
+  itself. No generated result is auto-logged.
+- Provider-backed AI remains disabled. It requires a separate owner-approved
+  hard spend limit and CUT-only credential before configuration or use. The
+  deterministic private-catalog fallback is functional without a provider.
+- The current candidate passes 1,469/1,469 automated tests, the full TypeScript
+  check, generated-code drift check, production build, working App Store
+  validator, non-billable production topology dry run, and `git diff --check`.
+  These results do not prove signed-in visual behavior, production deployment,
+  TestFlight, App Review, or public-release acceptance.
+- The latest signed Apple build is build 5, EAS ID
+  `be50e881-c04e-4710-9a28-e218cc6f2e38`, from old source commit `b4871b8`.
+  It is not the redesigned database-catalog candidate and must not be submitted.
+- Production remains on the older deployed commit
+  `08e62232db7f81047eec5b55a184f30fb7d4162a`. Production migration 0014 and
+  the redesigned app require an explicitly approved deployment/build cycle.
+- A locally signed Release Simulator app launches without a crash on two iOS 27
+  simulators. Signed-in visual tap-through remains pending; the owner must sign
+  in personally in Simulator and confirm that state without sharing a password.
+- Legal and privacy text remains draft pending qualified review. No lawyer,
+  dietitian, provider, or other external party was contacted during this work.
+
+## Historical App Store launch checkpoint — 2026-08-11T00:09:20Z
 
 - Exact EAS production build 4 for version 1.0.0 is signed from repaired commit
   `b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4`. Apple processed it as **Ready

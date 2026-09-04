@@ -1,26 +1,31 @@
 # CUT OS — App Store readiness
 
-**Status:** Automated paid-v1 checkpoint complete; not ready to submit
+**Status:** Redesigned source checkpoint in progress; not ready to submit
 
-**Updated:** August 4, 2026
+**Updated:** September 4, 2026
 
 ## Honest v1 scope
 
-CUT OS will launch as an adults-only daily cut check-in for people who lift.
-The paid binary may advertise only:
+CUT OS will launch as an adults-only food, training, and progress tracker for
+people who lift while cutting or recomping. The exact submitted binary may
+advertise only the features verified in that build:
 
-- One deterministic next action for today.
-- One daily weigh-in create/update.
-- Six curated balanced-meal options with portions, ingredients, common
-  allergens, and estimated nutrition.
-- Meal log/edit/delete and today's estimated nutrition totals.
+- Today, Food, Training, and Progress navigation plus a center Add action.
+- A database-backed free catalog of 35 source-linked foods and 18 balanced
+  meals, including 11 Desi/Bengali options.
+- Free supported barcode, manual, saved-food, meal, weigh-in, and training
+  logging plus nutrition and progress views.
+- Optional Pro meal fits based on explicit preferences, direct feedback,
+  confirmed history, and remaining daily targets.
+- Bounded on-demand Pro meal drafts with a deterministic catalog fallback.
 - Cloud account persistence, Restore Purchases, subscription management,
   legal/support links, and in-app account deletion.
 
-Do not advertise adaptive coaching, personalized calorie/protein targets,
-weight trends, workouts, sets, PRs, reminders, calendar, progress, daily
-closeout, weekly review, restaurant guidance, photo recognition, AI chat, or
-social features. Those are backlog, not submission truth.
+Do not advertise provider-backed AI or photo recognition unless the provider,
+credential, privacy boundary, spend cap, runtime configuration, and exact-build
+behavior are separately approved and verified. HealthKit, social/community,
+restaurant delivery, medical guidance, and unshipped features remain outside
+the launch claim.
 
 ## Engineering position
 
@@ -32,8 +37,15 @@ social features. Those are backlog, not submission truth.
 - [x] Server-enforced `adult-18-v1` eligibility before private guidance.
 - [x] Durable in-app account deletion foundation with Clerk deletion, local
       cascade, retry worker, and device recovery marker.
-- [x] Daily Next Action, weigh-in, six-meal catalog, retry-safe meal logging,
-      editing/deletion, and nutrition totals.
+- [x] Today/Food/Training/Progress navigation, a 35-food and 18-meal free
+      catalog, barcode/manual/saved food paths, retry-safe logging and deletion,
+      nutrition totals, weigh-ins, workouts, and progress views.
+- [x] PostgreSQL catalog tables and idempotent startup synchronization preserve
+      stable catalog IDs, free-tier access, inactive-history safety, and an
+      auditable source-of-truth dataset.
+- [x] Pro meal fits use only explicit preferences, direct feedback, confirmed
+      logs, and remaining targets. Bounded meal creation uses the same catalog
+      and falls back without an external provider.
 - [x] Paid-v1 profile data is minimized to the fields the shipped experience
       displays; unused sex, height, activity, training-experience, and target-
       date inputs are rejected and legacy stored values have a prelaunch purge

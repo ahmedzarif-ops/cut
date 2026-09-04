@@ -8,15 +8,15 @@ import {
 } from "@workspace/db";
 import {
   BALANCED_MEAL_CATALOG_VERSION,
-  CURATED_FOOD_CATALOG,
   CURATED_FOOD_CATALOG_VERSION,
   curatedFoodSupportsDiet,
-  getCuratedFood,
   rankAdaptiveMealFits,
   sumNutrition,
   systemClock,
   todayKey,
   type Clock,
+  type BalancedMealTemplate,
+  type CuratedFoodItem,
   type NutritionFacts,
 } from "@workspace/domain";
 
@@ -31,6 +31,7 @@ import {
   listMyMealFeedback,
 } from "./nutritionService";
 import { getMealEntriesForDay, nutritionTotals } from "./mealService";
+import { listCatalogFoods, listCatalogMeals } from "./nutritionCatalogService";
 
 export type MealDraftGoal = "balanced" | "high_protein" | "quick" | "desi";
 export type MealDraftTime = "any" | "breakfast" | "lunch" | "dinner" | "snack";
@@ -79,7 +80,7 @@ function normalizedTerms(values: readonly string[], maximum: number): string[] {
 }
 
 function containsAvoidedTerm(
-  item: (typeof CURATED_FOOD_CATALOG)[number],
+  item: CuratedFoodItem,
   avoided: readonly string[],
 ): boolean {
   const haystack = ` ${[item.name, ...item.aliases]
@@ -112,7 +113,7 @@ function calculatedReason(
 
 function candidateToDraft(
   candidate: AiMealCandidate,
-  allowedFoodIds: ReadonlySet<string>,
+  allowedFoodsById: ReadonlyMap<string, CuratedFoodItem>,
   remainingCaloriesKcal: number | null,
   remainingProteinG: number | null,
 ): MealDraft | null {
@@ -122,10 +123,10 @@ function candidateToDraft(
   const allergens = new Set<string>();
 
   for (const choice of candidate.ingredients) {
-    if (seen.has(choice.foodId) || !allowedFoodIds.has(choice.foodId)) {
+    if (seen.has(choice.foodId)) {
       return null;
     }
-    const food = getCuratedFood(choice.foodId);
+    const food = allowedFoodsById.get(choice.foodId);
     if (!food) return null;
     seen.add(choice.foodId);
     const factor = choice.grams / food.servingGrams;
@@ -181,6 +182,7 @@ function fallbackDrafts(input: {
   recentTemplateIds: string[];
   remainingCaloriesKcal: number | null;
   remainingProteinG: number | null;
+  catalog: readonly BalancedMealTemplate[];
 }): MealDraft[] {
   const rankedFits = rankAdaptiveMealFits(
     {
@@ -196,6 +198,7 @@ function fallbackDrafts(input: {
       learningEnabled: input.preferences.learningEnabled,
     },
     18,
+    input.catalog,
   );
   const goalRanked = [...rankedFits].sort((left, right) => {
     if (input.goal === "desi") {
@@ -316,7 +319,14 @@ export async function createMyMealDrafts(
   // Paid-call accounting uses UTC so changing the device timezone cannot reset
   // the quota. Meal targets still use the person's actual local calendar day.
   const usageDay = todayKey(clock, "UTC");
-  const [preferences, feedback, recentRows, todayEntries] = await Promise.all([
+  const [
+    preferences,
+    feedback,
+    recentRows,
+    todayEntries,
+    catalogFoods,
+    catalogMeals,
+  ] = await Promise.all([
     getMyNutritionPreferences(user.id),
     listMyMealFeedback(user.id),
     db
@@ -329,6 +339,8 @@ export async function createMyMealDrafts(
       .orderBy(desc(mealEntriesTable.createdAt), desc(mealEntriesTable.id))
       .limit(30),
     getMealEntriesForDay(user.id, localDay),
+    listCatalogFoods("all"),
+    listCatalogMeals("all"),
   ]);
   const totals = nutritionTotals(todayEntries);
   const remainingCaloriesKcal =
@@ -347,6 +359,7 @@ export async function createMyMealDrafts(
       recentTemplateIds: recentRows.map((row) => row.templateId),
       remainingCaloriesKcal,
       remainingProteinG,
+      catalog: catalogMeals,
     });
 
   if (!provider.enabled) {
@@ -374,11 +387,20 @@ export async function createMyMealDrafts(
   }
 
   const avoided = normalizedTerms(preferences.avoidedIngredients, 20);
-  const allowedFoods = CURATED_FOOD_CATALOG.filter(
+  const allowedFoods = catalogFoods.filter(
     (food) =>
       curatedFoodSupportsDiet(food, preferences.dietStyle) &&
       !containsAvoidedTerm(food, avoided),
   );
+  const catalogMealById = new Map(catalogMeals.map((meal) => [meal.id, meal]));
+  const feedbackMealNames = (preference: "liked" | "not_for_me") =>
+    preferences.learningEnabled
+      ? feedback
+          .filter((item) => item.preference === preference)
+          .map((item) => catalogMealById.get(item.templateId)?.name)
+          .filter((name): name is string => Boolean(name))
+          .slice(0, 8)
+      : [];
   try {
     const result = await provider.generate({
       userId: user.id,
@@ -392,6 +414,8 @@ export async function createMyMealDrafts(
         recentConfirmedMeals: preferences.learningEnabled
           ? recentRows.map((row) => row.name).slice(0, 12)
           : [],
+        likedMeals: feedbackMealNames("liked"),
+        notForMeMeals: feedbackMealNames("not_for_me"),
       },
       allowedFoods: allowedFoods.map((food) => ({
         id: food.id,
@@ -408,7 +432,9 @@ export async function createMyMealDrafts(
       result.outputTokens,
       clock,
     );
-    const allowedIds = new Set(allowedFoods.map((food) => food.id));
+    const allowedFoodsById = new Map(
+      allowedFoods.map((food) => [food.id, food]),
+    );
     const drafts = result.candidates
       .filter(
         (candidate) => candidate.estimatedPrepMinutes <= input.maxPrepMinutes,
@@ -416,7 +442,7 @@ export async function createMyMealDrafts(
       .map((candidate) =>
         candidateToDraft(
           candidate,
-          allowedIds,
+          allowedFoodsById,
           remainingCaloriesKcal,
           remainingProteinG,
         ),

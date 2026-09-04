@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "working_not_approved",
-  "updated": "2026-08-10",
+  "updated": "2026-09-04",
   "references": {
     "humanRecord": "APP_STORE_METADATA.md",
     "appConfig": "artifacts/cut-os/app.json",
@@ -46,13 +46,13 @@
     "appVersion": "1.0.0",
     "initialRelease": true,
     "primaryLanguage": "en-US",
-    "subtitle": "Daily weigh-ins & meal logging",
-    "description": "CUT OS brings daily weigh-ins, balanced meals, and estimated nutrition totals\ninto one focused check-in for adults who lift.\n\n- See one clear next action for today.\n- Log or update one daily weigh-in.\n- Choose from six curated balanced-meal options.\n- Review ingredients, common allergens, portions, and estimated nutrition.\n- Log, edit, or delete meals and see today's estimated nutrition totals.\n- Keep account data synced and delete the account in-app.\n\nCUT OS provides general fitness and nutrition information, not medical advice.\nMeal nutrition is estimated. Ingredient and common-allergen lists must be\nreviewed against the exact products you use and are not an allergen-safety\nguarantee.\n\nCUT OS is for adults age 18 and older. Paid access uses an auto-renewable Apple\nsubscription. The exact localized price and billing period appear before you\nconfirm purchase. You can restore purchases in the app and manage or cancel the\nsubscription through Apple.\n\nTerms: https://getcutos.com/terms",
-    "keywords": "weight,meal,protein,macros,lifting,nutrition,weigh-in,tracker,calorie,food,diet,bodybuilding,fiber",
+    "subtitle": "Food, training & progress",
+    "description": "CUT OS helps adults who lift run a focused cut or body recomposition. See what\nremains today, log what happened, and understand how food, body weight, and\ntraining move together.\n\nFree features:\n\n- Search a 35-food nutrition library.\n- Explore 18 balanced meals, including 11 Desi and Bengali options.\n- Scan supported food barcodes or add and save custom foods.\n- Log meals, daily nutrition totals, weigh-ins, and training sessions.\n- Review weight and training progress in clear charts.\n\nCUT OS Pro is optional. Pro adds meal fits based on remaining calorie and\nprotein goals, food preferences, and confirmed logs. The free tracking loop\nstays available without Pro.\n\nCUT OS provides general fitness and nutrition information, not medical advice.\nFood and meal nutrition is estimated. Ingredient and common-allergen lists must be\nreviewed against the exact products you use and are not an allergen-safety\nguarantee.\n\nCUT OS is for adults age 18 and older. CUT OS Pro uses an auto-renewable Apple\nsubscription. The exact localized price and billing period appear before you\nconfirm purchase. You can restore purchases in the app and manage or cancel\nthe subscription through Apple.\n\nTerms: https://getcutos.com/terms",
+    "keywords": "calorie,protein,macros,food,meal,Desi,Bengali,lifting,weight,workout,cut,recomp,tracker,nutrition",
     "primaryCategory": "Health & Fitness",
     "secondaryCategory": null,
     "madeForKids": false,
-    "promotionalText": "One focused daily check-in for lifters: log a weigh-in, choose a balanced meal, and review today's estimated nutrition totals.",
+    "promotionalText": "Track food, training, and progress in one focused app. Search 35 foods and explore 18 balanced meals, including Desi and Bengali options.",
     "marketingUrl": "https://getcutos.com",
     "whatsNew": null,
     "whatsNewPosition": "not_applicable_initial_release",
@@ -105,14 +105,14 @@
         "evidenceReference": "app-store/evidence/owner-deferred-professional-review-2026-08-10.md"
       },
       "exactBuildClaimsReview": {
-        "status": "confirmed",
+        "status": "pending",
         "appVersion": "1.0.0",
-        "buildNumber": "4",
-        "gitCommit": "b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4",
-        "easBuildId": "dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4",
-        "appStoreConnectBuildId": "0b6ff58a-d236-4469-b471-8216cf5a91ee",
-        "verifiedAtUtc": "2026-08-10T23:50:21Z",
-        "evidenceReference": "app-store/evidence/apple-build-4-processing-and-assignment-2026-08-10.md#exact-signed-archive-inspection"
+        "buildNumber": null,
+        "gitCommit": null,
+        "easBuildId": null,
+        "appStoreConnectBuildId": null,
+        "verifiedAtUtc": null,
+        "evidenceReference": null
       }
     }
   },
@@ -313,10 +313,10 @@
     },
     "exactBuild": {
       "appVersion": "1.0.0",
-      "buildNumber": "4",
-      "gitCommit": "b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4",
-      "easBuildId": "dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4",
-      "appStoreConnectBuildId": "0b6ff58a-d236-4469-b471-8216cf5a91ee",
+      "buildNumber": null,
+      "gitCommit": null,
+      "easBuildId": null,
+      "appStoreConnectBuildId": null,
       "verifiedAtUtc": null,
       "navigationEvidenceReference": null
     },
@@ -441,10 +441,10 @@
     },
     "exactBuildEvidence": {
       "appVersion": "1.0.0",
-      "buildNumber": "4",
-      "gitCommit": "b6d135dc334937c61f7e1f4847ec9b04d2fd6cd4",
-      "easBuildId": "dc2c2bfa-bec6-4112-bedd-eafbb81f4bc4",
-      "appStoreConnectBuildId": "0b6ff58a-d236-4469-b471-8216cf5a91ee",
+      "buildNumber": null,
+      "gitCommit": null,
+      "easBuildId": null,
+      "appStoreConnectBuildId": null,
       "storeKitOfferStatus": "pending",
       "purchaseQaStatus": "pending",
       "testFlightStatus": "pending",
@@ -613,7 +613,7 @@
   "regulatedMedicalDevice": {
     "status": "confirmed_in_app_store_connect",
     "workingPosition": "general_wellness_not_a_regulated_medical_device",
-    "basis": "Exact build 4 provides general fitness and nutrition information, not diagnosis, prevention, monitoring, treatment, clinical guidance, or regulated-device functionality. The owner approved the not-regulated declaration, and App Store Connect now confirms that answer for every country or region.",
+    "basis": "Current source provides general fitness and nutrition tracking, not diagnosis, prevention, monitoring, treatment, clinical guidance, or regulated-device functionality. The owner approved the not-regulated declaration and App Store Connect confirms it; the next exact candidate still requires claims re-verification.",
     "appleReference": "https://developer.apple.com/help/app-store-connect/manage-app-information/declare-regulated-medical-device-status",
     "regionalDeclarations": {
       "US": {
@@ -881,7 +881,7 @@
     }
   },
   "privacy": {
-    "status": "confirmed_for_submission",
+    "status": "provisional_pending_production_reconciliation",
     "manifestPath": "artifacts/cut-os/app.json",
     "engineeringEvidenceReference": "PRIVACY_DATA_MAP.md; app-store/evidence/production-launch-infrastructure-2026-08-08.md; app-store/evidence/apple-live-configuration-2026-08-04.md; app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md",
     "tracking": false,
@@ -941,7 +941,7 @@
           "NSPrivacyCollectedDataTypePurposeProductPersonalization"
         ],
         "ascPurposes": ["App Functionality", "Product Personalization"],
-        "v1Data": "Start and goal weight, daily weigh-ins, and nutrition records that ship in v1."
+        "v1Data": "Start and goal weight, daily weigh-ins, food and meal logs, nutrition preferences, and nutrition records that ship in v1."
       },
       {
         "ascDataType": "Health & Fitness - Fitness",
@@ -954,7 +954,7 @@
           "NSPrivacyCollectedDataTypePurposeProductPersonalization"
         ],
         "ascPurposes": ["App Functionality", "Product Personalization"],
-        "v1Data": "Adults-who-lift goal context and current fitness-related check-in data. No workout logger ships in v1."
+        "v1Data": "Adults-who-lift goal context, daily weigh-ins, and user-entered strength, cardio, and recovery training logs."
       },
       {
         "ascDataType": "Identifiers - User ID",
@@ -979,7 +979,7 @@
           "NSPrivacyCollectedDataTypePurposeProductPersonalization"
         ],
         "ascPurposes": ["App Functionality", "Product Personalization"],
-        "v1Data": "Eligibility result, policy version, decision time, timezone, unit preference, goal, and records where the live questionnaire maps them here."
+        "v1Data": "Eligibility result, policy version, decision time, timezone, unit preference, goal, saved-food snapshots, direct meal feedback, learning preference, and per-day AI request and token counts where the live questionnaire maps them here."
       },
       {
         "ascDataType": "Purchases - Purchase History",
@@ -1027,37 +1027,37 @@
     "externalVerificationGates": [
       {
         "id": "production_archive_and_embedded_sdks",
-        "status": "verified",
-        "requiredEvidence": "Exact build 4 archive manifest inventory, embedded SDK privacy manifests, app-level data types, required-reason APIs, and production public configuration are recorded in the build evidence."
+        "status": "pending",
+        "requiredEvidence": "The next exact candidate archive must verify its manifest inventory, embedded SDK privacy manifests, app-level data types, required-reason APIs, and production public configuration."
       },
       {
         "id": "ip_network_metadata_mapping",
-        "status": "verified",
-        "requiredEvidence": "Trusted client IP and Clerk device-identifier handling are conservatively mapped to linked Device ID for App Functionality using exact production behavior and Clerk's current DPA."
+        "status": "pending",
+        "requiredEvidence": "Reconfirm trusted client IP, Clerk device-identifier handling, and barcode-provider network behavior against the next exact candidate and production configuration."
       },
       {
         "id": "diagnostics_and_usage_data",
-        "status": "verified",
-        "requiredEvidence": "Exact build 4 has no crash or general analytics SDK; Clerk production authentication activity is conservatively mapped to linked Product Interaction for App Functionality and Analytics."
+        "status": "pending",
+        "requiredEvidence": "Verify the next exact candidate has no unreported crash or general analytics SDK and reconcile Clerk production authentication activity with Product Interaction."
       },
       {
         "id": "public_policy_reconciliation",
-        "status": "verified",
-        "requiredEvidence": "The live Privacy Policy and in-app notice-at-collection were reconciled with exact build 4, production behavior, and the disclosed Apple, Clerk, RevenueCat, and Replit data paths."
+        "status": "pending",
+        "requiredEvidence": "Deploy and verify an owner-approved Privacy Policy and in-app notice that disclose the current food, preferences, feedback, training, and AI-usage-counter data paths."
       },
       {
         "id": "app_store_connect_reconciliation",
-        "status": "verified",
-        "requiredEvidence": "The nine published App Store Connect data types, linkage, no-tracking answers, and purposes were reviewed against this matrix and exact build 4."
+        "status": "pending",
+        "requiredEvidence": "Reconcile the published App Store Connect data types, linkage, no-tracking answers, and purposes against the next exact candidate and current data map."
       }
     ],
     "approval": {
-      "owner": true,
+      "owner": false,
       "legal": false,
-      "productionArchiveVerified": true,
-      "vendorsVerified": true,
-      "publicPolicyVerified": true,
-      "appStoreConnectConfirmed": true
+      "productionArchiveVerified": false,
+      "vendorsVerified": false,
+      "publicPolicyVerified": false,
+      "appStoreConnectConfirmed": false
     }
   }
 }

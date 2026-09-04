@@ -625,14 +625,21 @@ export function curatedFoodSupportsDiet(
   return true;
 }
 
-export function searchCuratedFoods(query: string): CuratedFoodItem[] {
+export function filterCuratedFoods(
+  catalog: readonly CuratedFoodItem[],
+  query: string,
+): CuratedFoodItem[] {
   const normalized = query.trim().toLocaleLowerCase();
-  if (!normalized) return [...CURATED_FOOD_CATALOG];
+  if (!normalized) return [...catalog];
   const tokens = normalized.split(/\s+/u).filter(Boolean);
-  return CURATED_FOOD_CATALOG.filter((item) => {
+  return catalog.filter((item) => {
     const haystack = [item.name, ...item.aliases, ...item.cuisineTags]
       .join(" ")
       .toLocaleLowerCase();
     return tokens.every((token) => haystack.includes(token));
   });
+}
+
+export function searchCuratedFoods(query: string): CuratedFoodItem[] {
+  return filterCuratedFoods(CURATED_FOOD_CATALOG, query);
 }

@@ -30,6 +30,8 @@ describe("committed migrations", () => {
     expect(tables.rows.map((r) => r.table_name)).toEqual([
       "account_deletion_requests",
       "ai_meal_usage",
+      "catalog_foods",
+      "catalog_meals",
       "meal_entries",
       "meal_entry_deletion_tombstones",
       "meal_feedback",

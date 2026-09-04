@@ -23,7 +23,7 @@ and the exact signed iOS build before approval.
 
 | Item                       | Current launch position                                                                        |
 | -------------------------- | ---------------------------------------------------------------------------------------------- |
-| Product                    | CUT OS, an adults-only iPhone wellness app for daily weigh-ins and balanced-meal logging       |
+| Product                    | CUT OS, an adults-only iPhone food, training, and progress app for lifters                     |
 | Operator                   | Zarif Ahmed, individual seller; proposed sole-proprietor operation in Texas                    |
 | Public contact             | `ahmed.zarif@gmail.com`                                                                        |
 | Public domain              | `https://getcutos.com`                                                                         |
@@ -39,11 +39,12 @@ and the exact signed iOS build before approval.
 | General analytics SDK      | None in the current application dependency inventory                                           |
 | Medical positioning        | General wellness only; no diagnosis, cure, mitigation, prevention, or treatment claim intended |
 
-The paid v1 unlocks the daily check-in, one daily weigh-in, six curated balanced
-meal choices, meal logging/editing/deletion, daily nutrition totals, cloud
-persistence, and account controls. Adaptive targets, trends, workouts,
-reminders, progress reporting, weekly review, and medical treatment features do
-not ship in v1 and must not be claimed.
+The free app includes a database-backed 35-food library, 18 balanced meal
+templates including 11 Desi/Bengali options, supported barcode/manual/saved
+food logging, daily nutrition totals, weigh-ins, training logs, and progress.
+CUT OS Pro is optional and adds adaptive meal fits and bounded on-demand meal
+drafts. External provider AI and photo estimation must not be claimed unless
+separately approved, enabled, and verified in the exact submitted build.
 
 ## 2. Current technical and commercial controls
 
@@ -64,7 +65,8 @@ not ship in v1 and must not be claimed.
   Support supplied a public preview package that resolves the prior native
   session/TLS path; it is integrity-pinned and must remain pinned until Clerk
   publishes a supported stable release and CUT retests the exact candidate.
-- The current production backend is bound to release commit
+- The currently deployed production backend predates the redesigned candidate
+  and is bound to release commit
   `08e62232db7f81047eec5b55a184f30fb7d4162a` and Replit deployment
   `78b1854c`. The connected production database passed direct client-side TLS
   authorization and hostname verification. Point-in-time recovery is enabled
@@ -82,9 +84,10 @@ not ship in v1 and must not be claimed.
 - Public Privacy, Terms, and Support routes return HTTP 200 under the documented
   owner-deferred professional-review decision. This availability is not a
   qualified approval.
-- App Store Connect contains exact build 3 in internal TestFlight. Every physical
-  iPhone, TestFlight, purchase, restore, deletion, recovery, privacy-archive,
-  and screenshot conclusion remains pending.
+- App Store Connect contains earlier internal TestFlight builds. None contains
+  the current database-backed nutrition redesign. Every redesigned exact-build
+  TestFlight, purchase, restore, deletion, recovery, privacy-archive, and
+  screenshot conclusion remains pending.
 
 These are engineering assertions, not counsel conclusions. The exact signed
 archive, production vendor settings, and real-device behavior remain the final
@@ -98,6 +101,10 @@ evidence.
 | Display name and goal                                               | Setup and personalization                      | CUT database                                         | Cascade with user                                                                             |
 | Start/goal weight and daily weigh-ins                               | Daily wellness tracking                        | CUT database                                         | Cascade with user; seven-day in-place PITR exists; legal backup deletion treatment unresolved |
 | Meal choice, servings, calories, protein, carbohydrates, fat, fiber | Meal logging and daily totals                  | CUT database                                         | Cascade with user; seven-day in-place PITR exists; legal backup deletion treatment unresolved |
+| Strength, cardio, and recovery logs                                 | Training history and progress                  | CUT database                                         | Cascade with user; seven-day in-place PITR exists; legal backup deletion treatment unresolved |
+| Nutrition targets, cuisines, avoid terms, saved foods, and feedback | Meal filtering, ranking, and repeat logging    | CUT database                                         | Cascade with user; seven-day in-place PITR exists; legal backup deletion treatment unresolved |
+| Global food and meal catalog                                        | Shared nutrition content for every user        | CUT database + version-controlled source             | Product content only; not linked to an account                                                |
+| Per-day AI request and token counts                                 | Bound optional provider usage                  | CUT database                                         | Cascade with user; prompts, photos, and generated drafts are not stored by default            |
 | Full self-declared DOB                                              | One-time 18+ decision                          | Request memory only                                  | Designed for immediate discard; no persistence or logging                                     |
 | Eligibility result/version/time                                     | Enforce adults-only access                     | CUT database                                         | Delete with user; backup retention unresolved                                                 |
 | IP and request metadata                                             | Delivery, security, rate limiting, Clerk proxy | One-minute memory, Replit, Clerk                     | In-app limiter expires after one minute; vendor retention/linkage unresolved                  |

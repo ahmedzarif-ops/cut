@@ -1,6 +1,6 @@
 # ADR 004 — RevenueCat subscription authorization
 
-**Status:** Accepted for the focused iOS v1
+**Status:** Accepted; product scope amended by ADR 005 and ADR 006
 
 **Date:** August 3, 2026
 
@@ -12,12 +12,12 @@ the commercial transaction surface and RevenueCat is the entitlement source of
 truth. The database must not invent, extend, or independently revoke paid
 access.
 
-The first App Store submission will sell only behavior that is already present
-in the binary: an adults-only daily cut check-in, one next action, one daily
-weigh-in, six curated balanced-meal choices, meal logging/editing/deletion,
-daily nutrition totals, cloud persistence, and account controls. Adaptive
-targets, trends, workouts, reminders, progress, closeout, and weekly review are
-not launch claims until they ship.
+The first App Store submission may sell only behavior verified in its exact
+binary. ADR 005 changed the commercial boundary so food, weight, training, and
+progress tracking remain free while Pro adds adaptive meal fits and bounded
+meal creation. ADR 006 adds the database-backed global catalog. Provider AI or
+photo estimation is not a launch claim unless separately approved, enabled,
+and verified in the exact submitted build.
 
 Price and final offer approval are owner decisions made in App Store Connect.
 As a fail-closed engineering allowlist—not commercial approval—the current

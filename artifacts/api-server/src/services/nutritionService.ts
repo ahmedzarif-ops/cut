@@ -10,7 +10,6 @@ import {
   type SavedFood,
 } from "@workspace/db";
 import {
-  getBalancedMealTemplate,
   systemClock,
   type Clock,
   type MealPreference,
@@ -19,6 +18,7 @@ import {
 } from "@workspace/domain";
 
 import { HttpError } from "../lib/httpError";
+import { getCatalogMeal } from "./nutritionCatalogService";
 
 export const MAX_SAVED_FOODS = 100;
 
@@ -296,7 +296,7 @@ export async function upsertMyMealFeedback(
   preference: MealPreference,
   clock: Clock = systemClock,
 ): Promise<MealFeedbackResponse> {
-  if (!getBalancedMealTemplate(templateId)) {
+  if (!(await getCatalogMeal(templateId))) {
     throw new HttpError(404, "Meal template not found");
   }
   const [row] = await db

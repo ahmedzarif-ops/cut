@@ -127,16 +127,58 @@
               </tr>
               <tr>
                 <th scope="row">Body and fitness</th>
-                <td>Daily weigh-ins and their local calendar dates</td>
-                <td>Daily weigh-in check-ins and user-directed context</td>
+                <td>
+                  Daily weigh-ins and their local calendar dates; strength,
+                  cardio, and recovery sessions; exercise names, sets, reps,
+                  optional load, duration, and optional cardio details
+                </td>
+                <td>
+                  Weight and training logs, progress, and user-directed context
+                </td>
               </tr>
               <tr>
                 <th scope="row">Meals and nutrition</th>
                 <td>
-                  Meal choice, serving amount, calories, protein, carbohydrates,
-                  fat, and fiber
+                  Food or meal name and source, serving amount, calories,
+                  protein, carbohydrates, fat, fiber, and local calendar date
                 </td>
-                <td>Meal tracking, daily totals, and the next-action flow</td>
+                <td>Food diary, daily totals, and progress context</td>
+              </tr>
+              <tr>
+                <th scope="row">Food preferences and saved items</th>
+                <td>
+                  Daily calorie and protein goals, eating style, preferred
+                  cuisines, foods to avoid, learning choice, saved-food
+                  nutrition snapshots, and direct meal feedback
+                </td>
+                <td>
+                  Filter and rank requested meal fits and make repeat logging
+                  faster
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">AI usage controls</th>
+                <td>
+                  UTC day, request count, and input- and output-token counts
+                  when the separately approved provider is enabled
+                </td>
+                <td>
+                  Enforce the per-user daily limit and bounded provider usage.
+                  CUT OS does not store AI prompts, photos, or generated drafts
+                  by default
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Shared food and meal catalog</th>
+                <td>
+                  Source-linked foods, portions, estimated nutrition, meal
+                  templates, ingredients, cuisines, and common allergens
+                </td>
+                <td>
+                  Product content available across accounts. These shared rows
+                  do not contain an account ID, diary history, or private food
+                  preference
+                </td>
               </tr>
               <tr>
                 <th scope="row">Meal deletion safeguard</th>
@@ -206,7 +248,8 @@
           <li>Authenticate the user and keep account data separated.</li>
           <li>Enforce deletion status and adults-only access.</li>
           <li>
-            Provide weigh-in, meal, nutrition-total, and next-action features.
+            Provide food, nutrition, weigh-in, training, progress, and
+            user-requested meal-fit features.
           </li>
           <li>Verify paid access and restore or manage purchases.</li>
           <li>
@@ -248,7 +291,21 @@
             <strong>Public support tooling:</strong>
             <code>{{SUPPORT_TOOLING}}</code>
           </li>
+          <li>
+            <strong>Open Food Facts</strong> for supported barcode product
+            lookup. CUT OS sends the scanned product code, not the user’s CUT
+            account identifier.
+          </li>
         </ul>
+        <p>
+          No external AI meal provider is enabled in the current launch
+          configuration. If one is enabled after separate owner approval, the
+          provider receives only the current request, explicit food preferences,
+          remaining targets, a bounded list of confirmed meal names, and bounded
+          catalog meal names directly marked liked or not-for-me when learning
+          is on. CUT OS is designed not to send the provider an email address,
+          date of birth, Clerk ID, raw diary, or CUT account identifier.
+        </p>
         <p>
           The current application dependency inventory contains no advertising
           SDK or general product-analytics SDK. RevenueCat supplies purchase and
@@ -271,11 +328,13 @@
       <section aria-labelledby="storage">
         <h2 id="storage">7. Storage, security, and retention</h2>
         <p>
-          Account, profile, weight, meal, eligibility-result, and deletion-state
-          records are held in CUT OS systems or the providers described above.
-          Session and recovery records are held in secure device storage where
-          implemented. CUT OS uses server-side account boundaries and avoids
-          routine logging of request bodies and sensitive fitness values.
+          Account, profile, weight, food/meal, nutrition-preference, saved-food,
+          meal-feedback, workout, AI-usage-count, eligibility-result, and
+          deletion-state records are held in CUT OS systems or the providers
+          described above. Session and recovery records are held in secure
+          device storage where implemented. CUT OS uses server-side account
+          boundaries and avoids routine logging of request bodies and sensitive
+          fitness values.
         </p>
         <p data-blocker>
           <strong>Retention is unresolved:</strong>
@@ -298,7 +357,8 @@
           A signed-in user can request account deletion from Settings in the
           app. The implemented workflow is designed to delete the Clerk
           identity, delete the CUT OS user record and its linked profile,
-          weight, and meal records, and delete the RevenueCat customer
+          weight, food/meal, nutrition-preference, saved-food, meal-feedback,
+          workout, and AI-usage records, and delete the RevenueCat customer
           associated with the internal CUT OS UUID. A minimal
           deletion-coordination record may remain to prevent account recreation
           and recover partial failures; its final retention period is not
@@ -322,9 +382,10 @@
       <section aria-labelledby="choices">
         <h2 id="choices">9. Access, correction, and privacy choices</h2>
         <p>
-          Users can edit supported profile, weight, and meal information in the
-          app and can delete their account in Settings. Purchase management and
-          cancellation occur through Apple.
+          Users can edit supported profile, weight, food, nutrition preference,
+          saved-food, meal-feedback, and training information in the app and can
+          delete their account in Settings. Purchase management and cancellation
+          occur through Apple.
         </p>
         <p data-blocker>
           The final policy must describe the verified request process, identity
@@ -380,7 +441,7 @@
         <a href="terms.html">Terms draft</a> ·
         <a href="support.html">Support draft</a>
       </p>
-      <p>CUT OS privacy draft · Updated August 3, 2026</p>
+      <p>CUT OS privacy draft · Updated September 4, 2026</p>
     </footer>
   </body>
 </html>

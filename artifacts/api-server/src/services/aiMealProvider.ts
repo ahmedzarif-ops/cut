@@ -37,6 +37,8 @@ export interface AiMealGenerationInput {
     remainingCaloriesKcal: number | null;
     remainingProteinG: number | null;
     recentConfirmedMeals: string[];
+    likedMeals: string[];
+    notForMeMeals: string[];
   };
   allowedFoods: Array<{
     id: string;

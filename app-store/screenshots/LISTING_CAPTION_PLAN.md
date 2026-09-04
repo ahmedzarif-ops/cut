@@ -14,24 +14,20 @@ If exact-build marketing assets are ready without delaying submission, shots
 
 ## Capture-device preflight — not release evidence
 
-At `2026-08-10T22:31:48Z`, the dedicated local simulator
-`CUT App Store 6.9 QA` was booted as an iPhone 17 Pro Max on iOS 27.0. A
-temporary system-screen capture measured exactly `1320 × 2868` pixels, one of
-the manifest's accepted iPhone 6.9-inch portrait sizes. The temporary image did
-not show CUT OS. A separately installed, locally signed release-style simulator
-app then launched to the real empty sign-in screen at the same pixel size
-without a crash or clipped control. That local app is not the App Store-signed
-TestFlight binary, and both temporary images remain outside the release assets;
-neither is a listing screenshot, App Review screenshot, PII review, or
-exact-build claim. Keep the manifest capture-result fields null while build 4
-remains only the signed QA candidate. Capture, prepare, hash-bind, and review
-the two selected screens only from final immutable build 5 after it is
-processed and assigned in TestFlight.
+At `2026-09-04`, a locally signed Release Simulator app from redesigned commit
+`917237a1d7ad3bb3b58394cbbb29baa81b2d9cdb` installed and launched without a
+recorded crash on two iOS 27.0 simulators. It reached the signed-out Welcome
+screen, so signed-in visual acceptance is still pending. That local app is not
+an App Store-signed TestFlight binary, and its images remain outside the release
+assets; none is a listing screenshot, App Review screenshot, PII review, or
+exact-build claim. Keep the manifest capture-result fields null. Capture,
+prepare, hash-bind, and review the two selected screens only from the next
+approved immutable build after it is processed and assigned in TestFlight.
 
 The subscription-offer screen is part of the public listing selection, not only
-App Review evidence. Its exact-build capture must show an unmistakable paid or
-subscription cue and the StoreKit-localized offer details; do not imply that all
-features are free or type a price into a derived caption. The manifest therefore
+App Review evidence. Its exact-build capture must show that Pro is optional,
+that food, weight, and training tracking stay free, and the StoreKit-localized
+offer details; do not type a price into a derived caption. The manifest therefore
 classifies shot 07 as `listing_candidate_and_in_app_purchase_review_evidence`.
 
 The 1.0 listing uses visually raw screenshots from the exact signed build

@@ -118,15 +118,19 @@ function containsOnlyKnownKeys(
   );
 }
 
-router.get("/me/meal-options", requireAuth, (_req, res): void => {
-  res.json(ListMyMealOptionsResponse.parse(listMyMealOptions()));
-});
+router.get(
+  "/me/meal-options",
+  requireAuth,
+  async (_req, res): Promise<void> => {
+    res.json(ListMyMealOptionsResponse.parse(await listMyMealOptions()));
+  },
+);
 
-router.get("/me/food-library", requireAuth, (req, res): void => {
+router.get("/me/food-library", requireAuth, async (req, res): Promise<void> => {
   const parsed = ListMyFoodLibraryQueryParams.safeParse(req.query);
   if (!parsed.success) throw new HttpError(400, "Invalid food search");
   res.json(
-    ListMyFoodLibraryResponse.parse(listMyFoodLibrary(parsed.data.query)),
+    ListMyFoodLibraryResponse.parse(await listMyFoodLibrary(parsed.data.query)),
   );
 });
 

@@ -5,8 +5,8 @@
 company:
   name: "CUT"
   legal_entity: "Zarif Ahmed (individual operator; Texas sole-proprietorship path under review)" # no separate entity; exact public operator spelling authorized 2026-08-04
-  domain: "" # no custom domain; the working Replit v1 host is owner-approved, while public legal publication and qualified review remain pending
-  one_liner: "CUT is an adults-only mobile app that gives lifters one practical daily cut check-in across weigh-ins and balanced meals."
+  domain: "https://getcutos.com" # canonical public domain; exact redesigned policy sources still require approved deployment and reconciliation
+  one_liner: "CUT is an adults-only food, training, and progress app for lifters who are cutting or recomping."
 
 owner:
   name: "Zarif Ahmed"
@@ -14,7 +14,7 @@ owner:
   is_technical: false # plain English, no jargon, real trade-offs, starred recommendations
 
 offer:
-  summary: "A paid App Store subscription for one daily next action, consistent weigh-ins, six curated balanced-meal choices, meal logging, and daily nutrition totals."
+  summary: "A useful free food, training, and progress tracker with an optional paid plan for adaptive meal fits and bounded on-demand meal creation."
   pricing_notes: "Owner-approved v1: free download; one US-only $4.99/month subscription; no trial; Family Sharing off; manual release. The exact App Store Connect app, subscription, price, and availability records are saved; Apple membership, Paid Apps Agreement, tax, and banking are active. RevenueCat production app, required valid Apple in-app purchase/subscription key, product-entitlement-offering mapping, public iOS SDK-key provisioning, Decision 3 owner authorization, masked Replit storage of the replacement server key, dashboard read/write permission evidence, and the passing read-only live preflight are complete. The optional RevenueCat App Store Connect API sync credential was intentionally not created or uploaded after Apple's live internal-use-only attestation; no automatic import, price-sync, or store-status capability is claimed. Exact-build purchase/delete/restore QA, submission, and release remain pending, and the old unconfigured server key has not been revoked."
   booking_link: ""
 

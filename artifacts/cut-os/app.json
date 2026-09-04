@@ -128,7 +128,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow CUT OS to scan food barcodes and photograph meals you choose to analyze."
+          "cameraPermission": "Allow CUT OS to scan food barcodes."
         }
       ],
       ["@clerk/expo", { "appleSignIn": false }],

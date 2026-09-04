@@ -1,9 +1,11 @@
 # CUT OS
 
-A focused daily cut check-in for adults age 18 and older who lift. The current
-paid iOS scope is one next action, a daily weigh-in, six curated balanced-meal
-choices, meal logging, and daily nutrition totals. Native mobile app (React
-Native + Expo) + Express API + PostgreSQL.
+An adults-only food, training, and progress app for people who lift while
+cutting or recomping. The free iOS core includes a database-backed 35-food
+library, 18 balanced meals including 11 Desi/Bengali options, food and barcode
+logging, daily nutrition totals, weigh-ins, training logs, and progress. CUT OS
+Pro adds adaptive meal fits and bounded on-demand meal creation. Native mobile
+app (React Native + Expo) + Express API + PostgreSQL.
 
 The owner-approved eligibility policy is `adult-18-v1`. A self-declared full
 DOB is evaluated transiently by the server against the UTC calendar; raw DOB is
@@ -179,6 +181,8 @@ migration timestamp and hash exactly match the server build.
 - `ADR_002_ACCOUNT_DELETION.md` — resumable local-data and Clerk deletion
 - `ADR_003_ADULT_ELIGIBILITY.md` — adults-only eligibility and data-minimization boundary
 - `ADR_004_SUBSCRIPTIONS.md` — RevenueCat identity, authorization, and purchase boundary
+- `ADR_005_FOOD_PERSONALIZATION.md` — free nutrition core and bounded personalization
+- `ADR_006_DATABASE_NUTRITION_CATALOG.md` — database catalog mirror and tier boundary
 - `PURCHASE_QA_REPORT.md` — Apple Sandbox and TestFlight purchase evidence log
 - `APP_STORE_METADATA.md` — working App Store answers, evidence, and approvals
 - `PRIVACY_DATA_MAP.md` — current data inventory and App Store privacy gates

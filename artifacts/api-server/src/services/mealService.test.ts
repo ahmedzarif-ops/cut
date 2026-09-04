@@ -53,8 +53,8 @@ async function user(clerkUserId: string) {
 }
 
 describe("Balanced meal service", () => {
-  it("lists the whole ranked catalog with transparent nutrition reasons", () => {
-    const options = listMyMealOptions();
+  it("lists the whole ranked catalog with transparent nutrition reasons", async () => {
+    const options = await listMyMealOptions();
 
     expect(options).toHaveLength(BALANCED_MEAL_CATALOG.length);
     expect(options[0]).toMatchObject({

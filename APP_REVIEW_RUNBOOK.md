@@ -2,7 +2,7 @@
 
 **Status:** Working review package; not approved or ready for submission
 
-**Updated:** August 10, 2026
+**Updated:** September 4, 2026
 
 Use this runbook to prepare the exact CUT OS 1.0 review path, capture truthful
 screenshots from the release build, and write the App Review notes. It does not
@@ -12,42 +12,42 @@ exists. Record those items only after direct verification.
 
 ## Launch truth in one paragraph
 
-CUT OS is an adults-only daily cut check-in for people who lift. The paid iOS
-v1 contains one deterministic next action, one daily weigh-in create/update,
-six curated balanced-meal choices, ingredient/common-allergen and estimated
-nutrition information, meal log/edit/delete, today's estimated nutrition
-totals, cloud persistence, subscription purchase/restore/manage controls,
-legal/support links, sign-out, and in-app account deletion. Do not describe or
-show adaptive coaching, personalized calorie or protein targets, trends,
-workouts, reminders, progress, closeout, weekly review, AI, photo recognition,
-restaurant guidance, chat, or social features.
+CUT OS is an adults-only food, training, and progress tracker for people who
+lift while cutting or recomping. The free iOS core includes Today, Food,
+Training, and Progress tabs; daily weigh-ins; a 35-food library; 18 balanced
+meal templates including 11 Desi and Bengali options; supported barcode,
+manual, and saved-food logging; estimated nutrition totals; training logs; and
+weight progress. CUT OS Pro is optional and adds meal fits shaped by remaining
+goals, explicit preferences, direct feedback, and confirmed logs. The app also
+contains purchase/restore/manage controls, legal/support links, sign-out, and
+in-app account deletion. Do not describe or show provider-backed AI or photo
+recognition unless each is enabled and verified in the exact submitted build.
 
 ## Current audit
 
-| Surface            | Repository evidence                                                                                                                                                                                            | Current release position                                                                                                                                                                                        |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Native identity    | App Store Connect app `6798020879` is CUT OS with bundle ID `com.zarifahmed.cut`; version 1.0.0 build 4 is processed, assigned to internal TestFlight, and selected as the signed QA candidate                 | Build 4 is not the final immutable submission build. Finish its physical QA, resolve any issue, then cut the final build from the stabilized head containing both pre-created evidence drafts.                  |
-| Seller             | Apple Developer membership is active as an Individual; `getcutos.com` is the canonical public domain; the owner explicitly deferred professional review until after launch                                     | Preserve the owner-deferred record without claiming counsel approval. Do not add a different legal operator or publish private address information.                                                             |
-| Routes             | Sign in, sign up, adult eligibility, subscription, onboarding, Today, balanced meals, and Settings exist under `artifacts/cut-os/app`                                                                          | The navigation scripts below use only these built routes.                                                                                                                                                       |
-| Paid scope         | `ADR_004_SUBSCRIPTIONS.md` and `APP_STORE_READINESS.md` define the narrow v1 scope                                                                                                                             | Keep listing copy, screenshots, and review notes inside that boundary.                                                                                                                                          |
-| Purchases          | Apple stores the exact one-month `com.zarifahmed.cut.pro.monthly` product at $4.99 in the U.S. only, with no trial, no introductory offer, and Family Sharing off; RevenueCat credentials and mapping validate | Exact TestFlight purchase, entitlement refresh, restore-after-deletion, and the subscription review screenshot remain required.                                                                                 |
-| Adults only        | The server-authoritative `adult-18-v1` gate ships in build 4; Apple's current questionnaire is saved with an effective 18+ higher-age override                                                                 | Physical-device Declared Age Range behavior and the exact-build adult/restricted flows remain pending.                                                                                                          |
-| Privacy            | The nine-type linked-to-user, no-tracking App Privacy disclosure is published; Privacy, Terms, and Support are live at the canonical domain                                                                    | Exact-build account deletion, native recovery, archive/privacy verification, and final owner review remain pending.                                                                                             |
-| Category           | Health & Fitness is saved as the primary category; Made for Kids is No; Content Rights is No; regulated medical device is No; DSA is active as non-trader/no EU distribution                                   | Final listing/owner approval remains pending; do not infer professional approval from these saved Apple fields.                                                                                                 |
-| Icon               | `artifacts/cut-os/assets/images/icon-v2.png` is a 1024×1024, 8-bit RGB PNG with no alpha; SHA-256 `58e807c4772180bb7a6b157d421ac77c8d4106c606c6fe3ad80b62569c22c07a`                                           | Technically suitable as a candidate and configured for icon/splash/favicon. Native appearance and owner approval remain open.                                                                                   |
-| Minimum iOS        | The exact build 4 archive passed strict signature, profile, entitlement, privacy-manifest, configuration, and secret-boundary checks with the iOS 17 minimum required by the configured native Clerk SDK       | Reconfirm the same behavior on a physical supported iPhone through TestFlight.                                                                                                                                  |
-| Screenshots        | The validated 6.9-inch capture plan selects the Today next-action screen and the real subscription offer; no release image is captured or uploaded                                                             | Capture only from the fresh final immutable build after build 4 device QA stabilizes the runtime, then bind PII review and upload evidence to the exact PNG hashes.                                             |
-| Review credentials | No credentials belong in this repository                                                                                                                                                                       | Put the primary account in App Store Connect's Sign-in Information. Apple provides only one username/password pair there, so put additional purpose-built review accounts in App Review Notes as Apple directs. |
-| TestFlight access  | Internal group `CUT OS Internal QA` shows one tester and builds 3 and 4; saving canonical What to Test advanced the tester to Invited, then one owner-approved Reinvite preserved both builds                  | Preserve the assignment and support-case evidence. Invitation acceptance, installation, and every exact-build device result remain pending.                                                                     |
+| Surface            | Repository evidence                                                                                                                                                                                                                               | Current release position                                                                                                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Native identity    | App Store Connect app `6798020879` is CUT OS with bundle ID `com.zarifahmed.cut`; build 5 is processed from commit `b4871b864c01f196b0cf8e4780b492c4b2b8e18b`, while the redesigned local candidate is `917237a1d7ad3bb3b58394cbbb29baa81b2d9cdb` | Build 5 predates the food, training, progress, and Pro-meal redesign. It must not become the submission candidate. Cut a fresh build only after the current head and metadata are approved and immutable.       |
+| Seller             | Apple Developer membership is active as an Individual; `getcutos.com` is the canonical public domain; the owner explicitly deferred professional review until after launch                                                                        | Preserve the owner-deferred record without claiming counsel approval. Do not add a different legal operator or publish private address information.                                                             |
+| Routes             | Sign in, sign up, adult eligibility, onboarding, Today, Food, Training, Progress, quick add, food entry, barcode, saved foods, meal library, meal creator, subscription, and Settings exist under `artifacts/cut-os/app`                          | The navigation scripts below use only these built routes. Photo estimate remains an explicit unavailable-state screen and is not a launch claim.                                                                |
+| Paid scope         | `artifacts/cut-os/PRODUCT.md` and `ADR_005_FOOD_PERSONALIZATION.md` define a valuable free core and optional Pro meal-personalization scope                                                                                                       | Keep listing copy, screenshots, and review notes inside that boundary. Provider AI stays off until separately approved, funded, enabled, and exact-build tested.                                                |
+| Purchases          | Apple stores the exact one-month `com.zarifahmed.cut.pro.monthly` product at $4.99 in the U.S. only, with no trial, no introductory offer, and Family Sharing off; RevenueCat credentials and mapping validate                                    | Exact TestFlight purchase, entitlement refresh, restore-after-deletion, and the subscription review screenshot remain required.                                                                                 |
+| Adults only        | The server-authoritative `adult-18-v1` gate ships in build 4; Apple's current questionnaire is saved with an effective 18+ higher-age override                                                                                                    | Physical-device Declared Age Range behavior and the exact-build adult/restricted flows remain pending.                                                                                                          |
+| Privacy            | The nine-type linked-to-user, no-tracking App Privacy disclosure is published; Privacy, Terms, and Support are live at the canonical domain                                                                                                       | Exact-build account deletion, native recovery, archive/privacy verification, and final owner review remain pending.                                                                                             |
+| Category           | Health & Fitness is saved as the primary category; Made for Kids is No; Content Rights is No; regulated medical device is No; DSA is active as non-trader/no EU distribution                                                                      | Final listing/owner approval remains pending; do not infer professional approval from these saved Apple fields.                                                                                                 |
+| Icon               | `artifacts/cut-os/assets/images/icon-v2.png` is a 1024×1024, 8-bit RGB PNG with no alpha; SHA-256 `58e807c4772180bb7a6b157d421ac77c8d4106c606c6fe3ad80b62569c22c07a`                                                                              | Technically suitable as a candidate and configured for icon/splash/favicon. Native appearance and owner approval remain open.                                                                                   |
+| Minimum iOS        | The exact build 4 archive passed strict signature, profile, entitlement, privacy-manifest, configuration, and secret-boundary checks with the iOS 17 minimum required by the configured native Clerk SDK                                          | Reconfirm the same behavior on a physical supported iPhone through TestFlight.                                                                                                                                  |
+| Screenshots        | The validated 6.9-inch capture plan selects the Today screen and real subscription offer; no release image is captured or uploaded                                                                                                                | Capture only from the fresh final immutable build after signed-in device QA, then bind PII review and upload evidence to the exact PNG hashes.                                                                  |
+| Review credentials | No credentials belong in this repository                                                                                                                                                                                                          | Put the primary account in App Store Connect's Sign-in Information. Apple provides only one username/password pair there, so put additional purpose-built review accounts in App Review Notes as Apple directs. |
+| TestFlight access  | The owner accepted an internal TestFlight invitation and tested the earlier paid-first build; the current source redesign has not been uploaded                                                                                                   | Do not reuse that result as current-candidate QA. A fresh build needs new internal assignment, installation, and exact-build device evidence.                                                                   |
 
-### Corrected copy requiring native verification
+### Current source requiring native verification
 
-The source audit found that onboarding previously promised daily calorie and
-training targets, which are outside the truthful v1 scope. The source now uses
-**Set up your profile**, says “Save the basics for your CUT OS profile,” and
-tells incomplete users to finish the profile and start the daily check-in.
-Verify those exact truthful strings in the release build before capturing
-screenshots or submitting.
+The current source makes the free app usable without purchasing Pro, adds the
+four-tab navigation and center Add action, and keeps the top-right scan control
+available across the core screens. Verify those behaviors, the 35-food and
+18-meal counts, all 11 Desi/Bengali templates, and the explicit unavailable
+photo state in the release build before capturing screenshots or submitting.
 
 ## Review-account matrix
 
@@ -61,13 +61,13 @@ review-account credentials in the final App Review Notes. Never put any review
 credential in this file, source control, screenshots, or support tickets, and
 never reuse a production, owner, employee, or customer credential.
 
-| Account            | Required state immediately before submission                                                                                                                                                                                                                                                                                  | Purpose                                                                                                                                                                      |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Full-access review | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; current `adult-18-v1` status `eligible`; `CUT_OS_PRO` active through the real server-authoritative RevenueCat path; onboarding complete; display name `Reviewer`; empty current-day weight and meals | Primary product tour and the exact daily flow. The entitlement must not be a client or API bypass. Record `[ENTITLEMENT_PROVISIONING_METHOD]` in the private release record. |
-| Purchase review    | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; current adult status `eligible`; no `CUT_OS_PRO`; onboarding incomplete; no stale Apple/RevenueCat entitlement                                                                                       | Apple purchase, secure server refresh, and first onboarding.                                                                                                                 |
-| Adult-gate review  | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; adult status `unverified`; no entitlement; onboarding incomplete                                                                                                                                     | Self-declared 18+ path. Recreate/reset only through an approved test process because the first decision is permanent for that identity under v1.                             |
-| Restricted review  | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; adult status `ineligible`; no entitlement; no private health/nutrition data                                                                                                                          | Adults-only stop screen, restricted Settings, legal/support, sign-out, and deletion availability.                                                                            |
-| Deletion review    | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; `eligible`; any entitlement state is documented; synthetic profile only                                                                                                                              | Destructive account-deletion review without destroying another review account.                                                                                               |
+| Account            | Required state immediately before submission                                                                                                                                                                                                                                                                                                 | Purpose                                                                                                                                                               |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full-access review | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; current `adult-18-v1` status `eligible`; `CUT_OS_PRO` active through the real server-authoritative RevenueCat path; onboarding complete; display name `Reviewer`; empty current-day weight, food, and training logs | Primary free-core and Pro product tour. The entitlement must not be a client or API bypass. Record `[ENTITLEMENT_PROVISIONING_METHOD]` in the private release record. |
+| Purchase review    | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; current adult status `eligible`; no `CUT_OS_PRO`; onboarding incomplete; no stale Apple/RevenueCat entitlement                                                                                                      | Apple purchase, secure server refresh, and first onboarding.                                                                                                          |
+| Adult-gate review  | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; adult status `unverified`; no entitlement; onboarding incomplete                                                                                                                                                    | Self-declared 18+ path. Recreate/reset only through an approved test process because the first decision is permanent for that identity under v1.                      |
+| Restricted review  | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; adult status `ineligible`; no entitlement; no private health/nutrition data                                                                                                                                         | Adults-only stop screen, restricted Settings, legal/support, sign-out, and deletion availability.                                                                     |
+| Deletion review    | Email verified; reserved `+clerk_test` address; no user MFA; fixed Client Trust code works without out-of-band delivery; `eligible`; any entitlement state is documented; synthetic profile only                                                                                                                                             | Destructive account-deletion review without destroying another review account.                                                                                        |
 
 ### Clerk review-access lifecycle
 
@@ -145,30 +145,37 @@ UTC-default, stale-principal/cache, or wrong-day result stops submission.
 ### 1. Primary full-access tour
 
 Precondition: the Full-access review account matches the matrix and has no
-weigh-in or meal for the current server-resolved day.
+weigh-in, food, or training log for the current server-resolved day.
 
 1. Launch CUT OS. On **Welcome back**, enter the credentials supplied in App
    Store Connect and tap **Sign in**.
-2. CUT OS opens **Today**. Under **NEXT**, verify **Log your morning weigh-in**
-   and the **Today's weight** field are visible.
-3. Enter the approved synthetic value `[REVIEW_WEIGHT_AND_UNIT]` and tap **Log
-   weigh-in**.
-4. Verify the next card changes to **Build your first balanced meal**. Tap
-   **Open balanced meals**.
-5. On **Build your first balanced meal**, review the six cards under **Balanced
-   options**. Each card shows a cuisine, description, estimated calories,
-   protein, carbohydrates, fat, fiber, ingredients, common-allergen wording,
-   and fit reason.
-6. Select **Lemon Herb Chicken Grain Bowl**. Under **YOUR MEAL**, adjust
-   **Servings** only if desired and tap **Log Lemon Herb Chicken Grain Bowl**.
-7. CUT OS returns to **Today**. Verify **NUTRITION LOGGED**, calorie/protein
-   totals, meal count, and fiber are visible.
-8. Tap **Review logged meals**. Verify the logged meal exposes **Adjust
-   serving** and **Delete**. Do not delete it during the primary tour.
-9. Tap the back control (VoiceOver label **Back to Today**), then **Settings**.
-   Verify the active subscription state, **Restore purchases**, **Manage App
-   Store subscription**, Privacy Policy, Terms of Use, Support, and **Delete
-   account** are reachable.
+2. CUT OS opens **Today**. Verify the bottom navigation shows **Today**,
+   **Food**, **Add**, **Training**, and **Progress**, and the top-right scan
+   control is present.
+3. Under **Quick log**, open **Weight**, enter the approved synthetic value
+   `[REVIEW_WEIGHT_AND_UNIT]`, and tap **Save weigh-in**.
+4. Open **Food**. Confirm **Barcode**, **Manual**, and **Saved** are free, the
+   screen can show all 35 built-in foods, and **Balanced meal ideas** can show
+   all 18 templates. Confirm 11 options carry Desi or Bengali content.
+5. Search for a known catalog food and open it. Verify the portion and estimated
+   calories, protein, carbohydrates, fat, and fiber are editable before tapping
+   **Add to today**.
+6. Return to **Food**, open **Balanced meal ideas**, select **Lemon Herb Chicken
+   Grain Bowl**, review its ingredients/common-allergen wording and estimated
+   nutrition, then log one serving.
+7. Verify Food and Today show the updated calorie, protein, carbohydrate, fat,
+   fiber, and entry totals. Open the logged entry and verify **Adjust serving**
+   and **Delete** are available without deleting it.
+8. Still on **Food**, verify the entitled account sees up to three Pro meal fits
+   with transparent reasons and serving suggestions. Confirm feedback controls
+   do not auto-log a meal.
+9. Open **Training**, create one synthetic strength, cardio, or recovery log,
+   then verify it appears under **Recent**. Open **Progress** and verify the
+   weigh-in appears in the selected range.
+10. Tap **Add** and confirm each quick-add route has a working Close or Back
+    path. Open **Settings** and verify the active subscription state,
+    **Restore purchases**, **Manage App Store subscription**, Privacy Policy,
+    Terms of Use, Support, and **Delete account** are reachable.
 
 ### 2. New purchase and onboarding
 
@@ -177,22 +184,27 @@ Apple product is cleared for review with the build.
 
 1. Sign out, then sign in with the Purchase review credentials supplied in App
    Store Connect.
-2. CUT OS opens **CUT OS PRO** with the heading **Make the next choice
-   simple.**
-3. Wait until the real StoreKit plan card appears. Confirm its title,
+2. CUT OS opens onboarding, not a purchase screen. Complete **Set up your
+   profile** with synthetic values: display name **Reviewer**, goal **Cut**,
+   start weight **85 kg**, and goal weight **78 kg**. Tap **Save profile** and
+   verify **Today** opens with the free core available.
+3. Open **Food** and confirm search, barcode, manual food, saved foods, all 35
+   built-in foods, all 18 meal templates, Today totals, Training, and Progress
+   remain usable without Pro.
+4. Tap **Meals that adapt to your logs**. CUT OS opens **CUT OS PRO** with the
+   heading **Make meal choices faster.**
+5. Wait until the real StoreKit plan card appears. Confirm its title,
    localized price, period, and any introductory text exactly match App Store
    Connect. If no card appears, stop; do not submit.
-4. Select the intended plan and tap the button beginning **Continue —**. Confirm
+6. Select the intended plan and tap the button beginning **Continue —**. Confirm
    the purchase in Apple's system sheet.
-5. After Apple's confirmation, wait for CUT OS's secure server verification.
+7. After Apple's confirmation, wait for CUT OS's secure server verification.
    A temporary “waiting for secure access verification” message is not proof
    of access; the app must proceed only after the server recognizes
    `CUT_OS_PRO`.
-6. The onboarding screen must open with **Set up your profile**. Use only
-   synthetic values: display name **Reviewer**, goal **Cut**, start weight **85
-   kg**, and goal weight **78 kg**. Confirm that v1 does not ask for sex, height,
-   activity level, training experience, or a target date. Tap **Save profile**.
-7. Verify **Today** opens. Repeat the primary tour from step 2 as needed.
+8. Verify **Today** opens, return to **Food**, and confirm Pro meal fits now load
+   while the same free tools remain available. Repeat the primary tour as
+   needed.
 
 If the purchase is cancelled in Apple's sheet, CUT OS should remain on the
 subscription screen without presenting cancellation as an error. Record a
@@ -313,18 +325,18 @@ file's pixel dimensions before upload.
 
 ### Shot list
 
-| Order/slug                   | Built route and prepared state                                        | Required visible evidence                                                                                                                                                                                        | Intended use                                            |
-| ---------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `01-today-next-action`       | `/today`; full-access account, onboarding complete, empty current day | Greeting with display name `Reviewer`, **NEXT**, **Log your morning weigh-in**, weight field, **Settings**                                                                                                       | Listing candidate and review evidence                   |
-| `02-today-weigh-in-complete` | `/today`; current-day synthetic weigh-in saved, no meals              | **Build your first balanced meal**, **Open balanced meals**, and **WEIGH-IN COMPLETE**                                                                                                                           | Optional listing candidate                              |
-| `03-balanced-options`        | `/meal-one`; no pending recovery marker                               | **Build your first balanced meal**, **Balanced options**, and only the actual curated meal cards                                                                                                                 | Optional listing candidate                              |
-| `04-meal-preview`            | `/meal-one`; **Lemon Herb Chicken Grain Bowl** selected               | **YOUR MEAL**, serving control, estimated calories/protein/carbs/fat/fiber, estimate warning, and log button                                                                                                     | Optional listing candidate                              |
-| `05-today-nutrition-logged`  | `/today`; one synthetic meal logged                                   | **NUTRITION LOGGED**, actual estimated totals, meal count/fiber, and **Review logged meals**                                                                                                                     | Optional listing candidate                              |
-| `06-logged-meal-controls`    | `/meal-one`; one meal logged                                          | **Logged today**, actual totals, meal name, serving, **Adjust serving**, and **Delete**                                                                                                                          | Optional listing candidate                              |
-| `07-subscription-offer`      | `/subscription`; eligible unpaid account and StoreKit catalog loaded  | **Make the next choice simple.**, real plan title/localized price/period, introductory text when applicable (none for approved v1), **Continue —**, Restore, Manage, renewal disclosure, and legal/support links | Selected listing and IAP review screenshot              |
-| `08-adult-eligibility`       | `/adult-eligibility`; unverified account, empty fields                | **Confirm you're 18 or older**, transient-date disclosure, date fields, Privacy Policy, **Confirm age**, account/sign-out controls                                                                               | Review evidence; listing only after owner approval      |
-| `09-settings-controls`       | `/settings`; active full-access account                               | Active Pro state, Restore, Manage, legal/support links, separate-billing deletion warning, **Delete account**                                                                                                    | Review evidence                                         |
-| `10-sign-up-18plus`          | `/sign-up`; no text entered                                           | **Create your account**, 18+ notice/checkbox, Terms, Privacy, and disabled create action                                                                                                                         | Optional review evidence; never expose an email or code |
+| Order/slug                   | Built route and prepared state                                        | Required visible evidence                                                                                                                                                                                     | Intended use                                            |
+| ---------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `01-today-next-action`       | `/today`; full-access account, onboarding complete, empty current day | **Today**, current calorie/macro totals, **NEXT ACTION**, quick-log controls, top-right scan control, and the five-item bottom navigation                                                                     | Listing candidate and review evidence                   |
+| `02-today-weigh-in-complete` | `/today`; current-day synthetic weigh-in saved, no food logs          | Current weigh-in, calorie/macro totals, next action, quick-log controls, and the five-item bottom navigation                                                                                                  | Optional listing candidate                              |
+| `03-balanced-options`        | `/food`; all library queries loaded                                   | **Everyday foods**, **View all 35**, **Balanced meal ideas**, **View all 18**, free capture/manual/saved controls, and optional Pro section                                                                   | Optional listing candidate                              |
+| `04-meal-preview`            | `/meal-one`; **Lemon Herb Chicken Grain Bowl** selected               | **YOUR MEAL**, serving control, estimated calories/protein/carbs/fat/fiber, estimate warning, and log button                                                                                                  | Optional listing candidate                              |
+| `05-today-nutrition-logged`  | `/food`; one synthetic food and meal logged                           | **Today**, actual calorie/protein totals, logged entries, food search, and the free food library                                                                                                              | Optional listing candidate                              |
+| `06-logged-meal-controls`    | `/meal-one`; one meal logged                                          | **Logged today**, actual totals, meal name, serving, **Adjust serving**, and **Delete**                                                                                                                       | Optional listing candidate                              |
+| `07-subscription-offer`      | `/subscription`; eligible unpaid account and StoreKit catalog loaded  | **Make meal choices faster.**, real plan title/localized price/period, introductory text when applicable (none for approved v1), **Continue —**, Restore, Manage, renewal disclosure, and legal/support links | Selected listing and IAP review screenshot              |
+| `08-adult-eligibility`       | `/adult-eligibility`; unverified account, empty fields                | **Confirm you're 18 or older**, transient-date disclosure, date fields, Privacy Policy, **Confirm age**, account/sign-out controls                                                                            | Review evidence; listing only after owner approval      |
+| `09-settings-controls`       | `/settings`; active full-access account                               | Active Pro state, Restore, Manage, legal/support links, separate-billing deletion warning, **Delete account**                                                                                                 | Review evidence                                         |
+| `10-sign-up-18plus`          | `/sign-up`; no text entered                                           | **Create your account**, 18+ notice/checkbox, Terms, Privacy, and disabled create action                                                                                                                      | Optional review evidence; never expose an email or code |
 
 Select the final public screenshot subset only after checking the current App
 Store Connect slot count and owner-approved ordering. The v1 workflow does not
@@ -341,10 +353,10 @@ must all fit in one truthful raw screenshot. If they do not, adjust and rebuild
 the screen before capture; never composite, stitch, or mock the evidence.
 
 For the fastest truthful v1 submission, the manifest selects two public
-screenshots—01 for core use and 07 for the paid offer—and reuses shot 07 as the
-required in-app-purchase review screenshot. Shots 02 through 06 are optional
-marketing candidates; 08 through 10 are optional internal review aids. Their
-absence cannot block submission.
+screenshots—01 for the free core and 07 for the optional paid offer—and reuses
+shot 07 as the required in-app-purchase review screenshot. Shots 02 through 06
+are optional marketing candidates; 08 through 10 are optional internal review
+aids. Their absence cannot block submission.
 
 ## App Review notes draft
 
@@ -357,11 +369,14 @@ screenshots or release artifacts. If any placeholder remains, stop the
 submission.
 
 ```text
-CUT OS is an adults-only daily cut check-in for people who lift. It provides
-general fitness and nutrition information, not medical advice. Nutrition and
-allergen information is estimated, not an allergen-safety guarantee.
+CUT OS is an adults-only food, training, and progress tracker for people who
+lift while cutting or recomping. Food, meal, weight, and training logging are
+free. CUT OS Pro is optional and adds meal fits based on goals, explicit
+preferences, feedback, and confirmed logs. CUT OS provides general fitness and
+nutrition information, not medical advice. Nutrition and allergen information
+is estimated, not an allergen-safety guarantee.
 
-Build under review: version 1.0.0, build 5
+Build under review: version 1.0.0, build [BUILD_NUMBER]
 Bundle ID: com.zarifahmed.cut
 Primary category: Health & Fitness
 Review contact: [REVIEW_CONTACT_NAME], [REVIEW_CONTACT_PHONE],
@@ -371,7 +386,7 @@ ACCESS
 Primary credentials are in App Store Connect's Sign-in Information. That
 account is email verified, has no user MFA, is adult eligible and onboarded,
 has CUT_OS_PRO through [VERIFIED_ENTITLEMENT_PROVISIONING_METHOD], and starts
-with no current-day weigh-in or meal. If Client Trust asks for an email code
+with no current-day weigh-in, food, or training log. If Client Trust asks for an email code
 after the password, enter 424242. This is the fixed code for the reserved
 synthetic review accounts; no email is delivered.
 
@@ -382,19 +397,24 @@ Restricted: username [RESTRICTED_REVIEW_USERNAME], password [RESTRICTED_REVIEW_P
 Deletion: username [DELETION_REVIEW_USERNAME], password [DELETION_REVIEW_PASSWORD]
 
 PRIMARY PATH
-1. Sign in; Today opens at Log your morning weigh-in.
-2. Enter 180 lb and tap Log weigh-in.
-3. Open balanced meals, select Lemon Herb Chicken Grain Bowl, and log it.
-4. Today shows estimated nutrition totals. Review logged meals allows serving
-   adjustment and deletion. Settings provides Restore purchases, Manage App
-   Store subscription, legal/support links, and Delete account.
+1. Sign in; Today opens with Today, Food, Add, Training, and Progress navigation.
+2. Log 180 lb from Quick log > Weight.
+3. Open Food. Search the 35-food free library, review all 18 meal templates,
+   select Lemon Herb Chicken Grain Bowl, and log one serving.
+4. Food and Today show estimated nutrition totals. Logged entries allow serving
+   adjustment and deletion. Training accepts a synthetic session, and Progress
+   shows the recorded weigh-in.
+5. The entitled account sees Pro meal fits with transparent reasons. Settings
+   provides Restore purchases, Manage App Store subscription, legal/support
+   links, and Delete account.
 
 SUBSCRIPTION
 Product ID: com.zarifahmed.cut.pro.monthly; duration: one month; introductory
 offer: none. StoreKit supplies the localized price, period,
 and eligible offer through RevenueCat; none is hardcoded. Use the Purchase
-account, select the plan on CUT OS PRO, and tap Continue —
-$4.99 per month. Paid screens open only after server
+account, finish the free onboarding, confirm the free core remains usable, then
+open Food > Meals that adapt to your logs. Select the plan on CUT OS PRO and tap
+the StoreKit-labeled Continue action. Pro results open only after server
 verification of CUT_OS_PRO. Restore is on the offer and Settings; Manage App
 Store subscription opens Apple's management page.
 
@@ -408,10 +428,11 @@ private guidance or purchase option.
 
 ACCOUNT DELETION
 Use only the Deletion account. Settings > Delete account deletes the Clerk
-login, CUT OS profile/weight/meal rows, and linked RevenueCat customer after
-terminal completion. A minimal coordination record may remain for the approved
-retention period. Account deletion does not cancel Apple billing; Manage App
-Store subscription is provided separately.
+login; CUT OS profile, weight, food, nutrition-preference, saved-food,
+meal-feedback, training, and AI-usage rows; and the linked RevenueCat customer
+after terminal completion. A minimal coordination record may remain for the
+approved retention period. Account deletion does not cancel Apple billing;
+Manage App Store subscription is provided separately.
 
 Production API: https://getcutos.com
 Privacy: https://getcutos.com/privacy
@@ -490,17 +511,18 @@ during review. Network/VPN setup: none.
       target-date collection from the paid-v1 form/API; add a prelaunch
       migration that clears legacy values while preserving the start/goal
       weights the app displays.
-- [ ] Re-verify the corrected onboarding and Today copy in the final immutable
-      build before capture. The signed build 4 archive contains the required
-      copy and no forbidden target claim.
+- [ ] Re-verify onboarding, free-core access, four tabs, center Add, top-right
+      scan, all catalog counts, Pro meal fits, and truthful unavailable photo
+      state in the final immutable build before capture. Previous signed builds
+      do not cover this redesign.
 - [ ] Initiate the owner-deferred qualified nutrition/health and legal review of
-      the six recipes, ingredient quantities/yields, nutrition
+      all 18 meal templates, ingredient quantities/yields, nutrition
       source/calculation, common-allergen/dietary substantiation, estimate
       warning, and non-medical claims within three calendar days after public
       release. Do not claim approval before it occurs.
 - [ ] Do not claim diagnosis, treatment, clinical outcomes, guaranteed weight
-      loss, adaptive coaching, personalization that is not built, or allergen
-      safety.
+      loss, provider AI or photo recognition that is not enabled and tested, or
+      allergen safety.
 - [ ] Owner confirms the product name, subtitle, description, keywords, icon,
       and any screenshot captions against the final binary.
 

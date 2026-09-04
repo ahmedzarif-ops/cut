@@ -243,8 +243,11 @@ The free searchable food catalog also exposes 35 source-linked single foods
 from this same FDC registry using fixed gram servings, multilingual search
 aliases, and explicit common-allergen arrays. Its canonical implementation and
 calculation test are `lib/domain/src/foodCatalog.ts` and
-`lib/domain/src/foodCatalog.test.ts`. It is a versioned built-in catalog, not a
-claim that the generic source matches a person's exact brand or preparation.
+`lib/domain/src/foodCatalog.test.ts`. Migration 0014 creates the
+`catalog_foods` and `catalog_meals` runtime tables, and the API idempotently
+mirrors these reviewed source values before accepting traffic. It is a
+versioned database-backed catalog, not a claim that the generic source matches
+a person's exact brand or preparation.
 
 ## What this engineering pass closed
 

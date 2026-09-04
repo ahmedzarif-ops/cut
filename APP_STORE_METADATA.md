@@ -2,7 +2,7 @@
 
 **Status:** Working submission record; not approved for submission
 
-**Updated:** August 10, 2026
+**Updated:** September 4, 2026
 
 This file records the intended App Store answers and the evidence still needed.
 `app-store/app-store-submission.json` is its machine-checkable companion; the
@@ -33,43 +33,49 @@ marks and multiple body-recomposition/nutrition apps. This does not clear the
 name. Qualified U.S. trademark review remains required before the App Store
 record, domain, or paid campaign is locked.
 
-## Focused v1 listing copy
+## Launch listing copy
 
-This is the only launch positioning supported by the current repository scope;
-it remains pending verification in the submitted binary. Do not add adaptive
-coaching, personalized targets, trends, workouts, reminders, progress,
-closeout, or weekly review to the listing or screenshots until those features
-ship and are verified.
+This draft reflects the free core and optional Pro scope implemented at commit
+`917237a1d7ad3bb3b58394cbbb29baa81b2d9cdb`. It remains pending verification in
+the exact submitted binary. Do not advertise photo recognition or provider-backed
+AI meal creation unless those features are enabled, reviewed, and verified in
+that exact build.
 
-**Subtitle draft:** Daily weigh-ins & meal logging
+**Subtitle draft:** Food, training & progress
 
 **Description draft:**
 
-CUT OS brings daily weigh-ins, balanced meals, and estimated nutrition totals
-into one focused check-in for adults who lift.
+CUT OS helps adults who lift run a focused cut or body recomposition. See what
+remains today, log what happened, and understand how food, body weight, and
+training move together.
 
-- See one clear next action for today.
-- Log or update one daily weigh-in.
-- Choose from six curated balanced-meal options.
-- Review ingredients, common allergens, portions, and estimated nutrition.
-- Log, edit, or delete meals and see today's estimated nutrition totals.
-- Keep account data synced and delete the account in-app.
+Free features:
+
+- Search a 35-food nutrition library.
+- Explore 18 balanced meals, including 11 Desi and Bengali options.
+- Scan supported food barcodes or add and save custom foods.
+- Log meals, daily nutrition totals, weigh-ins, and training sessions.
+- Review weight and training progress in clear charts.
+
+CUT OS Pro is optional. Pro adds meal fits based on remaining calorie and
+protein goals, food preferences, and confirmed logs. The free tracking loop
+stays available without Pro.
 
 CUT OS provides general fitness and nutrition information, not medical advice.
-Meal nutrition is estimated. Ingredient and common-allergen lists must be
+Food and meal nutrition is estimated. Ingredient and common-allergen lists must be
 reviewed against the exact products you use and are not an allergen-safety
 guarantee.
 
-CUT OS is for adults age 18 and older. Paid access uses an auto-renewable Apple
+CUT OS is for adults age 18 and older. CUT OS Pro uses an auto-renewable Apple
 subscription. The exact localized price and billing period appear before you
-confirm purchase. You can restore purchases in the app and manage or cancel the
-subscription through Apple.
+confirm purchase. You can restore purchases in the app and manage or cancel
+the subscription through Apple.
 
 Terms: https://getcutos.com/terms
 
-**Keywords draft:** weight,meal,protein,macros,lifting,nutrition,weigh-in,tracker,calorie,food,diet,bodybuilding,fiber
+**Keywords draft:** calorie,protein,macros,food,meal,Desi,Bengali,lifting,weight,workout,cut,recomp,tracker,nutrition
 
-**Promotional text draft:** One focused daily check-in for lifters: log a weigh-in, choose a balanced meal, and review today's estimated nutrition totals.
+**Promotional text draft:** Track food, training, and progress in one focused app. Search 35 foods and explore 18 balanced meals, including Desi and Bengali options.
 
 The owner must approve this copy after exact-build review. Professional legal
 and nutrition review is explicitly deferred under the August 10 owner-risk
@@ -90,8 +96,8 @@ invent a value.
 | Bundle ID                  | `com.zarifahmed.cut`                                       | Must match the signed archive and existing App Store Connect record.                                                            |
 | App version                | `1.0.0`                                                    | Must match the submitted build.                                                                                                 |
 | Primary language           | English (U.S.) / `en-US`; saved                            | Reconfirm against the exact submitted version.                                                                                  |
-| Subtitle                   | Daily weigh-ins & meal logging; saved                      | Owner/reviewer and exact-build claims approval remain open.                                                                     |
-| Description                | Focused v1 listing copy above                              | Owner, legal, nutrition, and final-binary review remain open.                                                                   |
+| Subtitle                   | Food, training & progress; draft                           | Save only after owner and exact-build claims approval.                                                                          |
+| Description                | Launch listing copy above                                  | Owner, legal, nutrition, and final-binary review remain open.                                                                   |
 | Keywords                   | Draft above                                                | Recheck byte limit and owner approval before submission.                                                                        |
 | Primary category           | Health & Fitness; saved                                    | Owner/reviewers must confirm against the final feature set.                                                                     |
 | Secondary category         | None                                                       | Safe v1 omission unless the owner selects a supported second category.                                                          |
@@ -302,24 +308,25 @@ first-party data types in the current app privacy manifest. `Collected` means
 the manifest declares the type. It is not final App Store Connect evidence
 until the production archive and every vendor are reconciled.
 
-| App Store data type          | Collected | Linked to user | Tracking | Purposes                                   | Current v1 examples/evidence                                                                                                    |
-| ---------------------------- | --------- | -------------- | -------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| Contact Info — Name          | Yes       | Yes            | No       | App Functionality; Product Personalization | Display name for account setup and the user-directed greeting.                                                                  |
-| Contact Info — Email         | Yes       | Yes            | No       | App Functionality                          | Clerk sign-in and account support.                                                                                              |
-| Health & Fitness — Health    | Yes       | Yes            | No       | App Functionality; Product Personalization | Start/goal weight, daily weigh-ins, and nutrition records that ship in v1.                                                      |
-| Health & Fitness — Fitness   | Yes       | Yes            | No       | App Functionality; Product Personalization | Adults-who-lift goal context and current fitness-related check-in data; no workout logging ships in v1.                         |
-| Identifiers — User ID        | Yes       | Yes            | No       | App Functionality                          | Internal user UUID and authentication/account linkage.                                                                          |
-| Other Data Types             | Yes       | Yes            | No       | App Functionality; Product Personalization | Eligibility result/version/time, timezone, unit preference, goal, and meal records where the live questionnaire maps them here. |
-| Purchases — Purchase History | Yes       | Yes            | No       | App Functionality; Analytics               | Apple/RevenueCat subscription, renewal, expiry, refund, and entitlement state.                                                  |
+| App Store data type          | Collected | Linked to user | Tracking | Purposes                                   | Current v1 examples/evidence                                                                                          |
+| ---------------------------- | --------- | -------------- | -------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Contact Info — Name          | Yes       | Yes            | No       | App Functionality; Product Personalization | Display name for account setup and the user-directed greeting.                                                        |
+| Contact Info — Email         | Yes       | Yes            | No       | App Functionality                          | Clerk sign-in and account support.                                                                                    |
+| Health & Fitness — Health    | Yes       | Yes            | No       | App Functionality; Product Personalization | Start/goal weight, daily weigh-ins, food/meal logs, nutrition preferences, and saved-food snapshots.                  |
+| Health & Fitness — Fitness   | Yes       | Yes            | No       | App Functionality; Product Personalization | Goal context, daily weigh-ins, and user-entered strength, cardio, and recovery training logs.                         |
+| Identifiers — User ID        | Yes       | Yes            | No       | App Functionality                          | Internal user UUID and authentication/account linkage.                                                                |
+| Other Data Types             | Yes       | Yes            | No       | App Functionality; Product Personalization | Eligibility result/version/time, timezone, units, direct meal feedback, learning choice, and per-day AI usage counts. |
+| Purchases — Purchase History | Yes       | Yes            | No       | App Functionality; Analytics               | Apple/RevenueCat subscription, renewal, expiry, refund, and entitlement state.                                        |
 
-Do not add workout collection to the v1 answers: the current paid-v1 scope has
-no workout logger. Client IP/network metadata is processed for abuse
+Workout collection now ships in source and must remain in the Fitness answer.
+The shared `catalog_foods` and `catalog_meals` tables contain product content,
+not linked user data. Client IP/network metadata is processed for abuse
 prevention, request delivery, and Clerk authentication; the final hosting and
 Clerk retention/linkage determine whether the live questionnaire maps it to
 Identifiers, Diagnostics, or Other Data Types. Diagnostics or Usage Data must
 be added only if the final SDK/archive and production configuration collect
-them, with their actual purpose and linkage documented. Neither of these
-external-service questions is resolved by the app-level manifest alone.
+them, with their actual purpose and linkage documented. Neither external-service
+question is resolved by the app-level manifest alone.
 
 Raw DOB is transmitted only to make the real-time decision and is discarded
 immediately. Apple's current App Privacy definition of “collect” focuses on data
@@ -441,8 +448,12 @@ no-media state, and retain attributable saved evidence.
 - State the exact subscription group/product submitted with the build, where
   the subscription screen appears, how to purchase/restore/manage it, and that
   the app reads localized price and duration from StoreKit.
-- Describe paid scope narrowly: one daily next action, daily weigh-in, six
-  curated meal choices, meal logging, and daily nutrition totals.
+- Describe the free scope accurately: food search, barcode/manual/saved-food
+  logging, 18 meal templates, nutrition totals, weigh-ins, training, and
+  progress.
+- Describe the current paid scope narrowly: meal fits based on remaining
+  targets, explicit food preferences, and confirmed logs. Mention
+  provider-backed meal creation only if it is enabled and exact-build tested.
 - Keep the production backend and required authentication services live.
 - Describe wellness/nutrition limitations accurately; do not imply medical or
   allergen-safety guarantees.

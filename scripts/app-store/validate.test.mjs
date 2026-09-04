@@ -672,19 +672,17 @@ test("release mode stays fail closed while screenshot and downstream launch gate
       "release mode requires image file for 01-today-next-action",
     ),
   );
-  assert.equal(
+  assert.ok(
     errors.includes(
       "release mode requires privacy gate production_archive_and_embedded_sdks",
     ),
-    false,
-    "the exact build 3 privacy archive gate must remain verified",
+    "the redesigned candidate must require a fresh privacy archive audit",
   );
-  assert.equal(
+  assert.ok(
     errors.includes(
       "release mode requires privacy gate public_policy_reconciliation",
     ),
-    false,
-    "the published privacy-policy reconciliation gate must remain verified",
+    "the redesigned data paths must require fresh public-policy reconciliation",
   );
   assert.equal(
     errors.includes(
@@ -3580,10 +3578,9 @@ test("TestFlight record distinguishes internal testing from external review", ()
     automaticDistribution: false,
     testerCount: 1,
     buildCount: 2,
-    assignedAppStoreConnectBuildId: "0b6ff58a-d236-4469-b471-8216cf5a91ee",
-    assignmentVerifiedAtUtc: "2026-08-10T23:36:12Z",
-    assignmentEvidenceReference:
-      "app-store/evidence/apple-build-4-processing-and-assignment-2026-08-10.md#apple-processing-and-draft-selection",
+    assignedAppStoreConnectBuildId: null,
+    assignmentVerifiedAtUtc: null,
+    assignmentEvidenceReference: null,
     verifiedAtUtc: "2026-08-08T18:43:18Z",
     evidenceReference:
       "app-store/evidence/apple-live-configuration-2026-08-04.md#testflight-internal-configuration",

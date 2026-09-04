@@ -7,16 +7,14 @@ import {
   type User,
 } from "@workspace/db";
 import {
-  BALANCED_MEAL_CATALOG,
   BALANCED_MEAL_CATALOG_VERSION,
   CURATED_FOOD_CATALOG_VERSION,
   MAX_MEAL_SERVINGS,
   MIN_MEAL_SERVINGS,
-  getBalancedMealTemplate,
+  filterCuratedFoods,
   isCurrentBalancedMealCatalogVersion,
   rankBalancedMeals,
   rankAdaptiveMealFits,
-  searchCuratedFoods,
   scaleNutrition,
   sumNutrition,
   systemClock,
@@ -31,6 +29,11 @@ import {
   getMyNutritionPreferences,
   listMyMealFeedback,
 } from "./nutritionService";
+import {
+  getCatalogMeal,
+  listCatalogFoods,
+  listCatalogMeals,
+} from "./nutritionCatalogService";
 
 export interface MealOptionResponse extends NutritionFacts {
   id: string;
@@ -153,8 +156,9 @@ export function toMealEntryResponse(entry: MealEntry): MealEntryResponse {
   };
 }
 
-export function listMyMealOptions(): MealOptionResponse[] {
-  return rankBalancedMeals(BALANCED_MEAL_CATALOG).map(({ template }) =>
+export async function listMyMealOptions(): Promise<MealOptionResponse[]> {
+  const catalog = await listCatalogMeals("free");
+  return rankBalancedMeals(catalog).map(({ template }) =>
     toMealOption(template),
   );
 }
@@ -165,8 +169,9 @@ export async function listMyProMealFits(
   clock: Clock = systemClock,
 ): Promise<MealOptionResponse[]> {
   const localDay = todayKey(clock, deviceTimeZone);
-  const [recentEntries, preferences, feedback, todayEntries] =
+  const [catalog, recentEntries, preferences, feedback, todayEntries] =
     await Promise.all([
+      listCatalogMeals("all"),
       db
         .select({ templateId: mealEntriesTable.templateId })
         .from(mealEntriesTable)
@@ -199,6 +204,7 @@ export async function listMyProMealFits(
           : Math.max(0, preferences.dailyProteinTargetG - totals.proteinG),
     },
     3,
+    catalog,
   ).map(({ template, reason, recommendedServings }) => ({
     ...toMealOption(template),
     fitReason: reason,
@@ -206,8 +212,11 @@ export async function listMyProMealFits(
   }));
 }
 
-export function listMyFoodLibrary(query = ""): FoodLibraryItemResponse[] {
-  return searchCuratedFoods(query).map((item) => ({
+export async function listMyFoodLibrary(
+  query = "",
+): Promise<FoodLibraryItemResponse[]> {
+  const catalog = await listCatalogFoods("free");
+  return filterCuratedFoods(catalog, query).map((item) => ({
     id: item.id,
     catalogVersion: CURATED_FOOD_CATALOG_VERSION,
     name: item.name,
@@ -463,7 +472,7 @@ export async function createMyMealEntry(
     );
   }
 
-  const template = getBalancedMealTemplate(input.mealTemplateId);
+  const template = await getCatalogMeal(input.mealTemplateId);
   if (!template) throw new HttpError(404, "Meal template not found");
 
   const nutrition = templateNutrition(template);

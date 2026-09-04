@@ -5207,8 +5207,9 @@ export function validateMetadata({
       (entry) => entry?.manifestType === "NSPrivacyCollectedDataTypeFitness",
     );
     check(
-      /no workout logger ships in v1/i.test(fitnessEntry?.v1Data ?? ""),
-      "Fitness disclosure must explicitly state that no workout logger ships in v1",
+      /(?:workout|training) logs?/i.test(fitnessEntry?.v1Data ?? "") &&
+        !/no workout logger ships/i.test(fitnessEntry?.v1Data ?? ""),
+      "Fitness disclosure must explicitly include the shipped workout or training logs",
     );
     check(
       workingDataTypes.every((entry) => entry?.tracking === false),

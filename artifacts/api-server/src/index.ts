@@ -19,6 +19,7 @@ import {
   assertRevenueCatProductionConfiguration,
   RevenueCatConfigurationPreflightError,
 } from "./lib/revenueCatConfigurationPreflight";
+import { syncNutritionCatalog } from "./services/nutritionCatalogService";
 
 // Development and test remain easy to run, but a production process must not
 // bind a port with placeholder credentials, an insecure database transport,
@@ -60,6 +61,7 @@ async function start(): Promise<void> {
   // Autoscaled replicas coordinate through a bounded PostgreSQL advisory lock;
   // no HTTP traffic is accepted until committed migrations have completed.
   await prepareProductionDatabase();
+  await syncNutritionCatalog();
 
   const server = app.listen(port, () => {
     logger.info({ port }, "Server listening");

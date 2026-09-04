@@ -194,8 +194,10 @@ Deterministic product rules live in `lib/domain`. The active Next Action rule is
 available only after current adult eligibility, then onboarding → daily
 weigh-in → first balanced meal → neutral review of today’s logged meals. The
 same package owns the UTC `adult-18-v1` date rule (including March 1 for a
-February 29 birth in a non-leap 18th year), versioned six-meal launch catalog, nutrition
-scaling/summing, and transparent general ranking. Future daily status, streak,
+February 29 birth in a non-leap 18th year), versioned 35-food and 18-meal
+launch catalogs, nutrition scaling/summing, and transparent general ranking.
+PostgreSQL mirrors the reviewed catalog for runtime queries under ADR 006 while
+the domain source remains its audited input. Future daily status, streak,
 adaptive-review, and personalized fits-today rules follow the same boundary:
 
 - Pure rule logic belongs in a dedicated workspace package (e.g.

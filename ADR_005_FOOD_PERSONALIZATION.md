@@ -1,6 +1,6 @@
 # ADR 005 — Free food library and privacy-bounded meal personalization
 
-**Status:** Accepted
+**Status:** Accepted; catalog placement amended by ADR 006
 
 **Date:** September 4, 2026
 
@@ -14,10 +14,11 @@ preferences. CUT OS Pro uses those same reviewed inputs to rank meals, suggest
 bounded serving amounts, and explain why each result fits the person's stated
 targets and confirmed choices.
 
-The global catalog remains in version-controlled source for the launch. It is
-not copied into the production database. Historical meal logs continue to
-snapshot the exact catalog version and nutrition used at entry time. The
-database stores only user-owned data:
+The global catalog remains in version-controlled source as the reviewed audit
+record. ADR 006 now mirrors it into global production database tables for
+runtime search and future expansion. Historical meal logs continue to snapshot
+the exact catalog version and nutrition used at entry time. Private database
+tables store user-owned data:
 
 - nutrition targets and explicit food preferences;
 - foods the user deliberately saves;
@@ -50,9 +51,9 @@ surface before launch. It is deferred until catalog operations justify it.
 
 ### B. Versioned code catalog plus private user data in the database
 
-Chosen. It gives the free product a reliable offline-auditable foundation,
-preserves exact source evidence, and adds durable personalization without
-blocking launch on a content-management system.
+Originally chosen. ADR 006 preserves the source evidence but adds an
+idempotently synchronized database runtime copy without introducing a live
+content-management system.
 
 ### C. Fully dynamic LLM food and meal generation
 

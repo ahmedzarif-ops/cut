@@ -9,3 +9,5 @@ export * from "./savedFoods";
 export * from "./mealFeedback";
 export * from "./workouts";
 export * from "./aiMealUsage";
+export * from "./catalogFoods";
+export * from "./catalogMeals";

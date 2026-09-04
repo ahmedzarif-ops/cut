@@ -21,6 +21,8 @@ const input: AiMealGenerationInput = {
     remainingCaloriesKcal: 650,
     remainingProteinG: 55,
     recentConfirmedMeals: ["Dal bowl"],
+    likedMeals: ["Chicken curry plate"],
+    notForMeMeals: ["Tofu bowl"],
   },
   allowedFoods: [
     {
