@@ -28,6 +28,12 @@ export const aiMealUsageTable = pgTable(
     requestCount: integer("request_count").notNull().default(0),
     inputTokens: integer("input_tokens").notNull().default(0),
     outputTokens: integer("output_tokens").notNull().default(0),
+    reservedCostMicrodollars: integer("reserved_cost_microdollars")
+      .notNull()
+      .default(0),
+    spentCostMicrodollars: integer("spent_cost_microdollars")
+      .notNull()
+      .default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -41,7 +47,7 @@ export const aiMealUsageTable = pgTable(
     index("ai_meal_usage_day_index").on(table.usageDay),
     check(
       "ai_meal_usage_nonnegative_check",
-      sql`${table.requestCount} >= 0 AND ${table.inputTokens} >= 0 AND ${table.outputTokens} >= 0`,
+      sql`${table.requestCount} >= 0 AND ${table.inputTokens} >= 0 AND ${table.outputTokens} >= 0 AND ${table.reservedCostMicrodollars} >= 0 AND ${table.spentCostMicrodollars} >= 0`,
     ),
   ],
 );

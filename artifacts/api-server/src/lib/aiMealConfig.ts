@@ -3,6 +3,14 @@ import { parseBoundedInteger } from "./boundedInteger";
 export const AI_MEAL_DAILY_LIMIT_MAXIMUM = 20;
 export const AI_MEAL_TIMEOUT_MS = 20_000;
 export const AI_MEAL_MAX_OUTPUT_TOKENS = 1_600;
+export const AI_MEAL_MAX_REQUEST_BYTES = 65_536;
+export const AI_MEAL_USER_MONTHLY_BUDGET_MICRODOLLARS = 1_000_000;
+// Luna costs $0.20/M input tokens and $1.20/M output tokens. Reserving
+// against the full bounded request and response prevents concurrent calls
+// from crossing the user's monthly dollar ceiling.
+export const AI_MEAL_MAX_CALL_COST_MICRODOLLARS = Math.ceil(
+  (AI_MEAL_MAX_REQUEST_BYTES + 6 * AI_MEAL_MAX_OUTPUT_TOKENS) / 5,
+);
 /** Recommended after the owner separately approves provider spend and a key. */
 export const AI_MEAL_RECOMMENDED_MODEL = "gpt-5.6-luna";
 
@@ -32,12 +40,7 @@ function validApiKey(value: string | undefined): value is string {
 }
 
 function validModel(value: string | undefined): value is string {
-  return Boolean(
-    value &&
-    value === value.trim() &&
-    value.length <= 80 &&
-    /^[a-z0-9][a-z0-9._-]+$/u.test(value),
-  );
+  return value === AI_MEAL_RECOMMENDED_MODEL;
 }
 
 export function validateAiMealConfiguration(

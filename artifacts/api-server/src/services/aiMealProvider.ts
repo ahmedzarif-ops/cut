@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import {
+  AI_MEAL_MAX_REQUEST_BYTES,
   AI_MEAL_MAX_OUTPUT_TOKENS,
   AI_MEAL_TIMEOUT_MS,
   readAiMealConfiguration,
@@ -245,6 +246,33 @@ export class OpenAiMealProvider implements AiMealProvider {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), AI_MEAL_TIMEOUT_MS);
     try {
+      const requestBody = JSON.stringify({
+        model: this.config.model,
+        store: false,
+        max_output_tokens: AI_MEAL_MAX_OUTPUT_TOKENS,
+        reasoning: { effort: "low" },
+        safety_identifier: createHash("sha256")
+          .update(`cut-ai-meal:${input.userId}`)
+          .digest("hex"),
+        instructions:
+          "Create 1 to 3 practical meal drafts. Use only the provided allowedFoods IDs. Never infer allergies, diagnoses, religion, ethnicity, or identity. Treat avoided ingredients as preferences, not allergy guarantees. Respect the requested diet and prep limit. When the user explicitly requests Bengali, Bangladeshi, Desi, or South Asian food, prefer recognizable home-style structures such as rice or roti with dal, protein, and vegetables, using only the provided foods. Do not invent cultural authenticity or label a meal culturally just because it contains spices; use '-style' when the exact regional method is unknown. Nutrition will be calculated by CUT OS, so do not provide calorie or macro totals. Keep instructions simple. Every result is a draft that the user must review.",
+        input: JSON.stringify({
+          request: input.request,
+          preferences: input.context,
+          allowedFoods: input.allowedFoods,
+        }),
+        text: {
+          format: {
+            type: "json_schema",
+            name: "cut_meal_drafts",
+            strict: true,
+            schema: MEAL_DRAFT_SCHEMA,
+          },
+        },
+      });
+      if (Buffer.byteLength(requestBody, "utf8") > AI_MEAL_MAX_REQUEST_BYTES) {
+        throw new AiMealProviderError("invalid_output");
+      }
       const response = await this.fetcher(
         "https://api.openai.com/v1/responses",
         {
@@ -253,30 +281,7 @@ export class OpenAiMealProvider implements AiMealProvider {
             Authorization: `Bearer ${this.config.apiKey}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            model: this.config.model,
-            store: false,
-            max_output_tokens: AI_MEAL_MAX_OUTPUT_TOKENS,
-            reasoning: { effort: "low" },
-            safety_identifier: createHash("sha256")
-              .update(`cut-ai-meal:${input.userId}`)
-              .digest("hex"),
-            instructions:
-              "Create 1 to 3 practical meal drafts. Use only the provided allowedFoods IDs. Never infer allergies, diagnoses, religion, ethnicity, or identity. Treat avoided ingredients as preferences, not allergy guarantees. Respect the requested diet and prep limit. When the user explicitly requests Bengali, Bangladeshi, Desi, or South Asian food, prefer recognizable home-style structures such as rice or roti with dal, protein, and vegetables, using only the provided foods. Do not invent cultural authenticity or label a meal culturally just because it contains spices; use '-style' when the exact regional method is unknown. Nutrition will be calculated by CUT OS, so do not provide calorie or macro totals. Keep instructions simple. Every result is a draft that the user must review.",
-            input: JSON.stringify({
-              request: input.request,
-              preferences: input.context,
-              allowedFoods: input.allowedFoods,
-            }),
-            text: {
-              format: {
-                type: "json_schema",
-                name: "cut_meal_drafts",
-                strict: true,
-                schema: MEAL_DRAFT_SCHEMA,
-              },
-            },
-          }),
+          body: requestBody,
           signal: controller.signal,
         },
       );
@@ -293,20 +298,24 @@ export class OpenAiMealProvider implements AiMealProvider {
       if (!candidates) throw new AiMealProviderError("invalid_output");
 
       const usage = isObject(body.usage) ? body.usage : {};
+      const inputTokens = usage.input_tokens;
+      const outputTokens = usage.output_tokens;
+      if (
+        typeof inputTokens !== "number" ||
+        !Number.isSafeInteger(inputTokens) ||
+        inputTokens < 0 ||
+        inputTokens > AI_MEAL_MAX_REQUEST_BYTES ||
+        typeof outputTokens !== "number" ||
+        !Number.isSafeInteger(outputTokens) ||
+        outputTokens < 0 ||
+        outputTokens > AI_MEAL_MAX_OUTPUT_TOKENS
+      ) {
+        throw new AiMealProviderError("invalid_output");
+      }
       return {
         candidates,
-        inputTokens:
-          typeof usage.input_tokens === "number" &&
-          Number.isSafeInteger(usage.input_tokens) &&
-          usage.input_tokens >= 0
-            ? usage.input_tokens
-            : 0,
-        outputTokens:
-          typeof usage.output_tokens === "number" &&
-          Number.isSafeInteger(usage.output_tokens) &&
-          usage.output_tokens >= 0
-            ? usage.output_tokens
-            : 0,
+        inputTokens,
+        outputTokens,
       };
     } catch (error) {
       if (error instanceof AiMealProviderError) throw error;

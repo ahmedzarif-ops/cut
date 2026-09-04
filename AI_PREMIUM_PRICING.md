@@ -1,7 +1,7 @@
 # CUT OS AI and premium pricing decision
 
-**Status:** Working launch recommendation; no provider spend or App Store price
-change is authorized by this document.
+**Status:** Owner-approved launch controls. Production activation remains
+conditional on passing the server ledger and provider-account budget checks.
 
 **Updated:** September 4, 2026
 
@@ -41,7 +41,7 @@ $1.20 per million output tokens, while Terra is $2.00 and $12.00 respectively:
 
 Luna supports the Responses API, image input, reasoning controls, and structured
 outputs. The source adapter remains disabled unless an owner-approved key,
-spend limit, model, and daily quota are all configured.
+spend limit, exact Luna model, and daily quota are all configured.
 
 ## Conservative unit economics
 
@@ -78,12 +78,12 @@ Do not offer unlimited AI. Keep these controls:
 - no auto-logging of generated drafts;
 - deterministic fixed-catalog fallback during limits or provider failure.
 
-The owner accepted these ceilings on September 4, 2026. They are product and
-budget guardrails, not authorization to create a key, fund an account, or enable
-production AI. Before activation, the server must enforce the per-user ceiling
-from its token ledger and the provider dashboard must enforce the account
-ceiling. A limit reached must return the fixed catalog without charging or
-removing the rest of Pro.
+The owner accepted these ceilings and authorized bounded production activation
+on September 4, 2026. The server reserves the maximum bounded Luna call cost
+before dispatch, settles it from returned token usage, and conservatively
+charges the reservation after an uncertain provider failure. The provider
+account must remain bounded to $10 before the production key is enabled. A
+limit reached returns the fixed catalog without removing the rest of Pro.
 
 Review the price or quota when AI cost exceeds 15% of net subscription proceeds,
 the median Pro user regularly reaches the cap, or conversion and retention show

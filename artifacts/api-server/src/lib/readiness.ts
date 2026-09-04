@@ -8,9 +8,9 @@ import { sql } from "drizzle-orm";
  * SQL file, so adding or editing a migration cannot silently leave this stale.
  */
 export const EXPECTED_MIGRATION = Object.freeze({
-  tag: "0014_great_grey_gargoyle",
-  createdAt: 1_788_511_889_944,
-  sha256: "d6c81e09cc65d05d97dcdd3edb878f99262767cfdaab7b1ce8520f7ccc994f35",
+  tag: "0015_typical_mandrill",
+  createdAt: 1_788_532_613_625,
+  sha256: "f7199b4569a2d1d37f75bc6a8c99d0175b4d9755a5da3084c76a662ccd4f1221",
 });
 
 export class ApiReadinessError extends Error {

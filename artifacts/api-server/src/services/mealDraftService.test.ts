@@ -169,6 +169,8 @@ describe("personalized meal draft service", () => {
         requestCount: 1,
         inputTokens: 500,
         outputTokens: 180,
+        reservedCostMicrodollars: 0,
+        spentCostMicrodollars: 316,
       }),
     ]);
   });
@@ -212,6 +214,65 @@ describe("personalized meal draft service", () => {
     expect(second.source).toBe("catalog");
     expect(second.notice).toContain("limit was reached");
     expect(generate).toHaveBeenCalledTimes(1);
+  });
+
+  it("reserves worst-case spend and falls back before crossing the monthly dollar cap", async () => {
+    const owner = await user("meal_draft_monthly_budget");
+    const clock = { now: () => new Date("2026-09-04T12:00:00.000Z") };
+    await ctx.db.insert(aiMealUsageTable).values({
+      userId: owner.id,
+      usageDay: "2026-09-01",
+      spentCostMicrodollars: 985_000,
+    });
+    const generate = vi.fn(async () => {
+      throw new Error("must not run");
+    });
+
+    const result = await createMyMealDrafts(owner, request, "UTC", {
+      provider: provider(5, generate),
+      clock,
+    });
+
+    expect(result.source).toBe("catalog");
+    expect(result.notice).toContain("month's AI meal budget");
+    expect(generate).not.toHaveBeenCalled();
+    const usage = await ctx.db
+      .select()
+      .from(aiMealUsageTable)
+      .orderBy(aiMealUsageTable.usageDay);
+    expect(usage).toEqual([
+      expect.objectContaining({
+        usageDay: "2026-09-01",
+        requestCount: 0,
+        spentCostMicrodollars: 985_000,
+      }),
+      expect.objectContaining({
+        usageDay: "2026-09-04",
+        requestCount: 0,
+        reservedCostMicrodollars: 0,
+      }),
+    ]);
+  });
+
+  it("charges the conservative maximum when a paid provider call fails", async () => {
+    const owner = await user("meal_draft_failed_provider_budget");
+    const clock = { now: () => new Date("2026-09-04T12:00:00.000Z") };
+    const result = await createMyMealDrafts(owner, request, "UTC", {
+      provider: provider(5, async () => {
+        throw new Error("provider failed after dispatch");
+      }),
+      clock,
+    });
+
+    expect(result.source).toBe("catalog");
+    const [usage] = await ctx.db.select().from(aiMealUsageTable);
+    expect(usage).toMatchObject({
+      requestCount: 1,
+      inputTokens: 0,
+      outputTokens: 0,
+      reservedCostMicrodollars: 0,
+      spentCostMicrodollars: 15_028,
+    });
   });
 
   it("filters the provider catalog for the explicit diet and falls back on an invalid food choice", async () => {

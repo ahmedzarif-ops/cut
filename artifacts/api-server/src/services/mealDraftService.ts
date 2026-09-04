@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
 import {
   aiMealUsageTable,
   db,
   mealEntriesTable,
   type User,
+  usersTable,
 } from "@workspace/db";
 import {
   BALANCED_MEAL_CATALOG_VERSION,
@@ -21,6 +22,10 @@ import {
 } from "@workspace/domain";
 
 import type { Logger } from "pino";
+import {
+  AI_MEAL_MAX_CALL_COST_MICRODOLLARS,
+  AI_MEAL_USER_MONTHLY_BUDGET_MICRODOLLARS,
+} from "../lib/aiMealConfig";
 import {
   getAiMealProvider,
   type AiMealCandidate,
@@ -247,55 +252,122 @@ function fallbackDrafts(input: {
     });
 }
 
-async function reserveDailyRequest(
+type AiRequestReservation = "reserved" | "daily_limit" | "monthly_budget";
+
+function utcMonthRange(usageDay: string): {
+  monthStart: string;
+  nextMonthStart: string;
+} {
+  const year = Number(usageDay.slice(0, 4));
+  const monthIndex = Number(usageDay.slice(5, 7)) - 1;
+  const dateKey = (date: Date) => date.toISOString().slice(0, 10);
+  return {
+    monthStart: dateKey(new Date(Date.UTC(year, monthIndex, 1))),
+    nextMonthStart: dateKey(new Date(Date.UTC(year, monthIndex + 1, 1))),
+  };
+}
+
+function lunaCostMicrodollars(
+  inputTokens: number,
+  outputTokens: number,
+): number {
+  // $0.20/M input and $1.20/M output = 1/5 and 6/5 microdollars/token.
+  return Math.ceil((inputTokens + 6 * outputTokens) / 5);
+}
+
+async function reserveAiRequest(
   userId: string,
   usageDay: string,
   limit: number,
   clock: Clock,
-): Promise<boolean> {
-  await db
-    .insert(aiMealUsageTable)
-    .values({ userId, usageDay })
-    .onConflictDoNothing({
-      target: [aiMealUsageTable.userId, aiMealUsageTable.usageDay],
-    });
-  const [reserved] = await db
-    .update(aiMealUsageTable)
-    .set({
-      requestCount: sql`${aiMealUsageTable.requestCount} + 1`,
-      updatedAt: clock.now(),
-    })
-    .where(
-      and(
-        eq(aiMealUsageTable.userId, userId),
-        eq(aiMealUsageTable.usageDay, usageDay),
-        lt(aiMealUsageTable.requestCount, limit),
-      ),
-    )
-    .returning({ requestCount: aiMealUsageTable.requestCount });
-  return Boolean(reserved);
+): Promise<AiRequestReservation> {
+  return db.transaction(async (tx) => {
+    const [owner] = await tx
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .for("update");
+    if (!owner) return "monthly_budget";
+
+    await tx
+      .insert(aiMealUsageTable)
+      .values({ userId, usageDay })
+      .onConflictDoNothing({
+        target: [aiMealUsageTable.userId, aiMealUsageTable.usageDay],
+      });
+
+    const { monthStart, nextMonthStart } = utcMonthRange(usageDay);
+    const [month] = await tx
+      .select({
+        accountedMicrodollars: sql<string>`coalesce(sum(${aiMealUsageTable.spentCostMicrodollars} + ${aiMealUsageTable.reservedCostMicrodollars}), 0)`,
+      })
+      .from(aiMealUsageTable)
+      .where(
+        and(
+          eq(aiMealUsageTable.userId, userId),
+          gte(aiMealUsageTable.usageDay, monthStart),
+          lt(aiMealUsageTable.usageDay, nextMonthStart),
+        ),
+      );
+    const accountedMicrodollars = Number(month?.accountedMicrodollars ?? 0);
+    if (
+      accountedMicrodollars + AI_MEAL_MAX_CALL_COST_MICRODOLLARS >
+      AI_MEAL_USER_MONTHLY_BUDGET_MICRODOLLARS
+    ) {
+      return "monthly_budget";
+    }
+
+    const [reserved] = await tx
+      .update(aiMealUsageTable)
+      .set({
+        requestCount: sql`${aiMealUsageTable.requestCount} + 1`,
+        reservedCostMicrodollars: sql`${aiMealUsageTable.reservedCostMicrodollars} + ${AI_MEAL_MAX_CALL_COST_MICRODOLLARS}`,
+        updatedAt: clock.now(),
+      })
+      .where(
+        and(
+          eq(aiMealUsageTable.userId, userId),
+          eq(aiMealUsageTable.usageDay, usageDay),
+          lt(aiMealUsageTable.requestCount, limit),
+        ),
+      )
+      .returning({ requestCount: aiMealUsageTable.requestCount });
+    return reserved ? "reserved" : "daily_limit";
+  });
 }
 
-async function addUsageTokens(
+async function settleAiRequest(
   userId: string,
   usageDay: string,
   inputTokens: number,
   outputTokens: number,
+  providerSucceeded: boolean,
   clock: Clock,
 ): Promise<void> {
-  await db
+  const chargedMicrodollars = providerSucceeded
+    ? lunaCostMicrodollars(inputTokens, outputTokens)
+    : AI_MEAL_MAX_CALL_COST_MICRODOLLARS;
+  const [settled] = await db
     .update(aiMealUsageTable)
     .set({
       inputTokens: sql`${aiMealUsageTable.inputTokens} + ${inputTokens}`,
       outputTokens: sql`${aiMealUsageTable.outputTokens} + ${outputTokens}`,
+      reservedCostMicrodollars: sql`${aiMealUsageTable.reservedCostMicrodollars} - ${AI_MEAL_MAX_CALL_COST_MICRODOLLARS}`,
+      spentCostMicrodollars: sql`${aiMealUsageTable.spentCostMicrodollars} + ${chargedMicrodollars}`,
       updatedAt: clock.now(),
     })
     .where(
       and(
         eq(aiMealUsageTable.userId, userId),
         eq(aiMealUsageTable.usageDay, usageDay),
+        gte(
+          aiMealUsageTable.reservedCostMicrodollars,
+          AI_MEAL_MAX_CALL_COST_MICRODOLLARS,
+        ),
       ),
-    );
+    )
+    .returning({ requestCount: aiMealUsageTable.requestCount });
+  if (!settled) throw new Error("AI meal reservation was not settled");
 }
 
 export async function createMyMealDrafts(
@@ -371,18 +443,26 @@ export async function createMyMealDrafts(
     };
   }
 
-  const reserved = await reserveDailyRequest(
+  const reservation = await reserveAiRequest(
     user.id,
     usageDay,
     provider.dailyLimit,
     clock,
   );
-  if (!reserved) {
+  if (reservation === "daily_limit") {
     return {
       source: "catalog",
       drafts: fallback(),
       notice:
         "Today's AI meal limit was reached, so CUT used its private meal library instead.",
+    };
+  }
+  if (reservation === "monthly_budget") {
+    return {
+      source: "catalog",
+      drafts: fallback(),
+      notice:
+        "This month's AI meal budget was reached, so CUT used its private meal library instead.",
     };
   }
 
@@ -401,6 +481,7 @@ export async function createMyMealDrafts(
           .filter((name): name is string => Boolean(name))
           .slice(0, 8)
       : [];
+  let reservationSettled = false;
   try {
     const result = await provider.generate({
       userId: user.id,
@@ -425,13 +506,15 @@ export async function createMyMealDrafts(
         ...food.nutritionPerServing,
       })),
     });
-    await addUsageTokens(
+    await settleAiRequest(
       user.id,
       usageDay,
       result.inputTokens,
       result.outputTokens,
+      true,
       clock,
     );
+    reservationSettled = true;
     const allowedFoodsById = new Map(
       allowedFoods.map((food) => [food.id, food]),
     );
@@ -456,6 +539,16 @@ export async function createMyMealDrafts(
         "AI drafted these meals from CUT's allowed food catalog. CUT calculated the estimates; review every ingredient and portion before logging.",
     };
   } catch {
+    if (!reservationSettled) {
+      try {
+        await settleAiRequest(user.id, usageDay, 0, 0, false, clock);
+      } catch {
+        options.logger?.warn(
+          { errorCode: "ai_meal_reservation_settlement_failed" },
+          "AI meal reservation could not be settled; reserved budget remains locked",
+        );
+      }
+    }
     options.logger?.warn(
       { errorCode: "ai_meal_generation_failed" },
       "AI meal generation failed; catalog fallback used",

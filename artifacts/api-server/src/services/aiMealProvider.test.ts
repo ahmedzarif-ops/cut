@@ -142,4 +142,41 @@ describe("OpenAI meal provider adapter", () => {
       reason: "provider_response",
     });
   });
+
+  it("rejects a response without bounded usage accounting", async () => {
+    const fetcher = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            output_text: JSON.stringify({
+              candidates: [
+                {
+                  name: "Dal rice bowl",
+                  summary: "A simple bowl.",
+                  estimatedPrepMinutes: 20,
+                  ingredients: [
+                    {
+                      foodId: "lentils-cooked",
+                      grams: 180,
+                      preparation: "warm",
+                    },
+                    {
+                      foodId: "rice-white-cooked",
+                      grams: 150,
+                      preparation: "warm",
+                    },
+                  ],
+                  instructions: ["Warm both foods.", "Plate and review."],
+                  whyItFits: "Matches the request.",
+                },
+              ],
+            }),
+          }),
+          { status: 200 },
+        ),
+    );
+    await expect(
+      openAiProvider(fetcher as unknown as typeof fetch).generate(input),
+    ).rejects.toMatchObject({ reason: "invalid_output" });
+  });
 });

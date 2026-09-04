@@ -39,5 +39,13 @@ describe("AI meal configuration", () => {
       model: "gpt-5.6-luna",
       userDailyLimit: 5,
     });
+    expect(
+      validateAiMealConfiguration({
+        CUT_AI_MEALS_ENABLED: "true",
+        OPENAI_API_KEY: ["sk", "proj", "ProviderKeyForCUTMeals1234"].join("-"),
+        CUT_AI_MEAL_MODEL: "gpt-5-mini",
+        CUT_AI_MEAL_USER_DAILY_LIMIT: "5",
+      }),
+    ).toEqual(["CUT_AI_MEAL_MODEL"]);
   });
 });
