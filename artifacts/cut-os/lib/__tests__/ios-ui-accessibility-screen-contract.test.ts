@@ -89,6 +89,18 @@ describe("iOS UI accessibility screen contracts", () => {
     expect(styleBlock(todaySource, "iconButton")).toContain("height: 44");
   });
 
+  it("keeps the Today next action tappable and routes every action kind", () => {
+    expect(todaySource).toContain("const openNextAction = () => {");
+    expect(todaySource).toContain(
+      'accessibilityLabel={today.nextAction.title}\n            accessibilityHint="Opens the next recommended action"\n            accessibilityRole="button"',
+    );
+    expect(todaySource).toContain("onPress={openNextAction}");
+    expect(todaySource).toContain('case "weigh_in":\n        openWeightEditor();');
+    expect(todaySource).toContain(
+      'case "first_meal":\n      case "review_meals":\n        router.push("/meal-one");',
+    );
+  });
+
   it("exposes the restart fallback as a named button", () => {
     expectNamedButton(errorFallbackSource, "Restart CUT OS");
   });
