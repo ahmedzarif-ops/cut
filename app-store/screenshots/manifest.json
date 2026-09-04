@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "status": "planned_not_captured",
+  "updated": "2026-09-04",
+  "assetDirectory": "app-store/screenshots/files",
+  "listingPaidDisclosure": {
+    "shotId": "07-subscription-offer",
+    "cue": "Paid access uses an auto-renewable Apple subscription."
+  },
+  "technicalRequirements": {
+    "slot": "iPhone 6.9-inch portrait",
+    "acceptedFormats": ["png"],
+    "acceptedPixelDimensions": [
+      {
+        "width": 1260,
+        "height": 2736
+      },
+      {
+        "width": 1290,
+        "height": 2796
+      },
+      {
+        "width": 1320,
+        "height": 2868
+      }
+    ],
+    "alphaAllowed": false,
+    "minimumListingScreenshots": 1,
+    "maximumListingScreenshots": 10
+  },
+  "captureDefaults": {
+    "appVersion": "1.0.0",
+    "buildNumber": "7",
+    "gitCommit": "64c0790c659f1c4b3c9c5de96c125db095eaee5a",
+    "easBuildId": "e2d8b719-0f50-41c5-94ec-ae6e7304437f",
+    "appStoreConnectBuildId": "130301db-7ea1-451b-8578-5ccd34213129",
+    "easBuildReference": null,
+    "appStoreConnectDeviceSlot": "iPhone 6.9-inch portrait",
+    "captureDevice": null,
+    "iosVersion": null,
+    "locale": "en-US",
+    "appearance": null,
+    "capturedBy": null,
+    "capturedAtUtc": null
+  },
+  "listingSelection": ["01-today-next-action", "07-subscription-offer"],
+  "reviewEvidenceSelection": [],
+  "shots": [
+    {
+      "order": 1,
+      "id": "01-today-next-action",
+      "intendedUse": "listing_candidate_and_review_evidence",
+      "requiredForReleaseEvidence": true,
+      "file": null,
+      "sha256": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewedSha256": null,
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 2,
+      "id": "02-today-weigh-in-complete",
+      "intendedUse": "optional_listing_candidate",
+      "requiredForReleaseEvidence": false,
+      "file": null,
+      "sha256": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewedSha256": null,
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 3,
+      "id": "03-balanced-options",
+      "intendedUse": "optional_listing_candidate",
+      "requiredForReleaseEvidence": false,
+      "file": null,
+      "sha256": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewedSha256": null,
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 4,
+      "id": "04-meal-preview",
+      "intendedUse": "optional_listing_candidate",
+      "requiredForReleaseEvidence": false,
+      "file": null,
+      "sha256": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewedSha256": null,
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 5,
+      "id": "05-today-nutrition-logged",
+      "intendedUse": "optional_listing_candidate",
+      "requiredForReleaseEvidence": false,
+      "file": null,
+      "sha256": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewedSha256": null,
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 6,
+      "id": "06-logged-meal-controls",
+      "intendedUse": "optional_listing_candidate",
+      "requiredForReleaseEvidence": false,
+      "file": null,
+      "sha256": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewedSha256": null,
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 7,
+      "id": "07-subscription-offer",
+      "intendedUse": "listing_candidate_and_in_app_purchase_review_evidence",
+      "requiredForReleaseEvidence": true,
+      "file": null,
+      "sha256": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewedSha256": null,
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 8,
+      "id": "08-adult-eligibility",
+      "intendedUse": "review_evidence",
+      "requiredForReleaseEvidence": false,
+      "file": null,
+      "sha256": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewedSha256": null,
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 9,
+      "id": "09-settings-controls",
+      "intendedUse": "review_evidence",
+      "requiredForReleaseEvidence": false,
+      "file": null,
+      "sha256": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewedSha256": null,
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    },
+    {
+      "order": 10,
+      "id": "10-sign-up-18plus",
+      "intendedUse": "optional_review_evidence",
+      "requiredForReleaseEvidence": false,
+      "file": null,
+      "sha256": null,
+      "evidenceReference": null,
+      "piiReview": {
+        "status": "pending",
+        "reviewedSha256": null,
+        "reviewer": null,
+        "reviewedAtUtc": null,
+        "notes": null
+      }
+    }
+  ]
+}

@@ -10,13 +10,13 @@ import {
   CLERK_PROXY_PATH,
   clerkProxyMiddleware,
   getClerkProxyHost,
+  safeRequestPathForLog,
 } from "./middlewares/clerkProxyMiddleware";
 import helmet from "helmet";
-import {
-  createApiLimiter,
-  createClerkLimiter,
-} from "./middlewares/rateLimit";
+import { createApiLimiter, createClerkLimiter } from "./middlewares/rateLimit";
 import { buildAllowedHosts, buildAllowedOrigins } from "./lib/allowedHosts";
+import healthRouter from "./routes/health";
+import { createProductionPublicSiteMiddleware } from "./publicSite";
 
 const app: Express = express();
 
@@ -33,7 +33,7 @@ app.use(
         return {
           id: req.id,
           method: req.method,
-          url: req.url?.split("?")[0],
+          url: safeRequestPathForLog(req.url),
         };
       },
       res(res) {
@@ -79,6 +79,10 @@ app.use(
 // emit nosniff, HSTS, X-Frame-Options, and no-referrer.
 app.use("/api", helmet({ contentSecurityPolicy: false }));
 
+// Platform liveness/readiness probes must remain independent of Clerk and the
+// public API limiter. Readiness performs its own database revision checks.
+app.use("/api", healthRouter);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -87,13 +91,15 @@ app.use(express.urlencoded({ extended: true }));
 // limiter is IP-keyed and independent of auth status.
 app.use("/api", createApiLimiter());
 
-// Resolve the publishable key from the incoming request host so the same
-// server can serve multiple Clerk custom domains. Only ALLOWLISTED hosts
-// participate (x-forwarded-host is client-writable); an unknown or missing
-// host falls back to the env key — never to a header-derived one. The
-// fallback also bypasses publishableKeyFromHost, which throws on an empty
-// host when the fallback key is a live (pk_live_) key.
+// Resolve the publishable key from the incoming request host. Production has
+// one explicit canonical host; development may aggregate its injected preview
+// hosts. Only ALLOWLISTED hosts participate (x-forwarded-host is
+// client-writable); an unknown or missing host falls back to the env key —
+// never to a header-derived one. The fallback also bypasses
+// publishableKeyFromHost, which throws on an empty host when the fallback key
+// is a live (pk_live_) key.
 app.use(
+  "/api",
   clerkMiddleware((req) => {
     const host = getClerkProxyHost(req, allowedHosts);
     return {
@@ -105,6 +111,12 @@ app.use(
 );
 
 app.use("/api", router);
+
+// One production listener owns every public route. Keep this after the API and
+// Clerk proxy stack so their middleware order and security boundaries remain
+// unchanged; the public handler is a read-only, fail-closed fallback for the
+// launch, legal, support, and status surfaces.
+app.use(createProductionPublicSiteMiddleware());
 
 // Catch-all error normalizer — must be registered last, after all routes.
 app.use(errorHandler);

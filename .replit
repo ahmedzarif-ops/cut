@@ -1,15 +1,32 @@
 modules = ["nodejs-24"]
 
+[packager.features]
+enabledForHosting = false
+
 [deployment]
 router = "application"
-deploymentTarget = "autoscale"
+build = "corepack pnpm install --frozen-lockfile --prod=false && corepack pnpm --filter @workspace/api-server run build"
+run = "corepack pnpm run start:production"
 
 [deployment.postBuild]
-args = ["pnpm", "store", "prune"]
+args = ["corepack", "pnpm", "store", "prune"]
 env = { "CI" = "true" }
 
 [workflows]
-runButton = "Project"
+runButton = "CUT Development"
+
+[[workflows.workflow]]
+name = "CUT Development"
+mode = "parallel"
+author = 61899471
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=8080 corepack pnpm --filter @workspace/api-server run dev"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=22203 corepack pnpm --filter @workspace/cut-os run dev"
 
 [agent]
 stack = "PNPM_WORKSPACE"
@@ -18,7 +35,22 @@ integrations = ["github:1.0.0"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
-timeoutMs = 20000
+timeoutMs = 120000
 
 [nix]
 channel = "stable-25_05"
+
+[[ports]]
+localPort = 8080
+externalPort = 80
+
+[[ports]]
+localPort = 22203
+
+[userenv]
+
+[userenv.shared]
+REVENUECAT_PROJECT_ID = "projea0cbd46"
+REVENUECAT_ENTITLEMENT_REST_ID = "entl8efd6d2c18"
+REVENUECAT_APP_REST_ID = "app8feee0dfba"
+REVENUECAT_OFFERING_REST_ID = "ofrngeb5cc4a73c"

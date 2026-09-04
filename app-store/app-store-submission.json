@@ -1,0 +1,1063 @@
+{
+  "schemaVersion": 1,
+  "status": "working_not_approved",
+  "updated": "2026-09-04",
+  "references": {
+    "humanRecord": "APP_STORE_METADATA.md",
+    "appConfig": "artifacts/cut-os/app.json",
+    "subscriptionIdentity": "lib/domain/src/subscriptionIdentity.json",
+    "privacyDataMap": "PRIVACY_DATA_MAP.md",
+    "reviewRunbook": "APP_REVIEW_RUNBOOK.md",
+    "testFlightRecord": "app-store/testflight-submission.json",
+    "screenshotManifest": "app-store/screenshots/manifest.json"
+  },
+  "appleIdentifiers": {
+    "appId": "6798020879",
+    "subscriptionGroupId": "22286645",
+    "subscriptionId": "6798020349",
+    "verifiedAtUtc": "2026-08-04T22:13:34Z",
+    "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#canonical-apple-identifiers"
+  },
+  "professionalReviewDisposition": {
+    "status": "owner_deferred_post_launch",
+    "decisionAtUtc": "2026-08-10T18:54:19Z",
+    "evidenceReference": "app-store/evidence/owner-deferred-professional-review-2026-08-10.md",
+    "ownerRiskAccepted": true,
+    "professionalApprovalClaimed": false,
+    "initiationDeadlinePolicy": "within_3_calendar_days_after_public_release",
+    "safetyControls": {
+      "noMedicalOrOutcomeClaims": true,
+      "estimatedNutritionDisclosure": true,
+      "suspendSalesOnCriticalFinding": true,
+      "suspendSalesIfReviewNotInitiatedByDeadline": true
+    },
+    "legalReview": {
+      "status": "deferred",
+      "approvalClaimed": false
+    },
+    "nutritionReview": {
+      "status": "deferred",
+      "approvalClaimed": false
+    }
+  },
+  "listing": {
+    "appName": "CUT OS",
+    "bundleId": "com.zarifahmed.cut",
+    "appVersion": "1.0.0",
+    "initialRelease": true,
+    "primaryLanguage": "en-US",
+    "subtitle": "Food, training & progress",
+    "description": "CUT OS helps adults who lift run a focused cut or body recomposition. See what\nremains today, log what happened, and understand how food, body weight, and\ntraining move together.\n\nFree features:\n\n- Search a 99-food nutrition library.\n- Explore 89 balanced meals, including 82 Bengali, Bangladeshi, Desi, and South Asian options.\n- Scan supported food barcodes or add and save custom foods.\n- Log meals, daily nutrition totals, weigh-ins, and training sessions.\n- Review weight and training progress in clear charts.\n\nCUT OS Pro is optional. Pro adds meal fits based on remaining calorie and\nprotein goals, food preferences, and confirmed logs. The free tracking loop\nstays available without Pro.\n\nCUT OS provides general fitness and nutrition information, not medical advice.\nFood and meal nutrition is estimated. Ingredient and common-allergen lists must be\nreviewed against the exact products you use and are not an allergen-safety\nguarantee.\n\nCUT OS is for adults age 18 and older. CUT OS Pro uses an auto-renewable Apple\nsubscription. The exact localized price and billing period appear before you\nconfirm purchase. You can restore purchases in the app and manage or cancel\nthe subscription through Apple.\n\nTerms: https://getcutos.com/terms",
+    "keywords": "calorie,protein,macros,food,meal,Desi,Bengali,lifting,weight,workout,cut,recomp,tracker,nutrition",
+    "primaryCategory": "Health & Fitness",
+    "secondaryCategory": null,
+    "madeForKids": false,
+    "promotionalText": "Track food, training, and progress. Search 99 foods and explore 89 meals, including Bengali, Bangladeshi, Desi, and South Asian options.",
+    "marketingUrl": "https://getcutos.com",
+    "whatsNew": null,
+    "whatsNewPosition": "not_applicable_initial_release",
+    "releaseMethod": "manual",
+    "supportUrl": "https://getcutos.com/support",
+    "privacyPolicyUrl": "https://getcutos.com/privacy",
+    "termsUrl": "https://getcutos.com/terms",
+    "legalUrlPlacement": {
+      "privacyPolicy": "app_store_connect_privacy_policy_url",
+      "privacyPolicySubmittedUrl": "https://getcutos.com/privacy",
+      "terms": "listing_description",
+      "termsSubmittedUrl": "https://getcutos.com/terms",
+      "appStoreConnectConfirmation": {
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-10T20:56:38Z",
+        "evidenceReference": "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md"
+      }
+    },
+    "ageSuitabilityUrl": null,
+    "sellerLegalOperator": "Zarif Ahmed",
+    "sku": "cut-ios-v1",
+    "copyright": "2026 Zarif Ahmed",
+    "contentRightsDeclaration": false,
+    "initialTerritories": ["US"],
+    "approval": {
+      "status": "pending",
+      "nameClearance": {
+        "status": "pending",
+        "verifiedAtUtc": null,
+        "evidenceReference": null
+      },
+      "appStoreConnectNameAcceptance": {
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-04T21:33:17Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#app-and-identity"
+      },
+      "ownerApproval": {
+        "status": "pending",
+        "verifiedAtUtc": null,
+        "evidenceReference": null
+      },
+      "legalReview": {
+        "status": "owner_deferred_post_launch",
+        "verifiedAtUtc": "2026-08-10T18:54:19Z",
+        "evidenceReference": "app-store/evidence/owner-deferred-professional-review-2026-08-10.md"
+      },
+      "nutritionReview": {
+        "status": "owner_deferred_post_launch",
+        "verifiedAtUtc": "2026-08-10T18:54:19Z",
+        "evidenceReference": "app-store/evidence/owner-deferred-professional-review-2026-08-10.md"
+      },
+      "exactBuildClaimsReview": {
+        "status": "pending",
+        "appVersion": "1.0.0",
+        "buildNumber": "7",
+        "gitCommit": "64c0790c659f1c4b3c9c5de96c125db095eaee5a",
+        "easBuildId": "e2d8b719-0f50-41c5-94ec-ae6e7304437f",
+        "appStoreConnectBuildId": "130301db-7ea1-451b-8578-5ccd34213129",
+        "verifiedAtUtc": null,
+        "evidenceReference": null
+      }
+    }
+  },
+  "ownerControlledFields": [
+    "listing.sellerLegalOperator",
+    "listing.sku",
+    "listing.copyright",
+    "listing.contentRightsDeclaration",
+    "listing.supportUrl",
+    "listing.privacyPolicyUrl",
+    "listing.termsUrl",
+    "listing.initialTerritories",
+    "availability.distributionMethod.decision",
+    "availability.appleSiliconMacAvailability.decision",
+    "availability.appleVisionProAvailability.decision",
+    "accessibility.status",
+    "accessibility.appStoreConnectDecision.decision",
+    "subscription.entitlementId",
+    "subscription.subscriptionGroupReferenceName",
+    "subscription.productReferenceName",
+    "subscription.productId",
+    "subscription.duration",
+    "subscription.usPricing.storefront",
+    "subscription.usPricing.currency",
+    "subscription.usPricing.amount",
+    "subscription.introductoryOfferDecision",
+    "subscription.familySharingDecision",
+    "subscription.localizations.en-US.groupDisplayName",
+    "subscription.localizations.en-US.productDisplayName",
+    "subscription.localizations.en-US.description",
+    "subscription.localizations.en-US.appNameDisplayOption",
+    "subscription.localizations.en-US.customAppName"
+  ],
+  "availability": {
+    "status": "confirmed_in_app_store_connect",
+    "distributionMethod": {
+      "decision": "public",
+      "status": "confirmed_in_app_store_connect",
+      "savedAtUtc": "2026-08-04T21:33:17Z",
+      "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#distribution"
+    },
+    "appleSiliconMacAvailability": {
+      "decision": "do_not_make_available",
+      "status": "confirmed_in_app_store_connect",
+      "savedAtUtc": "2026-08-04T21:33:17Z",
+      "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#distribution"
+    },
+    "appleVisionProAvailability": {
+      "decision": "do_not_make_available",
+      "status": "confirmed_in_app_store_connect",
+      "savedAtUtc": "2026-08-04T21:33:17Z",
+      "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#distribution"
+    },
+    "approval": {
+      "owner": true,
+      "appStoreConnectConfirmed": true
+    }
+  },
+  "commercialAndLegal": {
+    "status": "confirmed_in_app_store_connect",
+    "appDownloadPrice": "free_download",
+    "licenseAgreement": "standard_apple_eula",
+    "appTaxCategory": "Fitness and Health",
+    "dsaStatus": "non_trader",
+    "appleCommerceReadiness": {
+      "status": "confirmed",
+      "developerProgramMembership": {
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-09-04T16:43:09Z",
+        "evidenceReference": "app-store/evidence/apple-build-6-processed-2026-09-04.md#agreement-resolution-and-testflight-assignment"
+      },
+      "accountHolderAccess": {
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-09-04T16:43:09Z",
+        "evidenceReference": "app-store/evidence/apple-build-6-processed-2026-09-04.md#agreement-resolution-and-testflight-assignment"
+      },
+      "paidAppsAgreement": {
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-04T23:08:08Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
+      },
+      "taxForms": {
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-04T23:08:08Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
+      },
+      "banking": {
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-04T23:08:08Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
+      }
+    },
+    "appStoreServerNotifications": {
+      "deliveryArchitecture": "revenuecat_direct",
+      "status": "not_configured_optional_for_initial_release",
+      "productionUrl": null,
+      "sandboxUrl": null,
+      "evidenceReference": null
+    },
+    "approval": {
+      "owner": true,
+      "legal": false,
+      "appStoreConnectConfirmed": true
+    }
+  },
+  "appReview": {
+    "status": "pending_app_store_connect_and_exact_build_verification",
+    "signInRequired": true,
+    "credentialPolicy": "credentials_only_in_app_store_connect_or_approved_secret_manager",
+    "configuration": {
+      "contactConfigured": false,
+      "notesConfigured": false,
+      "primaryDemoAccountConfigured": false,
+      "additionalSyntheticAccountsConfiguredInNotes": false
+    },
+    "clerkReviewAccess": {
+      "strategy": "clerk_production_test_mode_reserved_email_code",
+      "clientTrustEnabled": false,
+      "allReviewAccountsUseReservedTestEmail": false,
+      "fixedCodePolicy": "clerk_reserved_424242",
+      "exactBuildClientTrustFlowVerified": false,
+      "testModeState": "pending",
+      "verifiedAtUtc": null,
+      "evidenceReference": null,
+      "shutdownControl": {
+        "primaryOwner": null,
+        "backupOwner": null,
+        "bothHaveProductionClerkAccess": false,
+        "statusSource": "exact_app_store_connect_submission",
+        "statusMonitoringConfigured": false,
+        "escalationConfigured": false,
+        "closureSloMinutes": 15,
+        "accessPreflightAtUtc": null,
+        "accessPreflightEvidenceReference": null,
+        "triggerObservedAtUtc": null,
+        "testModeDisabledAtUtc": null,
+        "shutdownEvidenceReference": null
+      }
+    },
+    "appleWorkflow": {
+      "state": "pending",
+      "submissionReference": null,
+      "appVersionIncluded": false,
+      "subscriptionIncluded": false,
+      "subscriptionGroupIncluded": false,
+      "manualReleaseSelected": false,
+      "appVersionStatus": "pending",
+      "submissionSection": "pending",
+      "reviewActive": false,
+      "allSubmittedItemsAccepted": false,
+      "verifiedAtUtc": null,
+      "evidenceReference": null
+    },
+    "finalResolvedNotesEvidence": {
+      "templateSha256": null,
+      "resolvedUtf8ByteCount": null,
+      "placeholdersRemaining": null,
+      "measuredAtUtc": null,
+      "savedInAppStoreConnect": false,
+      "evidenceReference": null
+    },
+    "accountStates": {
+      "fullAccess": {
+        "status": "pending",
+        "nonExpiring": false,
+        "noMfaOrOutOfBandTrap": false,
+        "testedAtUtc": null,
+        "evidenceReference": null
+      },
+      "purchase": {
+        "status": "pending",
+        "nonExpiring": false,
+        "noMfaOrOutOfBandTrap": false,
+        "testedAtUtc": null,
+        "evidenceReference": null
+      },
+      "adultGate": {
+        "status": "pending",
+        "nonExpiring": false,
+        "noMfaOrOutOfBandTrap": false,
+        "testedAtUtc": null,
+        "evidenceReference": null
+      },
+      "restricted": {
+        "status": "pending",
+        "nonExpiring": false,
+        "noMfaOrOutOfBandTrap": false,
+        "testedAtUtc": null,
+        "evidenceReference": null
+      },
+      "deletion": {
+        "status": "pending",
+        "nonExpiring": false,
+        "noMfaOrOutOfBandTrap": false,
+        "testedAtUtc": null,
+        "evidenceReference": null
+      }
+    },
+    "exactBuild": {
+      "appVersion": "1.0.0",
+      "buildNumber": "7",
+      "gitCommit": "64c0790c659f1c4b3c9c5de96c125db095eaee5a",
+      "easBuildId": "e2d8b719-0f50-41c5-94ec-ae6e7304437f",
+      "appStoreConnectBuildId": "130301db-7ea1-451b-8578-5ccd34213129",
+      "verifiedAtUtc": null,
+      "navigationEvidenceReference": null
+    },
+    "approval": {
+      "owner": false,
+      "reviewQa": false,
+      "appStoreConnectConfirmed": false
+    }
+  },
+  "subscription": {
+    "status": "pending_app_store_connect_and_exact_build_evidence",
+    "ownerDecision": {
+      "revision": "owner-offer-2026-09-04-v3",
+      "authority": "owner_approved_core_offer_and_standing_delegated_launch_execution",
+      "evidenceReference": "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription",
+      "binding": {
+        "entitlementId": "CUT_OS_PRO",
+        "subscriptionGroupReferenceName": "CUT OS Pro",
+        "productReferenceName": "CUT OS Pro Monthly",
+        "productId": "com.zarifahmed.cut.pro.monthly",
+        "duration": "1_month",
+        "storefront": "US",
+        "currency": "USD",
+        "amount": "4.99",
+        "introductoryOfferDecision": "none",
+        "familySharingDecision": "disabled",
+        "groupDisplayName": "CUT OS Pro",
+        "productDisplayName": "CUT OS Pro Monthly",
+        "description": "Adaptive meal fits and on-demand meal drafts.",
+        "appNameDisplayOption": "use_app_name",
+        "customAppName": null
+      }
+    },
+    "entitlementId": "CUT_OS_PRO",
+    "subscriptionGroupReferenceName": "CUT OS Pro",
+    "productReferenceName": "CUT OS Pro Monthly",
+    "productId": "com.zarifahmed.cut.pro.monthly",
+    "duration": "1_month",
+    "priceScheduleEvidenceReference": "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#current-subscription-price-and-age-questionnaire-recheck",
+    "usPricing": {
+      "storefront": "US",
+      "currency": "USD",
+      "amount": "4.99",
+      "effectiveStatus": "effective",
+      "effectiveAtUtc": "2026-08-10T22:06:07Z",
+      "evidenceReference": "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#current-subscription-price-and-age-questionnaire-recheck",
+      "ownerDecisionRevision": "owner-offer-2026-09-04-v3",
+      "ownerDecisionEvidenceReference": "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription"
+    },
+    "availabilityEvidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#subscription",
+    "introductoryOfferDecision": "none",
+    "introductoryOfferTerms": {
+      "duration": null,
+      "numberOfPeriods": null,
+      "priceAmount": null,
+      "eligibility": null,
+      "evidenceReference": null
+    },
+    "familySharingDecision": "disabled",
+    "taxCategory": "Fitness and Health",
+    "localizations": {
+      "en-US": {
+        "groupDisplayName": "CUT OS Pro",
+        "productDisplayName": "CUT OS Pro Monthly",
+        "description": "Adaptive meal fits and on-demand meal drafts.",
+        "appNameDisplayOption": "use_app_name",
+        "customAppName": null
+      }
+    },
+    "appStoreConnect": {
+      "groupStatus": "confirmed_in_app_store_connect",
+      "productStatus": "confirmed_in_app_store_connect",
+      "firstSubmission": true,
+      "attachedToVersion": false,
+      "reviewNotes": {
+        "status": "saved_in_app_store_connect",
+        "appleSubscriptionId": "6798020349",
+        "credentialFree": true,
+        "savedAtUtc": "2026-09-04T18:45:22Z",
+        "evidenceReference": "app-store/evidence/apple-build-7-owner-check-and-submission-draft-2026-09-04.md#subscription"
+      },
+      "reviewScreenshotShotId": "07-subscription-offer",
+      "reviewScreenshotUpload": {
+        "status": "pending",
+        "shotId": "07-subscription-offer",
+        "sha256": null,
+        "uploadedAtUtc": null,
+        "evidenceReference": null
+      }
+    },
+    "revenueCat": {
+      "offeringId": "default",
+      "ownerAuthorization": {
+        "status": "confirmed",
+        "verifiedAtUtc": "2026-08-05T00:25:43Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat"
+      },
+      "productionMappingStatus": "verified",
+      "appStoreConnectApiKeyStatus": "verified",
+      "subscriptionKeyStatus": "verified",
+      "customerReadWritePermissionStatus": "verified",
+      "apiV2Key": {
+        "label": "CUT Replit Production Replacement 2026-08-04",
+        "apiVersion": "v2",
+        "customerInformationPermission": "read_write",
+        "projectConfigurationPermission": "read_only",
+        "chartsPermission": "no_access",
+        "keyValueViewedDuringVerification": true,
+        "verifiedAtUtc": "2026-08-05T00:25:43Z",
+        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat"
+      },
+      "restoreAfterAccountDeletion": {
+        "dashboardBehavior": "transfer_to_new_app_user_id",
+        "dashboardVerifiedAtUtc": "2026-08-04T22:13:34Z",
+        "dashboardEvidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat",
+        "nativeQaStatus": "pending",
+        "nativeQaTestedAtUtc": null,
+        "nativeQaEvidenceReference": null
+      },
+      "verifiedAtUtc": "2026-08-08T21:24:17Z",
+      "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#revenuecat"
+    },
+    "exactBuildEvidence": {
+      "appVersion": "1.0.0",
+      "buildNumber": "7",
+      "gitCommit": "64c0790c659f1c4b3c9c5de96c125db095eaee5a",
+      "easBuildId": "e2d8b719-0f50-41c5-94ec-ae6e7304437f",
+      "appStoreConnectBuildId": "130301db-7ea1-451b-8578-5ccd34213129",
+      "storeKitOfferStatus": "pending",
+      "purchaseQaStatus": "pending",
+      "testFlightStatus": "pending",
+      "testedAtUtc": null,
+      "evidenceReference": null
+    },
+    "approval": {
+      "owner": true,
+      "appStoreConnectConfirmed": true,
+      "revenueCatVerified": true,
+      "nativeQaVerified": false
+    }
+  },
+  "accessibility": {
+    "status": "not_reported_voluntary_for_initial_release",
+    "device": "iPhone",
+    "source": "https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels/",
+    "accessibilityUrl": null,
+    "exactBuildEvidence": {
+      "appVersion": "1.0.0",
+      "buildNumber": null,
+      "gitCommit": null,
+      "easBuildId": null,
+      "appStoreConnectBuildId": null,
+      "testedAtUtc": null,
+      "evidenceReference": null
+    },
+    "commonTasks": {
+      "firstLaunchAndSignUp": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "signIn": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "adultEligibility": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "purchaseAndRestore": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "onboarding": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "todayAndWeighIn": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "balancedMealLogging": {
+        "status": "pending",
+        "evidenceReference": null
+      },
+      "settingsAndDeletion": {
+        "status": "pending",
+        "evidenceReference": null
+      }
+    },
+    "features": {
+      "voiceOver": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "voiceControl": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "largerText": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "darkInterface": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "differentiateWithoutColorAlone": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "sufficientContrast": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "reducedMotion": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "captions": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      },
+      "audioDescriptions": {
+        "status": "pending",
+        "commonTasksVerified": [],
+        "evidenceReference": null
+      }
+    },
+    "appStoreConnectDecision": {
+      "status": "not_required_voluntary",
+      "decision": "not_reported_for_initial_release",
+      "savedAtUtc": null,
+      "evidenceReference": null
+    },
+    "approval": {
+      "owner": true,
+      "accessibilityReviewer": false,
+      "exactBuildVerified": false,
+      "appStoreConnectConfirmed": false
+    }
+  },
+  "authenticationSecurity": {
+    "status": "pending_supported_recovery_architecture_and_production_evidence",
+    "source": "artifacts/cut-os/AUTH_SECURITY_PRELAUNCH.md",
+    "risk": "password_reset_account_enumeration_timing",
+    "selectedRecoveryArchitecture": "clerk_supported_server_or_proxy_recovery",
+    "clerkSupportEvidenceReference": "https://clerk.com/docs/guides/development/custom-flows/authentication/forgot-password; https://clerk.com/docs/guides/secure/user-enumeration-protection",
+    "implementationEvidenceReference": "artifacts/cut-os/app/(auth)/forgot-password.tsx; artifacts/cut-os/app/(auth)/forgot-password.web.tsx; artifacts/cut-os/app/_layout.tsx; artifacts/cut-os/lib/auth-flow.ts; artifacts/cut-os/lib/__tests__/password-recovery-native.test.ts; artifacts/cut-os/lib/__tests__/auth-flow.test.ts; artifacts/cut-os/AUTH_SECURITY_PRODUCTION_QA_PROTOCOL.md",
+    "productionTenantEvidence": {
+      "clerkTenantAlias": "clerk-cut-os-getcutos-production-v2",
+      "testedAtUtc": null,
+      "checks": {
+        "genericPublicResponse": {
+          "status": "pending",
+          "evidenceReference": null
+        },
+        "responseEnvelopeParity": {
+          "status": "pending",
+          "evidenceReference": null
+        },
+        "timingParity": {
+          "status": "pending",
+          "evidenceReference": null
+        },
+        "rateLimitEnumerationResistance": {
+          "status": "pending",
+          "evidenceReference": null
+        },
+        "providerFailureBehavior": {
+          "status": "pending",
+          "evidenceReference": null
+        },
+        "safeAbuseLogging": {
+          "status": "pending",
+          "evidenceReference": null
+        }
+      }
+    },
+    "approval": {
+      "owner": false,
+      "securityReviewer": false,
+      "clerkSupportVerified": true,
+      "productionTenantEvidenceVerified": false
+    }
+  },
+  "regulatedMedicalDevice": {
+    "status": "confirmed_in_app_store_connect",
+    "workingPosition": "general_wellness_not_a_regulated_medical_device",
+    "basis": "Current source provides general fitness and nutrition tracking, not diagnosis, prevention, monitoring, treatment, clinical guidance, or regulated-device functionality. The owner approved the not-regulated declaration and App Store Connect confirms it; the next exact candidate still requires claims re-verification.",
+    "appleReference": "https://developer.apple.com/help/app-store-connect/manage-app-information/declare-regulated-medical-device-status",
+    "regionalDeclarations": {
+      "US": {
+        "workingAnswer": "not_regulated_medical_device",
+        "status": "confirmed_in_app_store_connect"
+      },
+      "EU_EEA": {
+        "workingAnswer": "not_regulated_medical_device",
+        "status": "confirmed_in_app_store_connect"
+      },
+      "UK": {
+        "workingAnswer": "not_regulated_medical_device",
+        "status": "confirmed_in_app_store_connect"
+      }
+    },
+    "approval": {
+      "owner": true,
+      "legalOrQualifiedRegulatoryReviewer": false,
+      "finalBinaryVerified": true,
+      "appStoreConnectConfirmed": true
+    }
+  },
+  "ageRating": {
+    "targetAudience": "18_plus",
+    "questionnaireCheckedAt": "2026-08-10",
+    "questionnaireSource": "https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/",
+    "savedQuestionnaireEvidence": {
+      "status": "confirmed_in_app_store_connect",
+      "questionnaireVersionOrRevision": "App Store Connect seven-step questionnaire including 2026 social-media questions verified 2026-08-10",
+      "calculatedRating": "9+",
+      "effectiveRatingAfterOverride": "18+",
+      "confirmedAtUtc": "2026-08-10T22:06:07Z",
+      "evidenceReference": "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#age-rating"
+    },
+    "workingAnswers": [
+      {
+        "id": "parental_controls",
+        "answer": "no",
+        "status": "confirmed",
+        "basis": "The current v1 scope has no parent or guardian controls because the product is restricted to adults.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "age_assurance",
+        "answer": "yes",
+        "status": "confirmed",
+        "basis": "CUT OS asks for a self-declared full DOB solely to decide whether the user meets its 18+ requirement; it is not identity verification.",
+        "evidence": [
+          "ADR_003_ADULT_ELIGIBILITY.md",
+          "artifacts/cut-os/app/(app)/adult-eligibility.tsx"
+        ],
+        "confirmationGates": [
+          "owner",
+          "legal",
+          "final_binary",
+          "app_store_connect"
+        ]
+      },
+      {
+        "id": "unrestricted_web_access",
+        "answer": "no",
+        "status": "confirmed",
+        "basis": "The app exposes controlled legal, support, and Apple subscription-management links rather than unrestricted browsing.",
+        "evidence": ["artifacts/cut-os/components/LegalSupportLinks.tsx"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "user_generated_content",
+        "answer": "no",
+        "status": "confirmed",
+        "basis": "No public or broadly distributed user-generated content feature ships in paid v1.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "social_media",
+        "answer": "no",
+        "status": "confirmed",
+        "basis": "No social or community feature ships in paid v1.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "social_media_disabled_for_users_under_13",
+        "answer": "not_applicable",
+        "status": "confirmed",
+        "basis": "No social-media capability ships, so an under-13 social-media mode does not apply to this adults-only v1.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "messaging_or_chat",
+        "answer": "no",
+        "status": "confirmed",
+        "basis": "No messaging or chat feature ships in paid v1.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "advertising",
+        "answer": "no",
+        "status": "confirmed",
+        "basis": "The current app has no advertising SDK or advertising feature.",
+        "evidence": ["PRIVACY_DATA_MAP.md#current-data-inventory"],
+        "confirmationGates": ["owner", "final_archive", "app_store_connect"]
+      },
+      {
+        "id": "profanity_or_crude_humor",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product and curated catalog contain no profanity or crude-humor content.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "horror_or_fear_themes",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product and curated catalog contain no horror or fear themes.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "alcohol_tobacco_or_drug_use_or_references",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product and curated meal catalog contain no alcohol, tobacco, or drug references.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "medical_or_treatment_information",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The v1 scope and listing provide general wellness information, not diagnosis, treatment, clinical guidance, or personalized medical advice.",
+        "evidence": [
+          "APP_STORE_METADATA.md#focused-v1-listing-copy",
+          "artifacts/cut-os/app/(app)/meal-one.tsx"
+        ],
+        "confirmationGates": [
+          "owner",
+          "legal",
+          "qualified_health_nutrition_review",
+          "final_binary",
+          "app_store_connect"
+        ]
+      },
+      {
+        "id": "health_or_wellness_topics",
+        "answer": "yes",
+        "status": "confirmed",
+        "basis": "The current app provides calorie, dieting, fitness, and exercise-related general wellness guidance.",
+        "evidence": [
+          "APP_STORE_METADATA.md#age-rating-and-questionnaire",
+          "artifacts/cut-os/app/(app)/meal-one.tsx"
+        ],
+        "confirmationGates": [
+          "owner",
+          "qualified_health_nutrition_review",
+          "final_binary",
+          "app_store_connect"
+        ]
+      },
+      {
+        "id": "mature_or_suggestive_themes",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product and curated catalog contain no mature or suggestive themes.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "sexual_content_or_nudity",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product and curated catalog contain no sexual content or nudity.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "graphic_sexual_content_and_nudity",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product and curated catalog contain no graphic sexual content or nudity.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "cartoon_or_fantasy_violence",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product and curated catalog contain no cartoon or fantasy violence.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "realistic_violence",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product and curated catalog contain no realistic violence.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "prolonged_graphic_or_sadistic_realistic_violence",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product and curated catalog contain no prolonged graphic or sadistic realistic violence.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "guns_or_other_weapons",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product and curated catalog contain no guns or other weapons.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "gambling",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product contains no real-money or exchangeable-currency gambling.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "simulated_gambling",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product contains no simulated betting, wagering, casino, or lottery feature.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "contests",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product contains no competitive ranking, reward, or contest feature.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      },
+      {
+        "id": "loot_boxes",
+        "answer": "none",
+        "status": "confirmed",
+        "basis": "The focused v1 product contains no randomized virtual-item purchase or loot-box feature.",
+        "evidence": ["APP_STORE_READINESS.md#honest-v1-scope"],
+        "confirmationGates": ["owner", "final_binary", "app_store_connect"]
+      }
+    ],
+    "higherAgeOverride": {
+      "target": "18_plus",
+      "status": "confirmed_in_app_store_connect",
+      "basis": "The owner confirmed an adults-only launch. If the final Terms/EULA minimum age is 18 and Apple's calculated rating is lower, select the 18+ higher-age override."
+    },
+    "approval": {
+      "owner": true,
+      "legal": false,
+      "qualifiedHealthNutritionReviewer": false,
+      "finalBinaryVerified": true,
+      "appStoreConnectConfirmed": true
+    }
+  },
+  "privacy": {
+    "status": "provisional_pending_production_reconciliation",
+    "manifestPath": "artifacts/cut-os/app.json",
+    "engineeringEvidenceReference": "PRIVACY_DATA_MAP.md; app-store/evidence/production-launch-infrastructure-2026-08-08.md; app-store/evidence/apple-live-configuration-2026-08-04.md; app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md",
+    "tracking": false,
+    "trackingDomains": [],
+    "requiredReasonApis": [
+      {
+        "type": "NSPrivacyAccessedAPICategoryFileTimestamp",
+        "reasons": ["0A2A.1", "3B52.1", "C617.1"]
+      },
+      {
+        "type": "NSPrivacyAccessedAPICategoryDiskSpace",
+        "reasons": ["85F4.1", "E174.1"]
+      },
+      {
+        "type": "NSPrivacyAccessedAPICategoryUserDefaults",
+        "reasons": ["CA92.1"]
+      },
+      {
+        "type": "NSPrivacyAccessedAPICategorySystemBootTime",
+        "reasons": ["35F9.1"]
+      }
+    ],
+    "dataTypes": [
+      {
+        "ascDataType": "Contact Info - Name",
+        "manifestType": "NSPrivacyCollectedDataTypeName",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          "NSPrivacyCollectedDataTypePurposeProductPersonalization"
+        ],
+        "ascPurposes": ["App Functionality", "Product Personalization"],
+        "v1Data": "Display name for account setup and the user-directed greeting."
+      },
+      {
+        "ascDataType": "Contact Info - Email Address",
+        "manifestType": "NSPrivacyCollectedDataTypeEmailAddress",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+        ],
+        "ascPurposes": ["App Functionality"],
+        "v1Data": "Clerk sign-in and account support."
+      },
+      {
+        "ascDataType": "Health & Fitness - Health",
+        "manifestType": "NSPrivacyCollectedDataTypeHealth",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          "NSPrivacyCollectedDataTypePurposeProductPersonalization"
+        ],
+        "ascPurposes": ["App Functionality", "Product Personalization"],
+        "v1Data": "Start and goal weight, daily weigh-ins, food and meal logs, nutrition preferences, and nutrition records that ship in v1."
+      },
+      {
+        "ascDataType": "Health & Fitness - Fitness",
+        "manifestType": "NSPrivacyCollectedDataTypeFitness",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          "NSPrivacyCollectedDataTypePurposeProductPersonalization"
+        ],
+        "ascPurposes": ["App Functionality", "Product Personalization"],
+        "v1Data": "Adults-who-lift goal context, daily weigh-ins, and user-entered strength, cardio, and recovery training logs."
+      },
+      {
+        "ascDataType": "Identifiers - User ID",
+        "manifestType": "NSPrivacyCollectedDataTypeUserID",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+        ],
+        "ascPurposes": ["App Functionality"],
+        "v1Data": "Internal user UUID and authentication/account linkage."
+      },
+      {
+        "ascDataType": "Other Data Types",
+        "manifestType": "NSPrivacyCollectedDataTypeOtherDataTypes",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          "NSPrivacyCollectedDataTypePurposeProductPersonalization"
+        ],
+        "ascPurposes": ["App Functionality", "Product Personalization"],
+        "v1Data": "Eligibility result, policy version, decision time, timezone, unit preference, goal, saved-food snapshots, direct meal feedback, learning preference, and per-day AI request and token counts where the live questionnaire maps them here."
+      },
+      {
+        "ascDataType": "Purchases - Purchase History",
+        "manifestType": "NSPrivacyCollectedDataTypePurchaseHistory",
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "manifestPurposes": [
+          "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          "NSPrivacyCollectedDataTypePurposeAnalytics"
+        ],
+        "ascPurposes": ["App Functionality", "Analytics"],
+        "v1Data": "Apple and RevenueCat subscription, renewal, expiry, refund, and entitlement state."
+      }
+    ],
+    "thirdPartyDataTypes": [
+      {
+        "ascDataType": "Identifiers - Device ID",
+        "partners": ["Clerk"],
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "ascPurposes": ["App Functionality"],
+        "v1Data": "Clerk may process device identifiers and trusted client IP metadata to authenticate sessions, prevent abuse, and apply account-security controls.",
+        "evidence": [
+          "https://clerk.com/legal/dpa",
+          "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#privacy-archive-and-vendor-reconciliation"
+        ]
+      },
+      {
+        "ascDataType": "Usage Data - Product Interaction",
+        "partners": ["Clerk"],
+        "collected": true,
+        "linked": true,
+        "tracking": false,
+        "ascPurposes": ["App Functionality", "Analytics"],
+        "v1Data": "Clerk records production authentication and session activity such as sign-ups, sign-ins, active usage, and retention for authentication operation and service analytics.",
+        "evidence": [
+          "https://clerk.com/legal/dpa",
+          "https://clerk.com/docs/guides/dashboard/analytics",
+          "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#privacy-archive-and-vendor-reconciliation"
+        ]
+      }
+    ],
+    "externalVerificationGates": [
+      {
+        "id": "production_archive_and_embedded_sdks",
+        "status": "pending",
+        "requiredEvidence": "The next exact candidate archive must verify its manifest inventory, embedded SDK privacy manifests, app-level data types, required-reason APIs, and production public configuration."
+      },
+      {
+        "id": "ip_network_metadata_mapping",
+        "status": "pending",
+        "requiredEvidence": "Reconfirm trusted client IP, Clerk device-identifier handling, and barcode-provider network behavior against the next exact candidate and production configuration."
+      },
+      {
+        "id": "diagnostics_and_usage_data",
+        "status": "pending",
+        "requiredEvidence": "Verify the next exact candidate has no unreported crash or general analytics SDK and reconcile Clerk production authentication activity with Product Interaction."
+      },
+      {
+        "id": "public_policy_reconciliation",
+        "status": "pending",
+        "requiredEvidence": "Deploy and verify an owner-approved Privacy Policy and in-app notice that disclose the current food, preferences, feedback, training, and AI-usage-counter data paths."
+      },
+      {
+        "id": "app_store_connect_reconciliation",
+        "status": "pending",
+        "requiredEvidence": "Reconcile the published App Store Connect data types, linkage, no-tracking answers, and purposes against the next exact candidate and current data map."
+      }
+    ],
+    "approval": {
+      "owner": false,
+      "legal": false,
+      "productionArchiveVerified": false,
+      "vendorsVerified": false,
+      "publicPolicyVerified": false,
+      "appStoreConnectConfirmed": false
+    }
+  }
+}

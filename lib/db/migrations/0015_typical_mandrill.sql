@@ -1,0 +1,4 @@
+ALTER TABLE "ai_meal_usage" DROP CONSTRAINT "ai_meal_usage_nonnegative_check";--> statement-breakpoint
+ALTER TABLE "ai_meal_usage" ADD COLUMN "reserved_cost_microdollars" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "ai_meal_usage" ADD COLUMN "spent_cost_microdollars" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "ai_meal_usage" ADD CONSTRAINT "ai_meal_usage_nonnegative_check" CHECK ("ai_meal_usage"."request_count" >= 0 AND "ai_meal_usage"."input_tokens" >= 0 AND "ai_meal_usage"."output_tokens" >= 0 AND "ai_meal_usage"."reserved_cost_microdollars" >= 0 AND "ai_meal_usage"."spent_cost_microdollars" >= 0);

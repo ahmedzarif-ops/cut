@@ -1,0 +1,54 @@
+export type NextActionKind =
+  "complete_onboarding" | "weigh_in" | "first_meal" | "review_meals";
+
+export interface NextAction {
+  kind: NextActionKind;
+  title: string;
+  detail: string;
+}
+
+export interface NextActionInput {
+  onboardingComplete: boolean;
+  hasWeightToday: boolean;
+  hasMealToday: boolean;
+}
+
+/**
+ * The first deterministic Today rule. It is intentionally small: the queue
+ * will grow as food, training, closeout, and weekly-review states land.
+ */
+export function selectNextAction(input: NextActionInput): NextAction {
+  if (!input.onboardingComplete) {
+    return {
+      kind: "complete_onboarding",
+      title: "Set up your profile",
+      detail:
+        "Add your profile details to finish setup and start your daily check-in.",
+    };
+  }
+
+  if (!input.hasWeightToday) {
+    return {
+      kind: "weigh_in",
+      title: "Log your morning weigh-in",
+      detail:
+        "Use the same conditions each day so your check-ins stay consistent.",
+    };
+  }
+
+  if (!input.hasMealToday) {
+    return {
+      kind: "first_meal",
+      title: "Build your first balanced meal",
+      detail:
+        "Choose a fixed recipe and review its ingredients, portions, and estimates before logging.",
+    };
+  }
+
+  return {
+    kind: "review_meals",
+    title: "Review today’s meals",
+    detail:
+      "See what you’ve logged, add another meal, or review today’s totals.",
+  };
+}

@@ -1,7 +1,6 @@
 import {
   date,
   doublePrecision,
-  integer,
   pgTable,
   text,
   timestamp,
@@ -28,7 +27,6 @@ export const profilesTable = pgTable("profiles", {
   goal: text("goal").notNull().default("cut"),
   // "male" | "female" | "other" | "unspecified"
   sex: text("sex").notNull().default("unspecified"),
-  birthYear: integer("birth_year"),
   heightCm: doublePrecision("height_cm"),
   startWeightKg: doublePrecision("start_weight_kg"),
   goalWeightKg: doublePrecision("goal_weight_kg"),

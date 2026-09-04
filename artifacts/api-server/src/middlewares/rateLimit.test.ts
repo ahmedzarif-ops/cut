@@ -1,7 +1,11 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import express, { type Express } from "express";
 import request from "supertest";
-import { createApiLimiter, createClerkLimiter } from "./rateLimit";
+import {
+  CLERK_RATE_LIMIT_SECURITY_EVENT,
+  createApiLimiter,
+  createClerkLimiter,
+} from "./rateLimit";
 
 afterEach(() => {
   delete process.env.API_RATE_LIMIT;
@@ -39,6 +43,32 @@ describe("createApiLimiter", () => {
     // A different client IP still has its own allowance.
     expect((await request(app).get("/ping").set(ip2)).status).toBe(200);
   });
+
+  it("does not pretend the MemoryStore allowance is shared across instances", async () => {
+    const firstReplica = appWithLimit(1);
+    const secondReplica = appWithLimit(1);
+    const ip = { "x-forwarded-for": "1.1.1.10" };
+
+    expect((await request(firstReplica).get("/ping").set(ip)).status).toBe(200);
+    expect((await request(firstReplica).get("/ping").set(ip)).status).toBe(429);
+    expect((await request(secondReplica).get("/ping").set(ip)).status).toBe(
+      200,
+    );
+  });
+
+  it.each(["NaN", "0", "-1", "1.5", "10001", " 3"])(
+    "uses the safe default instead of malformed or excessive API_RATE_LIMIT %s",
+    async (value) => {
+      process.env.API_RATE_LIMIT = value;
+      const app = express();
+      app.use(createApiLimiter());
+      app.get("/ping", (_req, res) => res.json({ ok: true }));
+      for (let requestNumber = 0; requestNumber < 100; requestNumber += 1) {
+        expect((await request(app).get("/ping")).status).toBe(200);
+      }
+      expect((await request(app).get("/ping")).status).toBe(429);
+    },
+  );
 });
 
 function clerkProxyApp(limit?: number): Express {
@@ -83,4 +113,40 @@ describe("createClerkLimiter", () => {
     // A different client IP still has its own allowance.
     expect((await request(app).get(path).set(ip2)).status).toBe(200);
   });
+
+  it("logs only a fixed abuse event when the Clerk proxy is throttled", async () => {
+    const warn = vi.fn();
+    process.env.CLERK_RATE_LIMIT = "1";
+    const app = express();
+    app.use((req, _res, next) => {
+      req.log = { warn } as unknown as typeof req.log;
+      next();
+    });
+    app.use("/api/__clerk", createClerkLimiter());
+    app.get("/api/__clerk/v1/client/sign_ins/:attemptId", (_req, res) =>
+      res.json({ ok: true }),
+    );
+    const path = "/api/__clerk/v1/client/sign_ins/sia_sensitive";
+
+    expect((await request(app).get(path)).status).toBe(200);
+    expect((await request(app).get(path)).status).toBe(429);
+    expect(warn).toHaveBeenCalledWith(
+      { securityEvent: CLERK_RATE_LIMIT_SECURITY_EVENT },
+      "Clerk Frontend API request rate limited",
+    );
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("sia_sensitive");
+  });
+
+  it.each(["NaN", "0", "-1", "1.5", "1001", " 2"])(
+    "uses the safe default instead of malformed or excessive CLERK_RATE_LIMIT %s",
+    async (value) => {
+      process.env.CLERK_RATE_LIMIT = value;
+      const app = clerkProxyApp();
+      const path = "/api/__clerk/v1/environment";
+      for (let requestNumber = 0; requestNumber < 30; requestNumber += 1) {
+        expect((await request(app).get(path)).status).toBe(200);
+      }
+      expect((await request(app).get(path)).status).toBe(429);
+    },
+  );
 });

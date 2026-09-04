@@ -16,11 +16,12 @@ paths = [ "/" ]
 localPort = 22203
 
 [services.development]
-run = "pnpm --filter @workspace/cut-os run dev"
+run = "corepack pnpm --filter @workspace/cut-os run dev"
 
-[services.production]
-build = [ "pnpm", "--filter", "@workspace/cut-os", "run", "build" ]
-run = [ "pnpm", "--filter", "@workspace/cut-os", "run", "serve" ]
+# This artifact is development/preview only. Production is intentionally owned
+# by the API artifact's single listener, which mounts these source-controlled
+# launch/legal routes in-process. Keeping a second production service here
+# would create a competing PORT listener on a one-machine Reserved VM.
 
 [services.env]
 PORT = "22203"

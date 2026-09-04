@@ -1,12 +1,13 @@
+import { useAuth, useSession } from "@clerk/expo";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  getMe as getMeRequest,
   getGetMeQueryKey,
   getGetMyProfileQueryKey,
+  updateMe as updateMeRequest,
+  upsertMyProfile as upsertMyProfileRequest,
   useGetMe,
   useGetMyProfile,
-  useUpdateMe,
-  useUpsertMyProfile,
-  type Profile,
 } from "@workspace/api-client-react";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -25,13 +26,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 import {
-  ACTIVITY,
-  EXPERIENCE,
   GOALS,
-  SEXES,
+  ProfileSavePrincipalChangedError,
+  convertProfileDraftUnits,
+  executeOwnedProfileSave,
   formStateToProfileInput,
   profileToFormState,
   type ProfileFormState,
+  type WeightUnits,
 } from "@/lib/profile-form";
 
 const LABELS: Record<string, string> = {
@@ -39,25 +41,15 @@ const LABELS: Record<string, string> = {
   maintain: "Maintain",
   recomp: "Recomp",
   gain: "Gain",
-  male: "Male",
-  female: "Female",
-  other: "Other",
-  unspecified: "Prefer not to say",
-  sedentary: "Sedentary",
-  light: "Light",
-  moderate: "Moderate",
-  active: "Active",
-  very_active: "Very active",
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
+  metric: "Kilograms (kg)",
+  imperial: "Pounds (lb)",
 };
 
 /**
  * Loads the current account + profile before showing the form so editing an
- * existing plan starts from the saved values. PUT /api/me/profile is a full
- * replace — rendering this form blank for a user who already has a profile
- * and letting them save would silently null every omitted field.
+ * existing profile starts from the saved values. PUT /api/me/profile is a full
+ * replace of the minimal paid-v1 profile; unused legacy fields are deliberately
+ * cleared rather than collected or carried forward.
  */
 export default function OnboardingScreen() {
   const c = useColors();
@@ -109,8 +101,12 @@ export default function OnboardingScreen() {
   }
 
   const profile = profileQuery.data ?? null;
+  const initialUnits = meQuery.data?.units ?? "metric";
   return (
-    <OnboardingForm initial={profileToFormState(profile)} existing={profile} />
+    <OnboardingForm
+      initial={profileToFormState(profile, initialUnits)}
+      initialUnits={initialUnits}
+    />
   );
 }
 
@@ -130,11 +126,13 @@ function LoadErrorView({ onRetry }: { onRetry: () => void }) {
         },
       ]}
     >
-      <Text style={s.title}>Couldn&apos;t load your plan</Text>
+      <Text style={s.title}>Couldn&apos;t load your profile</Text>
       <Text style={s.subtitle}>
         Check your connection and try again before editing.
       </Text>
       <Pressable
+        accessibilityLabel="Retry loading profile"
+        accessibilityRole="button"
         style={({ pressed }) => [s.button, pressed && s.buttonPressed]}
         onPress={onRetry}
       >
@@ -146,42 +144,137 @@ function LoadErrorView({ onRetry }: { onRetry: () => void }) {
 
 function OnboardingForm({
   initial,
-  existing,
+  initialUnits,
 }: {
   initial: ProfileFormState;
-  existing: Profile | null;
+  initialUnits: WeightUnits;
 }) {
   const c = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const s = makeStyles(c);
+  const { userId, sessionId } = useAuth();
+  const { session } = useSession();
 
-  const upsertProfile = useUpsertMyProfile();
-  const updateMe = useUpdateMe();
-
-  const [form, setForm] = React.useState<ProfileFormState>(initial);
+  const [draft, setDraft] = React.useState(() => ({
+    form: initial,
+    units: initialUnits,
+  }));
+  const { form, units } = draft;
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState(false);
+  const saveLock = React.useRef(false);
+  const mounted = React.useRef(true);
+  const currentPrincipal = React.useRef({
+    userId: userId ?? null,
+    sessionId: sessionId ?? null,
+  });
+  currentPrincipal.current = {
+    userId: userId ?? null,
+    sessionId: sessionId ?? null,
+  };
+
+  React.useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
+
+  const busy = saving;
 
   const set = <K extends keyof ProfileFormState>(
     key: K,
     value: ProfileFormState[K],
-  ) => setForm((prev) => ({ ...prev, [key]: value }));
+  ) => {
+    if (!busy) {
+      setDraft((current) => ({
+        ...current,
+        form: { ...current.form, [key]: value },
+      }));
+    }
+  };
 
-  const busy = upsertProfile.isPending || updateMe.isPending;
+  const selectUnits = (nextUnits: WeightUnits) => {
+    if (!busy) {
+      setDraft((current) => convertProfileDraftUnits(current, nextUnits));
+    }
+  };
 
   const handleSave = async () => {
+    if (
+      !userId ||
+      !sessionId ||
+      !session ||
+      session.id !== sessionId ||
+      session.user?.id !== userId ||
+      saveLock.current
+    ) {
+      return;
+    }
+
+    const ownerUserId = userId;
+    const ownerSessionId = sessionId;
+    const ownerSession = session;
+    const isCurrentPrincipal = () =>
+      mounted.current &&
+      currentPrincipal.current.userId === ownerUserId &&
+      currentPrincipal.current.sessionId === ownerSessionId;
+
+    saveLock.current = true;
+    setSaving(true);
     setSubmitError(null);
     try {
-      await upsertProfile.mutateAsync({
-        data: formStateToProfileInput(form, existing),
+      const saved = await executeOwnedProfileSave({
+        ownerUserId,
+        ownerSessionId,
+        currentPrincipal: () => currentPrincipal.current,
+        getToken: () =>
+          tokenWithinTimeout(() => ownerSession.getToken({ skipCache: true })),
+        updateAccount: (token) =>
+          updateMeRequest(
+            { units },
+            { headers: { Authorization: `Bearer ${token}` } },
+          ),
+        upsertProfile: (token) =>
+          upsertMyProfileRequest(formStateToProfileInput(form, units), {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        readAccount: (token) =>
+          getMeRequest({ headers: { Authorization: `Bearer ${token}` } }),
       });
-      await updateMe.mutateAsync({ data: { onboardingComplete: true } });
-      await qc.invalidateQueries({ queryKey: getGetMyProfileQueryKey() });
-      await qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      if (!isCurrentPrincipal()) return;
+
+      // A /me request started before the profile transaction can resolve after
+      // this save and overwrite the completed account with its older
+      // onboardingComplete=false response. That sends the route boundary back
+      // to onboarding while /today is mounting and can leave iOS showing only
+      // the native navigation background. Cancel both affected query families
+      // before installing the server-confirmed post-save state.
+      await Promise.all([
+        qc.cancelQueries({ queryKey: getGetMeQueryKey() }),
+        qc.cancelQueries({ queryKey: getGetMyProfileQueryKey() }),
+      ]);
+      if (!isCurrentPrincipal()) return;
+
+      qc.setQueryData(getGetMyProfileQueryKey(), saved.profile);
+      qc.setQueryData(getGetMeQueryKey(), saved.account);
+      qc.setQueryData([...getGetMeQueryKey(), ownerUserId], saved.account);
       router.replace("/today");
-    } catch {
-      setSubmitError("Couldn't save your plan. Check your entries and retry.");
+    } catch (error) {
+      if (
+        error instanceof ProfileSavePrincipalChangedError ||
+        !isCurrentPrincipal()
+      ) {
+        return;
+      }
+      setSubmitError(
+        "Couldn't save your profile. Check your entries and retry.",
+      );
+    } finally {
+      saveLock.current = false;
+      if (isCurrentPrincipal()) setSaving(false);
     }
   };
 
@@ -193,14 +286,25 @@ function OnboardingForm({
     <View style={s.chipRow}>
       {options.map((option) => {
         const active = option === selected;
+        const label = LABELS[option] ?? option;
         return (
           <Pressable
             key={option}
-            style={[s.chip, active && s.chipActive]}
+            accessibilityLabel={label}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active, disabled: busy }}
+            disabled={busy}
+            style={({ pressed }) => [
+              s.chip,
+              active && s.chipActive,
+              busy && s.buttonDisabled,
+              pressed && !busy && s.buttonPressed,
+            ]}
             onPress={() => onSelect(option)}
           >
             <Text style={[s.chipText, active && s.chipTextActive]}>
-              {LABELS[option] ?? option}
+              {active ? "✓ " : ""}
+              {label}
             </Text>
           </Pressable>
         );
@@ -220,89 +324,79 @@ function OnboardingForm({
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={s.title}>Build your plan</Text>
-        <Text style={s.subtitle}>
-          These drive your daily calorie and training targets.
+        <Text accessibilityRole="header" style={s.title}>
+          Set up your profile
         </Text>
+        <Text style={s.subtitle}>Save the basics for your CUT OS profile.</Text>
 
         <Text style={s.label}>Display name</Text>
         <TextInput
+          accessibilityLabel="Display name"
           style={s.input}
           placeholder="How should we greet you?"
           placeholderTextColor={c.mutedForeground}
           value={form.displayName}
           onChangeText={(v) => set("displayName", v)}
+          editable={!busy}
         />
 
         <Text style={s.label}>Goal</Text>
         {renderChips(GOALS, form.goal, (v) => set("goal", v))}
 
-        <Text style={s.label}>Sex</Text>
-        {renderChips(SEXES, form.sex, (v) => set("sex", v))}
+        <Text style={s.label}>Weight units</Text>
+        {renderChips(["metric", "imperial"] as const, units, selectUnits)}
 
         <View style={s.twoCol}>
           <View style={s.col}>
-            <Text style={s.label}>Birth year</Text>
+            <Text style={s.label}>
+              Start weight ({units === "imperial" ? "lb" : "kg"})
+            </Text>
             <TextInput
-              style={s.input}
-              keyboardType="number-pad"
-              placeholder="1995"
-              placeholderTextColor={c.mutedForeground}
-              value={form.birthYear}
-              onChangeText={(v) => set("birthYear", v)}
-            />
-          </View>
-          <View style={s.col}>
-            <Text style={s.label}>Height (cm)</Text>
-            <TextInput
+              accessibilityLabel={`Start weight in ${
+                units === "imperial" ? "pounds" : "kilograms"
+              }`}
               style={s.input}
               keyboardType="decimal-pad"
-              placeholder="180"
-              placeholderTextColor={c.mutedForeground}
-              value={form.heightCm}
-              onChangeText={(v) => set("heightCm", v)}
-            />
-          </View>
-        </View>
-
-        <View style={s.twoCol}>
-          <View style={s.col}>
-            <Text style={s.label}>Start weight (kg)</Text>
-            <TextInput
-              style={s.input}
-              keyboardType="decimal-pad"
-              placeholder="85"
+              placeholder={units === "imperial" ? "187" : "85"}
               placeholderTextColor={c.mutedForeground}
               value={form.startWeightKg}
               onChangeText={(v) => set("startWeightKg", v)}
+              editable={!busy}
             />
           </View>
           <View style={s.col}>
-            <Text style={s.label}>Goal weight (kg)</Text>
+            <Text style={s.label}>
+              Goal weight ({units === "imperial" ? "lb" : "kg"})
+            </Text>
             <TextInput
+              accessibilityLabel={`Goal weight in ${
+                units === "imperial" ? "pounds" : "kilograms"
+              }`}
               style={s.input}
               keyboardType="decimal-pad"
-              placeholder="78"
+              placeholder={units === "imperial" ? "172" : "78"}
               placeholderTextColor={c.mutedForeground}
               value={form.goalWeightKg}
               onChangeText={(v) => set("goalWeightKg", v)}
+              editable={!busy}
             />
           </View>
         </View>
 
-        <Text style={s.label}>Activity level</Text>
-        {renderChips(ACTIVITY, form.activityLevel, (v) =>
-          set("activityLevel", v),
+        {submitError && (
+          <Text
+            accessibilityRole="alert"
+            accessibilityLiveRegion="assertive"
+            style={s.error}
+          >
+            {submitError}
+          </Text>
         )}
-
-        <Text style={s.label}>Training experience</Text>
-        {renderChips(EXPERIENCE, form.trainingExperience, (v) =>
-          set("trainingExperience", v),
-        )}
-
-        {submitError && <Text style={s.error}>{submitError}</Text>}
 
         <Pressable
+          accessibilityLabel="Save profile"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: busy, busy: saving }}
           style={({ pressed }) => [
             s.button,
             busy && s.buttonDisabled,
@@ -314,12 +408,19 @@ function OnboardingForm({
           {busy ? (
             <ActivityIndicator color={c.primaryForeground} />
           ) : (
-            <Text style={s.buttonText}>Save plan</Text>
+            <Text style={s.buttonText}>Save profile</Text>
           )}
         </Pressable>
 
         <Pressable
-          style={s.secondaryButton}
+          accessibilityLabel="Cancel profile changes"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: busy }}
+          style={({ pressed }) => [
+            s.secondaryButton,
+            busy && s.buttonDisabled,
+            pressed && !busy && s.buttonPressed,
+          ]}
           onPress={() => router.back()}
           disabled={busy}
         >
@@ -328,6 +429,22 @@ function OnboardingForm({
       </ScrollView>
     </KeyboardAvoidingView>
   );
+}
+
+async function tokenWithinTimeout(
+  getToken: () => Promise<string | null>,
+): Promise<string | null> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      getToken(),
+      new Promise<null>((resolve) => {
+        timeout = setTimeout(() => resolve(null), 5000);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
 }
 
 function makeStyles(c: ReturnType<typeof useColors>) {
@@ -351,7 +468,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     input: {
       backgroundColor: c.input,
-      borderColor: c.border,
+      borderColor: c.inputBorder,
       borderWidth: 1,
       borderRadius: c.radius,
       color: c.foreground,
@@ -364,12 +481,15 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     col: { flex: 1 },
     chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     chip: {
+      minHeight: 44,
       backgroundColor: c.secondary,
-      borderColor: c.border,
+      borderColor: c.inputBorder,
       borderWidth: 1,
       borderRadius: 999,
       paddingHorizontal: 16,
       paddingVertical: 10,
+      alignItems: "center",
+      justifyContent: "center",
     },
     chipActive: { backgroundColor: c.primary, borderColor: c.primary },
     chipText: {
@@ -379,7 +499,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     chipTextActive: { color: c.primaryForeground },
     error: {
-      color: c.destructive,
+      color: c.destructiveText,
       fontFamily: "Inter_400Regular",
       fontSize: 13,
       marginTop: 16,
@@ -400,7 +520,13 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       fontFamily: "Inter_600SemiBold",
       fontSize: 16,
     },
-    secondaryButton: { alignItems: "center", paddingVertical: 14, marginTop: 8 },
+    secondaryButton: {
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 44,
+      paddingVertical: 14,
+      marginTop: 8,
+    },
     secondaryButtonText: {
       color: c.mutedForeground,
       fontFamily: "Inter_500Medium",

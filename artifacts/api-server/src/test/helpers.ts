@@ -17,18 +17,29 @@ import { fileURLToPath } from "node:url";
 import express, { type Express, type RequestHandler } from "express";
 import pinoHttp from "pino-http";
 import pino from "pino";
+import request from "supertest";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { setDb, type Db } from "@workspace/db";
 import * as schema from "@workspace/db/schema";
 import router from "../routes";
+import healthRouter from "../routes/health";
 import { errorHandler } from "../middlewares/errorHandler";
+import {
+  REVENUECAT_ENTITLEMENT_ID,
+  setSubscriptionStatusProviderForTesting,
+  type SubscriptionStatusProvider,
+} from "../services/revenueCatSubscriptionService";
+import {
+  setAccountSubscriptionCustomerDeletionPoller,
+  setAccountSubscriptionCustomerDeleter,
+  type SubscriptionCustomerDeletionPoller,
+  type SubscriptionCustomerDeleter,
+} from "../services/accountDeletionService";
+import { syncNutritionCatalog } from "../services/nutritionCatalogService";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const MIGRATIONS_DIR = path.resolve(
-  __dirname,
-  "../../../../lib/db/migrations",
-);
+const MIGRATIONS_DIR = path.resolve(__dirname, "../../../../lib/db/migrations");
 
 /** Same global brand @clerk/express stamps on `req.auth`. */
 const clerkAuthBrand = Symbol.for("@clerk/express.auth");
@@ -41,6 +52,50 @@ export interface TestContext {
   db: ReturnType<typeof drizzle<typeof schema>>;
   client: PGlite;
   close: () => Promise<void>;
+}
+
+export interface CreateTestContextOptions {
+  subscriptionStatusProvider?: SubscriptionStatusProvider;
+  subscriptionCustomerDeleter?: SubscriptionCustomerDeleter;
+  subscriptionCustomerDeletionPoller?: SubscriptionCustomerDeletionPoller;
+}
+
+const entitledTestSubscriptionProvider: SubscriptionStatusProvider = {
+  async getStatus() {
+    return {
+      entitled: true,
+      entitlementId: REVENUECAT_ENTITLEMENT_ID,
+      expiresAt: null,
+      managementUrl: null,
+    };
+  },
+};
+
+const absentTestSubscriptionCustomer: SubscriptionCustomerDeleter = async () =>
+  undefined;
+const absentTestSubscriptionCustomerPoller: SubscriptionCustomerDeletionPoller =
+  async () => undefined;
+
+/** Establish the current 18+ policy through the real special API route. */
+export async function makeTestUserEligible(
+  context: TestContext,
+  clerkUserId: string,
+  email?: string,
+): Promise<void> {
+  const response = await request(context.app)
+    .put("/api/me/adult-eligibility")
+    .set(TEST_USER_HEADER, clerkUserId)
+    .set(email ? { [TEST_EMAIL_HEADER]: email } : {})
+    .send({
+      dateOfBirth: "1990-01-01",
+      policyVersion: "adult-18-v1",
+      adultAttestation: true,
+    });
+  if (response.status !== 200) {
+    throw new Error(
+      `Failed to establish test adult eligibility (${response.status})`,
+    );
+  }
 }
 
 function readMigrationsInOrder(): string[] {
@@ -75,7 +130,9 @@ function testClerkAuth(): RequestHandler {
   };
 }
 
-export async function createTestContext(): Promise<TestContext> {
+export async function createTestContext(
+  options: CreateTestContextOptions = {},
+): Promise<TestContext> {
   const client = new PGlite();
   for (const sql of readMigrationsInOrder()) {
     await client.exec(sql);
@@ -85,10 +142,22 @@ export async function createTestContext(): Promise<TestContext> {
   // PGlite's Drizzle instance is a different driver flavor than node-postgres
   // but exposes the identical query API the routes use.
   setDb(db as unknown as Db);
+  await syncNutritionCatalog(db as unknown as Db);
+  setSubscriptionStatusProviderForTesting(
+    options.subscriptionStatusProvider ?? entitledTestSubscriptionProvider,
+  );
+  setAccountSubscriptionCustomerDeleter(
+    options.subscriptionCustomerDeleter ?? absentTestSubscriptionCustomer,
+  );
+  setAccountSubscriptionCustomerDeletionPoller(
+    options.subscriptionCustomerDeletionPoller ??
+      absentTestSubscriptionCustomerPoller,
+  );
 
   const app = express();
   app.use(pinoHttp({ logger: pino({ level: "silent" }) }));
   app.use(express.json());
+  app.use("/api", healthRouter);
   app.use(testClerkAuth());
   app.use("/api", router);
   app.use(errorHandler);
@@ -99,6 +168,9 @@ export async function createTestContext(): Promise<TestContext> {
     client,
     close: async () => {
       setDb(null);
+      setSubscriptionStatusProviderForTesting(null);
+      setAccountSubscriptionCustomerDeleter(null);
+      setAccountSubscriptionCustomerDeletionPoller(null);
       await client.close();
     },
   };

@@ -1,5 +1,10 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
+import { getAuth } from "@clerk/express";
 import {
+  DecideMyAdultEligibilityBody,
+  DecideMyAdultEligibilityResponse,
+  GetAccountDeletionStatusResponse,
+  GetMyAdultEligibilityResponse,
   GetMeResponse,
   UpdateMeBody,
   UpdateMeResponse,
@@ -8,9 +13,111 @@ import {
   UpsertMyProfileResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
-import { updateUser, getProfile, upsertProfile } from "../services/userService";
+import { sendSubscriptionStatusUnavailable } from "../middlewares/requireSubscription";
+import { getProfile, updateUser, upsertProfile } from "../services/userService";
+import {
+  enforcePostProvisionDeletionGuard,
+  getAccountDeletionIdentity,
+  getAccountDeletionStatus,
+  hashClerkIdentity,
+  requestAccountDeletion,
+} from "../services/accountDeletionService";
+import {
+  decideAdultEligibility,
+  getAdultEligibility,
+} from "../services/adultEligibilityService";
+import {
+  getSubscriptionStatusProvider,
+  REVENUECAT_ENTITLEMENT_ID,
+} from "../services/revenueCatSubscriptionService";
+import { HttpError } from "../lib/httpError";
 
 const router: IRouter = Router();
+const ADULT_ELIGIBILITY_INPUT_KEYS = new Set([
+  "dateOfBirth",
+  "policyVersion",
+  "adultAttestation",
+]);
+const USER_UPDATE_INPUT_KEYS = new Set([
+  "timezone",
+  "units",
+  "onboardingComplete",
+]);
+const PROFILE_INPUT_KEYS = new Set([
+  "displayName",
+  "goal",
+  "startWeightKg",
+  "goalWeightKg",
+]);
+
+function hasOnlyAdultEligibilityKeys(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).every((key) => ADULT_ELIGIBILITY_INPUT_KEYS.has(key))
+  );
+}
+
+function hasOnlyUserUpdateKeys(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).every((key) => USER_UPDATE_INPUT_KEYS.has(key))
+  );
+}
+
+function hasOnlyProfileInputKeys(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).every((key) => PROFILE_INPUT_KEYS.has(key))
+  );
+}
+
+function sendDeletionBlocked(res: Response): void {
+  res.status(410).json({
+    error: "Account deletion is in progress or completed",
+  });
+}
+
+async function sendSubscriptionStatus(
+  req: Request,
+  res: Response,
+  refresh: boolean,
+): Promise<void> {
+  try {
+    const status = await getSubscriptionStatusProvider().getStatus(
+      req.userId!,
+      refresh ? { refresh: true } : undefined,
+    );
+    res.json({
+      entitled: status.entitled,
+      entitlementId: REVENUECAT_ENTITLEMENT_ID,
+      expiresAt: status.expiresAt,
+      managementUrl: status.managementUrl,
+    });
+  } catch (error) {
+    sendSubscriptionStatusUnavailable(req, res, error);
+  }
+}
+
+// Eligibility status is authorization state and the PUT receives transient
+// age evidence. Keep every response on this path out of intermediary/browser
+// caches, including errors.
+router.use("/me/adult-eligibility", (_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
+
+// Subscription state is authorization data and may be explicitly refreshed
+// after a purchase or restore. Never let an intermediary reuse these results.
+router.use("/me/subscription", (_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
 
 // GET /api/me — current user. requireAuth already resolved and attached the
 // full internal row as req.user, so no second query is needed here.
@@ -18,8 +125,34 @@ router.get("/me", requireAuth, async (req, res): Promise<void> => {
   res.json(GetMeResponse.parse(req.user));
 });
 
-// PATCH /api/me — update account settings (timezone, units, onboarding flag).
+// These status endpoints are authenticated but intentionally not paywalled:
+// clients need them to decide whether to show purchase or restore UI.
+router.get("/me/subscription", requireAuth, async (req, res): Promise<void> => {
+  await sendSubscriptionStatus(req, res, false);
+});
+
+router.post(
+  "/me/subscription/refresh",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    await sendSubscriptionStatus(req, res, true);
+  },
+);
+
+// PATCH /api/me — update account settings (timezone, units). This route is
+// intentionally available before purchase so the app can establish its named
+// local-day boundary before showing paid daily flows. It exposes no paid data.
+// The onboarding flag remains server-owned, not a free setting: updateUser
+// validates it against profile existence (see PRODUCT_RULES "Onboarding
+// completion", P1-4).
 router.patch("/me", requireAuth, async (req, res): Promise<void> => {
+  // Generated Zod objects strip unknown keys by default. Enforce the closed
+  // OpenAPI shape explicitly so this pre-purchase endpoint cannot become a
+  // tunnel for profile, nutrition, or other paid-domain fields.
+  if (!hasOnlyUserUpdateKeys(req.body)) {
+    res.status(400).json({ error: "Invalid account settings input" });
+    return;
+  }
   const parsed = UpdateMeBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -33,25 +166,184 @@ router.patch("/me", requireAuth, async (req, res): Promise<void> => {
   res.json(UpdateMeResponse.parse(user));
 });
 
-// GET /api/me/profile — the current user's onboarding profile.
-router.get("/me/profile", requireAuth, async (req, res): Promise<void> => {
-  const profile = await getProfile(req.userId!);
-  if (!profile) {
-    res.status(404).json({ error: "Profile not found" });
+// GET /api/me/account-deletion — special auth with no JIT provisioning. This
+// remains available to a tombstoned identity while its token is still valid.
+router.get("/me/account-deletion", async (req, res): Promise<void> => {
+  const clerkUserId = getAccountDeletionIdentity(req);
+  if (!clerkUserId) {
+    res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  res.json(GetMyProfileResponse.parse(profile));
+  try {
+    res.json(
+      GetAccountDeletionStatusResponse.parse({
+        status: await getAccountDeletionStatus(clerkUserId),
+      }),
+    );
+  } catch {
+    req.log.error(
+      {
+        identityHash: hashClerkIdentity(clerkUserId),
+        errorCode: "account_deletion_status_failed",
+      },
+      "Account deletion status could not be loaded",
+    );
+    res.status(503).json({
+      error: "Account deletion status is temporarily unavailable",
+    });
+  }
 });
 
-// PUT /api/me/profile — create or replace the current user's profile.
-router.put("/me/profile", requireAuth, async (req, res): Promise<void> => {
-  const parsed = UpsertMyProfileBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+// GET /api/me/adult-eligibility — special authenticated status lookup that
+// never creates an internal user. Deletion retains precedence before and after
+// the read so a concurrent tombstone cannot be masked as eligibility state.
+router.get("/me/adult-eligibility", async (req, res): Promise<void> => {
+  const clerkUserId = getAccountDeletionIdentity(req);
+  if (!clerkUserId) {
+    res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const profile = await upsertProfile(req.userId!, parsed.data);
-  res.json(UpsertMyProfileResponse.parse(profile));
+  if ((await getAccountDeletionStatus(clerkUserId)) !== "none") {
+    sendDeletionBlocked(res);
+    return;
+  }
+
+  const status = await getAdultEligibility(clerkUserId);
+  const postReadDeletionStatus = status.userId
+    ? await enforcePostProvisionDeletionGuard({
+        identityHash: hashClerkIdentity(clerkUserId),
+        clerkUserId,
+        userId: status.userId,
+      })
+    : await getAccountDeletionStatus(clerkUserId);
+  if (postReadDeletionStatus !== "none") {
+    sendDeletionBlocked(res);
+    return;
+  }
+  res.json(GetMyAdultEligibilityResponse.parse(status.view));
 });
+
+// PUT /api/me/adult-eligibility — the only normal creation path for a user
+// row. The server evaluates the transient date using its injected UTC clock,
+// persists only the derived decision, and stores email only for an eligible
+// outcome. The strict key check compensates for generated Zod's default
+// unknown-key stripping and keeps additionalProperties:false true at runtime.
+router.put("/me/adult-eligibility", async (req, res): Promise<void> => {
+  const clerkUserId = getAccountDeletionIdentity(req);
+  if (!clerkUserId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if ((await getAccountDeletionStatus(clerkUserId)) !== "none") {
+    sendDeletionBlocked(res);
+    return;
+  }
+  if (!hasOnlyAdultEligibilityKeys(req.body)) {
+    throw new HttpError(400, "Invalid adult eligibility input");
+  }
+
+  const parsed = DecideMyAdultEligibilityBody.safeParse(req.body);
+  if (!parsed.success) {
+    throw new HttpError(400, "Invalid adult eligibility input");
+  }
+
+  const claims = getAuth(req).sessionClaims as { email?: unknown } | undefined;
+  const email = typeof claims?.email === "string" ? claims.email : null;
+  const decision = await decideAdultEligibility({
+    clerkUserId,
+    email,
+    dateOfBirth: parsed.data.dateOfBirth,
+    policyVersion: parsed.data.policyVersion,
+  });
+
+  const postDecisionDeletionStatus = await enforcePostProvisionDeletionGuard({
+    identityHash: hashClerkIdentity(clerkUserId),
+    clerkUserId,
+    userId: decision.userId,
+  });
+  if (postDecisionDeletionStatus !== "none") {
+    sendDeletionBlocked(res);
+    return;
+  }
+  if (decision.denied) {
+    throw new HttpError(
+      403,
+      "CUT OS is available only to adults age 18 or older",
+      "adult_eligibility_denied",
+    );
+  }
+  res.json(DecideMyAdultEligibilityResponse.parse(decision.view));
+});
+
+// DELETE /api/me — special auth bypasses normal account resolution so pending
+// and completed tombstones can retry idempotently. A 204 means both Clerk and
+// local cascade deletion are terminal; a 503 means durable retry remains.
+router.delete("/me", async (req, res): Promise<void> => {
+  const clerkUserId = getAccountDeletionIdentity(req);
+  if (!clerkUserId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  let result;
+  try {
+    result = await requestAccountDeletion(clerkUserId);
+  } catch {
+    req.log.error(
+      {
+        identityHash: hashClerkIdentity(clerkUserId),
+        errorCode: "account_deletion_stage_failed",
+      },
+      "Account deletion could not be staged",
+    );
+    res.status(503).json({
+      error: "Account deletion is temporarily unavailable",
+    });
+    return;
+  }
+
+  if (result.status === "pending") {
+    res.status(503).json({
+      error: "Account deletion is pending and will be retried",
+    });
+    return;
+  }
+  res.status(204).send();
+});
+
+// GET /api/me/profile — the current user's onboarding profile.
+router.get(
+  "/me/profile",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const profile = await getProfile(req.userId!);
+    if (!profile) {
+      res.status(404).json({ error: "Profile not found" });
+      return;
+    }
+    res.json(GetMyProfileResponse.parse(profile));
+  },
+);
+
+// PUT /api/me/profile — create or replace the current user's profile.
+router.put(
+  "/me/profile",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    // Reject rather than silently strip deprecated/unknown profile fields. The
+    // paid v1 API collects only values directly used by its daily experience.
+    if (!hasOnlyProfileInputKeys(req.body)) {
+      res.status(400).json({ error: "Invalid profile input" });
+      return;
+    }
+    const parsed = UpsertMyProfileBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const profile = await upsertProfile(req.userId!, parsed.data);
+    res.json(UpsertMyProfileResponse.parse(profile));
+  },
+);
 
 export default router;

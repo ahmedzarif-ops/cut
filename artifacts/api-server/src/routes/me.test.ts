@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { usersTable } from "@workspace/db/schema";
 import {
   createTestContext,
+  makeTestUserEligible,
   TEST_EMAIL_HEADER,
   TEST_USER_HEADER,
   type TestContext,
@@ -38,26 +39,34 @@ describe("auth gate", () => {
     const res = await request(ctx.app).get("/api/me");
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ error: "Unauthorized" });
+    expect(res.headers["cache-control"]).toBe("no-store");
+  });
+
+  it("rejects unauthenticated account-setting updates", async () => {
+    const res = await request(ctx.app)
+      .patch("/api/me")
+      .send({ timezone: "America/Chicago" });
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: "Unauthorized" });
   });
 
   it("rejects unauthenticated /me/profile reads and writes", async () => {
     expect((await request(ctx.app).get("/api/me/profile")).status).toBe(401);
     expect(
-      (
-        await request(ctx.app)
-          .put("/api/me/profile")
-          .send({ goal: "cut" })
-      ).status,
+      (await request(ctx.app).put("/api/me/profile").send({ goal: "cut" }))
+        .status,
     ).toBe(401);
   });
 });
 
-describe("GET /api/me — JIT provisioning", () => {
-  it("provisions an internal user on first access with defaults", async () => {
+describe("GET /api/me — eligible existing users only", () => {
+  it("returns an eligible user with defaults", async () => {
+    await makeTestUserEligible(ctx, "clerk_jit_1", "jit1@example.com");
     const res = await request(ctx.app)
       .get("/api/me")
       .set(asUser("clerk_jit_1", "jit1@example.com"));
     expect(res.status).toBe(200);
+    expect(res.headers["cache-control"]).toBe("no-store");
     expect(res.body.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(res.body.timezone).toBe("UTC");
     expect(res.body.units).toBe("metric");
@@ -66,6 +75,7 @@ describe("GET /api/me — JIT provisioning", () => {
   });
 
   it("never leaks the Clerk id in the response body", async () => {
+    await makeTestUserEligible(ctx, "clerk_jit_leakcheck");
     const res = await request(ctx.app)
       .get("/api/me")
       .set(asUser("clerk_jit_leakcheck"));
@@ -74,8 +84,9 @@ describe("GET /api/me — JIT provisioning", () => {
     expect(res.body).not.toHaveProperty("clerkUserId");
   });
 
-  it("is idempotent — repeated and concurrent first requests create one row", async () => {
+  it("is idempotent — repeated concurrent reads retain one row", async () => {
     const headers = asUser("clerk_jit_2");
+    await makeTestUserEligible(ctx, "clerk_jit_2");
     const responses = await Promise.all(
       Array.from({ length: 5 }, () =>
         request(ctx.app).get("/api/me").set(headers),
@@ -94,6 +105,7 @@ describe("GET /api/me — JIT provisioning", () => {
 
   it("repeated GET /me reads never mutate the row (no write anywhere)", async () => {
     const headers = asUser("clerk_getme_stable", "s@t.com");
+    await makeTestUserEligible(ctx, "clerk_getme_stable", "s@t.com");
     const first = await request(ctx.app).get("/api/me").set(headers);
     const [before] = await ctx.db
       .select()
@@ -113,28 +125,68 @@ describe("GET /api/me — JIT provisioning", () => {
 });
 
 describe("PATCH /api/me", () => {
-  it("updates timezone, units, and onboarding flag", async () => {
+  it("updates timezone and units", async () => {
     const headers = asUser("clerk_patch_1");
-    const res = await request(ctx.app)
-      .patch("/api/me")
-      .set(headers)
-      .send({
-        timezone: "America/Chicago",
-        units: "imperial",
-        onboardingComplete: true,
-      });
+    await makeTestUserEligible(ctx, "clerk_patch_1");
+    const res = await request(ctx.app).patch("/api/me").set(headers).send({
+      timezone: "America/Chicago",
+      units: "imperial",
+    });
     expect(res.status).toBe(200);
     expect(res.body.timezone).toBe("America/Chicago");
     expect(res.body.units).toBe("imperial");
-    expect(res.body.onboardingComplete).toBe(true);
 
     const readBack = await request(ctx.app).get("/api/me").set(headers);
     expect(readBack.body.timezone).toBe("America/Chicago");
     expect(readBack.body.units).toBe("imperial");
-    expect(readBack.body.onboardingComplete).toBe(true);
+  });
+
+  it("rejects onboardingComplete=true when the user has no profile (P1-4 invariant)", async () => {
+    await makeTestUserEligible(ctx, "clerk_patch_noprofile");
+    const res = await request(ctx.app)
+      .patch("/api/me")
+      .set(asUser("clerk_patch_noprofile"))
+      .send({ onboardingComplete: true });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe(
+      "Cannot complete onboarding before creating a profile",
+    );
+  });
+
+  it("accepts onboardingComplete=true once a profile exists", async () => {
+    const headers = asUser("clerk_patch_withprofile");
+    await makeTestUserEligible(ctx, "clerk_patch_withprofile");
+    await request(ctx.app)
+      .put("/api/me/profile")
+      .set(headers)
+      .send({ goal: "cut" });
+    const res = await request(ctx.app)
+      .patch("/api/me")
+      .set(headers)
+      .send({ onboardingComplete: true });
+    expect(res.status).toBe(200);
+    expect(res.body.onboardingComplete).toBe(true);
+  });
+
+  it("rejects onboardingComplete=false — un-onboarding is not a client operation", async () => {
+    const headers = asUser("clerk_patch_unonboard");
+    await makeTestUserEligible(ctx, "clerk_patch_unonboard");
+    await request(ctx.app)
+      .put("/api/me/profile")
+      .set(headers)
+      .send({ goal: "cut" });
+    const res = await request(ctx.app)
+      .patch("/api/me")
+      .set(headers)
+      .send({ onboardingComplete: false });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe(
+      "Onboarding completion is derived from your profile and cannot be unset",
+    );
   });
 
   it("rejects an invalid units value", async () => {
+    await makeTestUserEligible(ctx, "clerk_patch_2");
     const res = await request(ctx.app)
       .patch("/api/me")
       .set(asUser("clerk_patch_2"))
@@ -142,7 +194,24 @@ describe("PATCH /api/me", () => {
     expect(res.status).toBe(400);
   });
 
+  it("rejects unknown fields instead of silently accepting paid-domain input", async () => {
+    const headers = asUser("clerk_patch_unknown");
+    await makeTestUserEligible(ctx, "clerk_patch_unknown");
+
+    const res = await request(ctx.app).patch("/api/me").set(headers).send({
+      timezone: "Asia/Dhaka",
+      goal: "cut",
+      startWeightKg: 90,
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "Invalid account settings input" });
+    const readBack = await request(ctx.app).get("/api/me").set(headers);
+    expect(readBack.body.timezone).toBe("UTC");
+  });
+
   it("rejects an empty timezone", async () => {
+    await makeTestUserEligible(ctx, "clerk_patch_3");
     const res = await request(ctx.app)
       .patch("/api/me")
       .set(asUser("clerk_patch_3"))
@@ -151,6 +220,7 @@ describe("PATCH /api/me", () => {
   });
 
   it("rejects a syntactically-valid but unknown timezone with 400", async () => {
+    await makeTestUserEligible(ctx, "clerk_patch_4");
     const res = await request(ctx.app)
       .patch("/api/me")
       .set(asUser("clerk_patch_4"))
@@ -161,6 +231,7 @@ describe("PATCH /api/me", () => {
 
   it("accepts and persists a real IANA timezone", async () => {
     const headers = asUser("clerk_patch_5");
+    await makeTestUserEligible(ctx, "clerk_patch_5");
     const res = await request(ctx.app)
       .patch("/api/me")
       .set(headers)
@@ -174,8 +245,12 @@ describe("PATCH /api/me", () => {
 
   it("treats an empty-body PATCH as a no-op returning the current user", async () => {
     const headers = asUser("clerk_patch_6");
+    await makeTestUserEligible(ctx, "clerk_patch_6");
     // Seed a known value, then PATCH {} — nothing should change, status 200.
-    await request(ctx.app).patch("/api/me").set(headers).send({ units: "imperial" });
+    await request(ctx.app)
+      .patch("/api/me")
+      .set(headers)
+      .send({ units: "imperial" });
 
     const res = await request(ctx.app).patch("/api/me").set(headers).send({});
     expect(res.status).toBe(200);
@@ -186,6 +261,7 @@ describe("PATCH /api/me", () => {
 
 describe("profile lifecycle", () => {
   it("404s before the profile exists", async () => {
+    await makeTestUserEligible(ctx, "clerk_prof_1");
     const res = await request(ctx.app)
       .get("/api/me/profile")
       .set(asUser("clerk_prof_1"));
@@ -199,20 +275,18 @@ describe("profile lifecycle", () => {
       .set(headers)
       .send({
         goal: "cut",
-        sex: "male",
         displayName: "Test Lifter",
-        birthYear: 1995,
-        heightCm: 180,
         startWeightKg: 95.5,
         goalWeightKg: 86.2,
-        targetDate: "2026-09-26",
-        activityLevel: "active",
-        trainingExperience: "advanced",
       });
     expect(put.status).toBe(200);
     expect(put.body.goal).toBe("cut");
     expect(put.body.startWeightKg).toBeCloseTo(95.5);
-    expect(put.body.targetDate).toBe("2026-09-26");
+    expect(put.body).not.toHaveProperty("sex");
+    expect(put.body).not.toHaveProperty("heightCm");
+    expect(put.body).not.toHaveProperty("targetDate");
+    expect(put.body).not.toHaveProperty("activityLevel");
+    expect(put.body).not.toHaveProperty("trainingExperience");
 
     const me = await request(ctx.app).get("/api/me").set(headers);
     expect(put.body.userId).toBe(me.body.id);
@@ -220,10 +294,27 @@ describe("profile lifecycle", () => {
     const get = await request(ctx.app).get("/api/me/profile").set(headers);
     expect(get.status).toBe(200);
     expect(get.body.displayName).toBe("Test Lifter");
-    expect(get.body.heightCm).toBeCloseTo(180);
+    expect(get.body.goalWeightKg).toBeCloseTo(86.2);
   });
 
-  it("PUT is a full replace — omitted optional fields reset to null", async () => {
+  it("PUT /me/profile atomically marks onboarding complete (P1-4)", async () => {
+    const headers = asUser("clerk_atomic_onboard");
+    await makeTestUserEligible(ctx, "clerk_atomic_onboard");
+    // Fresh user starts un-onboarded.
+    const before = await request(ctx.app).get("/api/me").set(headers);
+    expect(before.body.onboardingComplete).toBe(false);
+    // A single PUT — with no follow-up PATCH — both creates the profile and
+    // marks onboarding done, so the flag and the profile can never disagree.
+    const put = await request(ctx.app)
+      .put("/api/me/profile")
+      .set(headers)
+      .send({ goal: "cut" });
+    expect(put.status).toBe(200);
+    const after = await request(ctx.app).get("/api/me").set(headers);
+    expect(after.body.onboardingComplete).toBe(true);
+  });
+
+  it("PUT is a full replace of the minimal paid-v1 profile", async () => {
     const headers = asUser("clerk_prof_1");
     const put = await request(ctx.app)
       .put("/api/me/profile")
@@ -231,22 +322,20 @@ describe("profile lifecycle", () => {
       .send({ goal: "maintain" });
     expect(put.status).toBe(200);
     expect(put.body.goal).toBe("maintain");
-    // This is the documented server contract that makes client-side prefill
-    // mandatory (see the onboarding Edit-plan data-loss fix in cut-os).
     expect(put.body.displayName).toBeNull();
-    expect(put.body.heightCm).toBeNull();
     expect(put.body.startWeightKg).toBeNull();
     expect(put.body.goalWeightKg).toBeNull();
-    expect(put.body.birthYear).toBeNull();
-    expect(put.body.targetDate).toBeNull();
-    // Enum fields fall back to their defaults rather than null.
-    expect(put.body.sex).toBe("unspecified");
-    expect(put.body.activityLevel).toBe("moderate");
-    expect(put.body.trainingExperience).toBe("beginner");
+    expect(put.body).not.toHaveProperty("birthYear");
+    expect(put.body).not.toHaveProperty("heightCm");
+    expect(put.body).not.toHaveProperty("targetDate");
+    expect(put.body).not.toHaveProperty("sex");
+    expect(put.body).not.toHaveProperty("activityLevel");
+    expect(put.body).not.toHaveProperty("trainingExperience");
   });
 
-  it("validates the body: missing goal and out-of-range values are 400", async () => {
+  it("validates the body and rejects deprecated or unknown profile fields", async () => {
     const headers = asUser("clerk_prof_2");
+    await makeTestUserEligible(ctx, "clerk_prof_2");
     expect(
       (await request(ctx.app).put("/api/me/profile").set(headers).send({}))
         .status,
@@ -256,7 +345,7 @@ describe("profile lifecycle", () => {
         await request(ctx.app)
           .put("/api/me/profile")
           .set(headers)
-          .send({ goal: "cut", heightCm: 10 })
+          .send({ goal: "cut", heightCm: 180 })
       ).status,
     ).toBe(400);
     expect(
@@ -264,7 +353,7 @@ describe("profile lifecycle", () => {
         await request(ctx.app)
           .put("/api/me/profile")
           .set(headers)
-          .send({ goal: "cut", targetDate: "September 26" })
+          .send({ goal: "cut", targetDate: "2026-09-26" })
       ).status,
     ).toBe(400);
     expect(
@@ -282,6 +371,8 @@ describe("cross-user isolation", () => {
   it("scopes every read and write to the authenticated identity", async () => {
     const alice = asUser("clerk_alice");
     const bob = asUser("clerk_bob");
+    await makeTestUserEligible(ctx, "clerk_alice");
+    await makeTestUserEligible(ctx, "clerk_bob");
 
     const alicePut = await request(ctx.app)
       .put("/api/me/profile")
@@ -304,9 +395,7 @@ describe("cross-user isolation", () => {
       .set(bob)
       .send({ goal: "gain", startWeightKg: 70, displayName: "Bob" });
 
-    const aliceAfter = await request(ctx.app)
-      .get("/api/me/profile")
-      .set(alice);
+    const aliceAfter = await request(ctx.app).get("/api/me/profile").set(alice);
     expect(aliceAfter.body.displayName).toBe("Alice");
     expect(aliceAfter.body.goal).toBe("cut");
     expect(aliceAfter.body.startWeightKg).toBeCloseTo(95);
