@@ -236,15 +236,15 @@ test("committed working App Store records preserve approved and pending scopes",
   );
   assert.equal(
     submission.subscription.appStoreConnect.reviewNotes.status,
-    "pending",
+    "saved_in_app_store_connect",
   );
   assert.equal(
     submission.subscription.appStoreConnect.reviewNotes.appleSubscriptionId,
-    null,
+    "6798020349",
   );
   assert.equal(
     submission.subscription.appStoreConnect.reviewNotes.credentialFree,
-    false,
+    true,
   );
   assert.equal(
     submission.subscription.appStoreConnect.attachedToVersion,
@@ -3592,13 +3592,14 @@ test("TestFlight record distinguishes internal testing from external review", ()
     status: "configured",
     automaticDistribution: false,
     testerCount: 1,
-    buildCount: 3,
-    assignedAppStoreConnectBuildId: null,
-    assignmentVerifiedAtUtc: null,
-    assignmentEvidenceReference: null,
-    verifiedAtUtc: "2026-09-04T09:44:33Z",
+    buildCount: 5,
+    assignedAppStoreConnectBuildId: "130301db-7ea1-451b-8578-5ccd34213129",
+    assignmentVerifiedAtUtc: "2026-09-04T18:45:22Z",
+    assignmentEvidenceReference:
+      "app-store/evidence/apple-build-7-owner-check-and-submission-draft-2026-09-04.md#exact-build",
+    verifiedAtUtc: "2026-09-04T18:45:22Z",
     evidenceReference:
-      "app-store/evidence/apple-live-readonly-2026-09-04.md#apple-and-testflight",
+      "app-store/evidence/apple-build-7-owner-check-and-submission-draft-2026-09-04.md#exact-build",
   });
 
   const driftedCopy = clone(record);
@@ -3638,6 +3639,7 @@ test("TestFlight record distinguishes internal testing from external review", ()
   ready.feedbackEmailConfiguredInAppStoreConnect = true;
   ready.internalGroup.testerCount = 1;
   ready.internalGroup.buildCount = 1;
+  ready.internalGroup.verifiedAtUtc = "2026-09-04T09:44:00Z";
   ready.internalGroup.assignedAppStoreConnectBuildId = "asc-build-01234567";
   ready.internalGroup.assignmentVerifiedAtUtc = "2026-09-04T09:45:00Z";
   ready.internalGroup.assignmentEvidenceReference =
@@ -3652,6 +3654,7 @@ test("TestFlight record distinguishes internal testing from external review", ()
     purchaseQaReportReference: "PURCHASE_QA_REPORT.md",
     appReviewRunbookReference: "APP_REVIEW_RUNBOOK.md",
   });
+  ready.approval.owner = false;
   assert.ok(
     validateTestFlightSubmission({
       record: ready,
