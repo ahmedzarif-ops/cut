@@ -32,9 +32,17 @@
   Android audio-recording permissions are disabled, no photo-library permission
   is requested, and photo-AI remains explicitly unshipped.
 - Build 5 (`be50e881-c04e-4710-9a28-e218cc6f2e38`) was created from old commit
-  `b4871b8`; it must not be submitted as the redesigned app. Create a fresh
-  build only after the candidate is committed, pushed, deployed, migrated, and
-  explicitly approved for upload.
+  `b4871b8`. Apple processed it as App Store Connect build
+  `8b59459f-ff7e-40a6-8db5-2439be1dd643`, status **Ready to Submit**, and the
+  internal group contains builds 3, 4, and 5. Build 5 must not be submitted as
+  the redesigned app. Create a fresh build only after the candidate is
+  committed, pushed, deployed, migrated, and explicitly approved for upload.
+- App Store version 1.0.0 still selects build 4. Listing screenshots and the
+  subscription review screenshot remain empty. The local release record now
+  corrects the misleading old paid-description copy to `Adaptive meal fits and
+  on-demand meal drafts.` and resets the subscription Review Notes gate pending
+  an explicitly approved App Store Connect metadata update. See
+  [apple-live-readonly-2026-09-04.md](../../app-store/evidence/apple-live-readonly-2026-09-04.md).
 - No external email/contact, spend, push, deployment, production migration,
   Apple upload, App Review submission, or public release was performed in this
   September 4 work.

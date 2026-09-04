@@ -329,7 +329,7 @@
   "subscription": {
     "status": "pending_app_store_connect_and_exact_build_evidence",
     "ownerDecision": {
-      "revision": "owner-offer-2026-08-04-v2",
+      "revision": "owner-offer-2026-09-04-v3",
       "authority": "owner_approved_core_offer_and_standing_delegated_launch_execution",
       "evidenceReference": "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription",
       "binding": {
@@ -345,7 +345,7 @@
         "familySharingDecision": "disabled",
         "groupDisplayName": "CUT OS Pro",
         "productDisplayName": "CUT OS Pro Monthly",
-        "description": "Weigh-ins, balanced meals & nutrition totals.",
+        "description": "Adaptive meal fits and on-demand meal drafts.",
         "appNameDisplayOption": "use_app_name",
         "customAppName": null
       }
@@ -363,7 +363,7 @@
       "effectiveStatus": "effective",
       "effectiveAtUtc": "2026-08-10T22:06:07Z",
       "evidenceReference": "app-store/evidence/apple-build-3-and-age-rating-2026-08-10.md#current-subscription-price-and-age-questionnaire-recheck",
-      "ownerDecisionRevision": "owner-offer-2026-08-04-v2",
+      "ownerDecisionRevision": "owner-offer-2026-09-04-v3",
       "ownerDecisionEvidenceReference": "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription"
     },
     "availabilityEvidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#subscription",
@@ -381,7 +381,7 @@
       "en-US": {
         "groupDisplayName": "CUT OS Pro",
         "productDisplayName": "CUT OS Pro Monthly",
-        "description": "Weigh-ins, balanced meals & nutrition totals.",
+        "description": "Adaptive meal fits and on-demand meal drafts.",
         "appNameDisplayOption": "use_app_name",
         "customAppName": null
       }
@@ -392,11 +392,11 @@
       "firstSubmission": true,
       "attachedToVersion": false,
       "reviewNotes": {
-        "status": "saved_in_app_store_connect",
-        "appleSubscriptionId": "6798020349",
-        "credentialFree": true,
-        "savedAtUtc": "2026-08-04T22:13:34Z",
-        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#subscription-review-notes"
+        "status": "pending",
+        "appleSubscriptionId": null,
+        "credentialFree": false,
+        "savedAtUtc": null,
+        "evidenceReference": null
       },
       "reviewScreenshotShotId": "07-subscription-offer",
       "reviewScreenshotUpload": {

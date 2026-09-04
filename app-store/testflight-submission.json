@@ -12,12 +12,12 @@
     "status": "configured",
     "automaticDistribution": false,
     "testerCount": 1,
-    "buildCount": 2,
+    "buildCount": 3,
     "assignedAppStoreConnectBuildId": null,
     "assignmentVerifiedAtUtc": null,
     "assignmentEvidenceReference": null,
-    "verifiedAtUtc": "2026-08-08T18:43:18Z",
-    "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#testflight-internal-configuration"
+    "verifiedAtUtc": "2026-09-04T09:44:33Z",
+    "evidenceReference": "app-store/evidence/apple-live-readonly-2026-09-04.md#apple-and-testflight"
   },
   "externalBetaReview": {
     "required": false,

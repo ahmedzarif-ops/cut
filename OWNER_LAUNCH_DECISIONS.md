@@ -76,9 +76,11 @@ decisions remain owner controlled.
 
 ## Decision 2 — first real subscription
 
-**Status:** The exact launch offer, App Store Connect subscription, U.S. price,
-availability, and credential-free Review Notes are saved; the exact RevenueCat
-Apple app/product/entitlement/default-offering mapping is verified. The
+**Status:** The exact financial offer, App Store Connect subscription, U.S.
+price, and availability are saved; the exact RevenueCat Apple
+app/product/entitlement/default-offering mapping is verified. The current
+free-versus-Pro subscription description and credential-free Review Notes are
+selected locally and still require an App Store Connect update. The
 first-version attachment, review screenshot, exact-build QA, submission, and
 release remain pending.
 
@@ -89,7 +91,7 @@ Recommended focused launch configuration:
 - Subscription Product Reference Name (internal): `CUT OS Pro Monthly`.
 - US English Subscription Group Display Name: `CUT OS Pro`.
 - US English Auto-Renewable Subscription Display Name: `CUT OS Pro Monthly`.
-- US English description: `Weigh-ins, balanced meals & nutrition totals.`
+- US English description: `Adaptive meal fits and on-demand meal drafts.`
 - Duration: monthly.
 - United States price: **$4.99/month**.
 - Introductory offer: **no free trial**.
@@ -108,7 +110,18 @@ characters. The initially approved sentence is 54 characters and must not be
 entered. Under the owner's standing instruction to continue launch execution
 without pausing for non-financial, non-sensitive routine choices, the exact
 45-character replacement `Weigh-ins, balanced meals & nutrition totals.` and
-the `use_app_name` display option are selected. The machine record binds every
+the `use_app_name` display option were selected and saved as revision v2.
+
+**Free-versus-Pro correction recorded September 4, 2026:** The owner directed
+that food search, balanced meals, barcode lookup, custom foods, logging,
+weigh-ins, training, and progress remain useful without payment, while the
+$4.99 Pro plan adds personalized adaptive meal fits and on-demand meal drafts.
+The old description incorrectly named free features as the subscription value.
+Under the same standing authority for non-financial routine launch copy, the
+exact 45-character replacement
+`Adaptive meal fits and on-demand meal drafts.` is selected as revision v3.
+The live Apple description and Review Notes remain pending until an explicitly
+approved App Store Connect metadata update. The machine record binds every
 offer term to this decision so changing price, duration, names, trial, Family
 Sharing, description, or app-name display fails validation.
 

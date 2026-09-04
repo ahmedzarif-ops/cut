@@ -219,7 +219,7 @@ test("committed working App Store records preserve approved and pending scopes",
   assert.equal(submission.subscription.familySharingDecision, "disabled");
   assert.equal(
     submission.subscription.localizations["en-US"].description,
-    "Weigh-ins, balanced meals & nutrition totals.",
+    "Adaptive meal fits and on-demand meal drafts.",
   );
   assert.equal(
     submission.subscription.localizations["en-US"].appNameDisplayOption,
@@ -236,15 +236,15 @@ test("committed working App Store records preserve approved and pending scopes",
   );
   assert.equal(
     submission.subscription.appStoreConnect.reviewNotes.status,
-    "saved_in_app_store_connect",
+    "pending",
   );
   assert.equal(
     submission.subscription.appStoreConnect.reviewNotes.appleSubscriptionId,
-    submission.appleIdentifiers.subscriptionId,
+    null,
   );
   assert.equal(
     submission.subscription.appStoreConnect.reviewNotes.credentialFree,
-    true,
+    false,
   );
   assert.equal(
     submission.subscription.appStoreConnect.attachedToVersion,
@@ -350,7 +350,7 @@ test("committed working App Store records preserve approved and pending scopes",
   });
   assert.equal(
     submission.subscription.ownerDecision.revision,
-    "owner-offer-2026-08-04-v2",
+    "owner-offer-2026-09-04-v3",
   );
 });
 
@@ -412,8 +412,16 @@ test("recorded subscription offer rejects drift in every owner-controlled term",
   }
 
   const driftedReviewNotesIdentity = clone(inputs.submission);
-  driftedReviewNotesIdentity.subscription.appStoreConnect.reviewNotes.appleSubscriptionId =
-    "22286645";
+  Object.assign(
+    driftedReviewNotesIdentity.subscription.appStoreConnect.reviewNotes,
+    {
+      status: "saved_in_app_store_connect",
+      appleSubscriptionId: "22286645",
+      credentialFree: true,
+      savedAtUtc: "2026-09-04T00:00:00Z",
+      evidenceReference: "evidence/subscription-review-notes",
+    },
+  );
   assert.ok(
     validateMetadata({
       ...inputs,
@@ -2429,7 +2437,7 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
   Object.assign(subscription.localizations["en-US"], {
     groupDisplayName: "CUT OS Pro",
     productDisplayName: "CUT OS Pro Monthly",
-    description: "Weigh-ins, balanced meals & nutrition totals.",
+    description: "Adaptive meal fits and on-demand meal drafts.",
     appNameDisplayOption: "use_app_name",
   });
   subscription.appStoreConnect.groupStatus = "confirmed_in_app_store_connect";
@@ -2440,7 +2448,7 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
     effectiveStatus: "scheduled",
     effectiveAtUtc: evidenceTime,
     evidenceReference: "evidence/us-price-schedule",
-    ownerDecisionRevision: "owner-offer-2026-08-04-v2",
+    ownerDecisionRevision: "owner-offer-2026-09-04-v3",
     ownerDecisionEvidenceReference:
       "OWNER_LAUNCH_DECISIONS.md#decision-2-first-real-subscription",
   });
@@ -2449,6 +2457,13 @@ test("commercial, review, subscription, and accessibility gates can be evidence-
     sha256: "a".repeat(64),
     uploadedAtUtc: evidenceTime,
     evidenceReference: "evidence/subscription-review-screenshot-upload",
+  });
+  Object.assign(subscription.appStoreConnect.reviewNotes, {
+    status: "saved_in_app_store_connect",
+    appleSubscriptionId: "6798020349",
+    credentialFree: true,
+    savedAtUtc: evidenceTime,
+    evidenceReference: "evidence/subscription-review-notes",
   });
   subscription.revenueCat.productionMappingStatus = "verified";
   subscription.revenueCat.appStoreConnectApiKeyStatus =
@@ -3577,13 +3592,13 @@ test("TestFlight record distinguishes internal testing from external review", ()
     status: "configured",
     automaticDistribution: false,
     testerCount: 1,
-    buildCount: 2,
+    buildCount: 3,
     assignedAppStoreConnectBuildId: null,
     assignmentVerifiedAtUtc: null,
     assignmentEvidenceReference: null,
-    verifiedAtUtc: "2026-08-08T18:43:18Z",
+    verifiedAtUtc: "2026-09-04T09:44:33Z",
     evidenceReference:
-      "app-store/evidence/apple-live-configuration-2026-08-04.md#testflight-internal-configuration",
+      "app-store/evidence/apple-live-readonly-2026-09-04.md#apple-and-testflight",
   });
 
   const driftedCopy = clone(record);
@@ -3624,7 +3639,7 @@ test("TestFlight record distinguishes internal testing from external review", ()
   ready.internalGroup.testerCount = 1;
   ready.internalGroup.buildCount = 1;
   ready.internalGroup.assignedAppStoreConnectBuildId = "asc-build-01234567";
-  ready.internalGroup.assignmentVerifiedAtUtc = "2026-08-08T18:44:00Z";
+  ready.internalGroup.assignmentVerifiedAtUtc = "2026-09-04T09:45:00Z";
   ready.internalGroup.assignmentEvidenceReference =
     "evidence/testflight-group-build-assignment";
   Object.assign(ready.exactBuildEvidence, {
@@ -3632,7 +3647,7 @@ test("TestFlight record distinguishes internal testing from external review", ()
     gitCommit: "0123456789abcdef0123456789abcdef01234567",
     easBuildId: "eas-build-01234567",
     appStoreConnectBuildId: "asc-build-01234567",
-    testedAtUtc: "2026-08-08T18:45:00Z",
+    testedAtUtc: "2026-09-04T09:46:00Z",
     qaReportReference: "QA_REPORT.md",
     purchaseQaReportReference: "PURCHASE_QA_REPORT.md",
     appReviewRunbookReference: "APP_REVIEW_RUNBOOK.md",

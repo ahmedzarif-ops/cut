@@ -440,7 +440,7 @@ const EXPECTED_SUBSCRIPTION_OWNER_BINDING_KEYS = Object.freeze([
   "customAppName",
 ]);
 const EXPECTED_SUBSCRIPTION_OWNER_DECISION = Object.freeze({
-  revision: "owner-offer-2026-08-04-v2",
+  revision: "owner-offer-2026-09-04-v3",
   authority:
     "owner_approved_core_offer_and_standing_delegated_launch_execution",
   evidenceReference:
@@ -458,7 +458,7 @@ const EXPECTED_SUBSCRIPTION_OWNER_DECISION = Object.freeze({
     familySharingDecision: "disabled",
     groupDisplayName: "CUT OS Pro",
     productDisplayName: "CUT OS Pro Monthly",
-    description: "Weigh-ins, balanced meals & nutrition totals.",
+    description: "Adaptive meal fits and on-demand meal drafts.",
     appNameDisplayOption: "use_app_name",
     customAppName: null,
   }),

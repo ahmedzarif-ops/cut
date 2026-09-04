@@ -40,7 +40,16 @@ not a public-launch readiness claim.
   photo-library permission is requested. Photo-AI remains unshipped.
 - The latest signed Apple build is build 5, EAS ID
   `be50e881-c04e-4710-9a28-e218cc6f2e38`, from old source commit `b4871b8`.
-  It is not the redesigned database-catalog candidate and must not be submitted.
+  Apple processed it as App Store Connect build
+  `8b59459f-ff7e-40a6-8db5-2439be1dd643`, status **Ready to Submit**, and it is
+  assigned to the internal QA group. It is not the redesigned database-catalog
+  candidate and must not be submitted.
+- App Store version 1.0.0 still selects build 4 and has no uploaded listing
+  screenshot. The subscription still has no review screenshot. Its live
+  description names free features as the paid value, so local release source
+  now selects the 45-character correction `Adaptive meal fits and on-demand
+  meal drafts.` and resets the Review Notes gate pending an approved Apple
+  metadata update.
 - Production remains on the older deployed commit
   `08e62232db7f81047eec5b55a184f30fb7d4162a`. Production migration 0014 and
   the redesigned app require an explicitly approved deployment/build cycle.
@@ -49,6 +58,9 @@ not a public-launch readiness claim.
   in personally in Simulator and confirm that state without sharing a password.
 - Legal and privacy text remains draft pending qualified review. No lawyer,
   dietitian, provider, or other external party was contacted during this work.
+- The current Apple, EAS, GitHub, and production read-only snapshot is recorded
+  in
+  [apple-live-readonly-2026-09-04.md](app-store/evidence/apple-live-readonly-2026-09-04.md).
 
 ## Historical App Store launch checkpoint — 2026-08-11T00:09:20Z
 
