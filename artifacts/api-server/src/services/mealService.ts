@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import {
   db,
   mealEntriesTable,
@@ -9,11 +9,14 @@ import {
 import {
   BALANCED_MEAL_CATALOG,
   BALANCED_MEAL_CATALOG_VERSION,
+  CURATED_FOOD_CATALOG_VERSION,
   MAX_MEAL_SERVINGS,
   MIN_MEAL_SERVINGS,
   getBalancedMealTemplate,
   isCurrentBalancedMealCatalogVersion,
   rankBalancedMeals,
+  rankAdaptiveMealFits,
+  searchCuratedFoods,
   scaleNutrition,
   sumNutrition,
   systemClock,
@@ -24,6 +27,10 @@ import {
 } from "@workspace/domain";
 
 import { HttpError } from "../lib/httpError";
+import {
+  getMyNutritionPreferences,
+  listMyMealFeedback,
+} from "./nutritionService";
 
 export interface MealOptionResponse extends NutritionFacts {
   id: string;
@@ -36,6 +43,7 @@ export interface MealOptionResponse extends NutritionFacts {
   dietaryTags: string[];
   allergens: string[];
   fitReason: string;
+  recommendedServings: number;
 }
 
 export interface MealEntryResponse extends NutritionFacts {
@@ -51,6 +59,19 @@ export interface MealEntryResponse extends NutritionFacts {
   updatedAt: Date;
 }
 
+export interface FoodLibraryItemResponse extends NutritionFacts {
+  id: string;
+  catalogVersion: string;
+  name: string;
+  aliases: string[];
+  servingDescription: string;
+  servingGrams: number;
+  cuisineTags: string[];
+  allergens: string[];
+  source: "USDA FoodData Central";
+  sourceId: number;
+}
+
 export interface TodayMealsResponse {
   dayKey: string;
   entries: MealEntryResponse[];
@@ -64,6 +85,16 @@ export interface CreateMealEntryInput {
   mealTemplateId: string;
   servings: number;
 }
+
+export interface CreateFoodEntryInput extends NutritionFacts {
+  clientRequestId: string;
+  dayKey: string;
+  name: string;
+  servingDescription: string;
+  servings: number;
+}
+
+const USER_FOOD_CATALOG_VERSION = "user-food-v1";
 
 function templateNutrition(template: BalancedMealTemplate): NutritionFacts {
   return template.nutritionPerServing;
@@ -92,6 +123,7 @@ function toMealOption(template: BalancedMealTemplate): MealOptionResponse {
     allergens: [...template.commonAllergens],
     ...templateNutrition(template),
     fitReason: fitReason(template),
+    recommendedServings: 1,
   };
 }
 
@@ -125,6 +157,69 @@ export function listMyMealOptions(): MealOptionResponse[] {
   return rankBalancedMeals(BALANCED_MEAL_CATALOG).map(({ template }) =>
     toMealOption(template),
   );
+}
+
+export async function listMyProMealFits(
+  userId: string,
+  deviceTimeZone = "UTC",
+  clock: Clock = systemClock,
+): Promise<MealOptionResponse[]> {
+  const localDay = todayKey(clock, deviceTimeZone);
+  const [recentEntries, preferences, feedback, todayEntries] =
+    await Promise.all([
+      db
+        .select({ templateId: mealEntriesTable.templateId })
+        .from(mealEntriesTable)
+        .where(eq(mealEntriesTable.userId, userId))
+        .orderBy(desc(mealEntriesTable.createdAt), desc(mealEntriesTable.id))
+        .limit(60),
+      getMyNutritionPreferences(userId),
+      listMyMealFeedback(userId),
+      getMealEntriesForDay(userId, localDay),
+    ]);
+  const totals = nutritionTotals(todayEntries);
+
+  return rankAdaptiveMealFits(
+    {
+      confirmedTemplateIds: recentEntries.map(({ templateId }) => templateId),
+      dietStyle: preferences.dietStyle,
+      preferredCuisines: preferences.preferredCuisines,
+      avoidedIngredients: preferences.avoidedIngredients,
+      learningEnabled: preferences.learningEnabled,
+      feedback: Object.fromEntries(
+        feedback.map((item) => [item.templateId, item.preference]),
+      ),
+      remainingCaloriesKcal:
+        preferences.dailyCalorieTarget === null
+          ? null
+          : Math.max(0, preferences.dailyCalorieTarget - totals.caloriesKcal),
+      remainingProteinG:
+        preferences.dailyProteinTargetG === null
+          ? null
+          : Math.max(0, preferences.dailyProteinTargetG - totals.proteinG),
+    },
+    3,
+  ).map(({ template, reason, recommendedServings }) => ({
+    ...toMealOption(template),
+    fitReason: reason,
+    recommendedServings,
+  }));
+}
+
+export function listMyFoodLibrary(query = ""): FoodLibraryItemResponse[] {
+  return searchCuratedFoods(query).map((item) => ({
+    id: item.id,
+    catalogVersion: CURATED_FOOD_CATALOG_VERSION,
+    name: item.name,
+    aliases: [...item.aliases],
+    servingDescription: item.servingDescription,
+    servingGrams: item.servingGrams,
+    cuisineTags: [...item.cuisineTags],
+    allergens: [...item.commonAllergens],
+    ...item.nutritionPerServing,
+    source: item.source,
+    sourceId: item.sourceId,
+  }));
 }
 
 export async function getMealEntriesForDay(
@@ -234,6 +329,99 @@ function ensureServings(servings: number): void {
       `Servings must be between ${MIN_MEAL_SERVINGS} and ${MAX_MEAL_SERVINGS}`,
     );
   }
+}
+
+function ensureIdempotentFoodPayload(
+  existing: MealEntry,
+  input: CreateFoodEntryInput,
+): void {
+  const expectedTemplateId = `food:${input.clientRequestId}`;
+  if (
+    existing.catalogVersion !== USER_FOOD_CATALOG_VERSION ||
+    existing.loggedOn !== input.dayKey ||
+    existing.templateId !== expectedTemplateId ||
+    existing.name !== input.name.trim() ||
+    existing.servingDescription !== input.servingDescription.trim() ||
+    existing.servings !== input.servings ||
+    existing.caloriesKcalPerServing !== input.caloriesKcal ||
+    existing.proteinGPerServing !== input.proteinG ||
+    existing.carbsGPerServing !== input.carbsG ||
+    existing.fatGPerServing !== input.fatG ||
+    existing.fiberGPerServing !== input.fiberG
+  ) {
+    throw new HttpError(
+      409,
+      "This client request ID was already used for a different food",
+    );
+  }
+}
+
+export async function createMyFoodEntry(
+  user: User,
+  input: CreateFoodEntryInput,
+  deviceTimeZone: string,
+  clock: Clock = systemClock,
+): Promise<MealEntryResponse> {
+  const existing = await getMealByClientRequestId(
+    user.id,
+    input.clientRequestId,
+  );
+  if (existing) {
+    ensureIdempotentFoodPayload(existing, input);
+    return toMealEntryResponse(existing);
+  }
+
+  if (await wasMealRequestDeleted(user.id, input.clientRequestId)) {
+    throw new HttpError(
+      412,
+      "This food request was already deleted. Refresh before logging again",
+    );
+  }
+  ensureServings(input.servings);
+
+  const authoritativeDayKey = todayKey(clock, deviceTimeZone);
+  if (input.dayKey !== authoritativeDayKey) {
+    throw new HttpError(
+      412,
+      "Food day changed. Refresh and review before logging",
+    );
+  }
+
+  const name = input.name.trim();
+  const servingDescription = input.servingDescription.trim();
+  if (!name || !servingDescription) {
+    throw new HttpError(400, "Food name and serving are required");
+  }
+
+  const [inserted] = await db
+    .insert(mealEntriesTable)
+    .values({
+      userId: user.id,
+      clientRequestId: input.clientRequestId,
+      loggedOn: authoritativeDayKey,
+      catalogVersion: USER_FOOD_CATALOG_VERSION,
+      templateId: `food:${input.clientRequestId}`,
+      name,
+      servingDescription,
+      servings: input.servings,
+      caloriesKcalPerServing: input.caloriesKcal,
+      proteinGPerServing: input.proteinG,
+      carbsGPerServing: input.carbsG,
+      fatGPerServing: input.fatG,
+      fiberGPerServing: input.fiberG,
+    })
+    .onConflictDoNothing({
+      target: [mealEntriesTable.userId, mealEntriesTable.clientRequestId],
+    })
+    .returning();
+
+  if (inserted) return toMealEntryResponse(inserted);
+
+  const raced = await getMealByClientRequestId(user.id, input.clientRequestId);
+  if (!raced)
+    throw new Error("Food idempotency conflict could not be resolved");
+  ensureIdempotentFoodPayload(raced, input);
+  return toMealEntryResponse(raced);
 }
 
 export async function createMyMealEntry(

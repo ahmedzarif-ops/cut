@@ -4,7 +4,6 @@ import {
   getGetAccountDeletionStatusQueryKey,
   getGetMyAdultEligibilityQueryKey,
   getGetMeQueryKey,
-  getGetMySubscriptionQueryKey,
   setAuthTokenGetter,
   setGoneResponseHandler,
   useGetAccountDeletionStatus,
@@ -13,7 +12,7 @@ import {
   useUpdateMe,
 } from "@workspace/api-client-react";
 import * as SecureStore from "expo-secure-store";
-import { Redirect, Stack, usePathname, useRouter } from "expo-router";
+import { Redirect, Stack, usePathname } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
@@ -82,8 +81,6 @@ const EMPTY_MARKER_STATE: MarkerLoadState = {
 
 const ACCOUNT_DELETION_STATUS_PATH = getGetAccountDeletionStatusQueryKey()[0];
 const ADULT_ELIGIBILITY_STATUS_PATH = getGetMyAdultEligibilityQueryKey()[0];
-const ME_PATH = getGetMeQueryKey()[0];
-const SUBSCRIPTION_STATUS_PATH = getGetMySubscriptionQueryKey()[0];
 const DEVICE_TIME_ZONE_REFRESH_MS = 60_000;
 const parsedRevenueCatIosApiKey = parseRevenueCatIosApiKey(
   process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY,
@@ -817,7 +814,6 @@ function EligibleSubscriptionShell({
       >
         <SubscriptionRouteBoundary
           onboardingComplete={meQuery.data.onboardingComplete}
-          onSignOut={onSignOut}
         />
       </SubscriptionGateProvider>
     </DeviceTimeZoneGateProvider>
@@ -826,14 +822,10 @@ function EligibleSubscriptionShell({
 
 function SubscriptionRouteBoundary({
   onboardingComplete,
-  onSignOut,
 }: {
   onboardingComplete: boolean;
-  onSignOut: () => void | Promise<void>;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const qc = useQueryClient();
   const subscription = useSubscriptionGate();
   const onSettings = pathname === "/settings" || pathname.endsWith("/settings");
   const onSubscription =
@@ -842,50 +834,13 @@ function SubscriptionRouteBoundary({
     ? "settings"
     : onSubscription
       ? "subscription"
-      : "paid";
+      : "core";
   const decision = decideSubscriptionRoute({
     route,
     subscription: subscription.server,
     onboardingComplete,
   });
 
-  React.useEffect(() => {
-    const server = subscription.server;
-    if (
-      server.state === "loading" ||
-      (server.state === "ready" && server.entitled)
-    ) {
-      return;
-    }
-
-    const isGateQuery = (queryKey: readonly unknown[]) =>
-      queryKey[0] === ACCOUNT_DELETION_STATUS_PATH ||
-      queryKey[0] === ADULT_ELIGIBILITY_STATUS_PATH ||
-      queryKey[0] === ME_PATH ||
-      queryKey[0] === SUBSCRIPTION_STATUS_PATH;
-    void qc.cancelQueries({
-      predicate: (query) => !isGateQuery(query.queryKey),
-    });
-    qc.removeQueries({
-      predicate: (query) => !isGateQuery(query.queryKey),
-    });
-  }, [qc, subscription.server]);
-
-  if (decision === "loading") return <GateLoading />;
-  if (decision === "unavailable") {
-    return (
-      <GateError
-        title="Access check needed"
-        message="CUT OS couldn't verify CUT OS Pro access. Paid health and nutrition screens remain locked until the check succeeds."
-        onRetry={subscription.retryServer}
-        onManageAccount={() => router.push("/settings")}
-        onSignOut={onSignOut}
-      />
-    );
-  }
-  if (decision === "redirect_subscription") {
-    return <Redirect href="/subscription" />;
-  }
   if (decision === "redirect_onboarding") {
     return <Redirect href="/onboarding" />;
   }
@@ -901,7 +856,27 @@ function AppStack() {
         headerShown: false,
         contentStyle: { backgroundColor: c.background },
       }}
-    />
+    >
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="quick-add"
+        options={{ presentation: "transparentModal", animation: "fade" }}
+      />
+      <Stack.Screen name="food-entry" options={{ presentation: "modal" }} />
+      <Stack.Screen name="saved-foods" options={{ presentation: "modal" }} />
+      <Stack.Screen
+        name="nutrition-preferences"
+        options={{ presentation: "modal" }}
+      />
+      <Stack.Screen name="capture" options={{ presentation: "modal" }} />
+      <Stack.Screen
+        name="barcode"
+        options={{ presentation: "fullScreenModal" }}
+      />
+      <Stack.Screen name="photo-estimate" options={{ presentation: "modal" }} />
+      <Stack.Screen name="meal-creator" options={{ presentation: "modal" }} />
+      <Stack.Screen name="workout-entry" options={{ presentation: "modal" }} />
+    </Stack>
   );
 }
 

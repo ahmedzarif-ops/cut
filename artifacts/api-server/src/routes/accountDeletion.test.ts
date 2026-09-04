@@ -6,9 +6,15 @@ import {
   accountDeletionRequestsTable,
   mealEntryDeletionTombstonesTable,
   mealEntriesTable,
+  mealFeedbackTable,
+  nutritionPreferencesTable,
   profilesTable,
+  savedFoodsTable,
   usersTable,
   weightEntriesTable,
+  workoutEntriesTable,
+  workoutExercisesTable,
+  aiMealUsageTable,
 } from "@workspace/db";
 
 import {
@@ -100,6 +106,68 @@ async function seedAccount(
     });
   expect(meal.status).toBe(201);
 
+  const preferences = await request(ctx.app)
+    .put("/api/me/nutrition-preferences")
+    .set(headers)
+    .send({
+      dailyCalorieTarget: 2200,
+      dailyProteinTargetG: 180,
+      dietStyle: "omnivore",
+      preferredCuisines: ["Desi"],
+      avoidedIngredients: [],
+      learningEnabled: true,
+    });
+  expect(preferences.status).toBe(200);
+  const savedFood = await request(ctx.app)
+    .post("/api/me/saved-foods")
+    .set(headers)
+    .send({
+      source: "manual",
+      sourceRef: null,
+      name: "Test food",
+      servingDescription: "1 serving",
+      caloriesKcal: 200,
+      proteinG: 20,
+      carbsG: 20,
+      fatG: 4,
+      fiberG: 3,
+    });
+  expect(savedFood.status).toBe(201);
+  const feedback = await request(ctx.app)
+    .put(`/api/me/meal-feedback/${options.body[0].id}`)
+    .set(headers)
+    .send({ preference: "liked" });
+  expect(feedback.status).toBe(200);
+  const workout = await request(ctx.app)
+    .post("/api/me/workouts")
+    .set(headers)
+    .send({
+      clientRequestId: crypto.randomUUID(),
+      dayKey: reviewedToday.body.dayKey,
+      kind: "strength",
+      name: "Test workout",
+      notes: null,
+      exercises: [
+        {
+          name: "Test lift",
+          sets: 3,
+          reps: 8,
+          loadKg: 50,
+          durationMinutes: null,
+          distanceKm: null,
+          caloriesKcal: null,
+        },
+      ],
+    });
+  expect(workout.status).toBe(201);
+  await ctx.db.insert(aiMealUsageTable).values({
+    userId: me.body.id as string,
+    usageDay: reviewedToday.body.dayKey as string,
+    requestCount: 1,
+    inputTokens: 100,
+    outputTokens: 50,
+  });
+
   return me.body.id as string;
 }
 
@@ -108,7 +176,12 @@ async function rowsForUser(
     | typeof profilesTable
     | typeof weightEntriesTable
     | typeof mealEntriesTable
-    | typeof mealEntryDeletionTombstonesTable,
+    | typeof mealEntryDeletionTombstonesTable
+    | typeof nutritionPreferencesTable
+    | typeof savedFoodsTable
+    | typeof mealFeedbackTable
+    | typeof workoutEntriesTable
+    | typeof aiMealUsageTable,
   userId: string,
 ) {
   return ctx.db.select().from(table).where(eq(table.userId, userId));
@@ -265,6 +338,12 @@ describe("durable account deletion", () => {
     expect(await rowsForUser(profilesTable, ownerId)).toEqual([]);
     expect(await rowsForUser(weightEntriesTable, ownerId)).toEqual([]);
     expect(await rowsForUser(mealEntriesTable, ownerId)).toEqual([]);
+    expect(await rowsForUser(nutritionPreferencesTable, ownerId)).toEqual([]);
+    expect(await rowsForUser(savedFoodsTable, ownerId)).toEqual([]);
+    expect(await rowsForUser(mealFeedbackTable, ownerId)).toEqual([]);
+    expect(await rowsForUser(workoutEntriesTable, ownerId)).toEqual([]);
+    expect(await rowsForUser(aiMealUsageTable, ownerId)).toEqual([]);
+    expect(await ctx.db.select().from(workoutExercisesTable)).toHaveLength(1);
     expect(
       await rowsForUser(mealEntryDeletionTombstonesTable, ownerId),
     ).toEqual([]);
@@ -275,6 +354,13 @@ describe("durable account deletion", () => {
     expect(await rowsForUser(profilesTable, otherId)).toHaveLength(1);
     expect(await rowsForUser(weightEntriesTable, otherId)).toHaveLength(1);
     expect(await rowsForUser(mealEntriesTable, otherId)).toHaveLength(1);
+    expect(await rowsForUser(nutritionPreferencesTable, otherId)).toHaveLength(
+      1,
+    );
+    expect(await rowsForUser(savedFoodsTable, otherId)).toHaveLength(1);
+    expect(await rowsForUser(mealFeedbackTable, otherId)).toHaveLength(1);
+    expect(await rowsForUser(workoutEntriesTable, otherId)).toHaveLength(1);
+    expect(await rowsForUser(aiMealUsageTable, otherId)).toHaveLength(1);
 
     const durable = await deletionRequest(ownerClerkId);
     expect(durable).toMatchObject({

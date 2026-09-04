@@ -4,3 +4,8 @@ export * from "./weightEntries";
 export * from "./mealEntries";
 export * from "./mealEntryDeletionTombstones";
 export * from "./accountDeletionRequests";
+export * from "./nutritionPreferences";
+export * from "./savedFoods";
+export * from "./mealFeedback";
+export * from "./workouts";
+export * from "./aiMealUsage";

@@ -5,6 +5,7 @@ export const DEVICE_TIME_ZONE_REQUIRED_CODE = "device_timezone_required";
 const DAILY_TIME_ZONE_PATHS = new Set([
   "/api/me/today",
   "/api/me/meals/today",
+  "/api/me/pro/meal-drafts",
 ]);
 
 export interface DailyDeviceTimeZoneContext {

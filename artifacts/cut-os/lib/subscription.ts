@@ -106,19 +106,21 @@ export function decideSubscriptionRoute({
   subscription,
   onboardingComplete,
 }: {
-  route: "settings" | "subscription" | "paid";
+  route: "settings" | "subscription" | "core";
   subscription: ResolvedServerSubscription;
   onboardingComplete: boolean;
 }): SubscriptionRouteDecision {
   if (route === "settings") return "allow";
-  if (subscription.state === "loading") return "loading";
-  if (subscription.state === "unavailable") return "unavailable";
+  if (!onboardingComplete && route === "core") return "redirect_onboarding";
 
-  if (!subscription.entitled) {
-    return route === "subscription" ? "allow" : "redirect_subscription";
-  }
+  // CUT OS is a freemium app. Subscription state may change what a feature
+  // offers, but it must never block the core diary, weight, or training loop.
+  if (route === "core") return "allow";
 
-  if (route !== "subscription") return "allow";
+  // Keep the upgrade screen reachable when the store/server is still loading
+  // or unavailable so it can show recovery controls instead of dead-ending the
+  // rest of the app. Already-entitled users manage billing from Settings.
+  if (subscription.state !== "ready" || !subscription.entitled) return "allow";
   return onboardingComplete ? "redirect_today" : "redirect_onboarding";
 }
 

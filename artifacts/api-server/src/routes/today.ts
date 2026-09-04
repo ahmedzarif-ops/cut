@@ -10,7 +10,6 @@ import {
 import { HttpError } from "../lib/httpError";
 import { requireDeviceTimeZone } from "../middlewares/requireDeviceTimeZone";
 import { requireAuth } from "../middlewares/requireAuth";
-import { requireSubscription } from "../middlewares/requireSubscription";
 import {
   getTodayState,
   listWeightEntries,
@@ -22,7 +21,6 @@ const router: IRouter = Router();
 router.get(
   "/me/today",
   requireAuth,
-  requireSubscription,
   requireDeviceTimeZone,
   async (req, res): Promise<void> => {
     const state = await getTodayState(req.user!, req.deviceTimeZone!);
@@ -33,7 +31,6 @@ router.get(
 router.get(
   "/me/weight-entries",
   requireAuth,
-  requireSubscription,
   async (req, res): Promise<void> => {
     const parsed = ListMyWeightEntriesQueryParams.safeParse(req.query);
     if (!parsed.success || !Number.isInteger(parsed.data.limit)) {
@@ -47,7 +44,6 @@ router.get(
 router.put(
   "/me/weight-entries/today",
   requireAuth,
-  requireSubscription,
   requireDeviceTimeZone,
   async (req, res): Promise<void> => {
     const parsed = UpsertTodayWeightBody.safeParse(req.body);

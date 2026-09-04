@@ -308,12 +308,8 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
-        "402":
-          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
-        "503":
-          $ref: "#/components/responses/SubscriptionStatusUnavailable"
     put:
       operationId: upsertMyProfile
       tags: [me]
@@ -347,12 +343,8 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
-        "402":
-          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
-        "503":
-          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/today:
     get:
       operationId: getToday
@@ -387,12 +379,8 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
-        "402":
-          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
-        "503":
-          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/meal-options:
     get:
       operationId: listMyMealOptions
@@ -421,10 +409,403 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
-        "402":
-          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+  /me/food-library:
+    get:
+      operationId: listMyFoodLibrary
+      tags: [me]
+      summary: Search the free built-in food library
+      description: >-
+        Returns versioned, source-linked generic foods with multilingual search
+        aliases and fixed gram servings. Values are editable estimates, not a
+        claim that a generic source matches a person's exact brand or recipe.
+      parameters:
+        - in: query
+          name: query
+          schema:
+            type: string
+            maxLength: 80
+      responses:
+        "200":
+          description: Matching curated foods
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 35
+                items:
+                  $ref: "#/components/schemas/FoodLibraryItem"
+        "400":
+          description: Invalid search query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+  /me/nutrition-preferences:
+    get:
+      operationId: getMyNutritionPreferences
+      tags: [me]
+      summary: Get the current user's explicit nutrition preferences
+      description: >-
+        Returns explicit targets and food preferences only. These values are
+        not medical or allergy advice and CUT OS does not infer protected or
+        health traits from them.
+      responses:
+        "200":
+          description: Stored choices or privacy-minimal defaults
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionPreferences"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+    put:
+      operationId: upsertMyNutritionPreferences
+      tags: [me]
+      summary: Replace the current user's explicit nutrition preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NutritionPreferencesInput"
+      responses:
+        "200":
+          description: Saved nutrition preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionPreferences"
+        "400":
+          description: Invalid preference input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+    delete:
+      operationId: resetMyNutritionPreferences
+      tags: [me]
+      summary: Reset explicit nutrition preferences to defaults
+      responses:
+        "204":
+          description: Preferences reset
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+  /me/saved-foods:
+    get:
+      operationId: listMySavedFoods
+      tags: [me]
+      summary: List the current user's saved foods
+      responses:
+        "200":
+          description: Up to 100 reusable, user-reviewed food snapshots
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 100
+                items:
+                  $ref: "#/components/schemas/SavedFood"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+    post:
+      operationId: saveMyFood
+      tags: [me]
+      summary: Save a reviewed food for reuse
+      description: >-
+        Stores a private nutrition snapshot. An identical normalized food is
+        deduplicated for the current user and refreshed instead of duplicated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedFoodInput"
+      responses:
+        "201":
+          description: Saved or refreshed food
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedFood"
+        "400":
+          description: Invalid saved food input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "409":
+          description: The saved-food limit has been reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+  /me/saved-foods/{savedFoodId}:
+    parameters:
+      - in: path
+        name: savedFoodId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      operationId: deleteMySavedFood
+      tags: [me]
+      summary: Delete one saved food
+      responses:
+        "204":
+          description: Saved food deleted or already absent
+        "400":
+          description: Invalid saved food ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+  /me/meal-feedback/{templateId}:
+    parameters:
+      - in: path
+        name: templateId
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+    put:
+      operationId: upsertMyMealFeedback
+      tags: [me]
+      summary: Save direct feedback for a fixed meal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealFeedbackInput"
+      responses:
+        "200":
+          description: Saved feedback
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealFeedback"
+        "400":
+          description: Invalid meal feedback
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "404":
+          description: Meal template not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+    delete:
+      operationId: deleteMyMealFeedback
+      tags: [me]
+      summary: Clear direct feedback for a fixed meal
+      responses:
+        "204":
+          description: Feedback deleted or already absent
+        "400":
+          description: Invalid meal template ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+  /me/pro/meal-fits:
+    get:
+      operationId: listMyProMealFits
+      tags: [me]
+      summary: List adaptive meal fits for a CUT OS Pro user
+      description: >-
+        Reorders the reviewed fixed-meal catalog using the current user's own
+        confirmed catalog-meal history, direct preferences, feedback, and
+        remaining daily targets. The explanation is transparent and the result
+        remains an editable estimate, not medical or allergy advice.
+      parameters:
+        - $ref: "#/components/parameters/DeviceTimezone"
+      responses:
+        "200":
+          description: Up to three adaptive meal fits
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 3
+                items:
+                  $ref: "#/components/schemas/MealOption"
+        "400":
+          description: Missing or invalid device timezone context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+        "503":
+          $ref: "#/components/responses/SubscriptionStatusUnavailable"
+  /me/pro/meal-drafts:
+    post:
+      operationId: createMyProMealDrafts
+      tags: [me]
+      summary: Create reviewed personalized meal drafts for a CUT OS Pro user
+      description: >-
+        Uses explicit preferences, confirmed meal history, today's remaining
+        targets, and the user's current request. When the separately approved
+        AI provider is enabled, it may choose only from CUT's source-linked
+        food catalog and CUT calculates all nutrition from those catalog
+        amounts. Otherwise the endpoint returns deterministic catalog fits.
+        No result is logged automatically and every value requires review.
+      parameters:
+        - $ref: "#/components/parameters/DeviceTimezone"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealDraftInput"
+      responses:
+        "200":
+          description: One to three review-required meal drafts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealDraftResult"
+        "400":
+          description: Invalid request or device timezone context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "402":
+          $ref: "#/components/responses/SubscriptionRequired"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
         "503":
           $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/meals/today:
@@ -460,12 +841,8 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
-        "402":
-          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
-        "503":
-          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/meal-entries:
     post:
       operationId: createMyMealEntry
@@ -511,8 +888,6 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
-        "402":
-          $ref: "#/components/responses/SubscriptionRequired"
         "404":
           description: Meal template not found
           content:
@@ -535,8 +910,112 @@ paths:
                 $ref: "#/components/schemas/Error"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
+  /me/food-entries:
+    post:
+      operationId: createMyFoodEntry
+      tags: [me]
+      summary: Log a reviewed food for today
+      description: >-
+        Logs a user-reviewed nutrition snapshot from manual entry, barcode
+        lookup, or a corrected estimate. The client echoes the dayKey it
+        reviewed and the server remains authoritative for the local calendar
+        day. Repeating the same clientRequestId and payload returns the original
+        entry. Nutrition values are estimates supplied or confirmed by the
+        user; this endpoint does not diagnose or prescribe.
+      parameters:
+        - $ref: "#/components/parameters/DeviceTimezone"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FoodEntryInput"
+      responses:
+        "201":
+          description: The logged food, or the original result of an identical retry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealEntry"
+        "400":
+          description: Invalid input or device timezone context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "409":
+          description: The idempotency key was already used for another payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "412":
+          description: The reviewed local day is stale or this request was deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /me/foods/barcode/{barcode}:
+    parameters:
+      - in: path
+        name: barcode
+        required: true
+        schema:
+          type: string
+          pattern: '^\d{6,14}$'
+    get:
+      operationId: getMyBarcodeFood
+      tags: [me]
+      summary: Look up a packaged food by barcode
+      description: >-
+        Looks up a barcode in Open Food Facts and returns a review-required
+        nutrition snapshot. CUT OS does not treat community food data as exact;
+        the person must review and may edit every value before logging.
+      responses:
+        "200":
+          description: Reviewable barcode food
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BarcodeFood"
+        "400":
+          description: Invalid barcode
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "404":
+          description: Barcode not found or nutrition is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
         "503":
-          $ref: "#/components/responses/SubscriptionStatusUnavailable"
+          description: Barcode lookup is temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /me/meal-entries/{mealEntryId}:
     parameters:
       - in: path
@@ -578,8 +1057,6 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
-        "402":
-          $ref: "#/components/responses/SubscriptionRequired"
         "404":
           description: Meal entry not found
           content:
@@ -588,8 +1065,6 @@ paths:
                 $ref: "#/components/schemas/Error"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
-        "503":
-          $ref: "#/components/responses/SubscriptionStatusUnavailable"
     delete:
       operationId: deleteMyMealEntry
       tags: [me]
@@ -613,12 +1088,8 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
-        "402":
-          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
-        "503":
-          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/weight-entries:
     get:
       operationId: listMyWeightEntries
@@ -658,12 +1129,8 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
-        "402":
-          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
-        "503":
-          $ref: "#/components/responses/SubscriptionStatusUnavailable"
   /me/weight-entries/today:
     put:
       operationId: upsertTodayWeight
@@ -706,8 +1173,6 @@ paths:
           $ref: "#/components/responses/AdultEligibilityDenied"
         "428":
           $ref: "#/components/responses/AdultEligibilityRequired"
-        "402":
-          $ref: "#/components/responses/SubscriptionRequired"
         "410":
           $ref: "#/components/responses/AccountDeletionBlocked"
         "412":
@@ -718,8 +1183,132 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-        "503":
-          $ref: "#/components/responses/SubscriptionStatusUnavailable"
+  /me/workouts:
+    get:
+      operationId: listMyWorkouts
+      tags: [me]
+      summary: List the current user's recent workout sessions
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            multipleOf: 1
+            minimum: 1
+            maximum: 90
+            default: 20
+      responses:
+        "200":
+          description: Recent workouts, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workout"
+        "400":
+          description: Invalid workout history query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+    post:
+      operationId: createMyWorkout
+      tags: [me]
+      summary: Save a workout on the reviewed local day
+      description: >-
+        The client echoes the reviewed dayKey and supplies an idempotency key.
+        The server derives the current day from the required device timezone.
+      parameters:
+        - $ref: "#/components/parameters/DeviceTimezone"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkoutInput"
+      responses:
+        "201":
+          description: Saved workout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workout"
+        "400":
+          description: Invalid workout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
+        "412":
+          description: The reviewed day is stale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /me/workouts/{workoutId}:
+    parameters:
+      - in: path
+        name: workoutId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      operationId: deleteMyWorkout
+      tags: [me]
+      summary: Delete one workout and its exercise rows
+      responses:
+        "204":
+          description: Workout deleted
+        "400":
+          description: Invalid workout ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/AdultEligibilityDenied"
+        "428":
+          $ref: "#/components/responses/AdultEligibilityRequired"
+        "404":
+          description: Workout not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "410":
+          $ref: "#/components/responses/AccountDeletionBlocked"
 components:
   securitySchemes:
     bearerAuth:
@@ -900,6 +1489,163 @@ components:
           type: number
           minimum: 20
           maximum: 500
+    WorkoutExercise:
+      type: object
+      required:
+        - id
+        - position
+        - name
+        - sets
+        - reps
+        - loadKg
+        - durationMinutes
+        - distanceKm
+        - caloriesKcal
+      properties:
+        id:
+          type: string
+          format: uuid
+        position:
+          type: integer
+          minimum: 0
+          maximum: 49
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        sets:
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 20
+        reps:
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 100
+        loadKg:
+          type: [number, "null"]
+          minimum: 0
+          maximum: 1000
+        durationMinutes:
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 1440
+        distanceKm:
+          type: [number, "null"]
+          exclusiveMinimum: 0
+          maximum: 1000
+        caloriesKcal:
+          type: [integer, "null"]
+          minimum: 0
+          maximum: 10000
+    WorkoutExerciseInput:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - sets
+        - reps
+        - loadKg
+        - durationMinutes
+        - distanceKm
+        - caloriesKcal
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        sets:
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 20
+        reps:
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 100
+        loadKg:
+          type: [number, "null"]
+          minimum: 0
+          maximum: 1000
+        durationMinutes:
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 1440
+        distanceKm:
+          type: [number, "null"]
+          exclusiveMinimum: 0
+          maximum: 1000
+        caloriesKcal:
+          type: [integer, "null"]
+          minimum: 0
+          maximum: 10000
+    Workout:
+      type: object
+      required:
+        - id
+        - clientRequestId
+        - loggedOn
+        - kind
+        - name
+        - notes
+        - exercises
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        clientRequestId:
+          type: string
+          format: uuid
+        loggedOn:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        kind:
+          type: string
+          enum: [strength, cardio, recovery]
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        notes:
+          type: [string, "null"]
+          maxLength: 500
+        exercises:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/WorkoutExercise"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateWorkoutInput:
+      type: object
+      additionalProperties: false
+      required: [clientRequestId, dayKey, kind, name, notes, exercises]
+      properties:
+        clientRequestId:
+          type: string
+          format: uuid
+        dayKey:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        kind:
+          type: string
+          enum: [strength, cardio, recovery]
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        notes:
+          type: [string, "null"]
+          maxLength: 500
+        exercises:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/WorkoutExerciseInput"
     TodayState:
       type: object
       required: [dayKey, nextAction, weightEntry, mealCount, nutritionTotals]
@@ -955,6 +1701,7 @@ components:
         - fatG
         - fiberG
         - fitReason
+        - recommendedServings
       properties:
         id:
           type: string
@@ -998,6 +1745,342 @@ components:
           minimum: 0
         fitReason:
           type: string
+        recommendedServings:
+          type: number
+          enum: [0.5, 0.75, 1, 1.25, 1.5, 2]
+    MealDraftInput:
+      type: object
+      additionalProperties: false
+      required:
+        - goal
+        - mealTime
+        - maxPrepMinutes
+        - availableIngredients
+        - notes
+      properties:
+        goal:
+          type: string
+          enum: [balanced, high_protein, quick, desi]
+        mealTime:
+          type: string
+          enum: [any, breakfast, lunch, dinner, snack]
+        maxPrepMinutes:
+          type: integer
+          minimum: 5
+          maximum: 120
+        availableIngredients:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            minLength: 1
+            maxLength: 60
+        notes:
+          type: string
+          maxLength: 300
+    MealDraft:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - source
+        - catalogVersion
+        - name
+        - summary
+        - servingDescription
+        - estimatedPrepMinutes
+        - ingredients
+        - instructions
+        - allergens
+        - caloriesKcal
+        - proteinG
+        - carbsG
+        - fatG
+        - fiberG
+        - whyItFits
+        - reviewRequired
+      properties:
+        id:
+          type: string
+          minLength: 1
+        source:
+          type: string
+          enum: [ai, catalog]
+        catalogVersion:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        summary:
+          type: string
+          minLength: 1
+          maxLength: 240
+        servingDescription:
+          type: string
+          minLength: 1
+          maxLength: 120
+        estimatedPrepMinutes:
+          type: integer
+          minimum: 1
+          maximum: 120
+        ingredients:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: string
+            minLength: 1
+            maxLength: 160
+        instructions:
+          type: array
+          minItems: 1
+          maxItems: 8
+          items:
+            type: string
+            minLength: 1
+            maxLength: 240
+        allergens:
+          type: array
+          items:
+            type: string
+        caloriesKcal:
+          type: number
+          minimum: 0
+          maximum: 10000
+        proteinG:
+          type: number
+          minimum: 0
+          maximum: 1000
+        carbsG:
+          type: number
+          minimum: 0
+          maximum: 1000
+        fatG:
+          type: number
+          minimum: 0
+          maximum: 1000
+        fiberG:
+          type: number
+          minimum: 0
+          maximum: 1000
+        whyItFits:
+          type: string
+          minLength: 1
+          maxLength: 400
+        reviewRequired:
+          type: boolean
+          enum: [true]
+    MealDraftResult:
+      type: object
+      additionalProperties: false
+      required: [source, drafts, notice]
+      properties:
+        source:
+          type: string
+          enum: [ai, catalog]
+        drafts:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/MealDraft"
+        notice:
+          type: string
+          minLength: 1
+          maxLength: 300
+    FoodLibraryItem:
+      type: object
+      required:
+        - id
+        - catalogVersion
+        - name
+        - aliases
+        - servingDescription
+        - servingGrams
+        - cuisineTags
+        - allergens
+        - caloriesKcal
+        - proteinG
+        - carbsG
+        - fatG
+        - fiberG
+        - source
+        - sourceId
+      properties:
+        id:
+          type: string
+        catalogVersion:
+          type: string
+          minLength: 1
+        name:
+          type: string
+        aliases:
+          type: array
+          items:
+            type: string
+        servingDescription:
+          type: string
+        servingGrams:
+          type: number
+          exclusiveMinimum: 0
+        cuisineTags:
+          type: array
+          items:
+            type: string
+        allergens:
+          type: array
+          items:
+            type: string
+        caloriesKcal:
+          type: number
+          minimum: 0
+        proteinG:
+          type: number
+          minimum: 0
+        carbsG:
+          type: number
+          minimum: 0
+        fatG:
+          type: number
+          minimum: 0
+        fiberG:
+          type: number
+          minimum: 0
+        source:
+          type: string
+          enum: [USDA FoodData Central]
+        sourceId:
+          type: integer
+          minimum: 1
+    NutritionPreferences:
+      type: object
+      additionalProperties: false
+      required:
+        - dailyCalorieTarget
+        - dailyProteinTargetG
+        - dietStyle
+        - preferredCuisines
+        - avoidedIngredients
+        - learningEnabled
+      properties:
+        dailyCalorieTarget:
+          type: [integer, "null"]
+          minimum: 800
+          maximum: 6000
+        dailyProteinTargetG:
+          type: [integer, "null"]
+          minimum: 20
+          maximum: 400
+        dietStyle:
+          type: string
+          enum: [no_preference, omnivore, vegetarian, vegan, pescatarian]
+        preferredCuisines:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+        avoidedIngredients:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+        learningEnabled:
+          type: boolean
+    NutritionPreferencesInput:
+      $ref: "#/components/schemas/NutritionPreferences"
+    SavedFood:
+      allOf:
+        - $ref: "#/components/schemas/SavedFoodInput"
+        - type: object
+          required: [id, createdAt, updatedAt]
+          properties:
+            id:
+              type: string
+              format: uuid
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    SavedFoodInput:
+      type: object
+      additionalProperties: false
+      required:
+        - source
+        - sourceRef
+        - name
+        - servingDescription
+        - caloriesKcal
+        - proteinG
+        - carbsG
+        - fatG
+        - fiberG
+      properties:
+        source:
+          type: string
+          enum: [curated, barcode, manual]
+        sourceRef:
+          type: [string, "null"]
+          maxLength: 160
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        servingDescription:
+          type: string
+          minLength: 1
+          maxLength: 120
+        caloriesKcal:
+          type: number
+          minimum: 0
+          maximum: 10000
+        proteinG:
+          type: number
+          minimum: 0
+          maximum: 1000
+        carbsG:
+          type: number
+          minimum: 0
+          maximum: 1000
+        fatG:
+          type: number
+          minimum: 0
+          maximum: 1000
+        fiberG:
+          type: number
+          minimum: 0
+          maximum: 1000
+    MealFeedback:
+      type: object
+      additionalProperties: false
+      required: [templateId, preference, createdAt, updatedAt]
+      properties:
+        templateId:
+          type: string
+        preference:
+          type: string
+          enum: [liked, not_for_me]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    MealFeedbackInput:
+      type: object
+      additionalProperties: false
+      required: [preference]
+      properties:
+        preference:
+          type: string
+          enum: [liked, not_for_me]
     MealEntry:
       type: object
       required:
@@ -1082,6 +2165,103 @@ components:
           type: number
           minimum: 0.25
           maximum: 4
+    FoodEntryInput:
+      type: object
+      additionalProperties: false
+      required:
+        - clientRequestId
+        - dayKey
+        - name
+        - servingDescription
+        - servings
+        - caloriesKcal
+        - proteinG
+        - carbsG
+        - fatG
+        - fiberG
+      properties:
+        clientRequestId:
+          type: string
+          format: uuid
+        dayKey:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        servingDescription:
+          type: string
+          minLength: 1
+          maxLength: 120
+        servings:
+          type: number
+          minimum: 0.25
+          maximum: 4
+        caloriesKcal:
+          type: number
+          minimum: 0
+          maximum: 10000
+        proteinG:
+          type: number
+          minimum: 0
+          maximum: 1000
+        carbsG:
+          type: number
+          minimum: 0
+          maximum: 1000
+        fatG:
+          type: number
+          minimum: 0
+          maximum: 1000
+        fiberG:
+          type: number
+          minimum: 0
+          maximum: 1000
+    BarcodeFood:
+      type: object
+      additionalProperties: false
+      required:
+        - barcode
+        - name
+        - brand
+        - servingDescription
+        - caloriesKcal
+        - proteinG
+        - carbsG
+        - fatG
+        - fiberG
+        - dataSource
+        - requiresReview
+      properties:
+        barcode:
+          type: string
+        name:
+          type: string
+        brand:
+          type: ["string", "null"]
+        servingDescription:
+          type: string
+        caloriesKcal:
+          type: number
+          minimum: 0
+        proteinG:
+          type: number
+          minimum: 0
+        carbsG:
+          type: number
+          minimum: 0
+        fatG:
+          type: number
+          minimum: 0
+        fiberG:
+          type: number
+          minimum: 0
+        dataSource:
+          type: string
+          enum: [Open Food Facts]
+        requiresReview:
+          type: boolean
     MealEntryUpdate:
       type: object
       additionalProperties: false

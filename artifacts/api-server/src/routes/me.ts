@@ -13,10 +13,7 @@ import {
   UpsertMyProfileResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
-import {
-  requireSubscription,
-  sendSubscriptionStatusUnavailable,
-} from "../middlewares/requireSubscription";
+import { sendSubscriptionStatusUnavailable } from "../middlewares/requireSubscription";
 import { getProfile, updateUser, upsertProfile } from "../services/userService";
 import {
   enforcePostProvisionDeletionGuard,
@@ -318,7 +315,6 @@ router.delete("/me", async (req, res): Promise<void> => {
 router.get(
   "/me/profile",
   requireAuth,
-  requireSubscription,
   async (req, res): Promise<void> => {
     const profile = await getProfile(req.userId!);
     if (!profile) {
@@ -333,7 +329,6 @@ router.get(
 router.put(
   "/me/profile",
   requireAuth,
-  requireSubscription,
   async (req, res): Promise<void> => {
     // Reject rather than silently strip deprecated/unknown profile fields. The
     // paid v1 API collects only values directly used by its daily experience.

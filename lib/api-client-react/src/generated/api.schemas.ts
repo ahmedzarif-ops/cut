@@ -152,6 +152,159 @@ export interface WeightEntryInput {
   weightKg: number;
 }
 
+export interface WorkoutExercise {
+  id: string;
+  /**
+     * @minimum 0
+     * @maximum 49
+     */
+  position: number;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 20
+     * @nullable
+     */
+  sets: number | null;
+  /**
+     * @minimum 1
+     * @maximum 100
+     * @nullable
+     */
+  reps: number | null;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     * @nullable
+     */
+  loadKg: number | null;
+  /**
+     * @minimum 1
+     * @maximum 1440
+     * @nullable
+     */
+  durationMinutes: number | null;
+  /**
+     * @maximum 1000
+     * @exclusiveMinimum 0
+     * @nullable
+     */
+  distanceKm: number | null;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     * @nullable
+     */
+  caloriesKcal: number | null;
+}
+
+export interface WorkoutExerciseInput {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 20
+     * @nullable
+     */
+  sets: number | null;
+  /**
+     * @minimum 1
+     * @maximum 100
+     * @nullable
+     */
+  reps: number | null;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     * @nullable
+     */
+  loadKg: number | null;
+  /**
+     * @minimum 1
+     * @maximum 1440
+     * @nullable
+     */
+  durationMinutes: number | null;
+  /**
+     * @maximum 1000
+     * @exclusiveMinimum 0
+     * @nullable
+     */
+  distanceKm: number | null;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     * @nullable
+     */
+  caloriesKcal: number | null;
+}
+
+export type WorkoutKind = typeof WorkoutKind[keyof typeof WorkoutKind];
+
+
+export const WorkoutKind = {
+  strength: 'strength',
+  cardio: 'cardio',
+  recovery: 'recovery',
+} as const;
+
+export interface Workout {
+  id: string;
+  clientRequestId: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  loggedOn: string;
+  kind: WorkoutKind;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  notes: string | null;
+  /** @maxItems 50 */
+  exercises: WorkoutExercise[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateWorkoutInputKind = typeof CreateWorkoutInputKind[keyof typeof CreateWorkoutInputKind];
+
+
+export const CreateWorkoutInputKind = {
+  strength: 'strength',
+  cardio: 'cardio',
+  recovery: 'recovery',
+} as const;
+
+export interface CreateWorkoutInput {
+  clientRequestId: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  dayKey: string;
+  kind: CreateWorkoutInputKind;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  notes: string | null;
+  /** @maxItems 50 */
+  exercises: WorkoutExerciseInput[];
+}
+
 export interface Nutrition {
   /** @minimum 0 */
   caloriesKcal: number;
@@ -175,6 +328,18 @@ export interface TodayState {
   nutritionTotals: Nutrition;
 }
 
+export type MealOptionRecommendedServings = typeof MealOptionRecommendedServings[keyof typeof MealOptionRecommendedServings];
+
+
+export const MealOptionRecommendedServings = {
+  '05': 0.5,
+  '075': 0.75,
+  NUMBER_1: 1,
+  '125': 1.25,
+  '15': 1.5,
+  NUMBER_2: 2,
+} as const;
+
 export interface MealOption {
   id: string;
   /** @minLength 1 */
@@ -197,6 +362,311 @@ export interface MealOption {
   /** @minimum 0 */
   fiberG: number;
   fitReason: string;
+  recommendedServings: MealOptionRecommendedServings;
+}
+
+export type MealDraftInputGoal = typeof MealDraftInputGoal[keyof typeof MealDraftInputGoal];
+
+
+export const MealDraftInputGoal = {
+  balanced: 'balanced',
+  high_protein: 'high_protein',
+  quick: 'quick',
+  desi: 'desi',
+} as const;
+
+export type MealDraftInputMealTime = typeof MealDraftInputMealTime[keyof typeof MealDraftInputMealTime];
+
+
+export const MealDraftInputMealTime = {
+  any: 'any',
+  breakfast: 'breakfast',
+  lunch: 'lunch',
+  dinner: 'dinner',
+  snack: 'snack',
+} as const;
+
+export interface MealDraftInput {
+  goal: MealDraftInputGoal;
+  mealTime: MealDraftInputMealTime;
+  /**
+     * @minimum 5
+     * @maximum 120
+     */
+  maxPrepMinutes: number;
+  /**
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 60
+     */
+  availableIngredients: string[];
+  /** @maxLength 300 */
+  notes: string;
+}
+
+export type MealDraftSource = typeof MealDraftSource[keyof typeof MealDraftSource];
+
+
+export const MealDraftSource = {
+  ai: 'ai',
+  catalog: 'catalog',
+} as const;
+
+export interface MealDraft {
+  /** @minLength 1 */
+  id: string;
+  source: MealDraftSource;
+  /** @minLength 1 */
+  catalogVersion: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 240
+     */
+  summary: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  servingDescription: string;
+  /**
+     * @minimum 1
+     * @maximum 120
+     */
+  estimatedPrepMinutes: number;
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 160
+     */
+  ingredients: string[];
+  /**
+     * @minItems 1
+     * @maxItems 8
+     * @items.minLength 1
+     * @items.maxLength 240
+     */
+  instructions: string[];
+  allergens: string[];
+  /**
+     * @minimum 0
+     * @maximum 10000
+     */
+  caloriesKcal: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  proteinG: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  carbsG: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  fatG: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  fiberG: number;
+  /**
+     * @minLength 1
+     * @maxLength 400
+     */
+  whyItFits: string;
+  reviewRequired: true;
+}
+
+export type MealDraftResultSource = typeof MealDraftResultSource[keyof typeof MealDraftResultSource];
+
+
+export const MealDraftResultSource = {
+  ai: 'ai',
+  catalog: 'catalog',
+} as const;
+
+export interface MealDraftResult {
+  source: MealDraftResultSource;
+  /**
+     * @minItems 1
+     * @maxItems 3
+     */
+  drafts: MealDraft[];
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  notice: string;
+}
+
+export type FoodLibraryItemSource = typeof FoodLibraryItemSource[keyof typeof FoodLibraryItemSource];
+
+
+export const FoodLibraryItemSource = {
+  USDA_FoodData_Central: 'USDA FoodData Central',
+} as const;
+
+export interface FoodLibraryItem {
+  id: string;
+  /** @minLength 1 */
+  catalogVersion: string;
+  name: string;
+  aliases: string[];
+  servingDescription: string;
+  /** @exclusiveMinimum 0 */
+  servingGrams: number;
+  cuisineTags: string[];
+  allergens: string[];
+  /** @minimum 0 */
+  caloriesKcal: number;
+  /** @minimum 0 */
+  proteinG: number;
+  /** @minimum 0 */
+  carbsG: number;
+  /** @minimum 0 */
+  fatG: number;
+  /** @minimum 0 */
+  fiberG: number;
+  source: FoodLibraryItemSource;
+  /** @minimum 1 */
+  sourceId: number;
+}
+
+export type NutritionPreferencesDietStyle = typeof NutritionPreferencesDietStyle[keyof typeof NutritionPreferencesDietStyle];
+
+
+export const NutritionPreferencesDietStyle = {
+  no_preference: 'no_preference',
+  omnivore: 'omnivore',
+  vegetarian: 'vegetarian',
+  vegan: 'vegan',
+  pescatarian: 'pescatarian',
+} as const;
+
+export interface NutritionPreferences {
+  /**
+     * @minimum 800
+     * @maximum 6000
+     * @nullable
+     */
+  dailyCalorieTarget: number | null;
+  /**
+     * @minimum 20
+     * @maximum 400
+     * @nullable
+     */
+  dailyProteinTargetG: number | null;
+  dietStyle: NutritionPreferencesDietStyle;
+  /**
+     * @maxItems 10
+     * @items.minLength 1
+     * @items.maxLength 40
+     */
+  preferredCuisines: string[];
+  /**
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 40
+     */
+  avoidedIngredients: string[];
+  learningEnabled: boolean;
+}
+
+export type NutritionPreferencesInput = NutritionPreferences;
+
+export type SavedFoodInputSource = typeof SavedFoodInputSource[keyof typeof SavedFoodInputSource];
+
+
+export const SavedFoodInputSource = {
+  curated: 'curated',
+  barcode: 'barcode',
+  manual: 'manual',
+} as const;
+
+export interface SavedFoodInput {
+  source: SavedFoodInputSource;
+  /**
+     * @maxLength 160
+     * @nullable
+     */
+  sourceRef: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  servingDescription: string;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     */
+  caloriesKcal: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  proteinG: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  carbsG: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  fatG: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  fiberG: number;
+}
+
+export type SavedFood = SavedFoodInput & {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MealFeedbackPreference = typeof MealFeedbackPreference[keyof typeof MealFeedbackPreference];
+
+
+export const MealFeedbackPreference = {
+  liked: 'liked',
+  not_for_me: 'not_for_me',
+} as const;
+
+export interface MealFeedback {
+  templateId: string;
+  preference: MealFeedbackPreference;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MealFeedbackInputPreference = typeof MealFeedbackInputPreference[keyof typeof MealFeedbackInputPreference];
+
+
+export const MealFeedbackInputPreference = {
+  liked: 'liked',
+  not_for_me: 'not_for_me',
+} as const;
+
+export interface MealFeedbackInput {
+  preference: MealFeedbackInputPreference;
 }
 
 export interface MealEntry {
@@ -241,6 +711,79 @@ export interface MealEntryInput {
      * @maximum 4
      */
   servings: number;
+}
+
+export interface FoodEntryInput {
+  clientRequestId: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  dayKey: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  servingDescription: string;
+  /**
+     * @minimum 0.25
+     * @maximum 4
+     */
+  servings: number;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     */
+  caloriesKcal: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  proteinG: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  carbsG: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  fatG: number;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  fiberG: number;
+}
+
+export type BarcodeFoodDataSource = typeof BarcodeFoodDataSource[keyof typeof BarcodeFoodDataSource];
+
+
+export const BarcodeFoodDataSource = {
+  Open_Food_Facts: 'Open Food Facts',
+} as const;
+
+export interface BarcodeFood {
+  barcode: string;
+  name: string;
+  /** @nullable */
+  brand: string | null;
+  servingDescription: string;
+  /** @minimum 0 */
+  caloriesKcal: number;
+  /** @minimum 0 */
+  proteinG: number;
+  /** @minimum 0 */
+  carbsG: number;
+  /** @minimum 0 */
+  fatG: number;
+  /** @minimum 0 */
+  fiberG: number;
+  dataSource: BarcodeFoodDataSource;
+  requiresReview: boolean;
 }
 
 export interface MealEntryUpdate {
@@ -379,7 +922,22 @@ export type SubscriptionStatusUnavailableResponse = SubscriptionStatusUnavailabl
  */
 export type DeviceTimezoneParameter = string;
 
+export type ListMyFoodLibraryParams = {
+/**
+ * @maxLength 80
+ */
+query?: string;
+};
+
 export type ListMyWeightEntriesParams = {
+/**
+ * @minimum 1
+ * @maximum 90
+ */
+limit?: number;
+};
+
+export type ListMyWorkoutsParams = {
 /**
  * @minimum 1
  * @maximum 90

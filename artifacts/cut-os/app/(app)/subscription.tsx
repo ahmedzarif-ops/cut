@@ -23,9 +23,9 @@ import { useSubscriptionGate } from "@/lib/subscription-gate";
 import { runSubscriptionSignOut } from "@/lib/subscription-provider-state";
 
 const BENEFITS = [
-  "A clear next step for today",
-  "A daily weigh-in you can update",
-  "Simple balanced meal options with nutrition estimates",
+  "Adaptive meal fits based on meals you confirm",
+  "Fresh choices that respond to your recent cuisine patterns",
+  "Transparent reasons with every suggestion",
 ] as const;
 
 export default function SubscriptionScreen() {
@@ -277,13 +277,13 @@ export default function SubscriptionScreen() {
         }
         style={[s.title, compactReadyLayout && s.readyTitle]}
       >
-        Make the next choice simple.
+        Make meal choices faster.
       </Text>
       {!readyOfferVisible ? (
         <>
           <Text style={s.subtitle}>
-            CUT OS Pro keeps your daily check-in, weigh-in, meal options, and
-            nutrition estimates together.
+            CUT OS Pro adapts meal ideas to your confirmed logs. Food, weight,
+            and workout tracking stay free.
           </Text>
 
           <View style={s.benefitsCard}>

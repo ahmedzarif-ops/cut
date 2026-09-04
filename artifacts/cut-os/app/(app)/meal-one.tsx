@@ -15,7 +15,7 @@ import {
 import * as Crypto from "expo-crypto";
 import * as Haptics from "expo-haptics";
 import * as SecureStore from "expo-secure-store";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
@@ -77,6 +77,10 @@ export default function MealOneScreen() {
   const { userId, sessionId } = useAuth();
   const { session } = useSession();
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    mealTemplateId?: string;
+    servings?: string;
+  }>();
   const qc = useQueryClient();
   const c = useColors();
   const insets = useSafeAreaInsets();
@@ -98,8 +102,13 @@ export default function MealOneScreen() {
   const updateMeal = useUpdateMyMealEntry();
   const deleteMeal = useDeleteMyMealEntry();
 
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
-  const [servings, setServings] = React.useState(1);
+  const [selectedId, setSelectedId] = React.useState<string | null>(() =>
+    typeof params.mealTemplateId === "string" ? params.mealTemplateId : null,
+  );
+  const [servings, setServings] = React.useState(() => {
+    const suggested = Number(params.servings);
+    return Number.isFinite(suggested) ? clampMealServings(suggested) : 1;
+  });
   const [editingEntryId, setEditingEntryId] = React.useState<string | null>(
     null,
   );

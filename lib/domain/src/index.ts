@@ -5,5 +5,7 @@ export * from "./timeZone";
 export * from "./nextAction";
 export * from "./weightUnits";
 export * from "./balancedMeals";
+export * from "./foodCatalog";
+export * from "./mealPersonalization";
 export * from "./adultEligibility";
 export * from "./subscriptionIdentity";

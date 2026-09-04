@@ -5,6 +5,7 @@
  * CUT OS API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { MealOptionRecommendedServings } from './mealOptionRecommendedServings';
 
 export interface MealOption {
   id: string;
@@ -28,4 +29,5 @@ export interface MealOption {
   /** @minimum 0 */
   fiberG: number;
   fitReason: string;
+  recommendedServings: MealOptionRecommendedServings;
 }

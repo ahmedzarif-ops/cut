@@ -12,7 +12,7 @@ function screenSource(path: string) {
 
 const rootLayoutSource = screenSource("../../app/_layout.tsx");
 const onboardingSource = screenSource("../../app/(app)/onboarding.tsx");
-const todaySource = screenSource("../../app/(app)/today.tsx");
+const todaySource = screenSource("../../app/(app)/(tabs)/today.tsx");
 const settingsSource = screenSource("../../app/(app)/settings.tsx");
 const subscriptionSource = screenSource("../../app/(app)/subscription.tsx");
 const errorFallbackSource = screenSource("../../components/ErrorFallback.tsx");
@@ -75,16 +75,18 @@ describe("iOS UI accessibility screen contracts", () => {
   it("names Today actions and guarantees the cancel target is 44 points", () => {
     for (const label of [
       "Cancel editing weigh-in",
-      "Retry loading account",
       "Start onboarding",
       "Retry loading Today",
       "Update today's weigh-in",
-      "Edit profile",
+      "Open Food diary",
+      "Open Progress",
+      "Open Training",
     ]) {
       expectNamedButton(todaySource, label);
     }
 
-    expect(styleBlock(todaySource, "cancelButton")).toContain("minHeight: 44");
+    expect(styleBlock(todaySource, "iconButton")).toContain("width: 44");
+    expect(styleBlock(todaySource, "iconButton")).toContain("height: 44");
   });
 
   it("exposes the restart fallback as a named button", () => {

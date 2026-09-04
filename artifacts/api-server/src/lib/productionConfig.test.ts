@@ -57,6 +57,46 @@ describe("production configuration", () => {
     ).not.toThrow();
   });
 
+  it("keeps paid AI meals off unless an exact complete configuration is supplied", () => {
+    expect(
+      validateProductionConfiguration({
+        ...validProductionEnvironment,
+        CUT_AI_MEALS_ENABLED: "false",
+      }),
+    ).toEqual([]);
+    expect(
+      validateProductionConfiguration({
+        ...validProductionEnvironment,
+        CUT_AI_MEALS_ENABLED: "true",
+      }),
+    ).toEqual([
+      "OPENAI_API_KEY",
+      "CUT_AI_MEAL_MODEL",
+      "CUT_AI_MEAL_USER_DAILY_LIMIT",
+    ]);
+    expect(
+      validateProductionConfiguration({
+        ...validProductionEnvironment,
+        CUT_AI_MEALS_ENABLED: "true",
+        OPENAI_API_KEY: ["sk", "proj", "ProviderKeyForCUTMeals1234"].join("-"),
+        CUT_AI_MEAL_MODEL: "gpt-5-mini",
+        CUT_AI_MEAL_USER_DAILY_LIMIT: "5",
+      }),
+    ).toEqual([]);
+  });
+
+  it.each(["TRUE", "1", "yes", ""])(
+    "rejects ambiguous CUT_AI_MEALS_ENABLED value %s",
+    (value) => {
+      expect(
+        validateProductionConfiguration({
+          ...validProductionEnvironment,
+          CUT_AI_MEALS_ENABLED: value,
+        }),
+      ).toContain("CUT_AI_MEALS_ENABLED");
+    },
+  );
+
   it("upgrades the exact provider-managed TLS mode before validation and pool creation", () => {
     const environment = {
       ...validProductionEnvironment,

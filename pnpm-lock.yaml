@@ -298,6 +298,9 @@ importers:
       expo:
         specifier: ~54.0.37
         version: 54.0.37(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@16.8.1)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(typescript@5.9.3)
+      expo-camera:
+        specifier: ~17.0.10
+        version: 17.0.10(expo@54.0.37)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       expo-constants:
         specifier: ~18.0.14
         version: 18.0.14(expo@54.0.37)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))
@@ -1471,10 +1474,7 @@ packages:
 
   "@clerk/clerk-js@https://pkg.pr.new/clerk/javascript/@clerk/clerk-js@cfb6495":
     resolution:
-      {
-        integrity: sha512-6iny37Jg507ww3QUBQYJxI6eypFv16NlGCXYFePPdbpmDK4PeKRkixn7aIzyWhD3K2QzJjwspufdLM6WwVqD7g==,
-        tarball: https://pkg.pr.new/clerk/javascript/@clerk/clerk-js@cfb6495,
-      }
+      { tarball: https://pkg.pr.new/clerk/javascript/@clerk/clerk-js@cfb6495 }
     version: 6.27.1
     engines: { node: ">=20.9.0" }
 
@@ -1533,10 +1533,7 @@ packages:
 
   "@clerk/react@https://pkg.pr.new/clerk/javascript/@clerk/react@cfb6495":
     resolution:
-      {
-        integrity: sha512-w2sx6Ph6/P4FI+pSNFckdiEKkGvYKZSY3bRorYQSEJzVeQudTvDCRM9vsinh2CM0IABaXoEQv8yEYetxuR5esQ==,
-        tarball: https://pkg.pr.new/clerk/javascript/@clerk/react@cfb6495,
-      }
+      { tarball: https://pkg.pr.new/clerk/javascript/@clerk/react@cfb6495 }
     version: 6.13.1
     engines: { node: ">=20.9.0" }
     peerDependencies:
@@ -1560,10 +1557,7 @@ packages:
 
   "@clerk/shared@https://pkg.pr.new/clerk/javascript/@clerk/shared@cfb6495":
     resolution:
-      {
-        integrity: sha512-Hf109+dZwEkQtZEOQvkPkLWqEvt+j/9r6Qg8ZohbZ/HUb/kKkreozEmVdggpnWofk9xlOc+XGIW3GUP9zxFADA==,
-        tarball: https://pkg.pr.new/clerk/javascript/@clerk/shared@cfb6495,
-      }
+      { tarball: https://pkg.pr.new/clerk/javascript/@clerk/shared@cfb6495 }
     version: 4.27.1
     engines: { node: ">=20.9.0" }
     peerDependencies:
@@ -6793,6 +6787,20 @@ packages:
       expo: "*"
       react: "*"
       react-native: "*"
+
+  expo-camera@17.0.10:
+    resolution:
+      {
+        integrity: sha512-w1RBw83mAGVk4BPPwNrCZyFop0VLiVSRE3c2V9onWbdFwonpRhzmB4drygG8YOUTl1H3wQvALJHyMPTbgsK1Jg==,
+      }
+    peerDependencies:
+      expo: "*"
+      react: "*"
+      react-native: "*"
+      react-native-web: "*"
+    peerDependenciesMeta:
+      react-native-web:
+        optional: true
 
   expo-constants@18.0.14:
     resolution:
@@ -16867,6 +16875,15 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
       - typescript
+
+  expo-camera@17.0.10(expo@54.0.37)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
+    dependencies:
+      expo: 54.0.37(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@16.8.1)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(typescript@5.9.3)
+      invariant: 2.2.4
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0)
+    optionalDependencies:
+      react-native-web: 0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
 
   expo-constants@18.0.14(expo@54.0.37)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0)):
     dependencies:

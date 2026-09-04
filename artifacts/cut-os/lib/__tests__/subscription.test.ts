@@ -36,7 +36,7 @@ describe("subscription policy", () => {
     ).toEqual({ state: "unavailable" });
   });
 
-  it("keeps only Settings and the paywall open without entitlement", () => {
+  it("keeps the core product open without entitlement", () => {
     const unpaid = resolveServerSubscription(
       {
         entitled: false,
@@ -63,11 +63,25 @@ describe("subscription policy", () => {
     ).toBe("allow");
     expect(
       decideSubscriptionRoute({
-        route: "paid",
+        route: "core",
+        subscription: unpaid,
+        onboardingComplete: true,
+      }),
+    ).toBe("allow");
+    expect(
+      decideSubscriptionRoute({
+        route: "core",
+        subscription: { state: "unavailable" },
+        onboardingComplete: true,
+      }),
+    ).toBe("allow");
+    expect(
+      decideSubscriptionRoute({
+        route: "core",
         subscription: unpaid,
         onboardingComplete: false,
       }),
-    ).toBe("redirect_subscription");
+    ).toBe("redirect_onboarding");
   });
 
   it("leaves the paywall only after server-confirmed access", () => {

@@ -15,6 +15,7 @@ import {
   getMealEntriesForDay,
   getTodayMeals as getTodayMealsForDevice,
   listMyMealOptions,
+  listMyProMealFits,
   updateMyMealEntry,
 } from "./mealService";
 import { provisionUser, updateUser } from "./userService";
@@ -82,7 +83,7 @@ describe("Balanced meal service", () => {
     expect(
       options.find(({ id }) => id === "bengali-chicken-curry-plate"),
     ).toMatchObject({
-      catalogVersion: "2026-08-03.2",
+      catalogVersion: "2026-09-04.1",
       servingDescription:
         "Entire recipe: 150 g chicken, 160 g rice, curry vegetables, spinach and cucumber",
       ingredients: expect.arrayContaining([
@@ -98,6 +99,40 @@ describe("Balanced meal service", () => {
       fatG: 13.9,
       fiberG: 6.1,
     });
+  });
+
+  it("builds private adaptive Pro fits from only that user's confirmed logs", async () => {
+    const owner = await user("adaptive_fit_owner");
+    const other = await user("adaptive_fit_other");
+    const templateIds = [
+      "desi-chicken-masoor-rice-bowl",
+      "desi-chicken-quinoa-sabzi-bowl",
+      "masoor-brown-rice-sabzi-bowl",
+    ];
+
+    for (const [index, mealTemplateId] of templateIds.entries()) {
+      await createMyMealEntry(
+        owner,
+        {
+          clientRequestId: `00000000-0000-4000-8000-00000000000${index + 1}`,
+          catalogVersion: BALANCED_MEAL_CATALOG_VERSION,
+          dayKey: "2026-08-04",
+          mealTemplateId,
+          servings: 1,
+        },
+        chicagoEvening,
+      );
+    }
+
+    const ownerFits = await listMyProMealFits(owner.id);
+    const otherFits = await listMyProMealFits(other.id);
+    expect(ownerFits).toHaveLength(3);
+    expect(ownerFits[0]?.fitReason).toContain(
+      "confirmed Desi-inspired meal logs",
+    );
+    expect(otherFits[0]?.fitReason).toBe(
+      "A balanced starting option. Review ingredients and portions.",
+    );
   });
 
   it("uses the user's local day and scales immutable nutrition snapshots", async () => {

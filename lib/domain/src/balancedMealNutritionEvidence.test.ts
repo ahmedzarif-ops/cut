@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { getBalancedMealTemplate, type NutritionFacts } from "./balancedMeals";
+import {
+  BALANCED_MEAL_CATALOG,
+  getBalancedMealTemplate,
+  type NutritionFacts,
+} from "./balancedMeals";
 
 /**
  * USDA FoodData Central values per 100 g retrieved August 3, 2026. Exact FDC
@@ -312,6 +316,137 @@ const RECIPE_GRAMS = {
     [173944, 80],
     [170554, 10],
   ],
+  "desi-chicken-masoor-rice-bowl": [
+    [171477, 150],
+    [172421, 150],
+    [168878, 100],
+    [170457, 100],
+    [170000, 50],
+    [171413, 5],
+    [169230, 5],
+    [169231, 5],
+    [170923, 1],
+    [172231, 1],
+    [746775, 1],
+  ],
+  "desi-chicken-quinoa-sabzi-bowl": [
+    [171477, 150],
+    [168917, 140],
+    [168463, 100],
+    [169292, 100],
+    [170457, 100],
+    [171413, 5],
+    [169230, 5],
+    [169231, 5],
+    [170923, 1],
+    [172231, 1],
+    [746775, 1],
+  ],
+  "egg-masoor-spinach-plate": [
+    [173424, 150],
+    [172421, 200],
+    [168463, 100],
+    [170457, 100],
+    [170000, 50],
+    [171413, 5],
+    [169230, 5],
+    [170923, 1],
+    [172231, 1],
+    [746775, 1],
+  ],
+  "bengali-salmon-rice-spinach": [
+    [175168, 140],
+    [168878, 140],
+    [168463, 100],
+    [170457, 100],
+    [170000, 50],
+    [171413, 5],
+    [169231, 5],
+    [172231, 1],
+    [746775, 1],
+  ],
+  "desi-tofu-masoor-bowl": [
+    [172475, 150],
+    [172421, 180],
+    [168463, 75],
+    [170457, 100],
+    [170000, 50],
+    [171413, 5],
+    [169230, 5],
+    [170923, 1],
+    [172231, 1],
+    [746775, 1],
+  ],
+  "chicken-sweet-potato-masala-plate": [
+    [171477, 150],
+    [168483, 220],
+    [169967, 120],
+    [170457, 100],
+    [170000, 50],
+    [171413, 5],
+    [169230, 5],
+    [170923, 1],
+    [172231, 1],
+    [746775, 1],
+  ],
+  "masoor-brown-rice-sabzi-bowl": [
+    [172421, 220],
+    [169704, 100],
+    [168463, 100],
+    [170457, 100],
+    [170000, 50],
+    [171413, 5],
+    [169230, 5],
+    [170923, 1],
+    [172231, 1],
+    [746775, 1],
+  ],
+  "yogurt-oat-banana-bowl": [
+    [170894, 250],
+    [173904, 50],
+    [173944, 100],
+    [170554, 10],
+  ],
+  "chicken-rice-kachumber-bowl": [
+    [171477, 150],
+    [169704, 140],
+    [168409, 120],
+    [170457, 100],
+    [169247, 75],
+    [167747, 20],
+    [171413, 5],
+    [746775, 1],
+  ],
+  "egg-quinoa-spinach-bowl": [
+    [173424, 150],
+    [168917, 150],
+    [168463, 100],
+    [170457, 100],
+    [170000, 50],
+    [171413, 5],
+    [170923, 1],
+    [172231, 1],
+    [746775, 1],
+  ],
+  "salmon-quinoa-vegetable-bowl": [
+    [175168, 140],
+    [168917, 150],
+    [169967, 120],
+    [170108, 100],
+    [167747, 20],
+    [171413, 5],
+    [746775, 1],
+  ],
+  "tofu-edamame-quinoa-bowl": [
+    [172475, 150],
+    [168411, 100],
+    [168917, 140],
+    [169967, 100],
+    [169977, 75],
+    [171016, 5],
+    [169231, 5],
+    [746775, 1],
+  ],
 } as const;
 
 function round(value: number, places: number): number {
@@ -349,6 +484,9 @@ function calculateRecipe(
 
 describe("balanced meal nutrition evidence", () => {
   it("reproduces every catalog estimate from the recorded FDC values and gram weights", () => {
+    expect(Object.keys(RECIPE_GRAMS).sort()).toEqual(
+      BALANCED_MEAL_CATALOG.map(({ id }) => id).sort(),
+    );
     for (const [templateId, inputs] of Object.entries(RECIPE_GRAMS)) {
       expect(getBalancedMealTemplate(templateId)?.nutritionPerServing).toEqual(
         calculateRecipe(inputs),

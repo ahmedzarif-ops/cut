@@ -12,15 +12,15 @@ import {
 } from "./balancedMeals";
 
 describe("balanced meal catalog", () => {
-  it("ships six durable, unique options with Bengali and Desi choices", () => {
-    expect(BALANCED_MEAL_CATALOG_VERSION).toBe("2026-08-03.2");
+  it("ships eighteen durable, unique options with Bengali and Desi choices", () => {
+    expect(BALANCED_MEAL_CATALOG_VERSION).toBe("2026-09-04.1");
     expect(BALANCED_MEAL_CATALOG_VERSION).toMatch(/^\d{4}-\d{2}-\d{2}\.\d+$/);
     expect(
       isCurrentBalancedMealCatalogVersion(BALANCED_MEAL_CATALOG_VERSION),
     ).toBe(true);
     expect(isCurrentBalancedMealCatalogVersion("2026-08-02.9")).toBe(false);
-    expect(BALANCED_MEAL_CATALOG).toHaveLength(6);
-    expect(new Set(BALANCED_MEAL_CATALOG.map(({ id }) => id)).size).toBe(6);
+    expect(BALANCED_MEAL_CATALOG).toHaveLength(18);
+    expect(new Set(BALANCED_MEAL_CATALOG.map(({ id }) => id)).size).toBe(18);
     expect(BALANCED_MEAL_CATALOG.map(({ cuisine }) => cuisine)).toEqual(
       expect.arrayContaining(["Bengali", "Desi"]),
     );
@@ -35,9 +35,9 @@ describe("balanced meal catalog", () => {
     }
   });
 
-  it("matches the fixed recipe quantities and USDA-based calculation record", () => {
+  it("keeps the original six frozen recipe records unchanged", () => {
     expect(
-      BALANCED_MEAL_CATALOG.map(
+      BALANCED_MEAL_CATALOG.slice(0, 6).map(
         ({
           id,
           servingDescription,

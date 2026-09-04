@@ -259,9 +259,461 @@ export const ListMyMealOptionsResponseItem = zod.object({
   "carbsG": zod.number().min(listMyMealOptionsResponseCarbsGMin),
   "fatG": zod.number().min(listMyMealOptionsResponseFatGMin),
   "fiberG": zod.number().min(listMyMealOptionsResponseFiberGMin),
-  "fitReason": zod.string()
+  "fitReason": zod.string(),
+  "recommendedServings": zod.union([zod.literal(0.5),zod.literal(0.75),zod.literal(1),zod.literal(1.25),zod.literal(1.5),zod.literal(2)])
 })
 export const ListMyMealOptionsResponse = zod.array(ListMyMealOptionsResponseItem)
+
+
+/**
+ * Returns versioned, source-linked generic foods with multilingual search aliases and fixed gram servings. Values are editable estimates, not a claim that a generic source matches a person's exact brand or recipe.
+ * @summary Search the free built-in food library
+ */
+export const listMyFoodLibraryQueryQueryMax = 80;
+
+
+
+export const ListMyFoodLibraryQueryParams = zod.object({
+  "query": zod.coerce.string().max(listMyFoodLibraryQueryQueryMax).optional()
+})
+
+
+export const listMyFoodLibraryResponseServingGramsExclusiveMin = 0;
+
+export const listMyFoodLibraryResponseCaloriesKcalMin = 0;
+
+export const listMyFoodLibraryResponseProteinGMin = 0;
+
+export const listMyFoodLibraryResponseCarbsGMin = 0;
+
+export const listMyFoodLibraryResponseFatGMin = 0;
+
+export const listMyFoodLibraryResponseFiberGMin = 0;
+
+
+
+
+export const ListMyFoodLibraryResponseItem = zod.object({
+  "id": zod.string(),
+  "catalogVersion": zod.string().min(1),
+  "name": zod.string(),
+  "aliases": zod.array(zod.string()),
+  "servingDescription": zod.string(),
+  "servingGrams": zod.number().gt(listMyFoodLibraryResponseServingGramsExclusiveMin),
+  "cuisineTags": zod.array(zod.string()),
+  "allergens": zod.array(zod.string()),
+  "caloriesKcal": zod.number().min(listMyFoodLibraryResponseCaloriesKcalMin),
+  "proteinG": zod.number().min(listMyFoodLibraryResponseProteinGMin),
+  "carbsG": zod.number().min(listMyFoodLibraryResponseCarbsGMin),
+  "fatG": zod.number().min(listMyFoodLibraryResponseFatGMin),
+  "fiberG": zod.number().min(listMyFoodLibraryResponseFiberGMin),
+  "source": zod.enum(['USDA FoodData Central']),
+  "sourceId": zod.number().min(1)
+})
+export const ListMyFoodLibraryResponse = zod.array(ListMyFoodLibraryResponseItem).max(35)
+
+
+/**
+ * Returns explicit targets and food preferences only. These values are not medical or allergy advice and CUT OS does not infer protected or health traits from them.
+ * @summary Get the current user's explicit nutrition preferences
+ */
+export const getMyNutritionPreferencesResponseDailyCalorieTargetMin = 800;
+export const getMyNutritionPreferencesResponseDailyCalorieTargetMax = 6000;
+
+export const getMyNutritionPreferencesResponseDailyProteinTargetGMin = 20;
+export const getMyNutritionPreferencesResponseDailyProteinTargetGMax = 400;
+
+export const getMyNutritionPreferencesResponsePreferredCuisinesItemMax = 40;
+
+export const getMyNutritionPreferencesResponsePreferredCuisinesMax = 10;
+
+export const getMyNutritionPreferencesResponseAvoidedIngredientsItemMax = 40;
+
+export const getMyNutritionPreferencesResponseAvoidedIngredientsMax = 20;
+
+
+
+export const GetMyNutritionPreferencesResponse = zod.object({
+  "dailyCalorieTarget": zod.number().min(getMyNutritionPreferencesResponseDailyCalorieTargetMin).max(getMyNutritionPreferencesResponseDailyCalorieTargetMax).nullable(),
+  "dailyProteinTargetG": zod.number().min(getMyNutritionPreferencesResponseDailyProteinTargetGMin).max(getMyNutritionPreferencesResponseDailyProteinTargetGMax).nullable(),
+  "dietStyle": zod.enum(['no_preference', 'omnivore', 'vegetarian', 'vegan', 'pescatarian']),
+  "preferredCuisines": zod.array(zod.string().min(1).max(getMyNutritionPreferencesResponsePreferredCuisinesItemMax)).max(getMyNutritionPreferencesResponsePreferredCuisinesMax),
+  "avoidedIngredients": zod.array(zod.string().min(1).max(getMyNutritionPreferencesResponseAvoidedIngredientsItemMax)).max(getMyNutritionPreferencesResponseAvoidedIngredientsMax),
+  "learningEnabled": zod.boolean()
+})
+
+
+/**
+ * @summary Replace the current user's explicit nutrition preferences
+ */
+export const upsertMyNutritionPreferencesBodyDailyCalorieTargetMin = 800;
+export const upsertMyNutritionPreferencesBodyDailyCalorieTargetMax = 6000;
+
+export const upsertMyNutritionPreferencesBodyDailyProteinTargetGMin = 20;
+export const upsertMyNutritionPreferencesBodyDailyProteinTargetGMax = 400;
+
+export const upsertMyNutritionPreferencesBodyPreferredCuisinesItemMax = 40;
+
+export const upsertMyNutritionPreferencesBodyPreferredCuisinesMax = 10;
+
+export const upsertMyNutritionPreferencesBodyAvoidedIngredientsItemMax = 40;
+
+export const upsertMyNutritionPreferencesBodyAvoidedIngredientsMax = 20;
+
+
+
+export const UpsertMyNutritionPreferencesBody = zod.object({
+  "dailyCalorieTarget": zod.number().min(upsertMyNutritionPreferencesBodyDailyCalorieTargetMin).max(upsertMyNutritionPreferencesBodyDailyCalorieTargetMax).nullable(),
+  "dailyProteinTargetG": zod.number().min(upsertMyNutritionPreferencesBodyDailyProteinTargetGMin).max(upsertMyNutritionPreferencesBodyDailyProteinTargetGMax).nullable(),
+  "dietStyle": zod.enum(['no_preference', 'omnivore', 'vegetarian', 'vegan', 'pescatarian']),
+  "preferredCuisines": zod.array(zod.string().min(1).max(upsertMyNutritionPreferencesBodyPreferredCuisinesItemMax)).max(upsertMyNutritionPreferencesBodyPreferredCuisinesMax),
+  "avoidedIngredients": zod.array(zod.string().min(1).max(upsertMyNutritionPreferencesBodyAvoidedIngredientsItemMax)).max(upsertMyNutritionPreferencesBodyAvoidedIngredientsMax),
+  "learningEnabled": zod.boolean()
+})
+
+export const upsertMyNutritionPreferencesResponseDailyCalorieTargetMin = 800;
+export const upsertMyNutritionPreferencesResponseDailyCalorieTargetMax = 6000;
+
+export const upsertMyNutritionPreferencesResponseDailyProteinTargetGMin = 20;
+export const upsertMyNutritionPreferencesResponseDailyProteinTargetGMax = 400;
+
+export const upsertMyNutritionPreferencesResponsePreferredCuisinesItemMax = 40;
+
+export const upsertMyNutritionPreferencesResponsePreferredCuisinesMax = 10;
+
+export const upsertMyNutritionPreferencesResponseAvoidedIngredientsItemMax = 40;
+
+export const upsertMyNutritionPreferencesResponseAvoidedIngredientsMax = 20;
+
+
+
+export const UpsertMyNutritionPreferencesResponse = zod.object({
+  "dailyCalorieTarget": zod.number().min(upsertMyNutritionPreferencesResponseDailyCalorieTargetMin).max(upsertMyNutritionPreferencesResponseDailyCalorieTargetMax).nullable(),
+  "dailyProteinTargetG": zod.number().min(upsertMyNutritionPreferencesResponseDailyProteinTargetGMin).max(upsertMyNutritionPreferencesResponseDailyProteinTargetGMax).nullable(),
+  "dietStyle": zod.enum(['no_preference', 'omnivore', 'vegetarian', 'vegan', 'pescatarian']),
+  "preferredCuisines": zod.array(zod.string().min(1).max(upsertMyNutritionPreferencesResponsePreferredCuisinesItemMax)).max(upsertMyNutritionPreferencesResponsePreferredCuisinesMax),
+  "avoidedIngredients": zod.array(zod.string().min(1).max(upsertMyNutritionPreferencesResponseAvoidedIngredientsItemMax)).max(upsertMyNutritionPreferencesResponseAvoidedIngredientsMax),
+  "learningEnabled": zod.boolean()
+})
+
+
+/**
+ * @summary Reset explicit nutrition preferences to defaults
+ */
+export const ResetMyNutritionPreferencesResponse = zod.void()
+
+
+/**
+ * @summary List the current user's saved foods
+ */
+export const listMySavedFoodsResponseOneSourceRefMax = 160;
+
+export const listMySavedFoodsResponseOneNameMax = 120;
+
+export const listMySavedFoodsResponseOneServingDescriptionMax = 120;
+
+export const listMySavedFoodsResponseOneCaloriesKcalMin = 0;
+export const listMySavedFoodsResponseOneCaloriesKcalMax = 10000;
+
+export const listMySavedFoodsResponseOneProteinGMin = 0;
+export const listMySavedFoodsResponseOneProteinGMax = 1000;
+
+export const listMySavedFoodsResponseOneCarbsGMin = 0;
+export const listMySavedFoodsResponseOneCarbsGMax = 1000;
+
+export const listMySavedFoodsResponseOneFatGMin = 0;
+export const listMySavedFoodsResponseOneFatGMax = 1000;
+
+export const listMySavedFoodsResponseOneFiberGMin = 0;
+export const listMySavedFoodsResponseOneFiberGMax = 1000;
+
+
+
+export const ListMySavedFoodsResponseItem = zod.object({
+  "source": zod.enum(['curated', 'barcode', 'manual']),
+  "sourceRef": zod.string().max(listMySavedFoodsResponseOneSourceRefMax).nullable(),
+  "name": zod.string().min(1).max(listMySavedFoodsResponseOneNameMax),
+  "servingDescription": zod.string().min(1).max(listMySavedFoodsResponseOneServingDescriptionMax),
+  "caloriesKcal": zod.number().min(listMySavedFoodsResponseOneCaloriesKcalMin).max(listMySavedFoodsResponseOneCaloriesKcalMax),
+  "proteinG": zod.number().min(listMySavedFoodsResponseOneProteinGMin).max(listMySavedFoodsResponseOneProteinGMax),
+  "carbsG": zod.number().min(listMySavedFoodsResponseOneCarbsGMin).max(listMySavedFoodsResponseOneCarbsGMax),
+  "fatG": zod.number().min(listMySavedFoodsResponseOneFatGMin).max(listMySavedFoodsResponseOneFatGMax),
+  "fiberG": zod.number().min(listMySavedFoodsResponseOneFiberGMin).max(listMySavedFoodsResponseOneFiberGMax)
+}).and(zod.object({
+  "id": zod.uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+export const ListMySavedFoodsResponse = zod.array(ListMySavedFoodsResponseItem).max(100)
+
+
+/**
+ * Stores a private nutrition snapshot. An identical normalized food is deduplicated for the current user and refreshed instead of duplicated.
+ * @summary Save a reviewed food for reuse
+ */
+export const saveMyFoodBodySourceRefMax = 160;
+
+export const saveMyFoodBodyNameMax = 120;
+
+export const saveMyFoodBodyServingDescriptionMax = 120;
+
+export const saveMyFoodBodyCaloriesKcalMin = 0;
+export const saveMyFoodBodyCaloriesKcalMax = 10000;
+
+export const saveMyFoodBodyProteinGMin = 0;
+export const saveMyFoodBodyProteinGMax = 1000;
+
+export const saveMyFoodBodyCarbsGMin = 0;
+export const saveMyFoodBodyCarbsGMax = 1000;
+
+export const saveMyFoodBodyFatGMin = 0;
+export const saveMyFoodBodyFatGMax = 1000;
+
+export const saveMyFoodBodyFiberGMin = 0;
+export const saveMyFoodBodyFiberGMax = 1000;
+
+
+
+export const SaveMyFoodBody = zod.object({
+  "source": zod.enum(['curated', 'barcode', 'manual']),
+  "sourceRef": zod.string().max(saveMyFoodBodySourceRefMax).nullable(),
+  "name": zod.string().min(1).max(saveMyFoodBodyNameMax),
+  "servingDescription": zod.string().min(1).max(saveMyFoodBodyServingDescriptionMax),
+  "caloriesKcal": zod.number().min(saveMyFoodBodyCaloriesKcalMin).max(saveMyFoodBodyCaloriesKcalMax),
+  "proteinG": zod.number().min(saveMyFoodBodyProteinGMin).max(saveMyFoodBodyProteinGMax),
+  "carbsG": zod.number().min(saveMyFoodBodyCarbsGMin).max(saveMyFoodBodyCarbsGMax),
+  "fatG": zod.number().min(saveMyFoodBodyFatGMin).max(saveMyFoodBodyFatGMax),
+  "fiberG": zod.number().min(saveMyFoodBodyFiberGMin).max(saveMyFoodBodyFiberGMax)
+})
+
+export const saveMyFoodResponseOneSourceRefMax = 160;
+
+export const saveMyFoodResponseOneNameMax = 120;
+
+export const saveMyFoodResponseOneServingDescriptionMax = 120;
+
+export const saveMyFoodResponseOneCaloriesKcalMin = 0;
+export const saveMyFoodResponseOneCaloriesKcalMax = 10000;
+
+export const saveMyFoodResponseOneProteinGMin = 0;
+export const saveMyFoodResponseOneProteinGMax = 1000;
+
+export const saveMyFoodResponseOneCarbsGMin = 0;
+export const saveMyFoodResponseOneCarbsGMax = 1000;
+
+export const saveMyFoodResponseOneFatGMin = 0;
+export const saveMyFoodResponseOneFatGMax = 1000;
+
+export const saveMyFoodResponseOneFiberGMin = 0;
+export const saveMyFoodResponseOneFiberGMax = 1000;
+
+
+
+export const SaveMyFoodResponse = zod.object({
+  "source": zod.enum(['curated', 'barcode', 'manual']),
+  "sourceRef": zod.string().max(saveMyFoodResponseOneSourceRefMax).nullable(),
+  "name": zod.string().min(1).max(saveMyFoodResponseOneNameMax),
+  "servingDescription": zod.string().min(1).max(saveMyFoodResponseOneServingDescriptionMax),
+  "caloriesKcal": zod.number().min(saveMyFoodResponseOneCaloriesKcalMin).max(saveMyFoodResponseOneCaloriesKcalMax),
+  "proteinG": zod.number().min(saveMyFoodResponseOneProteinGMin).max(saveMyFoodResponseOneProteinGMax),
+  "carbsG": zod.number().min(saveMyFoodResponseOneCarbsGMin).max(saveMyFoodResponseOneCarbsGMax),
+  "fatG": zod.number().min(saveMyFoodResponseOneFatGMin).max(saveMyFoodResponseOneFatGMax),
+  "fiberG": zod.number().min(saveMyFoodResponseOneFiberGMin).max(saveMyFoodResponseOneFiberGMax)
+}).and(zod.object({
+  "id": zod.uuid(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+
+
+/**
+ * @summary Delete one saved food
+ */
+export const DeleteMySavedFoodParams = zod.object({
+  "savedFoodId": zod.uuid()
+})
+
+export const DeleteMySavedFoodResponse = zod.void()
+
+
+/**
+ * @summary Save direct feedback for a fixed meal
+ */
+export const upsertMyMealFeedbackPathTemplateIdMax = 120;
+
+
+
+export const UpsertMyMealFeedbackParams = zod.object({
+  "templateId": zod.coerce.string().min(1).max(upsertMyMealFeedbackPathTemplateIdMax)
+})
+
+export const UpsertMyMealFeedbackBody = zod.object({
+  "preference": zod.enum(['liked', 'not_for_me'])
+})
+
+export const UpsertMyMealFeedbackResponse = zod.object({
+  "templateId": zod.string(),
+  "preference": zod.enum(['liked', 'not_for_me']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Clear direct feedback for a fixed meal
+ */
+export const deleteMyMealFeedbackPathTemplateIdMax = 120;
+
+
+
+export const DeleteMyMealFeedbackParams = zod.object({
+  "templateId": zod.coerce.string().min(1).max(deleteMyMealFeedbackPathTemplateIdMax)
+})
+
+export const DeleteMyMealFeedbackResponse = zod.void()
+
+
+/**
+ * Reorders the reviewed fixed-meal catalog using the current user's own confirmed catalog-meal history, direct preferences, feedback, and remaining daily targets. The explanation is transparent and the result remains an editable estimate, not medical or allergy advice.
+ * @summary List adaptive meal fits for a CUT OS Pro user
+ */
+export const listMyProMealFitsHeaderXCUTDeviceTimezoneMax = 100;
+
+
+
+export const ListMyProMealFitsHeader = zod.object({
+  "X-CUT-Device-Timezone": zod.string().min(1).max(listMyProMealFitsHeaderXCUTDeviceTimezoneMax).describe('Current validated IANA timezone reported by this device. Daily endpoints use this request-scoped context directly instead of a shared mutable account timezone.')
+})
+
+
+export const listMyProMealFitsResponseCaloriesKcalMin = 0;
+
+export const listMyProMealFitsResponseProteinGMin = 0;
+
+export const listMyProMealFitsResponseCarbsGMin = 0;
+
+export const listMyProMealFitsResponseFatGMin = 0;
+
+export const listMyProMealFitsResponseFiberGMin = 0;
+
+
+
+export const ListMyProMealFitsResponseItem = zod.object({
+  "id": zod.string(),
+  "catalogVersion": zod.string().min(1),
+  "name": zod.string(),
+  "description": zod.string(),
+  "cuisine": zod.string(),
+  "servingDescription": zod.string(),
+  "dietaryTags": zod.array(zod.string()),
+  "ingredients": zod.array(zod.string()),
+  "allergens": zod.array(zod.string()),
+  "caloriesKcal": zod.number().min(listMyProMealFitsResponseCaloriesKcalMin),
+  "proteinG": zod.number().min(listMyProMealFitsResponseProteinGMin),
+  "carbsG": zod.number().min(listMyProMealFitsResponseCarbsGMin),
+  "fatG": zod.number().min(listMyProMealFitsResponseFatGMin),
+  "fiberG": zod.number().min(listMyProMealFitsResponseFiberGMin),
+  "fitReason": zod.string(),
+  "recommendedServings": zod.union([zod.literal(0.5),zod.literal(0.75),zod.literal(1),zod.literal(1.25),zod.literal(1.5),zod.literal(2)])
+})
+export const ListMyProMealFitsResponse = zod.array(ListMyProMealFitsResponseItem).max(3)
+
+
+/**
+ * Uses explicit preferences, confirmed meal history, today's remaining targets, and the user's current request. When the separately approved AI provider is enabled, it may choose only from CUT's source-linked food catalog and CUT calculates all nutrition from those catalog amounts. Otherwise the endpoint returns deterministic catalog fits. No result is logged automatically and every value requires review.
+ * @summary Create reviewed personalized meal drafts for a CUT OS Pro user
+ */
+export const createMyProMealDraftsHeaderXCUTDeviceTimezoneMax = 100;
+
+
+
+export const CreateMyProMealDraftsHeader = zod.object({
+  "X-CUT-Device-Timezone": zod.string().min(1).max(createMyProMealDraftsHeaderXCUTDeviceTimezoneMax).describe('Current validated IANA timezone reported by this device. Daily endpoints use this request-scoped context directly instead of a shared mutable account timezone.')
+})
+
+export const createMyProMealDraftsBodyMaxPrepMinutesMin = 5;
+export const createMyProMealDraftsBodyMaxPrepMinutesMax = 120;
+
+export const createMyProMealDraftsBodyAvailableIngredientsItemMax = 60;
+
+export const createMyProMealDraftsBodyAvailableIngredientsMax = 20;
+
+export const createMyProMealDraftsBodyNotesMax = 300;
+
+
+
+export const CreateMyProMealDraftsBody = zod.object({
+  "goal": zod.enum(['balanced', 'high_protein', 'quick', 'desi']),
+  "mealTime": zod.enum(['any', 'breakfast', 'lunch', 'dinner', 'snack']),
+  "maxPrepMinutes": zod.number().min(createMyProMealDraftsBodyMaxPrepMinutesMin).max(createMyProMealDraftsBodyMaxPrepMinutesMax),
+  "availableIngredients": zod.array(zod.string().min(1).max(createMyProMealDraftsBodyAvailableIngredientsItemMax)).max(createMyProMealDraftsBodyAvailableIngredientsMax),
+  "notes": zod.string().max(createMyProMealDraftsBodyNotesMax)
+})
+
+
+
+export const createMyProMealDraftsResponseDraftsItemNameMax = 80;
+
+export const createMyProMealDraftsResponseDraftsItemSummaryMax = 240;
+
+export const createMyProMealDraftsResponseDraftsItemServingDescriptionMax = 120;
+
+export const createMyProMealDraftsResponseDraftsItemEstimatedPrepMinutesMax = 120;
+
+export const createMyProMealDraftsResponseDraftsItemIngredientsItemMax = 160;
+
+export const createMyProMealDraftsResponseDraftsItemIngredientsMax = 20;
+
+export const createMyProMealDraftsResponseDraftsItemInstructionsItemMax = 240;
+
+export const createMyProMealDraftsResponseDraftsItemInstructionsMax = 8;
+
+export const createMyProMealDraftsResponseDraftsItemCaloriesKcalMin = 0;
+export const createMyProMealDraftsResponseDraftsItemCaloriesKcalMax = 10000;
+
+export const createMyProMealDraftsResponseDraftsItemProteinGMin = 0;
+export const createMyProMealDraftsResponseDraftsItemProteinGMax = 1000;
+
+export const createMyProMealDraftsResponseDraftsItemCarbsGMin = 0;
+export const createMyProMealDraftsResponseDraftsItemCarbsGMax = 1000;
+
+export const createMyProMealDraftsResponseDraftsItemFatGMin = 0;
+export const createMyProMealDraftsResponseDraftsItemFatGMax = 1000;
+
+export const createMyProMealDraftsResponseDraftsItemFiberGMin = 0;
+export const createMyProMealDraftsResponseDraftsItemFiberGMax = 1000;
+
+export const createMyProMealDraftsResponseDraftsItemWhyItFitsMax = 400;
+
+export const createMyProMealDraftsResponseDraftsMax = 3;
+
+export const createMyProMealDraftsResponseNoticeMax = 300;
+
+
+
+export const CreateMyProMealDraftsResponse = zod.object({
+  "source": zod.enum(['ai', 'catalog']),
+  "drafts": zod.array(zod.object({
+  "id": zod.string().min(1),
+  "source": zod.enum(['ai', 'catalog']),
+  "catalogVersion": zod.string().min(1),
+  "name": zod.string().min(1).max(createMyProMealDraftsResponseDraftsItemNameMax),
+  "summary": zod.string().min(1).max(createMyProMealDraftsResponseDraftsItemSummaryMax),
+  "servingDescription": zod.string().min(1).max(createMyProMealDraftsResponseDraftsItemServingDescriptionMax),
+  "estimatedPrepMinutes": zod.number().min(1).max(createMyProMealDraftsResponseDraftsItemEstimatedPrepMinutesMax),
+  "ingredients": zod.array(zod.string().min(1).max(createMyProMealDraftsResponseDraftsItemIngredientsItemMax)).min(1).max(createMyProMealDraftsResponseDraftsItemIngredientsMax),
+  "instructions": zod.array(zod.string().min(1).max(createMyProMealDraftsResponseDraftsItemInstructionsItemMax)).min(1).max(createMyProMealDraftsResponseDraftsItemInstructionsMax),
+  "allergens": zod.array(zod.string()),
+  "caloriesKcal": zod.number().min(createMyProMealDraftsResponseDraftsItemCaloriesKcalMin).max(createMyProMealDraftsResponseDraftsItemCaloriesKcalMax),
+  "proteinG": zod.number().min(createMyProMealDraftsResponseDraftsItemProteinGMin).max(createMyProMealDraftsResponseDraftsItemProteinGMax),
+  "carbsG": zod.number().min(createMyProMealDraftsResponseDraftsItemCarbsGMin).max(createMyProMealDraftsResponseDraftsItemCarbsGMax),
+  "fatG": zod.number().min(createMyProMealDraftsResponseDraftsItemFatGMin).max(createMyProMealDraftsResponseDraftsItemFatGMax),
+  "fiberG": zod.number().min(createMyProMealDraftsResponseDraftsItemFiberGMin).max(createMyProMealDraftsResponseDraftsItemFiberGMax),
+  "whyItFits": zod.string().min(1).max(createMyProMealDraftsResponseDraftsItemWhyItFitsMax),
+  "reviewRequired": zod.literal(true)
+})).min(1).max(createMyProMealDraftsResponseDraftsMax),
+  "notice": zod.string().min(1).max(createMyProMealDraftsResponseNoticeMax)
+})
 
 
 /**
@@ -398,6 +850,130 @@ export const CreateMyMealEntryResponse = zod.object({
 
 
 /**
+ * Logs a user-reviewed nutrition snapshot from manual entry, barcode lookup, or a corrected estimate. The client echoes the dayKey it reviewed and the server remains authoritative for the local calendar day. Repeating the same clientRequestId and payload returns the original entry. Nutrition values are estimates supplied or confirmed by the user; this endpoint does not diagnose or prescribe.
+ * @summary Log a reviewed food for today
+ */
+export const createMyFoodEntryHeaderXCUTDeviceTimezoneMax = 100;
+
+
+
+export const CreateMyFoodEntryHeader = zod.object({
+  "X-CUT-Device-Timezone": zod.string().min(1).max(createMyFoodEntryHeaderXCUTDeviceTimezoneMax).describe('Current validated IANA timezone reported by this device. Daily endpoints use this request-scoped context directly instead of a shared mutable account timezone.')
+})
+
+export const createMyFoodEntryBodyDayKeyRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createMyFoodEntryBodyNameMax = 120;
+
+export const createMyFoodEntryBodyServingDescriptionMax = 120;
+
+export const createMyFoodEntryBodyServingsMin = 0.25;
+export const createMyFoodEntryBodyServingsMax = 4;
+
+export const createMyFoodEntryBodyCaloriesKcalMin = 0;
+export const createMyFoodEntryBodyCaloriesKcalMax = 10000;
+
+export const createMyFoodEntryBodyProteinGMin = 0;
+export const createMyFoodEntryBodyProteinGMax = 1000;
+
+export const createMyFoodEntryBodyCarbsGMin = 0;
+export const createMyFoodEntryBodyCarbsGMax = 1000;
+
+export const createMyFoodEntryBodyFatGMin = 0;
+export const createMyFoodEntryBodyFatGMax = 1000;
+
+export const createMyFoodEntryBodyFiberGMin = 0;
+export const createMyFoodEntryBodyFiberGMax = 1000;
+
+
+
+export const CreateMyFoodEntryBody = zod.object({
+  "clientRequestId": zod.uuid(),
+  "dayKey": zod.string().regex(createMyFoodEntryBodyDayKeyRegExp),
+  "name": zod.string().min(1).max(createMyFoodEntryBodyNameMax),
+  "servingDescription": zod.string().min(1).max(createMyFoodEntryBodyServingDescriptionMax),
+  "servings": zod.number().min(createMyFoodEntryBodyServingsMin).max(createMyFoodEntryBodyServingsMax),
+  "caloriesKcal": zod.number().min(createMyFoodEntryBodyCaloriesKcalMin).max(createMyFoodEntryBodyCaloriesKcalMax),
+  "proteinG": zod.number().min(createMyFoodEntryBodyProteinGMin).max(createMyFoodEntryBodyProteinGMax),
+  "carbsG": zod.number().min(createMyFoodEntryBodyCarbsGMin).max(createMyFoodEntryBodyCarbsGMax),
+  "fatG": zod.number().min(createMyFoodEntryBodyFatGMin).max(createMyFoodEntryBodyFatGMax),
+  "fiberG": zod.number().min(createMyFoodEntryBodyFiberGMin).max(createMyFoodEntryBodyFiberGMax)
+})
+
+
+export const createMyFoodEntryResponseLoggedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createMyFoodEntryResponseServingsMin = 0.25;
+export const createMyFoodEntryResponseServingsMax = 4;
+
+export const createMyFoodEntryResponseCaloriesKcalMin = 0;
+
+export const createMyFoodEntryResponseProteinGMin = 0;
+
+export const createMyFoodEntryResponseCarbsGMin = 0;
+
+export const createMyFoodEntryResponseFatGMin = 0;
+
+export const createMyFoodEntryResponseFiberGMin = 0;
+
+
+
+export const CreateMyFoodEntryResponse = zod.object({
+  "id": zod.uuid(),
+  "catalogVersion": zod.string().min(1),
+  "templateId": zod.string(),
+  "clientRequestId": zod.uuid(),
+  "name": zod.string(),
+  "servingDescription": zod.string(),
+  "loggedOn": zod.string().regex(createMyFoodEntryResponseLoggedOnRegExp),
+  "servings": zod.number().min(createMyFoodEntryResponseServingsMin).max(createMyFoodEntryResponseServingsMax),
+  "caloriesKcal": zod.number().min(createMyFoodEntryResponseCaloriesKcalMin),
+  "proteinG": zod.number().min(createMyFoodEntryResponseProteinGMin),
+  "carbsG": zod.number().min(createMyFoodEntryResponseCarbsGMin),
+  "fatG": zod.number().min(createMyFoodEntryResponseFatGMin),
+  "fiberG": zod.number().min(createMyFoodEntryResponseFiberGMin),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * Looks up a barcode in Open Food Facts and returns a review-required nutrition snapshot. CUT OS does not treat community food data as exact; the person must review and may edit every value before logging.
+ * @summary Look up a packaged food by barcode
+ */
+export const getMyBarcodeFoodPathBarcodeRegExp = new RegExp('^\\d{6,14}$');
+
+
+export const GetMyBarcodeFoodParams = zod.object({
+  "barcode": zod.coerce.string().regex(getMyBarcodeFoodPathBarcodeRegExp)
+})
+
+export const getMyBarcodeFoodResponseCaloriesKcalMin = 0;
+
+export const getMyBarcodeFoodResponseProteinGMin = 0;
+
+export const getMyBarcodeFoodResponseCarbsGMin = 0;
+
+export const getMyBarcodeFoodResponseFatGMin = 0;
+
+export const getMyBarcodeFoodResponseFiberGMin = 0;
+
+
+
+export const GetMyBarcodeFoodResponse = zod.object({
+  "barcode": zod.string(),
+  "name": zod.string(),
+  "brand": zod.string().nullable(),
+  "servingDescription": zod.string(),
+  "caloriesKcal": zod.number().min(getMyBarcodeFoodResponseCaloriesKcalMin),
+  "proteinG": zod.number().min(getMyBarcodeFoodResponseProteinGMin),
+  "carbsG": zod.number().min(getMyBarcodeFoodResponseCarbsGMin),
+  "fatG": zod.number().min(getMyBarcodeFoodResponseFatGMin),
+  "fiberG": zod.number().min(getMyBarcodeFoodResponseFiberGMin),
+  "dataSource": zod.enum(['Open Food Facts']),
+  "requiresReview": zod.boolean()
+})
+
+
+/**
  * @summary Update a logged meal's serving count
  */
 export const UpdateMyMealEntryParams = zod.object({
@@ -520,5 +1096,188 @@ export const UpsertTodayWeightResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
+
+
+/**
+ * @summary List the current user's recent workout sessions
+ */
+export const listMyWorkoutsQueryLimitDefault = 20;
+export const listMyWorkoutsQueryLimitMax = 90;
+export const listMyWorkoutsQueryLimitMultipleOf = 1;
+
+
+
+export const ListMyWorkoutsQueryParams = zod.object({
+  "limit": zod.coerce.number().min(1).max(listMyWorkoutsQueryLimitMax).multipleOf(listMyWorkoutsQueryLimitMultipleOf).default(listMyWorkoutsQueryLimitDefault)
+})
+
+export const listMyWorkoutsResponseLoggedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const listMyWorkoutsResponseNameMax = 80;
+
+export const listMyWorkoutsResponseNotesMax = 500;
+
+export const listMyWorkoutsResponseExercisesItemPositionMin = 0;
+export const listMyWorkoutsResponseExercisesItemPositionMax = 49;
+
+export const listMyWorkoutsResponseExercisesItemNameMax = 80;
+
+export const listMyWorkoutsResponseExercisesItemSetsMax = 20;
+
+export const listMyWorkoutsResponseExercisesItemRepsMax = 100;
+
+export const listMyWorkoutsResponseExercisesItemLoadKgMin = 0;
+export const listMyWorkoutsResponseExercisesItemLoadKgMax = 1000;
+
+export const listMyWorkoutsResponseExercisesItemDurationMinutesMax = 1440;
+
+export const listMyWorkoutsResponseExercisesItemDistanceKmExclusiveMin = 0;
+export const listMyWorkoutsResponseExercisesItemDistanceKmMax = 1000;
+
+export const listMyWorkoutsResponseExercisesItemCaloriesKcalMin = 0;
+export const listMyWorkoutsResponseExercisesItemCaloriesKcalMax = 10000;
+
+export const listMyWorkoutsResponseExercisesMax = 50;
+
+
+
+export const ListMyWorkoutsResponseItem = zod.object({
+  "id": zod.uuid(),
+  "clientRequestId": zod.uuid(),
+  "loggedOn": zod.string().regex(listMyWorkoutsResponseLoggedOnRegExp),
+  "kind": zod.enum(['strength', 'cardio', 'recovery']),
+  "name": zod.string().min(1).max(listMyWorkoutsResponseNameMax),
+  "notes": zod.string().max(listMyWorkoutsResponseNotesMax).nullable(),
+  "exercises": zod.array(zod.object({
+  "id": zod.uuid(),
+  "position": zod.number().min(listMyWorkoutsResponseExercisesItemPositionMin).max(listMyWorkoutsResponseExercisesItemPositionMax),
+  "name": zod.string().min(1).max(listMyWorkoutsResponseExercisesItemNameMax),
+  "sets": zod.number().min(1).max(listMyWorkoutsResponseExercisesItemSetsMax).nullable(),
+  "reps": zod.number().min(1).max(listMyWorkoutsResponseExercisesItemRepsMax).nullable(),
+  "loadKg": zod.number().min(listMyWorkoutsResponseExercisesItemLoadKgMin).max(listMyWorkoutsResponseExercisesItemLoadKgMax).nullable(),
+  "durationMinutes": zod.number().min(1).max(listMyWorkoutsResponseExercisesItemDurationMinutesMax).nullable(),
+  "distanceKm": zod.number().gt(listMyWorkoutsResponseExercisesItemDistanceKmExclusiveMin).max(listMyWorkoutsResponseExercisesItemDistanceKmMax).nullable(),
+  "caloriesKcal": zod.number().min(listMyWorkoutsResponseExercisesItemCaloriesKcalMin).max(listMyWorkoutsResponseExercisesItemCaloriesKcalMax).nullable()
+})).max(listMyWorkoutsResponseExercisesMax),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListMyWorkoutsResponse = zod.array(ListMyWorkoutsResponseItem)
+
+
+/**
+ * The client echoes the reviewed dayKey and supplies an idempotency key. The server derives the current day from the required device timezone.
+ * @summary Save a workout on the reviewed local day
+ */
+export const createMyWorkoutHeaderXCUTDeviceTimezoneMax = 100;
+
+
+
+export const CreateMyWorkoutHeader = zod.object({
+  "X-CUT-Device-Timezone": zod.string().min(1).max(createMyWorkoutHeaderXCUTDeviceTimezoneMax).describe('Current validated IANA timezone reported by this device. Daily endpoints use this request-scoped context directly instead of a shared mutable account timezone.')
+})
+
+export const createMyWorkoutBodyDayKeyRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createMyWorkoutBodyNameMax = 80;
+
+export const createMyWorkoutBodyNotesMax = 500;
+
+export const createMyWorkoutBodyExercisesItemNameMax = 80;
+
+export const createMyWorkoutBodyExercisesItemSetsMax = 20;
+
+export const createMyWorkoutBodyExercisesItemRepsMax = 100;
+
+export const createMyWorkoutBodyExercisesItemLoadKgMin = 0;
+export const createMyWorkoutBodyExercisesItemLoadKgMax = 1000;
+
+export const createMyWorkoutBodyExercisesItemDurationMinutesMax = 1440;
+
+export const createMyWorkoutBodyExercisesItemDistanceKmExclusiveMin = 0;
+export const createMyWorkoutBodyExercisesItemDistanceKmMax = 1000;
+
+export const createMyWorkoutBodyExercisesItemCaloriesKcalMin = 0;
+export const createMyWorkoutBodyExercisesItemCaloriesKcalMax = 10000;
+
+export const createMyWorkoutBodyExercisesMax = 50;
+
+
+
+export const CreateMyWorkoutBody = zod.object({
+  "clientRequestId": zod.uuid(),
+  "dayKey": zod.string().regex(createMyWorkoutBodyDayKeyRegExp),
+  "kind": zod.enum(['strength', 'cardio', 'recovery']),
+  "name": zod.string().min(1).max(createMyWorkoutBodyNameMax),
+  "notes": zod.string().max(createMyWorkoutBodyNotesMax).nullable(),
+  "exercises": zod.array(zod.object({
+  "name": zod.string().min(1).max(createMyWorkoutBodyExercisesItemNameMax),
+  "sets": zod.number().min(1).max(createMyWorkoutBodyExercisesItemSetsMax).nullable(),
+  "reps": zod.number().min(1).max(createMyWorkoutBodyExercisesItemRepsMax).nullable(),
+  "loadKg": zod.number().min(createMyWorkoutBodyExercisesItemLoadKgMin).max(createMyWorkoutBodyExercisesItemLoadKgMax).nullable(),
+  "durationMinutes": zod.number().min(1).max(createMyWorkoutBodyExercisesItemDurationMinutesMax).nullable(),
+  "distanceKm": zod.number().gt(createMyWorkoutBodyExercisesItemDistanceKmExclusiveMin).max(createMyWorkoutBodyExercisesItemDistanceKmMax).nullable(),
+  "caloriesKcal": zod.number().min(createMyWorkoutBodyExercisesItemCaloriesKcalMin).max(createMyWorkoutBodyExercisesItemCaloriesKcalMax).nullable()
+})).max(createMyWorkoutBodyExercisesMax)
+})
+
+export const createMyWorkoutResponseLoggedOnRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const createMyWorkoutResponseNameMax = 80;
+
+export const createMyWorkoutResponseNotesMax = 500;
+
+export const createMyWorkoutResponseExercisesItemPositionMin = 0;
+export const createMyWorkoutResponseExercisesItemPositionMax = 49;
+
+export const createMyWorkoutResponseExercisesItemNameMax = 80;
+
+export const createMyWorkoutResponseExercisesItemSetsMax = 20;
+
+export const createMyWorkoutResponseExercisesItemRepsMax = 100;
+
+export const createMyWorkoutResponseExercisesItemLoadKgMin = 0;
+export const createMyWorkoutResponseExercisesItemLoadKgMax = 1000;
+
+export const createMyWorkoutResponseExercisesItemDurationMinutesMax = 1440;
+
+export const createMyWorkoutResponseExercisesItemDistanceKmExclusiveMin = 0;
+export const createMyWorkoutResponseExercisesItemDistanceKmMax = 1000;
+
+export const createMyWorkoutResponseExercisesItemCaloriesKcalMin = 0;
+export const createMyWorkoutResponseExercisesItemCaloriesKcalMax = 10000;
+
+export const createMyWorkoutResponseExercisesMax = 50;
+
+
+
+export const CreateMyWorkoutResponse = zod.object({
+  "id": zod.uuid(),
+  "clientRequestId": zod.uuid(),
+  "loggedOn": zod.string().regex(createMyWorkoutResponseLoggedOnRegExp),
+  "kind": zod.enum(['strength', 'cardio', 'recovery']),
+  "name": zod.string().min(1).max(createMyWorkoutResponseNameMax),
+  "notes": zod.string().max(createMyWorkoutResponseNotesMax).nullable(),
+  "exercises": zod.array(zod.object({
+  "id": zod.uuid(),
+  "position": zod.number().min(createMyWorkoutResponseExercisesItemPositionMin).max(createMyWorkoutResponseExercisesItemPositionMax),
+  "name": zod.string().min(1).max(createMyWorkoutResponseExercisesItemNameMax),
+  "sets": zod.number().min(1).max(createMyWorkoutResponseExercisesItemSetsMax).nullable(),
+  "reps": zod.number().min(1).max(createMyWorkoutResponseExercisesItemRepsMax).nullable(),
+  "loadKg": zod.number().min(createMyWorkoutResponseExercisesItemLoadKgMin).max(createMyWorkoutResponseExercisesItemLoadKgMax).nullable(),
+  "durationMinutes": zod.number().min(1).max(createMyWorkoutResponseExercisesItemDurationMinutesMax).nullable(),
+  "distanceKm": zod.number().gt(createMyWorkoutResponseExercisesItemDistanceKmExclusiveMin).max(createMyWorkoutResponseExercisesItemDistanceKmMax).nullable(),
+  "caloriesKcal": zod.number().min(createMyWorkoutResponseExercisesItemCaloriesKcalMin).max(createMyWorkoutResponseExercisesItemCaloriesKcalMax).nullable()
+})).max(createMyWorkoutResponseExercisesMax),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete one workout and its exercise rows
+ */
+export const DeleteMyWorkoutParams = zod.object({
+  "workoutId": zod.uuid()
+})
+
+export const DeleteMyWorkoutResponse = zod.void()
 
 

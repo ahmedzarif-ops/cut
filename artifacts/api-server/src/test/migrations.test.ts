@@ -29,11 +29,17 @@ describe("committed migrations", () => {
     );
     expect(tables.rows.map((r) => r.table_name)).toEqual([
       "account_deletion_requests",
+      "ai_meal_usage",
       "meal_entries",
       "meal_entry_deletion_tombstones",
+      "meal_feedback",
+      "nutrition_preferences",
       "profiles",
+      "saved_foods",
       "users",
       "weight_entries",
+      "workout_entries",
+      "workout_exercises",
     ]);
     await client.close();
   });

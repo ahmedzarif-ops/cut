@@ -7,6 +7,10 @@ import {
   CLERK_RATE_LIMIT_MAXIMUM,
   parseBoundedInteger,
 } from "./boundedInteger";
+import {
+  validateAiMealConfiguration,
+  type AiMealConfigurationIssue,
+} from "./aiMealConfig";
 
 export type ProductionConfigurationIssue =
   | "DATABASE_URL"
@@ -26,7 +30,8 @@ export type ProductionConfigurationIssue =
   | "ACCOUNT_DELETION_RETRY_INTERVAL_MS"
   | "API_RATE_LIMIT"
   | "CLERK_RATE_LIMIT"
-  | "PG_POOL_MAX";
+  | "PG_POOL_MAX"
+  | AiMealConfigurationIssue;
 
 const PLACEHOLDER_CLERK_FRONTEND_APIS = new Set([
   "example.accounts.dev",
@@ -318,6 +323,8 @@ export function validateProductionConfiguration(
   ) {
     issues.push("PG_POOL_MAX");
   }
+
+  issues.push(...validateAiMealConfiguration(env));
 
   const maximumInstances = parseMaximumInstanceCount(env.API_MAX_INSTANCES);
   if (maximumInstances === null) {

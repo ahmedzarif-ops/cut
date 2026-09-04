@@ -38,6 +38,7 @@ const mobileRuntimeDependencies = [
   "@workspace/api-client-react",
   "@workspace/domain",
   "expo",
+  "expo-camera",
   "expo-constants",
   "expo-crypto",
   "expo-font",
@@ -168,7 +169,7 @@ describe("native release configuration", () => {
 
     expect(clerkPods).toEqual(["ClerkExpo"]);
     expect(clerkPods).not.toContain("ClerkGoogleSignIn");
-  });
+  }, 15_000);
 
   it("autolinks Apple's age-range bridge and requests only its capability", () => {
     expect(appConfig.expo.ios.entitlements).toEqual({

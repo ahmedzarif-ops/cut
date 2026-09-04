@@ -40,8 +40,27 @@ describe("Balanced meal API", () => {
       .post("/api/me/meal-entries")
       .set(authenticatedOnly)
       .send({});
+    const missingProFit = await request(ctx.app)
+      .get("/api/me/pro/meal-fits")
+      .set(authenticatedOnly);
+    const missingMealDraft = await request(ctx.app)
+      .post("/api/me/pro/meal-drafts")
+      .set(authenticatedOnly)
+      .send({
+        goal: "desi",
+        mealTime: "dinner",
+        maxPrepMinutes: 30,
+        availableIngredients: [],
+        notes: "",
+      });
 
-    for (const response of [missingRead, invalidRead, missingCreate]) {
+    for (const response of [
+      missingRead,
+      invalidRead,
+      missingCreate,
+      missingProFit,
+      missingMealDraft,
+    ]) {
       expect(response.status).toBe(400);
       expect(response.body.code).toBe("device_timezone_required");
       expect(response.headers["cache-control"]).toBe("no-store");
@@ -110,8 +129,27 @@ describe("Balanced meal API", () => {
   it("requires authentication for every meal endpoint", async () => {
     const responses = await Promise.all([
       request(ctx.app).get("/api/me/meal-options"),
+      request(ctx.app).get("/api/me/food-library"),
+      request(ctx.app).get("/api/me/nutrition-preferences"),
+      request(ctx.app).put("/api/me/nutrition-preferences").send({}),
+      request(ctx.app).delete("/api/me/nutrition-preferences"),
+      request(ctx.app).get("/api/me/saved-foods"),
+      request(ctx.app).post("/api/me/saved-foods").send({}),
+      request(ctx.app).delete(
+        "/api/me/saved-foods/4bbc54d0-9976-4f55-bb39-83d3fa96e410",
+      ),
+      request(ctx.app)
+        .put("/api/me/meal-feedback/bengali-chicken-curry-plate")
+        .send({ preference: "liked" }),
+      request(ctx.app).delete(
+        "/api/me/meal-feedback/bengali-chicken-curry-plate",
+      ),
+      request(ctx.app).get("/api/me/pro/meal-fits"),
+      request(ctx.app).post("/api/me/pro/meal-drafts").send({}),
       request(ctx.app).get("/api/me/meals/today"),
       request(ctx.app).post("/api/me/meal-entries").send({}),
+      request(ctx.app).post("/api/me/food-entries").send({}),
+      request(ctx.app).get("/api/me/foods/barcode/012345678905"),
       request(ctx.app)
         .patch("/api/me/meal-entries/4bbc54d0-9976-4f55-bb39-83d3fa96e410")
         .send({ servings: 1 }),
@@ -121,8 +159,180 @@ describe("Balanced meal API", () => {
     ]);
 
     expect(responses.map((response) => response.status)).toEqual([
-      401, 401, 401, 401, 401,
+      401, 401, 401, 401, 401, 401, 401, 401, 401, 401, 401, 401, 401, 401, 401,
+      401, 401, 401,
     ]);
+  });
+
+  it("searches the free USDA-linked library with Desi aliases", async () => {
+    const headers = asUser("food_library_owner");
+    await makeTestUserEligible(ctx, "food_library_owner");
+
+    const dal = await request(ctx.app)
+      .get("/api/me/food-library?query=dal")
+      .set(headers);
+    expect(dal.status).toBe(200);
+    expect(dal.body).toEqual([
+      expect.objectContaining({
+        id: "lentils-cooked",
+        catalogVersion: "2026-09-04.1",
+        servingDescription: "180 g",
+        source: "USDA FoodData Central",
+        sourceId: 172421,
+        caloriesKcal: 209,
+        proteinG: 16.2,
+      }),
+    ]);
+
+    const bengaliRice = await request(ctx.app)
+      .get("/api/me/food-library?query=bhaat")
+      .set(headers);
+    expect(bengaliRice.status).toBe(200);
+    expect(bengaliRice.body[0]).toMatchObject({ id: "rice-white-cooked" });
+
+    const invalid = await request(ctx.app)
+      .get(`/api/me/food-library?query=${"a".repeat(81)}`)
+      .set(headers);
+    expect(invalid.status).toBe(400);
+  });
+
+  it("returns a bounded adaptive meal set for an entitled user", async () => {
+    const headers = asUser("adaptive_route_owner");
+    await makeTestUserEligible(ctx, "adaptive_route_owner");
+
+    const response = await request(ctx.app)
+      .get("/api/me/pro/meal-fits")
+      .set(headers);
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(3);
+    expect(response.body[0]).toMatchObject({
+      id: expect.any(String),
+      fitReason: "A balanced starting option. Review ingredients and portions.",
+      recommendedServings: 1,
+    });
+    expect(response.headers["cache-control"]).toBe("no-store");
+  });
+
+  it("creates useful review-required meal drafts without sending data when AI is off", async () => {
+    const headers = asUser("meal_draft_route_owner");
+    await makeTestUserEligible(ctx, "meal_draft_route_owner");
+
+    const response = await request(ctx.app)
+      .post("/api/me/pro/meal-drafts")
+      .set(headers)
+      .send({
+        goal: "desi",
+        mealTime: "dinner",
+        maxPrepMinutes: 30,
+        availableIngredients: ["chicken", "rice"],
+        notes: "simple",
+      });
+    expect(response.status).toBe(200);
+    expect(response.body.source).toBe("catalog");
+    expect(response.body.drafts).toHaveLength(3);
+    expect(response.body.drafts[0]).toMatchObject({
+      source: "catalog",
+      reviewRequired: true,
+      caloriesKcal: expect.any(Number),
+      proteinG: expect.any(Number),
+    });
+    expect(response.body.notice).toContain("no data was sent");
+    expect(response.headers["cache-control"]).toBe("no-store");
+
+    const fractionalPrep = await request(ctx.app)
+      .post("/api/me/pro/meal-drafts")
+      .set(headers)
+      .send({
+        goal: "desi",
+        mealTime: "dinner",
+        maxPrepMinutes: 30.5,
+        availableIngredients: [],
+        notes: "",
+      });
+    expect(fractionalPrep.status).toBe(400);
+  });
+
+  it("persists free preferences, saved foods, and direct meal feedback", async () => {
+    const headers = asUser("nutrition_data_route_owner");
+    await makeTestUserEligible(ctx, "nutrition_data_route_owner");
+
+    const defaults = await request(ctx.app)
+      .get("/api/me/nutrition-preferences")
+      .set(headers);
+    expect(defaults.status).toBe(200);
+    expect(defaults.body).toMatchObject({
+      dailyCalorieTarget: null,
+      dietStyle: "no_preference",
+      learningEnabled: true,
+    });
+
+    const preferences = await request(ctx.app)
+      .put("/api/me/nutrition-preferences")
+      .set(headers)
+      .send({
+        dailyCalorieTarget: 2100,
+        dailyProteinTargetG: 170,
+        dietStyle: "omnivore",
+        preferredCuisines: ["Desi", "Bengali"],
+        avoidedIngredients: ["cilantro"],
+        learningEnabled: true,
+      });
+    expect(preferences.status).toBe(200);
+    expect(preferences.body.preferredCuisines).toEqual(["Desi", "Bengali"]);
+
+    const savedInput = {
+      source: "manual",
+      sourceRef: null,
+      name: "Chicken keema",
+      servingDescription: "1 bowl",
+      caloriesKcal: 390,
+      proteinG: 38,
+      carbsG: 12,
+      fatG: 21,
+      fiberG: 3,
+    };
+    const saved = await request(ctx.app)
+      .post("/api/me/saved-foods")
+      .set(headers)
+      .send(savedInput);
+    expect(saved.status).toBe(201);
+    expect(saved.body).toMatchObject(savedInput);
+    const savedList = await request(ctx.app)
+      .get("/api/me/saved-foods")
+      .set(headers);
+    expect(savedList.body).toHaveLength(1);
+
+    const feedback = await request(ctx.app)
+      .put("/api/me/meal-feedback/bengali-chicken-curry-plate")
+      .set(headers)
+      .send({ preference: "liked" });
+    expect(feedback.status).toBe(200);
+    expect(feedback.body).toMatchObject({
+      templateId: "bengali-chicken-curry-plate",
+      preference: "liked",
+    });
+
+    const fits = await request(ctx.app)
+      .get("/api/me/pro/meal-fits")
+      .set(headers);
+    expect(fits.status).toBe(200);
+    expect(fits.body[0].fitReason).toContain("preference");
+    expect(fits.body[0].recommendedServings).toBeGreaterThan(0);
+
+    expect(
+      (
+        await request(ctx.app)
+          .delete(`/api/me/saved-foods/${saved.body.id}`)
+          .set(headers)
+      ).status,
+    ).toBe(204);
+    expect(
+      (
+        await request(ctx.app)
+          .delete("/api/me/nutrition-preferences")
+          .set(headers)
+      ).status,
+    ).toBe(204);
   });
 
   it("validates create and update inputs and rejects an unknown template", async () => {
@@ -184,6 +394,58 @@ describe("Balanced meal API", () => {
       .set(headers)
       .send({ servings: 1, notes: "must not be silently ignored" });
     expect(updateWithUnknownKey.status).toBe(400);
+  });
+
+  it("logs a reviewed manual food and keeps identical retries idempotent", async () => {
+    const headers = asUser("manual_food_owner");
+    await makeTestUserEligible(ctx, "manual_food_owner");
+    const reviewedDay = await request(ctx.app)
+      .get("/api/me/meals/today")
+      .set(headers);
+    const input = {
+      clientRequestId: "f1a73194-ab12-44aa-b81b-25c248a1b590",
+      dayKey: reviewedDay.body.dayKey,
+      name: "Greek yogurt and berries",
+      servingDescription: "1 bowl",
+      servings: 1,
+      caloriesKcal: 245,
+      proteinG: 24,
+      carbsG: 28,
+      fatG: 4,
+      fiberG: 5,
+    };
+
+    const created = await request(ctx.app)
+      .post("/api/me/food-entries")
+      .set(headers)
+      .send(input);
+    const retry = await request(ctx.app)
+      .post("/api/me/food-entries")
+      .set(headers)
+      .send(input);
+
+    expect(created.status).toBe(201);
+    expect(retry.status).toBe(201);
+    expect(retry.body).toEqual(created.body);
+    expect(created.body).toMatchObject({
+      name: input.name,
+      servingDescription: input.servingDescription,
+      caloriesKcal: input.caloriesKcal,
+      proteinG: input.proteinG,
+      templateId: `food:${input.clientRequestId}`,
+    });
+
+    const diary = await request(ctx.app)
+      .get("/api/me/meals/today")
+      .set(headers);
+    expect(diary.body.entries).toHaveLength(1);
+    expect(diary.body.totals.caloriesKcal).toBe(245);
+
+    const mismatch = await request(ctx.app)
+      .post("/api/me/food-entries")
+      .set(headers)
+      .send({ ...input, caloriesKcal: 300 });
+    expect(mismatch.status).toBe(409);
   });
 
   it("supports an isolated create, retry, update, total, and delete lifecycle", async () => {

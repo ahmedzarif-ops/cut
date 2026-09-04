@@ -97,9 +97,9 @@ describe("subscription status endpoints", () => {
     const statusResponse = await request(ctx.app)
       .get("/api/me/subscription")
       .set(headers);
-    const paidResponse = await request(ctx.app)
+    const coreResponse = await request(ctx.app)
       .get("/api/me/today")
-      .set(headers);
+      .set({ ...headers, "X-CUT-Device-Timezone": "UTC" });
     setSubscriptionStatusProviderForTesting(inactiveProvider);
 
     const expected = {
@@ -109,51 +109,77 @@ describe("subscription status endpoints", () => {
     expect(statusResponse.status).toBe(503);
     expect(statusResponse.body).toEqual(expected);
     expect(statusResponse.headers["cache-control"]).toBe("no-store");
-    expect(paidResponse.status).toBe(503);
-    expect(paidResponse.body).toEqual(expected);
+    expect(coreResponse.status).toBe(200);
     expect(
-      JSON.stringify([statusResponse.body, paidResponse.body]),
+      JSON.stringify([statusResponse.body, coreResponse.body]),
     ).not.toContain("provider-secret");
   });
 });
 
-describe("paid route boundary", () => {
-  const paidRequests: Array<[string, () => request.Test]> = [
+describe("freemium route boundary", () => {
+  const coreRequests: Array<[string, number, () => request.Test]> = [
     [
       "GET /me/profile",
+      404,
       () => request(ctx.app).get("/api/me/profile").set(headers),
     ],
     [
       "PUT /me/profile",
+      400,
       () => request(ctx.app).put("/api/me/profile").set(headers).send({}),
     ],
-    ["GET /me/today", () => request(ctx.app).get("/api/me/today").set(headers)],
+    [
+      "GET /me/today",
+      200,
+      () =>
+        request(ctx.app)
+          .get("/api/me/today")
+          .set({ ...headers, "X-CUT-Device-Timezone": "UTC" }),
+    ],
     [
       "GET /me/weight-entries",
+      200,
       () => request(ctx.app).get("/api/me/weight-entries").set(headers),
     ],
     [
       "PUT /me/weight-entries/today",
+      400,
       () =>
         request(ctx.app)
           .put("/api/me/weight-entries/today")
-          .set(headers)
+          .set({ ...headers, "X-CUT-Device-Timezone": "UTC" })
           .send({}),
     ],
     [
       "GET /me/meal-options",
+      200,
       () => request(ctx.app).get("/api/me/meal-options").set(headers),
     ],
     [
+      "GET /me/food-library",
+      200,
+      () => request(ctx.app).get("/api/me/food-library").set(headers),
+    ],
+    [
       "GET /me/meals/today",
-      () => request(ctx.app).get("/api/me/meals/today").set(headers),
+      200,
+      () =>
+        request(ctx.app)
+          .get("/api/me/meals/today")
+          .set({ ...headers, "X-CUT-Device-Timezone": "UTC" }),
     ],
     [
       "POST /me/meal-entries",
-      () => request(ctx.app).post("/api/me/meal-entries").set(headers).send({}),
+      400,
+      () =>
+        request(ctx.app)
+          .post("/api/me/meal-entries")
+          .set({ ...headers, "X-CUT-Device-Timezone": "UTC" })
+          .send({}),
     ],
     [
       "PATCH /me/meal-entries/:id",
+      400,
       () =>
         request(ctx.app)
           .patch("/api/me/meal-entries/not-an-id")
@@ -162,22 +188,22 @@ describe("paid route boundary", () => {
     ],
     [
       "DELETE /me/meal-entries/:id",
+      400,
       () =>
         request(ctx.app).delete("/api/me/meal-entries/not-an-id").set(headers),
     ],
   ];
 
-  it.each(paidRequests)(
-    "blocks %s before handler validation",
-    async (_name, makeRequest) => {
+  it.each(coreRequests)(
+    "keeps %s available without Pro",
+    async (_name, expectedStatus, makeRequest) => {
+      getStatus.mockClear();
       const response = await makeRequest();
 
-      expect(response.status).toBe(402);
-      expect(response.body).toEqual({
-        error: "An active CUT OS Pro subscription is required",
-        code: "subscription_required",
-      });
-      expect(response.headers["cache-control"]).toBe("no-store");
+      expect(response.status).toBe(expectedStatus);
+      expect(response.status).not.toBe(402);
+      expect(response.status).not.toBe(503);
+      expect(getStatus).not.toHaveBeenCalled();
     },
   );
 
@@ -214,6 +240,34 @@ describe("paid route boundary", () => {
     expect(eligibility.status).toBe(200);
     expect(deletion.status).toBe(200);
     expect(getStatus).not.toHaveBeenCalled();
+  });
+
+  it("keeps adaptive meal fits and meal creation behind the Pro entitlement", async () => {
+    getStatus.mockClear();
+    const response = await request(ctx.app)
+      .get("/api/me/pro/meal-fits")
+      .set(headers);
+    const drafts = await request(ctx.app)
+      .post("/api/me/pro/meal-drafts")
+      .set({ ...headers, "X-CUT-Device-Timezone": "UTC" })
+      .send({
+        goal: "balanced",
+        mealTime: "any",
+        maxPrepMinutes: 30,
+        availableIngredients: [],
+        notes: "",
+      });
+
+    expect(response.status).toBe(402);
+    expect(response.body).toEqual({
+      error: "An active CUT OS Pro subscription is required",
+      code: "subscription_required",
+    });
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(drafts.status).toBe(402);
+    expect(drafts.body).toEqual(response.body);
+    expect(getStatus).toHaveBeenCalledTimes(2);
+    expect(getStatus).toHaveBeenCalledWith(internalUserId);
   });
 
   it("keeps DELETE /me available without checking subscription status", async () => {
