@@ -107,10 +107,10 @@
       "exactBuildClaimsReview": {
         "status": "pending",
         "appVersion": "1.0.0",
-        "buildNumber": null,
-        "gitCommit": null,
-        "easBuildId": null,
-        "appStoreConnectBuildId": null,
+        "buildNumber": "6",
+        "gitCommit": "9f4c0e596b2e90f479148168f8ee1f49df6d5132",
+        "easBuildId": "360852e6-5e8c-4cb4-a04c-a6c12a16ea8a",
+        "appStoreConnectBuildId": "063f0711-c168-4b58-a4d5-a62ed65e123c",
         "verifiedAtUtc": null,
         "evidenceReference": null
       }
@@ -181,13 +181,13 @@
       "status": "confirmed",
       "developerProgramMembership": {
         "status": "confirmed",
-        "verifiedAtUtc": "2026-08-04T21:33:17Z",
-        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
+        "verifiedAtUtc": "2026-09-04T16:43:09Z",
+        "evidenceReference": "app-store/evidence/apple-build-6-processed-2026-09-04.md#agreement-resolution-and-testflight-assignment"
       },
       "accountHolderAccess": {
         "status": "confirmed",
-        "verifiedAtUtc": "2026-08-04T21:33:17Z",
-        "evidenceReference": "app-store/evidence/apple-live-configuration-2026-08-04.md#membership-and-account"
+        "verifiedAtUtc": "2026-09-04T16:43:09Z",
+        "evidenceReference": "app-store/evidence/apple-build-6-processed-2026-09-04.md#agreement-resolution-and-testflight-assignment"
       },
       "paidAppsAgreement": {
         "status": "confirmed",
@@ -313,10 +313,10 @@
     },
     "exactBuild": {
       "appVersion": "1.0.0",
-      "buildNumber": null,
-      "gitCommit": null,
-      "easBuildId": null,
-      "appStoreConnectBuildId": null,
+      "buildNumber": "6",
+      "gitCommit": "9f4c0e596b2e90f479148168f8ee1f49df6d5132",
+      "easBuildId": "360852e6-5e8c-4cb4-a04c-a6c12a16ea8a",
+      "appStoreConnectBuildId": "063f0711-c168-4b58-a4d5-a62ed65e123c",
       "verifiedAtUtc": null,
       "navigationEvidenceReference": null
     },
@@ -441,10 +441,10 @@
     },
     "exactBuildEvidence": {
       "appVersion": "1.0.0",
-      "buildNumber": null,
-      "gitCommit": null,
-      "easBuildId": null,
-      "appStoreConnectBuildId": null,
+      "buildNumber": "6",
+      "gitCommit": "9f4c0e596b2e90f479148168f8ee1f49df6d5132",
+      "easBuildId": "360852e6-5e8c-4cb4-a04c-a6c12a16ea8a",
+      "appStoreConnectBuildId": "063f0711-c168-4b58-a4d5-a62ed65e123c",
       "storeKitOfferStatus": "pending",
       "purchaseQaStatus": "pending",
       "testFlightStatus": "pending",

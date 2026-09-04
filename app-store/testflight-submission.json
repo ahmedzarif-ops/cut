@@ -12,12 +12,12 @@
     "status": "configured",
     "automaticDistribution": false,
     "testerCount": 1,
-    "buildCount": 3,
-    "assignedAppStoreConnectBuildId": null,
-    "assignmentVerifiedAtUtc": null,
-    "assignmentEvidenceReference": null,
-    "verifiedAtUtc": "2026-09-04T09:44:33Z",
-    "evidenceReference": "app-store/evidence/apple-live-readonly-2026-09-04.md#apple-and-testflight"
+    "buildCount": 4,
+    "assignedAppStoreConnectBuildId": "063f0711-c168-4b58-a4d5-a62ed65e123c",
+    "assignmentVerifiedAtUtc": "2026-09-04T16:43:09Z",
+    "assignmentEvidenceReference": "app-store/evidence/apple-build-6-processed-2026-09-04.md#agreement-resolution-and-testflight-assignment",
+    "verifiedAtUtc": "2026-09-04T16:43:09Z",
+    "evidenceReference": "app-store/evidence/apple-build-6-processed-2026-09-04.md#agreement-resolution-and-testflight-assignment"
   },
   "externalBetaReview": {
     "required": false,
@@ -27,10 +27,10 @@
   },
   "exactBuildEvidence": {
     "appVersion": "1.0.0",
-    "buildNumber": null,
-    "gitCommit": null,
-    "easBuildId": null,
-    "appStoreConnectBuildId": null,
+    "buildNumber": "6",
+    "gitCommit": "9f4c0e596b2e90f479148168f8ee1f49df6d5132",
+    "easBuildId": "360852e6-5e8c-4cb4-a04c-a6c12a16ea8a",
+    "appStoreConnectBuildId": "063f0711-c168-4b58-a4d5-a62ed65e123c",
     "testedAtUtc": null,
     "qaReportReference": null,
     "purchaseQaReportReference": null,
