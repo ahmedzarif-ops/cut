@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   CUT_OS_PRO_ENTITLEMENT_ID,
   decideSubscriptionRoute,
+  resolveSubscriptionRoute,
   formatIntroductoryOffer,
   formatPlanBilling,
   formatSubscriptionPeriod,
@@ -13,6 +14,40 @@ import {
 } from "../subscription";
 
 describe("subscription policy", () => {
+  it("terminates a new user's startup redirect at the onboarding form", () => {
+    const subscription = { state: "unavailable" } as const;
+    const decide = (pathname: string, onboardingComplete = false) =>
+      decideSubscriptionRoute({
+        route: resolveSubscriptionRoute(pathname),
+        subscription,
+        onboardingComplete,
+      });
+    expect(decide("/today")).toBe("redirect_onboarding");
+    expect(decide("/onboarding")).toBe("allow");
+    expect(decide("/(app)/onboarding")).toBe("allow");
+    expect(decide("/today", true)).toBe("allow");
+    expect(decide("/onboarding", true)).toBe("allow");
+  });
+
+  it("keeps onboarding reachable for free, paid and loading accounts", () => {
+    for (const entitled of [false, true]) {
+      const subscription = resolveServerSubscription(
+        { entitled, entitlementId: "CUT_OS_PRO", expiresAt: null, managementUrl: null },
+        false,
+      );
+      expect(decideSubscriptionRoute({
+        route: resolveSubscriptionRoute("/onboarding"),
+        subscription,
+        onboardingComplete: false,
+      })).toBe("allow");
+    }
+    expect(decideSubscriptionRoute({
+      route: resolveSubscriptionRoute("/onboarding"),
+      subscription: { state: "loading" },
+      onboardingComplete: false,
+    })).toBe("allow");
+  });
+
   it("uses the exact server and RevenueCat entitlement identifier", () => {
     expect(CUT_OS_PRO_ENTITLEMENT_ID).toBe("CUT_OS_PRO");
   });

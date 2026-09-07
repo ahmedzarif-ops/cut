@@ -101,16 +101,32 @@ export function resolveServerSubscription(
   };
 }
 
+export function resolveSubscriptionRoute(
+  pathname: string,
+): "settings" | "subscription" | "onboarding" | "core" {
+  const destination = pathname.split("/").filter(Boolean).at(-1);
+  if (
+    destination === "settings" ||
+    destination === "subscription" ||
+    destination === "onboarding"
+  ) {
+    return destination;
+  }
+  return "core";
+}
+
 export function decideSubscriptionRoute({
   route,
   subscription,
   onboardingComplete,
 }: {
-  route: "settings" | "subscription" | "core";
+  route: "settings" | "subscription" | "onboarding" | "core";
   subscription: ResolvedServerSubscription;
   onboardingComplete: boolean;
 }): SubscriptionRouteDecision {
-  if (route === "settings") return "allow";
+  // Onboarding must mount its form rather than redirect back to itself.
+  // Completed users also use this route to edit their existing profile.
+  if (route === "settings" || route === "onboarding") return "allow";
   if (!onboardingComplete && route === "core") return "redirect_onboarding";
 
   // CUT OS is a freemium app. Subscription state may change what a feature
