@@ -35,6 +35,7 @@ import {
 import { useAccountDeletionGate } from "@/lib/account-deletion-gate";
 import { useAdultEligibilityGate } from "@/lib/adult-eligibility-gate";
 import { useOptionalSubscriptionGate } from "@/lib/subscription-gate";
+import { runSignOutWithFeedback } from "@/lib/subscription-provider-state";
 import {
   finishTerminalDeletionDeviceCleanup,
   isTerminalDeletionServerCompleted,
@@ -72,6 +73,9 @@ export default function SettingsScreen() {
     "restore" | "manage" | null
   >(null);
   const [operationBusy, setOperationBusy] = React.useState(false);
+  const [signOutBusy, setSignOutBusy] = React.useState(false);
+  const [signOutError, setSignOutError] = React.useState<string | null>(null);
+  const signOutLock = React.useRef(false);
   const [locallyCompletedOwnerUserId, setLocallyCompletedOwnerUserId] =
     React.useState<string | null>(null);
   const operationLock = React.useRef(false);
@@ -96,7 +100,27 @@ export default function SettingsScreen() {
     marker !== null || serverStatus !== "none" || terminalServerCompleted;
   const ageRequirementRequired =
     !recoveryRequired && adultEligibility.isRequired;
-  const busy = operationBusy || subscriptionBusy !== null || unitBusy !== null;
+  const busy = operationBusy || subscriptionBusy !== null || unitBusy !== null || signOutBusy;
+
+  const leaveAccount = async () => {
+    if (busy || signOutLock.current) return;
+    const ownerSessionId = sessionId;
+    await runSignOutWithFeedback(
+      signOutLock,
+      async () => {
+        // End only this device's session. Never call account deletion or remove
+        // recovery markers: saved account data and subscriptions stay intact.
+        if (!ownerSessionId) throw new Error("No active session");
+        qc.clear();
+        await signOut({ sessionId: ownerSessionId });
+      },
+      {
+        setBusy: (value) => { if (mounted.current) setSignOutBusy(value); },
+        setError: (value) => { if (mounted.current) setSignOutError(value); },
+      },
+      "CUT OS couldn't sign out. Please try again.",
+    );
+  };
 
   const leaveSettings = () => {
     if (ageRequirementRequired) {
@@ -679,6 +703,30 @@ export default function SettingsScreen() {
       </View>
 
       <LegalSupportLinks />
+
+      <View style={s.card}>
+        <Text style={s.cardOverline}>ACCOUNT</Text>
+        <Text style={s.cardTitle}>Sign out</Text>
+        <Text style={s.cardBody}>
+          Sign out on this device. Your saved meals, weight logs, and account
+          stay safe. Signing out does not cancel your subscription.
+        </Text>
+        {signOutError ? (
+          <Text accessibilityRole="alert" style={s.errorText}>{signOutError}</Text>
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+          accessibilityState={{ disabled: busy, busy: signOutBusy }}
+          disabled={busy}
+          style={({ pressed }) => [s.secondaryAction, busy && s.disabled, pressed && !busy && s.pressed]}
+          onPress={() => void leaveAccount()}
+        >
+          {signOutBusy ? <ActivityIndicator color={c.primary} /> : (
+            <Text style={s.secondaryActionText}>Sign out</Text>
+          )}
+        </Pressable>
+      </View>
 
       <View style={[s.card, s.dangerCard]}>
         <Text style={s.dangerOverline}>ACCOUNT DELETION</Text>
