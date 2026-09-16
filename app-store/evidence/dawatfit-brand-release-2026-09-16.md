@@ -31,3 +31,11 @@ Generated with the built-in image tool from approved concept 2. Prompt: extract 
 - Local working-record App Store validator and legal-source release validator pass. Live legal hashes must match before EAS submission.
 - Existing unrelated handoff/evidence changes were left out of the branding commit. Replit's own publish-generated changes add deploymentTarget and ignorePorts only; preserved instead of overwritten.
 - Serial backend rerun completed: all 602 tests passed across 37 files. The complete component totals are 1,498 passing tests (303 release ops, 64 App Store, 46 domain, 4 database, 479 mobile, 602 API); the initial parallel backend failure is retained above rather than concealed.
+
+## Dependency release gate
+
+- GitHub run 35059335531 failed the high-severity dependency audit before testing. No deployment was dispatched from that failed candidate.
+- Raised only existing js-yaml branches to 3.15.2/4.3.2 and xmldom branches to 0.8.15/0.9.12, following upstream advisories. Kept release-age protection, Clerk tarball integrity hashes, and existing reviewed image-size patch intact.
+- Local high-severity audit now exits 0; remaining findings are 4 low, 10 moderate, and the two already patched/explicitly ignored image-size records. No new ignores were added.
+- Workspace typecheck passed after the dependency updates. Full tests and remote CI are being rerun before deploy.
+- Replit fast-forward to dbaac76528f1ffb7e889f210cb573088c74c556d completed with a clean tree; production was not republished. Development-data copy remains OFF and resources remain 0.5 vCPU / 2 GiB RAM.
