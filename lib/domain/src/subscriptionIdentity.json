@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "iosBundleId": "com.zarifahmed.cut",
+  "revenueCat": {
+    "entitlementId": "CUT_OS_PRO",
+    "offeringId": "default",
+    "productId": "com.zarifahmed.cut.pro.monthly"
+  }
+}

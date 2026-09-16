@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "status": "working_not_approved",
+  "updated": "2026-09-04",
+  "distributionScope": "internal_only",
+  "betaAppDescription": "CUT OS is an adults-only food, training, and progress tracker for people who lift. Free users can search 99 foods and browse 89 balanced meals, including 82 Bengali, Bangladeshi, Desi, and South Asian options; use supported barcode lookup; add custom foods; log meals; record weigh-ins and training; and review progress. CUT OS Pro is optional and adds meal fits based on remaining goals, preferences, and confirmed logs. CUT OS provides general fitness and nutrition information, not medical advice. Food, meal, and common-allergen information is estimated.",
+  "whatToTest": "Use the purpose-built beta account supplied through the approved tester channel. Please test sign-in and the 18+ gate; the Today, Food, Training, and Progress tabs; free food search; all 89 meal templates; supported barcode lookup; custom and saved foods; meal add, edit, and delete; weigh-in and training logs; and progress charts. Confirm the top-right scan control and center Add action always have a clear back path. Test purchase, cancellation, restore, subscription management, relaunch, account switching, legal and support links, and in-app account deletion. Verify that free tools stay usable without Pro, Pro meal fits open only after server-confirmed access, prices and periods match Apple's purchase sheet, and deleting the CUT OS account does not claim to cancel Apple billing. Also complete these common tasks with VoiceOver and large text and report any unclear label, focus-order issue, clipped text, low contrast, or unusable control. When reporting an issue, include the selected TestFlight version/build, device/iOS, account-state alias, steps, expected result, and observed result. Do not include passwords, verification codes, receipts, personal data, or secrets.",
+  "feedbackEmail": "ahmed.zarif@gmail.com",
+  "feedbackEmailConfiguredInAppStoreConnect": true,
+  "internalGroup": {
+    "name": "CUT OS Internal QA",
+    "status": "configured",
+    "automaticDistribution": false,
+    "testerCount": 1,
+    "buildCount": 5,
+    "assignedAppStoreConnectBuildId": "130301db-7ea1-451b-8578-5ccd34213129",
+    "assignmentVerifiedAtUtc": "2026-09-04T18:45:22Z",
+    "assignmentEvidenceReference": "app-store/evidence/apple-build-7-owner-check-and-submission-draft-2026-09-04.md#exact-build",
+    "verifiedAtUtc": "2026-09-04T18:45:22Z",
+    "evidenceReference": "app-store/evidence/apple-build-7-owner-check-and-submission-draft-2026-09-04.md#exact-build"
+  },
+  "externalBetaReview": {
+    "required": false,
+    "contactConfigured": false,
+    "primaryDemoAccountConfigured": false,
+    "notesConfigured": false
+  },
+  "exactBuildEvidence": {
+    "appVersion": "1.0.0",
+    "buildNumber": "7",
+    "gitCommit": "64c0790c659f1c4b3c9c5de96c125db095eaee5a",
+    "easBuildId": "e2d8b719-0f50-41c5-94ec-ae6e7304437f",
+    "appStoreConnectBuildId": "130301db-7ea1-451b-8578-5ccd34213129",
+    "testedAtUtc": "2026-09-04T18:45:22Z",
+    "qaReportReference": "app-store/evidence/apple-build-7-owner-check-and-submission-draft-2026-09-04.md#owner-check-and-beta-feedback",
+    "purchaseQaReportReference": null,
+    "appReviewRunbookReference": null
+  },
+  "approval": {
+    "owner": true,
+    "mobileQa": false,
+    "appStoreConnectConfirmed": false
+  }
+}

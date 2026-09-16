@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "publicationStatus": "approved",
+  "approvalScope": "Exact rendered privacy, terms, support, and legal stylesheet contents recorded by SHA-256.",
+  "counselApproval": {
+    "approvedBy": null,
+    "approvedAt": null,
+    "evidenceReference": null
+  },
+  "ownerRiskAcceptance": {
+    "acceptedBy": "Zarif Ahmed",
+    "acceptedAt": "2026-08-10T18:54:19.000Z",
+    "evidenceReference": "app-store/evidence/owner-deferred-professional-review-2026-08-10.md",
+    "professionalReviewStatus": "owner_deferred_post_launch",
+    "professionalApprovalClaimed": false,
+    "initiationDeadlinePolicy": "within_3_calendar_days_after_public_release"
+  },
+  "ownerContentAmendment": {
+    "approvedBy": "Zarif Ahmed",
+    "evidenceReference": "app-store/evidence/dawatfit-brand-release-2026-09-16.md",
+    "professionalApprovalClaimed": false
+  },
+  "rendering": {
+    "appName": "DawatFit",
+    "basePath": ""
+  },
+  "sha256": {
+    "/privacy": "eb1ab6f7d90c1713bd4425bdc3454c17cdee02a083832f1e2ce29b81e86f440a",
+    "/terms": "55d2393f89bd07c848511dbdb459522199b28fea39142bf090bb02e6e572a776",
+    "/support": "fb12039ce5c3ea7f39e26701da71ca87b2c8a0551774392c37b55aafd39df9b4",
+    "/legal.css": "4ec4eb3c09f7c40571f4423e98d8119b216d376a176f2974d3c45a5a8772bc78"
+  }
+}

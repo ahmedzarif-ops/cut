@@ -1,21 +1,46 @@
 {
   "cli": {
-    "version": ">= 16.0.0",
-    "appVersionSource": "remote"
+    "version": "21.4.0",
+    "appVersionSource": "remote",
+    "requireCommit": true
   },
   "build": {
+    "base": {
+      "node": "24.14.0",
+      "pnpm": "10.34.5"
+    },
     "development": {
+      "extends": "base",
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "environment": "development"
     },
     "preview": {
-      "distribution": "internal"
+      "extends": "base",
+      "distribution": "internal",
+      "environment": "preview"
+    },
+    "ios-simulator": {
+      "extends": "preview",
+      "ios": {
+        "simulator": true,
+        "image": "macos-tahoe-26.4-xcode-26.4"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "extends": "base",
+      "autoIncrement": true,
+      "environment": "production",
+      "ios": {
+        "image": "macos-tahoe-26.4-xcode-26.4"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6798020879"
+      }
+    }
   }
 }

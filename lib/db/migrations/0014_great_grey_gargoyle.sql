@@ -1,0 +1,56 @@
+CREATE TABLE "catalog_foods" (
+	"id" text PRIMARY KEY NOT NULL,
+	"catalog_version" text NOT NULL,
+	"access_tier" text DEFAULT 'free' NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"sort_order" integer NOT NULL,
+	"name" text NOT NULL,
+	"aliases" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"serving_description" text NOT NULL,
+	"serving_grams" double precision NOT NULL,
+	"cuisine_tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"dietary_tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"common_allergens" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"calories_kcal" double precision NOT NULL,
+	"protein_g" double precision NOT NULL,
+	"carbs_g" double precision NOT NULL,
+	"fat_g" double precision NOT NULL,
+	"fiber_g" double precision NOT NULL,
+	"source" text NOT NULL,
+	"source_id" integer NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "catalog_foods_access_tier_check" CHECK ("catalog_foods"."access_tier" IN ('free', 'pro')),
+	CONSTRAINT "catalog_foods_sort_order_check" CHECK ("catalog_foods"."sort_order" >= 0),
+	CONSTRAINT "catalog_foods_serving_positive_check" CHECK ("catalog_foods"."serving_grams" > 0),
+	CONSTRAINT "catalog_foods_nutrition_nonnegative_check" CHECK ("catalog_foods"."calories_kcal" >= 0 AND "catalog_foods"."protein_g" >= 0 AND "catalog_foods"."carbs_g" >= 0 AND "catalog_foods"."fat_g" >= 0 AND "catalog_foods"."fiber_g" >= 0),
+	CONSTRAINT "catalog_foods_nutrition_finite_check" CHECK ("catalog_foods"."serving_grams" NOT IN ('NaN'::double precision, 'Infinity'::double precision, '-Infinity'::double precision) AND "catalog_foods"."calories_kcal" NOT IN ('NaN'::double precision, 'Infinity'::double precision, '-Infinity'::double precision) AND "catalog_foods"."protein_g" NOT IN ('NaN'::double precision, 'Infinity'::double precision, '-Infinity'::double precision) AND "catalog_foods"."carbs_g" NOT IN ('NaN'::double precision, 'Infinity'::double precision, '-Infinity'::double precision) AND "catalog_foods"."fat_g" NOT IN ('NaN'::double precision, 'Infinity'::double precision, '-Infinity'::double precision) AND "catalog_foods"."fiber_g" NOT IN ('NaN'::double precision, 'Infinity'::double precision, '-Infinity'::double precision))
+);
+--> statement-breakpoint
+CREATE TABLE "catalog_meals" (
+	"id" text PRIMARY KEY NOT NULL,
+	"catalog_version" text NOT NULL,
+	"access_tier" text DEFAULT 'free' NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"sort_order" integer NOT NULL,
+	"name" text NOT NULL,
+	"serving_description" text NOT NULL,
+	"cuisine" text NOT NULL,
+	"ingredients" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"dietary_tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"common_allergens" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"calories_kcal" double precision NOT NULL,
+	"protein_g" double precision NOT NULL,
+	"carbs_g" double precision NOT NULL,
+	"fat_g" double precision NOT NULL,
+	"fiber_g" double precision NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "catalog_meals_access_tier_check" CHECK ("catalog_meals"."access_tier" IN ('free', 'pro')),
+	CONSTRAINT "catalog_meals_sort_order_check" CHECK ("catalog_meals"."sort_order" >= 0),
+	CONSTRAINT "catalog_meals_nutrition_nonnegative_check" CHECK ("catalog_meals"."calories_kcal" >= 0 AND "catalog_meals"."protein_g" >= 0 AND "catalog_meals"."carbs_g" >= 0 AND "catalog_meals"."fat_g" >= 0 AND "catalog_meals"."fiber_g" >= 0),
+	CONSTRAINT "catalog_meals_nutrition_finite_check" CHECK ("catalog_meals"."calories_kcal" NOT IN ('NaN'::double precision, 'Infinity'::double precision, '-Infinity'::double precision) AND "catalog_meals"."protein_g" NOT IN ('NaN'::double precision, 'Infinity'::double precision, '-Infinity'::double precision) AND "catalog_meals"."carbs_g" NOT IN ('NaN'::double precision, 'Infinity'::double precision, '-Infinity'::double precision) AND "catalog_meals"."fat_g" NOT IN ('NaN'::double precision, 'Infinity'::double precision, '-Infinity'::double precision) AND "catalog_meals"."fiber_g" NOT IN ('NaN'::double precision, 'Infinity'::double precision, '-Infinity'::double precision))
+);
+--> statement-breakpoint
+CREATE INDEX "catalog_foods_active_tier_order_index" ON "catalog_foods" USING btree ("is_active","access_tier","sort_order");--> statement-breakpoint
+CREATE INDEX "catalog_meals_active_tier_order_index" ON "catalog_meals" USING btree ("is_active","access_tier","sort_order");

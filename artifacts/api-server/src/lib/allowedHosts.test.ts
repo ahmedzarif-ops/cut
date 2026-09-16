@@ -2,8 +2,9 @@ import { describe, it, expect } from "vitest";
 import { buildAllowedHosts, buildAllowedOrigins } from "./allowedHosts";
 
 describe("buildAllowedHosts", () => {
-  it("collects hostnames from the same env vars as the CORS allowlist", () => {
+  it("preserves injected-domain aggregation outside production", () => {
     const hosts = buildAllowedHosts({
+      NODE_ENV: "development",
       REPLIT_DEV_DOMAIN: "dev.replit.dev",
       REPLIT_EXPO_DEV_DOMAIN: "expo.replit.dev",
       CORS_ALLOWED_ORIGINS: "https://cut.example.com, app.example.com",
@@ -27,7 +28,8 @@ describe("buildAllowedHosts", () => {
 
   it("rejects plaintext http:// entries, mirroring the CORS allowlist", () => {
     const hosts = buildAllowedHosts({
-      CORS_ALLOWED_ORIGINS: "http://insecure.example.com,https://ok.example.com",
+      CORS_ALLOWED_ORIGINS:
+        "http://insecure.example.com,https://ok.example.com",
     });
     expect(hosts).toEqual(new Set(["ok.example.com"]));
   });
@@ -65,5 +67,63 @@ describe("buildAllowedOrigins", () => {
 
   it("is empty when no allowlist env vars are set", () => {
     expect(buildAllowedOrigins({})).toEqual(new Set());
+  });
+});
+
+describe("production canonical ingress", () => {
+  it("uses only the one explicit canonical origin for CORS and Clerk", () => {
+    const environment = {
+      NODE_ENV: "production",
+      CORS_ALLOWED_ORIGINS: "https://cut.example.com",
+      REPLIT_DEV_DOMAIN: "dev-injection.replit.dev",
+      REPLIT_EXPO_DEV_DOMAIN: "expo-injection.replit.dev",
+      REPLIT_DOMAINS: "deployment-injection.replit.app,other.replit.app",
+    };
+
+    expect(buildAllowedOrigins(environment)).toEqual(
+      new Set(["https://cut.example.com"]),
+    );
+    expect(buildAllowedHosts(environment)).toEqual(
+      new Set(["cut.example.com"]),
+    );
+  });
+
+  it("does not promote provider-injected domains when the explicit origin is absent", () => {
+    const environment = {
+      NODE_ENV: "production",
+      REPLIT_DEV_DOMAIN: "dev-injection.replit.dev",
+      REPLIT_EXPO_DEV_DOMAIN: "expo-injection.replit.dev",
+      REPLIT_DOMAINS: "deployment-injection.replit.app,other.replit.app",
+    };
+
+    expect(buildAllowedOrigins(environment)).toEqual(new Set());
+    expect(buildAllowedHosts(environment)).toEqual(new Set());
+  });
+
+  it.each([
+    "cut.example.com",
+    "http://cut.example.com",
+    "https://cut.example.com/",
+    "https://cut.example.com:8443",
+    "https://cut.example.com/path",
+    "https://cut.example.com?query=true",
+    "https://cut.example.com#fragment",
+    "https://user@cut.example.com",
+    "https://localhost",
+    "https://127.0.0.1",
+    "https://cut.example",
+    " https://cut.example.com",
+    "https://cut.example.com ",
+    "https://cut.example.com,https://other.example.com",
+    "https://cut.example.com,not-an-origin",
+    "https://cut.example.com,",
+  ])("fails closed for a non-canonical production origin: %s", (origin) => {
+    const environment = {
+      NODE_ENV: "production",
+      CORS_ALLOWED_ORIGINS: origin,
+    };
+
+    expect(buildAllowedOrigins(environment)).toEqual(new Set());
+    expect(buildAllowedHosts(environment)).toEqual(new Set());
   });
 });

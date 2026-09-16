@@ -6,7 +6,19 @@ export type ErrorType<T = unknown> = ApiError<T>;
 
 export type BodyType<T> = T;
 
-export type AuthTokenGetter = () => Promise<string | null> | string | null;
+export type AuthTokenGetterOptions = {
+  /** Bypass the provider token cache after an authenticated request is rejected. */
+  skipCache?: boolean;
+};
+
+export type AuthTokenGetter = (
+  options?: AuthTokenGetterOptions,
+) => Promise<string | null> | string | null;
+export type GoneResponseHandler = (
+  error: ApiError<unknown>,
+) => Promise<void> | void;
+
+export const API_REQUEST_TIMEOUT_MS = 20_000;
 
 const NO_BODY_STATUS = new Set([204, 205, 304]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
@@ -17,6 +29,125 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _goneResponseHandler: GoneResponseHandler | null = null;
+
+export class ApiRequestTimeoutError extends Error {
+  readonly name = "ApiRequestTimeoutError";
+
+  constructor() {
+    super("The request timed out. Check your connection and try again.");
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+export class AuthTokenUnavailableError extends Error {
+  readonly name = "AuthTokenUnavailableError";
+
+  constructor() {
+    super("The signed-in session token is temporarily unavailable. Try again.");
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+interface RequestDeadline {
+  signal: AbortSignal;
+  race<T>(operation: PromiseLike<T>): Promise<T>;
+  dispose(): void;
+}
+
+async function waitForAuthRetry(
+  deadline: RequestDeadline,
+  delayMs = 100,
+): Promise<void> {
+  await deadline.race(
+    new Promise<void>((resolve) => setTimeout(resolve, delayMs)),
+  );
+}
+
+async function resolveAuthToken(
+  getter: AuthTokenGetter,
+  deadline: RequestDeadline,
+  forceRefreshFirst: boolean,
+): Promise<string | null> {
+  const attempts: Array<AuthTokenGetterOptions | undefined> = forceRefreshFirst
+    ? [{ skipCache: true }, undefined, { skipCache: true }]
+    : [undefined, undefined, { skipCache: true }];
+
+  for (const [index, options] of attempts.entries()) {
+    if (index > 0) await waitForAuthRetry(deadline);
+    const token = await deadline.race(
+      Promise.resolve().then(() => getter(options)),
+    );
+    if (token) return token;
+  }
+  return null;
+}
+
+function createAbortError(): Error {
+  const error = new Error("The request was cancelled.");
+  error.name = "AbortError";
+  return error;
+}
+
+/**
+ * React Native does not consistently expose AbortSignal.timeout/any. Build a
+ * small deadline that combines caller cancellation with an internal timeout,
+ * aborts the underlying fetch, and still settles when a transport ignores
+ * abort signals.
+ */
+function createRequestDeadline(
+  callerSignals: Array<AbortSignal | null | undefined>,
+): RequestDeadline {
+  const controller = new AbortController();
+  const watchedSignals = Array.from(
+    new Set(callerSignals.filter((signal): signal is AbortSignal => !!signal)),
+  );
+  let rejectBoundary!: (error: Error) => void;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let interrupted = false;
+  let disposed = false;
+  const boundary = new Promise<never>((_resolve, reject) => {
+    rejectBoundary = reject;
+  });
+
+  const interrupt = (error: Error) => {
+    if (interrupted || disposed) return;
+    interrupted = true;
+    // Reject first so a timeout remains distinguishable from the AbortError
+    // produced when aborting the underlying transport.
+    rejectBoundary(error);
+    controller.abort();
+  };
+  const onCallerAbort = () => interrupt(createAbortError());
+
+  for (const signal of watchedSignals) {
+    signal.addEventListener("abort", onCallerAbort, { once: true });
+  }
+
+  if (watchedSignals.some((signal) => signal.aborted)) {
+    onCallerAbort();
+  } else {
+    timer = setTimeout(
+      () => interrupt(new ApiRequestTimeoutError()),
+      API_REQUEST_TIMEOUT_MS,
+    );
+  }
+
+  return {
+    signal: controller.signal,
+    race<T>(operation: PromiseLike<T>): Promise<T> {
+      return Promise.race([Promise.resolve(operation), boundary]);
+    },
+    dispose(): void {
+      if (disposed) return;
+      disposed = true;
+      if (timer !== undefined) clearTimeout(timer);
+      for (const signal of watchedSignals) {
+        signal.removeEventListener("abort", onCallerAbort);
+      }
+    },
+  };
+}
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -44,11 +175,27 @@ export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
 }
 
+/**
+ * Register a process-wide callback for HTTP 410 responses.
+ *
+ * The callback is snapshotted synchronously when each request starts. This is
+ * important for multi-session clients: a late response issued by user A can
+ * invoke only A's callback, never a callback installed later for user B.
+ */
+export function setGoneResponseHandler(
+  handler: GoneResponseHandler | null,
+): void {
+  _goneResponseHandler = handler;
+}
+
 function isRequest(input: RequestInfo | URL): input is Request {
   return typeof Request !== "undefined" && input instanceof Request;
 }
 
-function resolveMethod(input: RequestInfo | URL, explicitMethod?: string): string {
+function resolveMethod(
+  input: RequestInfo | URL,
+  explicitMethod?: string,
+): string {
   if (explicitMethod) return explicitMethod.toUpperCase();
   if (isRequest(input)) return input.method.toUpperCase();
   return "GET";
@@ -78,6 +225,30 @@ function resolveUrl(input: RequestInfo | URL): string {
   return input.url;
 }
 
+function isAllowedAuthenticatedTarget(url: string): boolean {
+  if (!_baseUrl) return false;
+
+  try {
+    const base = new URL(_baseUrl);
+    const target = new URL(url);
+    return (
+      base.protocol === "https:" &&
+      target.protocol === "https:" &&
+      target.origin === base.origin
+    );
+  } catch {
+    return false;
+  }
+}
+
+function assertAllowedAuthenticatedTarget(url: string): void {
+  if (!isAllowedAuthenticatedTarget(url)) {
+    throw new TypeError(
+      "customFetch: refusing to send authorization without a configured, matching HTTPS API origin.",
+    );
+  }
+}
+
 function mergeHeaders(...sources: Array<HeadersInit | undefined>): Headers {
   const headers = new Headers();
 
@@ -97,17 +268,19 @@ function getMediaType(headers: Headers): string | null {
 }
 
 function isJsonMediaType(mediaType: string | null): boolean {
-  return mediaType === "application/json" || Boolean(mediaType?.endsWith("+json"));
+  return (
+    mediaType === "application/json" || Boolean(mediaType?.endsWith("+json"))
+  );
 }
 
 function isTextMediaType(mediaType: string | null): boolean {
   return Boolean(
     mediaType &&
-      (mediaType.startsWith("text/") ||
-        mediaType === "application/xml" ||
-        mediaType === "text/xml" ||
-        mediaType.endsWith("+xml") ||
-        mediaType === "application/x-www-form-urlencoded"),
+    (mediaType.startsWith("text/") ||
+      mediaType === "application/xml" ||
+      mediaType === "text/xml" ||
+      mediaType.endsWith("+xml") ||
+      mediaType === "application/x-www-form-urlencoded"),
   );
 }
 
@@ -203,33 +376,20 @@ export class ResponseParseError extends Error {
   readonly name = "ResponseParseError";
   readonly status: number;
   readonly statusText: string;
-  readonly headers: Headers;
-  readonly response: Response;
   readonly method: string;
-  readonly url: string;
-  readonly rawBody: string;
-  readonly cause: unknown;
 
   constructor(
     response: Response,
-    rawBody: string,
-    cause: unknown,
     requestInfo: { method: string; url: string },
   ) {
     super(
-      `Failed to parse response from ${requestInfo.method} ${response.url || requestInfo.url} ` +
-        `(${response.status} ${response.statusText}) as JSON`,
+      `Failed to parse the server response (${response.status} ${response.statusText}) as JSON`,
     );
     Object.setPrototypeOf(this, new.target.prototype);
 
     this.status = response.status;
     this.statusText = response.statusText;
-    this.headers = response.headers;
-    this.response = response;
     this.method = requestInfo.method;
-    this.url = response.url || requestInfo.url;
-    this.rawBody = rawBody;
-    this.cause = cause;
   }
 }
 
@@ -246,12 +406,19 @@ async function parseJsonBody(
 
   try {
     return JSON.parse(normalized);
-  } catch (cause) {
-    throw new ResponseParseError(response, raw, cause, requestInfo);
+  } catch {
+    // Do not retain the raw body, Response, headers, URL, or parser cause on
+    // the thrown object. A malformed success payload can contain weight,
+    // nutrition, or account data and may otherwise survive in query/error
+    // state or a future crash report.
+    throw new ResponseParseError(response, requestInfo);
   }
 }
 
-async function parseErrorBody(response: Response, method: string): Promise<unknown> {
+async function parseErrorBody(
+  response: Response,
+  method: string,
+): Promise<unknown> {
   if (hasNoBody(response, method)) {
     return null;
   }
@@ -260,7 +427,9 @@ async function parseErrorBody(response: Response, method: string): Promise<unkno
 
   // Fall back to text when blob() is unavailable (e.g. some React Native builds).
   if (mediaType && !isJsonMediaType(mediaType) && !isTextMediaType(mediaType)) {
-    return typeof response.blob === "function" ? response.blob() : response.text();
+    return typeof response.blob === "function"
+      ? response.blob()
+      : response.text();
   }
 
   const raw = await response.text();
@@ -296,7 +465,10 @@ async function parseSuccessBody(
   requestInfo: { method: string; url: string },
 ): Promise<unknown> {
   if (hasNoBody(response, requestInfo.method)) {
-    return null;
+    // Generated no-content operations are typed as `void`. Resolve them to
+    // JavaScript's absence value rather than `null`, which is a distinct value
+    // and violates that contract at runtime.
+    return undefined;
   }
 
   const effectiveType =
@@ -315,7 +487,7 @@ async function parseSuccessBody(
       if (typeof response.blob !== "function") {
         throw new TypeError(
           "Blob responses are not supported in this runtime. " +
-            "Use responseType \"json\" or \"text\" instead.",
+            'Use responseType "json" or "text" instead.',
         );
       }
       return response.blob();
@@ -326,6 +498,8 @@ export async function customFetch<T = unknown>(
   input: RequestInfo | URL,
   options: CustomFetchOptions = {},
 ): Promise<T> {
+  const goneResponseHandler = _goneResponseHandler;
+  const authTokenGetter = _authTokenGetter;
   input = applyBaseUrl(input);
   const { responseType = "auto", headers: headersInit, ...init } = options;
 
@@ -335,7 +509,10 @@ export async function customFetch<T = unknown>(
     throw new TypeError(`customFetch: ${method} requests cannot have a body.`);
   }
 
-  const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, headersInit);
+  const headers = mergeHeaders(
+    isRequest(input) ? input.headers : undefined,
+    headersInit,
+  );
 
   if (
     typeof init.body === "string" &&
@@ -349,23 +526,101 @@ export async function customFetch<T = unknown>(
     headers.set("accept", DEFAULT_JSON_ACCEPT);
   }
 
-  // Attach bearer token when an auth getter is configured and no
-  // Authorization header has been explicitly provided.
-  if (_authTokenGetter && !headers.has("authorization")) {
-    const token = await _authTokenGetter();
-    if (token) {
-      headers.set("authorization", `Bearer ${token}`);
-    }
-  }
-
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
-
-  if (!response.ok) {
-    const errorData = await parseErrorBody(response, method);
-    throw new ApiError(response, errorData, requestInfo);
+  // Validate explicit authorization before starting any request work.
+  const hasExplicitAuthorization = headers.has("authorization");
+  if (hasExplicitAuthorization) {
+    assertAllowedAuthenticatedTarget(requestInfo.url);
   }
 
-  return (await parseSuccessBody(response, responseType, requestInfo)) as T;
+  // Native URL loading stacks can cache an authentication failure when a
+  // protected response omits cache directives. Never let a prior 401 be
+  // reused after Clerk has supplied a newer bearer token.
+  const authenticatedInit =
+    hasExplicitAuthorization || authTokenGetter
+      ? { ...init, cache: "no-store" as const }
+      : init;
+
+  const deadline = createRequestDeadline([
+    init.signal,
+    isRequest(input) ? input.signal : undefined,
+  ]);
+  try {
+    // Attach bearer token when an auth getter is configured and no
+    // Authorization header has been explicitly provided. The deadline also
+    // bounds custom getters; the Expo getter retains its own shorter timeout.
+    if (!headers.has("authorization") && authTokenGetter) {
+      const token = await resolveAuthToken(authTokenGetter, deadline, false);
+      if (!token) throw new AuthTokenUnavailableError();
+      assertAllowedAuthenticatedTarget(requestInfo.url);
+      headers.set("authorization", `Bearer ${token}`);
+    }
+
+    let response = await deadline.race(
+      Promise.resolve().then(() =>
+        fetch(input, {
+          ...authenticatedInit,
+          method,
+          headers,
+          signal: deadline.signal,
+        }),
+      ),
+    );
+
+    // Clerk can briefly return a cached session token that the backend has
+    // already rejected (for example immediately after a native session sync).
+    // Retry one replay-safe, automatically-authenticated request with a forced
+    // token refresh. A 401 proves the protected handler did not accept the
+    // request, so this cannot duplicate an authorized mutation. Explicit
+    // caller-owned Authorization headers are never replaced or replayed.
+    const canReplayAfterAuthRefresh =
+      response.status === 401 &&
+      !hasExplicitAuthorization &&
+      !!authTokenGetter &&
+      !isRequest(input) &&
+      (method === "GET" || method === "HEAD" || method === "OPTIONS");
+    if (canReplayAfterAuthRefresh) {
+      const refreshedToken = await resolveAuthToken(
+        authTokenGetter,
+        deadline,
+        true,
+      );
+      if (refreshedToken) {
+        assertAllowedAuthenticatedTarget(requestInfo.url);
+        headers.set("authorization", `Bearer ${refreshedToken}`);
+        response = await deadline.race(
+          Promise.resolve().then(() =>
+            fetch(input, {
+              ...authenticatedInit,
+              method,
+              headers,
+              signal: deadline.signal,
+            }),
+          ),
+        );
+      }
+    }
+
+    if (!response.ok) {
+      const errorData = await deadline.race(parseErrorBody(response, method));
+      const error = new ApiError(response, errorData, requestInfo);
+      if (response.status === 410 && goneResponseHandler) {
+        try {
+          void Promise.resolve(goneResponseHandler(error)).catch(
+            () => undefined,
+          );
+        } catch {
+          // Response handling must never replace the transport's original error.
+        }
+      }
+      throw error;
+    }
+
+    return (await deadline.race(
+      parseSuccessBody(response, responseType, requestInfo),
+    )) as T;
+  } finally {
+    deadline.dispose();
+  }
 }

@@ -11,28 +11,46 @@ export interface PoolConfig {
   max: number;
   idleTimeoutMillis: number;
   connectionTimeoutMillis: number;
+  query_timeout: number;
+  statement_timeout: number;
 }
 
 const DEFAULT_POOL_MAX = 5;
+export const PG_POOL_MAXIMUM = 20;
+// This client-side guard remains above the accepted 60-second startup migration
+// statement ceiling while keeping transport stalls bounded for normal traffic.
+export const PG_QUERY_TIMEOUT_MS = 65_000;
+export const PG_STATEMENT_TIMEOUT_MS = 5_000;
 
 /**
  * Connection-pool budget. `max` is env-tunable (PG_POOL_MAX, default 5) —
  * conservative for a single autoscale instance against a pooled Postgres
  * endpoint. Pure, so it can be unit-tested without a live database.
  *
- * Garbage PG_POOL_MAX (non-numeric, empty, zero/negative, fractional) clamps
+ * Garbage or excessive PG_POOL_MAX (non-numeric, empty, zero/negative,
+ * fractional, or above 20) clamps
  * to the intended default — otherwise pg would receive NaN/0 and silently
  * substitute ITS default (10), doubling the budget we meant to set.
  */
 export function poolConfig(env: NodeJS.ProcessEnv = process.env): PoolConfig {
-  const parsed = Number(env.PG_POOL_MAX);
+  const raw = env.PG_POOL_MAX;
+  const parsed = raw && /^(?:0|[1-9]\d*)$/u.test(raw) ? Number(raw) : NaN;
   const max =
-    Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_POOL_MAX;
+    Number.isSafeInteger(parsed) && parsed > 0 && parsed <= PG_POOL_MAXIMUM
+      ? parsed
+      : DEFAULT_POOL_MAX;
   return {
     connectionString: env.DATABASE_URL,
     max,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
+    // Normal application statements must not occupy a scarce production pool
+    // slot indefinitely. Startup migrations temporarily raise PostgreSQL's
+    // statement timeout to their separately bounded 60-second policy. This
+    // longer client guard still bounds the caller if the transport never
+    // delivers PostgreSQL's timeout response.
+    query_timeout: PG_QUERY_TIMEOUT_MS,
+    statement_timeout: PG_STATEMENT_TIMEOUT_MS,
   };
 }
 
@@ -51,8 +69,10 @@ function createDefaultDb(): Db {
   // on the pool. Without a listener Node treats it as an unhandled 'error' and
   // crashes the process. Log the signal (no health values — privacy rule) and
   // let the pool evict the dead client.
-  pool.on("error", (err) => {
-    console.error("[db] idle pool client error", err);
+  pool.on("error", () => {
+    console.error("[db] idle pool client error", {
+      errorCode: "db_idle_client_error",
+    });
   });
   _pool = pool;
   return drizzle(pool, { schema });

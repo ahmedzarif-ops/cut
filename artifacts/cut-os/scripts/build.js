@@ -3,6 +3,7 @@ const path = require("path");
 const { spawn } = require("child_process");
 const { Readable } = require("stream");
 const { pipeline } = require("stream/promises");
+const { createMetroEnvironment } = require("./build-environment");
 
 let metroProcess = null;
 
@@ -16,7 +17,9 @@ function findWorkspaceRoot(startDir) {
     }
     dir = path.dirname(dir);
   }
-  throw new Error("Could not find workspace root (no pnpm-workspace.yaml found)");
+  throw new Error(
+    "Could not find workspace root (no pnpm-workspace.yaml found)",
+  );
 }
 
 const workspaceRoot = findWorkspaceRoot(projectRoot);
@@ -135,34 +138,22 @@ async function startMetro(expoPublicDomain, expoPublicReplId) {
   }
 
   console.log("Starting Metro...");
-  console.log(`Setting EXPO_PUBLIC_DOMAIN=${expoPublicDomain}`);
   // In production the Clerk Frontend API is reached through a same-origin
-  // proxy mounted on the backend at CLERK_PROXY_URL (a path like /__clerk).
+  // proxy mounted on the backend at CLERK_PROXY_URL (/api/__clerk).
   const clerkProxyUrl = process.env.CLERK_PROXY_URL
     ? `https://${expoPublicDomain}${process.env.CLERK_PROXY_URL}`
     : "";
-  const env = {
-    ...process.env,
+  const env = createMetroEnvironment(process.env, {
     EXPO_PUBLIC_DOMAIN: expoPublicDomain,
     EXPO_PUBLIC_REPL_ID: expoPublicReplId,
     EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY || "",
     EXPO_PUBLIC_CLERK_PROXY_URL: clerkProxyUrl,
-  };
-
-  if (expoPublicReplId) {
-    console.log(`Setting EXPO_PUBLIC_REPL_ID=${expoPublicReplId}`);
-  }
+  });
+  console.log("Configured allowlisted Metro build environment");
 
   metroProcess = spawn(
     "pnpm",
-    [
-      "exec",
-      "expo",
-      "start",
-      "--no-dev",
-      "--minify",
-      "--localhost",
-    ],
+    ["exec", "expo", "start", "--no-dev", "--minify", "--localhost"],
     {
       stdio: ["ignore", "pipe", "pipe"],
       detached: false,
@@ -235,7 +226,12 @@ async function downloadFile(url, outputPath) {
 }
 
 async function downloadBundle(platform, timestamp) {
-  const entryPath = path.resolve(projectRoot, "node_modules", "expo-router", "entry");
+  const entryPath = path.resolve(
+    projectRoot,
+    "node_modules",
+    "expo-router",
+    "entry",
+  );
   const bundlePath = path.relative(workspaceRoot, entryPath);
   const url = new URL(`http://localhost:8081/${bundlePath}.bundle`);
   url.searchParams.set("platform", platform);
@@ -315,11 +311,27 @@ function extractAssets(timestamp) {
   const staticBuild = path.join(projectRoot, "static-build");
   const bundles = {
     ios: fs.readFileSync(
-      path.join(staticBuild, timestamp, "_expo", "static", "js", "ios", "bundle.js"),
+      path.join(
+        staticBuild,
+        timestamp,
+        "_expo",
+        "static",
+        "js",
+        "ios",
+        "bundle.js",
+      ),
       "utf-8",
     ),
     android: fs.readFileSync(
-      path.join(staticBuild, timestamp, "_expo", "static", "js", "android", "bundle.js"),
+      path.join(
+        staticBuild,
+        timestamp,
+        "_expo",
+        "static",
+        "js",
+        "android",
+        "bundle.js",
+      ),
       "utf-8",
     ),
   };

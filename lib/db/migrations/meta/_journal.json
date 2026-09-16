@@ -8,6 +8,111 @@
       "when": 1783839570543,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785739594330,
+      "tag": "0001_add_weight_entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785765541988,
+      "tag": "0002_add_meal_entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785766549728,
+      "tag": "0003_account_deletion_persistence",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785768984617,
+      "tag": "0004_harden_account_deletion_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785769886131,
+      "tag": "0005_add_meal_catalog_version",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785771775931,
+      "tag": "0006_concerned_firebird",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785771963050,
+      "tag": "0007_closed_paladin",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785774802816,
+      "tag": "0008_dazzling_sentinels",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785787420265,
+      "tag": "0009_silly_thunderbolts",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785790800000,
+      "tag": "0010_minimize_v1_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788504402237,
+      "tag": "0011_glossy_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788506029655,
+      "tag": "0012_oval_union_jack",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788508286322,
+      "tag": "0013_mushy_lord_hawal",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788511889944,
+      "tag": "0014_great_grey_gargoyle",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1788532613625,
+      "tag": "0015_typical_mandrill",
+      "breakpoints": true
     }
   ]
 }
