@@ -87,7 +87,7 @@ export default function ProgressScreen() {
           <View style={s.chartState}>
             <Ionicons name="analytics-outline" size={30} color={c.mutedForeground} />
             <Text style={s.emptyTitle}>Your trend starts with one weigh-in</Text>
-            <Text style={s.chartMessage}>Daily changes are noisy. CUT OS will make the direction easier to see.</Text>
+            <Text style={s.chartMessage}>Daily changes are noisy. DawatFit will make the direction easier to see.</Text>
           </View>
         ) : (
           <WeightBars values={values.map((entry) => entry.weightKg).reverse()} />

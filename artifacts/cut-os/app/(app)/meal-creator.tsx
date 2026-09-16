@@ -105,7 +105,7 @@ export default function MealCreatorScreen() {
         </Pressable>
         <View style={s.proPill}>
           <Ionicons name="sparkles" size={13} color={c.primary} />
-          <Text style={s.proPillText}>CUT OS PRO</Text>
+          <Text style={s.proPillText}>DawatFit PRO</Text>
         </View>
         <View style={s.navButton} />
       </View>

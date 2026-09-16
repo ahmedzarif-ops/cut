@@ -21,9 +21,9 @@ export interface DeclaredAgeRangeGateValue {
 }
 
 const INSPECTION_ERROR =
-  "CUT OS couldn't verify Apple's age requirement. Health and nutrition features remain locked.";
+  "DawatFit couldn't verify Apple's age requirement. Health and nutrition features remain locked.";
 const REQUEST_ERROR =
-  "CUT OS couldn't complete Apple's age check. Try again; private health and nutrition features remain locked.";
+  "DawatFit couldn't complete Apple's age check. Try again; private health and nutrition features remain locked.";
 
 export function useDeclaredAgeRangeGate(input: {
   enabled: boolean;

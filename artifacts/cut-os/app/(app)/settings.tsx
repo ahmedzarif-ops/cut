@@ -118,7 +118,7 @@ export default function SettingsScreen() {
         setBusy: (value) => { if (mounted.current) setSignOutBusy(value); },
         setError: (value) => { if (mounted.current) setSignOutError(value); },
       },
-      "CUT OS couldn't sign out. Please try again.",
+      "DawatFit couldn't sign out. Please try again.",
     );
   };
 
@@ -156,19 +156,19 @@ export default function SettingsScreen() {
     try {
       const result = await subscription.restore();
       if (result === "entitled") {
-        setSubscriptionMessage("CUT OS Pro access was restored.");
+        setSubscriptionMessage("DawatFit Pro access was restored.");
       } else if (result === "not_entitled") {
         setSubscriptionMessage(
-          "No active CUT OS Pro purchase was found for this Apple ID.",
+          "No active DawatFit Pro purchase was found for this Apple ID.",
         );
       } else if (result === "pending") {
         setSubscriptionMessage(
-          "The restore check finished. CUT OS is still waiting for secure access verification; try again shortly.",
+          "The restore check finished. DawatFit is still waiting for secure access verification; try again shortly.",
         );
       }
     } catch {
       setSubscriptionError(
-        "CUT OS couldn't restore purchases. Check your connection and try again.",
+        "DawatFit couldn't restore purchases. Check your connection and try again.",
       );
     } finally {
       setSubscriptionBusy(null);
@@ -285,7 +285,7 @@ export default function SettingsScreen() {
       if (error instanceof PrincipalChangedError) return;
       if (mounted.current && isCurrentPrincipal(ownerUserId, ownerSessionId)) {
         setActionError(
-          "Your CUT OS account is deleted and its private recovery data was cleared, but this device could not finish signing out. Retry device cleanup.",
+          "Your DawatFit account is deleted and its private recovery data was cleared, but this device could not finish signing out. Retry device cleanup.",
         );
       }
       return;
@@ -297,7 +297,7 @@ export default function SettingsScreen() {
       isCurrentPrincipal(ownerUserId, ownerSessionId)
     ) {
       setActionError(
-        "Your CUT OS account is deleted on the server, but private recovery data could not be cleared from this device. Stay signed in and retry device cleanup.",
+        "Your DawatFit account is deleted on the server, but private recovery data could not be cleared from this device. Stay signed in and retry device cleanup.",
       );
     }
   };
@@ -361,7 +361,7 @@ export default function SettingsScreen() {
           isCurrentPrincipal(ownerUserId, ownerSessionId)
         ) {
           setActionError(
-            "Deletion did not start because CUT OS couldn't save a recovery checkpoint on this device. Retry before deleting anything.",
+            "Deletion did not start because DawatFit couldn't save a recovery checkpoint on this device. Retry before deleting anything.",
           );
         }
         return;
@@ -380,7 +380,7 @@ export default function SettingsScreen() {
           isCurrentPrincipal(ownerUserId, ownerSessionId)
         ) {
           setActionError(
-            "Deletion is paused safely. CUT OS couldn't stop active account requests; retry to continue.",
+            "Deletion is paused safely. DawatFit couldn't stop active account requests; retry to continue.",
           );
         }
         return;
@@ -416,8 +416,8 @@ export default function SettingsScreen() {
         ) {
           setActionError(
             status === 401
-              ? "CUT OS can no longer authenticate this login. Your recovery request remains saved; sign out if retry cannot verify it."
-              : "CUT OS couldn't confirm completion. Your device recovery checkpoint is saved—retry safely to verify whether the request is pending or complete.",
+              ? "DawatFit can no longer authenticate this login. Your recovery request remains saved; sign out if retry cannot verify it."
+              : "DawatFit couldn't confirm completion. Your device recovery checkpoint is saved—retry safely to verify whether the request is pending or complete.",
           );
           void qc.invalidateQueries({
             queryKey: getGetAccountDeletionStatusQueryKey(),
@@ -437,8 +437,8 @@ export default function SettingsScreen() {
 
   const confirmDeletion = () => {
     Alert.alert(
-      "Delete your CUT OS account?",
-      "This permanently deletes your CUT OS account and fitness data. It does not cancel an App Store subscription—manage that with Apple first if needed.",
+      "Delete your DawatFit account?",
+      "This permanently deletes your DawatFit account and fitness data. It does not cancel an App Store subscription—manage that with Apple first if needed.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -456,12 +456,12 @@ export default function SettingsScreen() {
       ? "Deletion needs attention"
       : "Delete account";
   const deletionBody = terminalServerCompleted
-    ? "Your CUT OS account is deleted on the server. Clear private recovery data from this device before signing out."
+    ? "Your DawatFit account is deleted on the server. Clear private recovery data from this device before signing out."
     : serverStatus === "pending"
       ? "The server is securely finishing your deletion. Retry to confirm completion."
       : marker
         ? "A deletion request is saved on this device. Retry safely to send or confirm it."
-        : "Permanently delete your CUT OS login, profile, weigh-ins, and meal history.";
+        : "Permanently delete your DawatFit login, profile, weigh-ins, and meal history.";
   const deletionButton = terminalServerCompleted
     ? "Finish device cleanup"
     : recoveryRequired
@@ -514,20 +514,20 @@ export default function SettingsScreen() {
       </Text>
       <Text style={s.subtitle}>
         {ageRequirementRequired
-          ? "Manage your CUT OS account while health and nutrition features remain locked."
-          : "Manage your subscription and CUT OS account."}
+          ? "Manage your DawatFit account while health and nutrition features remain locked."
+          : "Manage your subscription and DawatFit account."}
       </Text>
 
       <View style={s.card}>
         <Text style={s.cardOverline}>DISPLAY UNITS</Text>
         <Text style={s.cardTitle}>Weight units</Text>
         <Text style={s.cardBody}>
-          Choose how weights appear. CUT OS keeps saved measurements consistent
+          Choose how weights appear. DawatFit keeps saved measurements consistent
           when you switch.
         </Text>
         {meQuery.isError ? (
           <Text accessibilityRole="alert" style={s.errorText}>
-            CUT OS couldn&apos;t load your saved weight units. Retry before
+            DawatFit couldn&apos;t load your saved weight units. Retry before
             changing them.
           </Text>
         ) : null}
@@ -603,21 +603,21 @@ export default function SettingsScreen() {
         <Text style={s.cardTitle}>
           {subscription?.server.state === "ready" &&
           subscription.server.entitled
-            ? "CUT OS Pro is active"
-            : "CUT OS Pro"}
+            ? "DawatFit Pro is active"
+            : "DawatFit Pro"}
         </Text>
         <Text style={s.cardBody}>
           {subscription?.server.state === "loading"
             ? "Checking App Store access…"
             : subscription?.server.state === "unavailable"
-              ? "CUT OS couldn't verify Pro access. Retry before opening paid features."
+              ? "DawatFit couldn't verify Pro access. Retry before opening paid features."
               : subscription?.server.state === "ready" &&
                   subscription.server.entitled
                 ? "Your paid daily check-in, weigh-ins, and nutrition features are available."
                 : "Upgrade to unlock the paid daily check-in, weigh-ins, and nutrition features."}
         </Text>
         <Text style={s.cardBody}>
-          Deleting CUT OS does not cancel billing through Apple. Manage or
+          Deleting DawatFit does not cancel billing through Apple. Manage or
           cancel separately in App Store subscription settings.
         </Text>
         {subscriptionMessage ? (

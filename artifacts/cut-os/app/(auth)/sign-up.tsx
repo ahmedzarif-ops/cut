@@ -1,3 +1,4 @@
+import { BrandMark } from "@/components/BrandMark";
 import { useSignUp } from "@clerk/expo";
 import { Link, useRouter } from "expo-router";
 import React from "react";
@@ -263,9 +264,7 @@ export default function SignUpScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={s.brandMark}>
-          <Text style={s.brandMarkText}>CUT</Text>
-        </View>
+        <BrandMark />
 
         {step !== "account" ? (
           <>
@@ -388,7 +387,7 @@ export default function SignUpScreen() {
               Create your account
             </Text>
             <Text style={s.subtitle}>
-              CUT OS is available only to people age 18 or older.
+              DawatFit is available only to people age 18 or older.
             </Text>
 
             <Text style={s.label}>Email</Text>

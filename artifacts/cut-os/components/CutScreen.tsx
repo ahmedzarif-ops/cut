@@ -67,7 +67,7 @@ export function CutScreen({
           </Pressable>
           <Pressable
             accessibilityLabel="Scan barcode or take a food photo"
-            accessibilityHint="Barcode scanning is free. Photo analysis requires CUT OS Pro."
+            accessibilityHint="Barcode scanning is free. Photo analysis requires DawatFit Pro."
             accessibilityRole="button"
             style={({ pressed }) => [
               styles.capture,

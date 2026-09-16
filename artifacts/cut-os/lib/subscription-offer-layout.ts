@@ -81,7 +81,7 @@ export function isSubscriptionOfferReadyLayoutEligible({
 
 /**
  * Conservative maximum for the settled one-plan offer, including an
- * introductory-offer row even though CUT OS v1 has no introductory offer.
+ * introductory-offer row even though DawatFit v1 has no introductory offer.
  */
 export function subscriptionOfferReadyVerticalBudgetPoints() {
   const layout = SUBSCRIPTION_OFFER_READY_LAYOUT;

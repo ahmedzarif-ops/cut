@@ -45,7 +45,7 @@ that exact build.
 
 **Description draft:**
 
-CUT OS helps adults who lift run a focused cut or body recomposition. See what
+DawatFit helps adults who lift run a focused cut or body recomposition. See what
 remains today, log what happened, and understand how food, body weight, and
 training move together.
 
@@ -57,16 +57,16 @@ Free features:
 - Log meals, daily nutrition totals, weigh-ins, and training sessions.
 - Review weight and training progress in clear charts.
 
-CUT OS Pro is optional. Pro adds meal fits based on remaining calorie and
+DawatFit Pro is optional. Pro adds meal fits based on remaining calorie and
 protein goals, food preferences, and confirmed logs. The free tracking loop
 stays available without Pro.
 
-CUT OS provides general fitness and nutrition information, not medical advice.
+DawatFit provides general fitness and nutrition information, not medical advice.
 Food and meal nutrition is estimated. Ingredient and common-allergen lists must be
 reviewed against the exact products you use and are not an allergen-safety
 guarantee.
 
-CUT OS is for adults age 18 and older. CUT OS Pro uses an auto-renewable Apple
+DawatFit is for adults age 18 and older. DawatFit Pro uses an auto-renewable Apple
 subscription. The exact localized price and billing period appear before you
 confirm purchase. You can restore purchases in the app and manage or cancel
 the subscription through Apple.

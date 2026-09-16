@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "CUT OS",
+    "name": "DawatFit",
     "owner": "zee-digipit",
     "slug": "cut",
     "version": "1.0.0",
@@ -12,7 +12,7 @@
     "splash": {
       "image": "./assets/images/icon-v2.png",
       "resizeMode": "contain",
-      "backgroundColor": "#07111F"
+      "backgroundColor": "#2563EB"
     },
     "ios": {
       "supportsTablet": false,
@@ -138,7 +138,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow CUT OS to scan food barcodes and take food photos for Pro estimates.",
+          "cameraPermission": "Allow DawatFit to scan food barcodes and take food photos for Pro estimates.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }

@@ -1,3 +1,4 @@
+import { BrandMark } from "@/components/BrandMark";
 import { useSignIn } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -149,9 +150,7 @@ export default function ForgotPasswordScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={s.brandMark}>
-          <Text style={s.brandMarkText}>CUT</Text>
-        </View>
+        <BrandMark />
 
         {step === "request" ? (
           <>

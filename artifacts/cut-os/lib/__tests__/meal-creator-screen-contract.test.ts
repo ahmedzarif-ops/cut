@@ -28,7 +28,7 @@ describe("personalized meal creator screen contract", () => {
       "Free food search, Desi meal ideas, barcode scanning, manual logs,",
     );
     expect(food).toContain(
-      'accessibilityLabel="Make me a personalized meal, CUT OS Pro"',
+      'accessibilityLabel="Make me a personalized meal, DawatFit Pro"',
     );
     expect(food).toContain('router.push("/meal-creator" as never)');
     expect(food).toContain("View all ${foodsQuery.data?.length ?? 0}");

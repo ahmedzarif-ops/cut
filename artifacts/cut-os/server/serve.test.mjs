@@ -522,7 +522,7 @@ describe("CUT OS public server", () => {
     const staticRoot = await createStaticRoot();
     const { port } = await listen({
       staticRoot,
-      appName: "CUT OS",
+      appName: "DawatFit",
       publicationStatus: "approved",
       publicAppOrigin: "https://getcutos.com",
     });

@@ -13,10 +13,10 @@ const settingsScreenSource = readFileSync(
 describe("account-deletion subscription disclosure contract", () => {
   it("keeps the Apple billing-continuation warning visible before deletion", () => {
     expect(settingsScreenSource).toMatch(
-      /Deleting CUT OS does not cancel billing through Apple\.\s*Manage or\s*cancel separately in App Store subscription settings\./u,
+      /Deleting DawatFit does not cancel billing through Apple\.\s*Manage or\s*cancel separately in App Store subscription settings\./u,
     );
     expect(settingsScreenSource).toContain(
-      '"This permanently deletes your CUT OS account and fitness data. It does not cancel an App Store subscription—manage that with Apple first if needed."',
+      '"This permanently deletes your DawatFit account and fitness data. It does not cancel an App Store subscription—manage that with Apple first if needed."',
     );
   });
 
@@ -38,7 +38,7 @@ describe("account-deletion subscription disclosure contract", () => {
 
   it("keeps account deletion explicit, confirmable, and destructive", () => {
     expect(settingsScreenSource).toMatch(
-      /Alert\.alert\(\s*"Delete your CUT OS account\?",[\s\S]*?\{ text: "Cancel", style: "cancel" \},[\s\S]*?text: "Delete account",\s*style: "destructive",\s*onPress: \(\) => void runDeletion\(\),[\s\S]*?\],\s*\);/u,
+      /Alert\.alert\(\s*"Delete your DawatFit account\?",[\s\S]*?\{ text: "Cancel", style: "cancel" \},[\s\S]*?text: "Delete account",\s*style: "destructive",\s*onPress: \(\) => void runDeletion\(\),[\s\S]*?\],\s*\);/u,
     );
   });
 });

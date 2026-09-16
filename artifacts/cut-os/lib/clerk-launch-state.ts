@@ -22,7 +22,7 @@ export function createClerkLaunchState(): ClerkLaunchState {
 /**
  * Keeps launch recovery independent from Clerk's rendered control components.
  * Clerk can internally catch a rejected initialization and render neither its
- * loading nor loaded branch, so CUT OS must own the fallback lifecycle.
+ * loading nor loaded branch, so DawatFit must own the fallback lifecycle.
  */
 export function reduceClerkLaunchState(
   state: ClerkLaunchState,

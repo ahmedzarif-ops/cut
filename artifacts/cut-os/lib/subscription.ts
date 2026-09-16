@@ -129,7 +129,7 @@ export function decideSubscriptionRoute({
   if (route === "settings" || route === "onboarding") return "allow";
   if (!onboardingComplete && route === "core") return "redirect_onboarding";
 
-  // CUT OS is a freemium app. Subscription state may change what a feature
+  // DawatFit is a freemium app. Subscription state may change what a feature
   // offers, but it must never block the core diary, weight, or training loop.
   if (route === "core") return "allow";
 

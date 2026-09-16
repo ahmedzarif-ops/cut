@@ -99,7 +99,7 @@ export function createProductionPublicSiteMiddleware(
   env: NodeJS.ProcessEnv = process.env,
 ): RequestHandler {
   const handler = createRequestHandler({
-    appName: "CUT OS",
+    appName: "DawatFit",
     basePath: resolvePublicSiteBasePath(env),
     buildSha: env.BUILD_SHA,
     previewMode: false,

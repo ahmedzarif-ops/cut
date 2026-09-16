@@ -182,7 +182,7 @@ export default function PhotoEstimateScreen() {
       {!subscription.isEntitled ? (
         <>
           <Text style={[s.body, { color: c.mutedForeground }]}>
-            Photo analysis is a CUT OS Pro feature. You can still log food
+            Photo analysis is a DawatFit Pro feature. You can still log food
             manually or scan barcodes for free.
           </Text>
           {button("See Pro", () => router.replace("/subscription"))}

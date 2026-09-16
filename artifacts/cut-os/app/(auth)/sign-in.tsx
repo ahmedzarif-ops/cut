@@ -1,3 +1,4 @@
+import { BrandMark } from "@/components/BrandMark";
 import { useSignIn } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import React from "react";
@@ -228,9 +229,7 @@ export default function SignInScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={s.brandMark}>
-          <Text style={s.brandMarkText}>CUT</Text>
-        </View>
+        <BrandMark />
 
         {step === "email-code" ? (
           <>

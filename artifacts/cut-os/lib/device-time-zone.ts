@@ -89,7 +89,7 @@ export function isExpectedDeviceTimeZoneUpdateResponse(
 
 /**
  * Read the IANA time zone reported by the device without guessing from an
- * offset. Daily CUT OS keys require a named zone so daylight-saving changes
+ * offset. Daily DawatFit keys require a named zone so daylight-saving changes
  * and local-midnight rollovers stay correct.
  */
 export function resolveDeviceTimeZone(

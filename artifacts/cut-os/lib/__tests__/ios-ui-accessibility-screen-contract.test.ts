@@ -61,10 +61,10 @@ describe("iOS UI accessibility screen contracts", () => {
       "<AssetLaunchScreen timedOut={assetLoadingTimedOut} />",
     );
     expect(rootLayoutSource).toContain(
-      'accessibilityLabel="Loading CUT OS display"',
+      'accessibilityLabel="Loading DawatFit display"',
     );
     expect(rootLayoutSource).toContain(
-      'accessibilityLabel="Restart CUT OS after startup timeout"',
+      'accessibilityLabel="Restart DawatFit after startup timeout"',
     );
   });
 
@@ -127,7 +127,7 @@ describe("iOS UI accessibility screen contracts", () => {
   });
 
   it("exposes the restart fallback as a named button", () => {
-    expectNamedButton(errorFallbackSource, "Restart CUT OS");
+    expectNamedButton(errorFallbackSource, "Restart DawatFit");
   });
 
   it("announces disabled states for Settings recovery controls", () => {

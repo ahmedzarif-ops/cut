@@ -249,7 +249,7 @@ export default function MealOneScreen() {
       .catch(() => {
         if (!active) return;
         setIntentLoadError(
-          "CUT OS couldn't safely check for an unfinished meal log on this device. No new meal was sent.",
+          "DawatFit couldn't safely check for an unfinished meal log on this device. No new meal was sent.",
         );
         setIntentReadyOwner(userId);
       });
@@ -290,7 +290,7 @@ export default function MealOneScreen() {
       .catch(() => {
         if (!active) return;
         setActionError(
-          "Your previous meal is saved, but CUT OS couldn't clear its device recovery checkpoint. Retry verification before logging another meal.",
+          "Your previous meal is saved, but DawatFit couldn't clear its device recovery checkpoint. Retry verification before logging another meal.",
         );
       });
 
@@ -475,8 +475,8 @@ export default function MealOneScreen() {
         if (!isCurrentPrincipal()) return;
         setActionError(
           markerCleared
-            ? "The saved meal request is no longer active. Review today’s meals and the latest options before logging again. CUT OS did not create a new meal from this retry."
-            : "The saved meal request is no longer active, but CUT OS couldn't clear its device checkpoint. Retry verification before logging again.",
+            ? "The saved meal request is no longer active. Review today’s meals and the latest options before logging again. DawatFit did not create a new meal from this retry."
+            : "The saved meal request is no longer active, but DawatFit couldn't clear its device checkpoint. Retry verification before logging again.",
         );
         return;
       }
@@ -491,8 +491,8 @@ export default function MealOneScreen() {
       if (requestStarted) void mealsQuery.refetch();
       setActionError(
         requestStarted
-          ? "CUT OS couldn't confirm whether this meal was saved. Retry safely—the exact same request is preserved and cannot create a duplicate."
-          : "No meal was sent because CUT OS couldn't secure this request. Retry when your session and device storage are available.",
+          ? "DawatFit couldn't confirm whether this meal was saved. Retry safely—the exact same request is preserved and cannot create a duplicate."
+          : "No meal was sent because DawatFit couldn't secure this request. Retry when your session and device storage are available.",
       );
     } finally {
       mutationLock.current = false;
@@ -737,7 +737,7 @@ export default function MealOneScreen() {
             Verify previous meal log
           </Text>
           <Text style={s.cardDescription}>
-            CUT OS will verify the exact saved request before you change or add
+            DawatFit will verify the exact saved request before you change or add
             another meal.
           </Text>
           <Text style={s.recoveryPayload}>
@@ -933,7 +933,7 @@ export default function MealOneScreen() {
           ) : screenState.catalogState === "error" ? (
             <View style={[s.catalogStateCard, s.catalogErrorCard]}>
               <Text accessibilityRole="alert" style={s.catalogStateText}>
-                CUT OS couldn&apos;t load balanced options. Your logged meals
+                DawatFit couldn&apos;t load balanced options. Your logged meals
                 remain available above.
               </Text>
               <Pressable

@@ -61,7 +61,7 @@ if (runtimeConfig.ok) {
 } else {
   // Report only stable issue codes. Environment values can include sensitive
   // deployment details and must never be printed to a device log.
-  console.error("CUT OS build configuration is invalid", runtimeConfig.issues);
+  console.error("DawatFit build configuration is invalid", runtimeConfig.issues);
 }
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -91,7 +91,7 @@ function ConfigurationErrorScreen({
 
   return (
     <View accessibilityRole="alert" style={configurationErrorStyles.container}>
-      <Text style={configurationErrorStyles.eyebrow}>CUT OS</Text>
+      <Text style={configurationErrorStyles.eyebrow}>DawatFit</Text>
       <Text style={configurationErrorStyles.title}>
         {localWebPreview
           ? "Local preview needs setup"
@@ -100,7 +100,7 @@ function ConfigurationErrorScreen({
       <Text style={configurationErrorStyles.message}>
         {localWebPreview
           ? "Launch is safely paused because required services are not configured. Add real development settings and restart Expo; authentication is not mocked or bypassed."
-          : "The app is missing required launch settings. Please install a newer build or contact CUT OS support."}
+          : "The app is missing required launch settings. Please install a newer build or contact DawatFit support."}
       </Text>
       {localWebPreview ? (
         <Text style={configurationErrorStyles.detail}>
@@ -115,11 +115,11 @@ function LaunchLoadingScreen() {
   return (
     <View style={launchStyles.fallback}>
       <ActivityIndicator
-        accessibilityLabel="Loading CUT OS"
+        accessibilityLabel="Loading DawatFit"
         color="#64D8CB"
         size="large"
       />
-      <Text style={launchStyles.loadingText}>Loading CUT OS</Text>
+      <Text style={launchStyles.loadingText}>Loading DawatFit</Text>
     </View>
   );
 }
@@ -145,14 +145,14 @@ function AssetLaunchScreen({ timedOut }: { timedOut: boolean }) {
       >
         {timedOut ? (
           <React.Fragment>
-            <Text style={launchStyles.systemEyebrow}>CUT OS</Text>
+            <Text style={launchStyles.systemEyebrow}>DawatFit</Text>
             <Text style={launchStyles.systemTitle}>Startup needs a retry</Text>
             <Text style={launchStyles.systemMessage}>
-              CUT OS could not finish loading its display resources. Restart the
+              DawatFit could not finish loading its display resources. Restart the
               app to try again.
             </Text>
             <Pressable
-              accessibilityLabel="Restart CUT OS after startup timeout"
+              accessibilityLabel="Restart DawatFit after startup timeout"
               accessibilityRole="button"
               style={({ pressed }) => [
                 launchStyles.retryButton,
@@ -161,23 +161,23 @@ function AssetLaunchScreen({ timedOut }: { timedOut: boolean }) {
               onPress={() => void restart()}
             >
               <Text style={launchStyles.systemRetryButtonText}>
-                Restart CUT OS
+                Restart DawatFit
               </Text>
             </Pressable>
             {restartFailed ? (
               <Text accessibilityRole="alert" style={launchStyles.systemError}>
-                Close CUT OS from the app switcher, then open it again.
+                Close DawatFit from the app switcher, then open it again.
               </Text>
             ) : null}
           </React.Fragment>
         ) : (
           <React.Fragment>
             <ActivityIndicator
-              accessibilityLabel="Loading CUT OS display"
+              accessibilityLabel="Loading DawatFit display"
               color="#64D8CB"
               size="large"
             />
-            <Text style={launchStyles.systemLoadingText}>Loading CUT OS</Text>
+            <Text style={launchStyles.systemLoadingText}>Loading DawatFit</Text>
           </React.Fragment>
         )}
       </View>
@@ -188,7 +188,7 @@ function AssetLaunchScreen({ timedOut }: { timedOut: boolean }) {
 function ClerkLaunchRetry({ onRetry }: { onRetry: () => void }) {
   return (
     <View accessibilityRole="alert" style={launchStyles.fallback}>
-      <Text style={launchStyles.eyebrow}>CUT OS</Text>
+      <Text style={launchStyles.eyebrow}>DawatFit</Text>
       <Text style={launchStyles.title}>We couldn&apos;t connect</Text>
       <Text style={launchStyles.message}>
         Secure sign-in is taking longer than expected. Check your connection and
@@ -238,10 +238,10 @@ function LaunchErrorScreen(_props: ErrorFallbackProps) {
     <React.Fragment>
       <StatusBar style="light" />
       <View accessibilityRole="alert" style={launchStyles.container}>
-        <Text style={launchStyles.eyebrow}>CUT OS</Text>
+        <Text style={launchStyles.eyebrow}>DawatFit</Text>
         <Text style={launchStyles.title}>We couldn't open the app</Text>
         <Text style={launchStyles.message}>
-          Please close CUT OS and try again. If this continues, contact CUT OS
+          Please close DawatFit and try again. If this continues, contact DawatFit
           support.
         </Text>
       </View>
@@ -349,7 +349,7 @@ export default function RootLayout() {
           >
             {/*
               Keep using Clerk's exported loading/loaded controls, but never put
-              CUT OS's only launch UI inside ClerkLoading. A rejected Clerk load
+              DawatFit's only launch UI inside ClerkLoading. A rejected Clerk load
               is caught internally and can cause that branch to render nothing.
             */}
             <ClerkLoading>

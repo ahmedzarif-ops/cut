@@ -410,7 +410,7 @@ export default function WorkoutEntryScreen() {
 
         {todayQuery.isError ? (
           <Text accessibilityRole="alert" style={s.notice}>
-            CUT OS couldn&apos;t load today. Check your connection and try
+            DawatFit couldn&apos;t load today. Check your connection and try
             again.
           </Text>
         ) : error ? (

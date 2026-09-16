@@ -180,7 +180,7 @@ export default function FoodScreen() {
       </View>
 
       <Pressable
-        accessibilityLabel="Make me a personalized meal, CUT OS Pro"
+        accessibilityLabel="Make me a personalized meal, DawatFit Pro"
         accessibilityRole="button"
         style={({ pressed }) => [s.mealMakerCard, pressed && s.pressed]}
         onPress={() => router.push("/meal-creator" as never)}

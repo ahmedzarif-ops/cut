@@ -188,7 +188,7 @@ describe("RevenueCat subscription adapter", () => {
         packageItem({
           packageIdentifier: "monthly",
           productIdentifier: PRODUCT_ID,
-          title: "CUT OS Pro Monthly",
+          title: "DawatFit Pro Monthly",
           priceString: "€4,99",
           period: "P1M",
         }),
@@ -218,7 +218,7 @@ describe("RevenueCat subscription adapter", () => {
 
   it("preserves legitimate localized Unicode offer display fields", async () => {
     const bridge = new FakeBridge();
-    const localizedTitle = "CUT OS プロ月額 🏋️";
+    const localizedTitle = "DawatFit プロ月額 🏋️";
     const localizedDescription = "毎日の計量、バランスのよい食事、栄養合計。";
     const localizedPrice = "\u200f٤٫٩٩\u00a0ر.س.\u200f";
     bridge.offering = {
@@ -256,8 +256,8 @@ describe("RevenueCat subscription adapter", () => {
           packageItem({
             packageIdentifier: "monthly",
             productIdentifier: PRODUCT_ID,
-            title: override.title ?? "CUT OS Pro Monthly",
-            description: override.description ?? "Monthly CUT OS Pro access",
+            title: override.title ?? "DawatFit Pro Monthly",
+            description: override.description ?? "Monthly DawatFit Pro access",
             priceString: override.priceString ?? "$4.99",
             period: "P1M",
           }),
@@ -284,7 +284,7 @@ describe("RevenueCat subscription adapter", () => {
         packageItem({
           packageIdentifier: "monthly",
           productIdentifier: PRODUCT_ID,
-          title: "CUT OS Pro Monthly",
+          title: "DawatFit Pro Monthly",
           priceString: "$4.99",
           period: "P1M",
         }),
@@ -307,7 +307,7 @@ describe("RevenueCat subscription adapter", () => {
         packageItem({
           packageIdentifier: "monthly",
           productIdentifier: differentProduct,
-          title: "CUT OS Pro Other",
+          title: "DawatFit Pro Other",
           priceString: "$4.99",
           period: "P1M",
         }),
@@ -329,7 +329,7 @@ describe("RevenueCat subscription adapter", () => {
         packageItem({
           packageIdentifier: "monthly",
           productIdentifier: PRODUCT_ID,
-          title: "CUT OS Pro Monthly",
+          title: "DawatFit Pro Monthly",
           priceString: "$4.99",
           period: "P1M",
         }),
@@ -362,14 +362,14 @@ describe("RevenueCat subscription adapter", () => {
         packageItem({
           packageIdentifier: "monthly",
           productIdentifier: PRODUCT_ID,
-          title: "CUT OS Pro Monthly",
+          title: "DawatFit Pro Monthly",
           priceString: "$4.99",
           period: "P1M",
         }),
         packageItem({
           packageIdentifier: "monthly_duplicate",
           productIdentifier: PRODUCT_ID,
-          title: "CUT OS Pro Monthly",
+          title: "DawatFit Pro Monthly",
           priceString: "$4.99",
           period: "P1M",
         }),
@@ -391,7 +391,7 @@ describe("RevenueCat subscription adapter", () => {
         packageItem({
           packageIdentifier: "monthly",
           productIdentifier: PRODUCT_ID,
-          title: "CUT OS Pro Monthly",
+          title: "DawatFit Pro Monthly",
           priceString: "$4.99",
           period: "P1M",
           intro: {
@@ -421,7 +421,7 @@ describe("RevenueCat subscription adapter", () => {
         packageItem({
           packageIdentifier: "monthly",
           productIdentifier: PRODUCT_ID,
-          title: "CUT OS Pro Monthly",
+          title: "DawatFit Pro Monthly",
           priceString: "$49.99",
           period: "P1Y",
         }),
@@ -447,7 +447,7 @@ describe("RevenueCat subscription adapter", () => {
         packageItem({
           packageIdentifier: "monthly",
           productIdentifier: PRODUCT_ID,
-          title: "CUT OS Pro Monthly",
+          title: "DawatFit Pro Monthly",
           priceString: "$4.99",
           period: "P1M",
         }),

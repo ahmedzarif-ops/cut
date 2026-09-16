@@ -17,17 +17,17 @@
   },
   "ownerContentAmendment": {
     "approvedBy": "Zarif Ahmed",
-    "evidenceReference": "app-store/evidence/photo-privacy-owner-approval-2026-09-15.md",
+    "evidenceReference": "app-store/evidence/dawatfit-brand-release-2026-09-16.md",
     "professionalApprovalClaimed": false
   },
   "rendering": {
-    "appName": "CUT OS",
+    "appName": "DawatFit",
     "basePath": ""
   },
   "sha256": {
-    "/privacy": "703968005674e1e33b5ac4ca051bc4224edcfa5f59329874bc0ba9c916de0c41",
-    "/terms": "e88d9a37bbb62e827243216e71fc574ed825f0cf281e824dc7bb3b45fa8c8fe9",
-    "/support": "98f8d43ae2d9a0b1291396b05d92635d1442f2be60fe075b5fd441399f271b56",
+    "/privacy": "eb1ab6f7d90c1713bd4425bdc3454c17cdee02a083832f1e2ce29b81e86f440a",
+    "/terms": "55d2393f89bd07c848511dbdb459522199b28fea39142bf090bb02e6e572a776",
+    "/support": "fb12039ce5c3ea7f39e26701da71ca87b2c8a0551774392c37b55aafd39df9b4",
     "/legal.css": "4ec4eb3c09f7c40571f4423e98d8119b216d376a176f2974d3c45a5a8772bc78"
   }
 }

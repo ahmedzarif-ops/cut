@@ -205,7 +205,7 @@ export function SubscriptionGateProvider({
       .connect(apiKey, owner, (customer) => {
         if (!isCurrent()) return;
         setStoreCustomer(customer);
-        // Store state is never enough to unlock CUT OS Pro. Ask the server to
+        // Store state is never enough to unlock DawatFit Pro. Ask the server to
         // verify RevenueCat and update only this internal UUID's query cache.
         void confirmWithServer(owner).catch(() => undefined);
       })

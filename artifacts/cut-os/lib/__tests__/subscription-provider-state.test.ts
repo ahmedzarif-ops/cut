@@ -316,14 +316,14 @@ describe("subscription provider state", () => {
         lock,
         signOut,
         { setBusy, setError },
-        "CUT OS couldn't sign out. Check your connection and try again.",
+        "DawatFit couldn't sign out. Check your connection and try again.",
       ),
     ).resolves.toBe("failed");
 
     expect(setError).toHaveBeenNthCalledWith(1, null);
     expect(setError).toHaveBeenNthCalledWith(
       2,
-      "CUT OS couldn't sign out. Check your connection and try again.",
+      "DawatFit couldn't sign out. Check your connection and try again.",
     );
     expect(setBusy.mock.calls).toEqual([[true], [false]]);
     expect(lock.current).toBe(false);

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import colors from "../../constants/colors";
 import { contrastRatio } from "../color-contrast";
 
-describe("CUT OS semantic color contrast", () => {
+describe("DawatFit semantic color contrast", () => {
   it("meets WCAG AA normal-text contrast on action and status surfaces", () => {
     for (const palette of [colors.dark, colors.light]) {
       expect(

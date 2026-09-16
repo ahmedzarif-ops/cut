@@ -97,7 +97,7 @@ export default function TrainingScreen() {
         </View>
         <Text style={s.heroTitle}>What are you training?</Text>
         <Text style={s.body}>
-          Log the lifts that matter during your cut. CUT OS will keep the
+          Log the lifts that matter during your cut. DawatFit will keep the
           history easy to compare.
         </Text>
         <Pressable

@@ -5,7 +5,7 @@ const source = readFileSync(new URL("../../app/(app)/photo-estimate.tsx", import
 describe("Photo estimate UI boundary", () => {
   it("gates capture and transfer to Pro, including direct navigation", () => {
     expect(source).toContain('!subscription.isEntitled');
-    expect(source).toContain('Photo analysis is a CUT OS Pro feature.');
+    expect(source).toContain('Photo analysis is a DawatFit Pro feature.');
     expect(source).toContain('if (lock.current || !photo || !subscription.isEntitled) return');
     expect(source).toContain('if (lock.current || !ready || !subscription.isEntitled) return');
   });

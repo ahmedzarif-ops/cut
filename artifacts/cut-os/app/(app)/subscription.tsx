@@ -60,7 +60,7 @@ export default function SubscriptionScreen() {
       ) {
         return current;
       }
-      // Preserve the order remotely configured in RevenueCat. CUT OS does not
+      // Preserve the order remotely configured in RevenueCat. DawatFit does not
       // silently prefer an annual or otherwise hard-coded package.
       return subscription.plans[0]?.packageIdentifier ?? null;
     });
@@ -128,7 +128,7 @@ export default function SubscriptionScreen() {
       if (result === "pending") {
         setPendingAccess(true);
         setMessage(
-          "Apple confirmed the purchase. CUT OS is waiting for secure access verification. Tap Check access again shortly if access does not open.",
+          "Apple confirmed the purchase. DawatFit is waiting for secure access verification. Tap Check access again shortly if access does not open.",
         );
       }
     } catch {
@@ -156,17 +156,17 @@ export default function SubscriptionScreen() {
       const result = await subscription.restore();
       if (result === "not_entitled") {
         setMessage(
-          "No active CUT OS Pro purchase was found for this Apple ID.",
+          "No active DawatFit Pro purchase was found for this Apple ID.",
         );
       } else if (result === "pending") {
         setPendingAccess(true);
         setMessage(
-          "The restore check finished. CUT OS is still waiting for secure access verification. Tap Check access again shortly if access does not open.",
+          "The restore check finished. DawatFit is still waiting for secure access verification. Tap Check access again shortly if access does not open.",
         );
       }
     } catch {
       setError(
-        "CUT OS couldn't restore purchases. Check your connection and try again.",
+        "DawatFit couldn't restore purchases. Check your connection and try again.",
       );
     } finally {
       setBusyAction(null);
@@ -183,13 +183,13 @@ export default function SubscriptionScreen() {
       if (result === "pending") {
         setPendingAccess(true);
         setMessage(
-          "Secure verification completed, but CUT OS Pro is not active yet. Wait a moment and check again, or restore purchases.",
+          "Secure verification completed, but DawatFit Pro is not active yet. Wait a moment and check again, or restore purchases.",
         );
       }
     } catch {
       setPendingAccess(true);
       setError(
-        "CUT OS couldn't verify purchase access. Check your connection and try again.",
+        "DawatFit couldn't verify purchase access. Check your connection and try again.",
       );
     } finally {
       setBusyAction(null);
@@ -204,7 +204,7 @@ export default function SubscriptionScreen() {
     try {
       await runSubscriptionSignOut(signOutLock, subscription.signOut);
     } catch {
-      setError("CUT OS couldn't sign out. Try again.");
+      setError("DawatFit couldn't sign out. Try again.");
     } finally {
       setBusyAction(null);
     }
@@ -218,7 +218,7 @@ export default function SubscriptionScreen() {
       await WebBrowser.openBrowserAsync(subscription.managementUrl);
     } catch {
       setError(
-        "CUT OS couldn't open App Store subscription settings. Try again when you're online.",
+        "DawatFit couldn't open App Store subscription settings. Try again when you're online.",
       );
     } finally {
       setBusyAction(null);
@@ -228,12 +228,12 @@ export default function SubscriptionScreen() {
   const unavailableMessage =
     !subscription.capability.available &&
     subscription.capability.reason === "expo_go"
-      ? "Purchases are unavailable in Expo Go. Install the CUT OS TestFlight or App Store build to subscribe."
+      ? "Purchases are unavailable in Expo Go. Install the DawatFit TestFlight or App Store build to subscribe."
       : !subscription.capability.available &&
           subscription.capability.reason === "ios_only"
-        ? "CUT OS subscriptions are currently available in the iPhone app."
+        ? "DawatFit subscriptions are currently available in the iPhone app."
         : !subscription.capability.available
-          ? "Purchases are unavailable in this build. Please install a newer CUT OS build."
+          ? "Purchases are unavailable in this build. Please install a newer DawatFit build."
           : null;
 
   return (
@@ -257,7 +257,7 @@ export default function SubscriptionScreen() {
       ]}
     >
       <View style={[s.topRow, compactReadyLayout && s.readyTopRow]}>
-        <Text style={s.brand}>CUT OS PRO</Text>
+        <Text style={s.brand}>DawatFit PRO</Text>
         <Pressable
           accessibilityRole="button"
           style={({ pressed }) => [s.settingsLink, pressed && s.pressed]}
@@ -282,7 +282,7 @@ export default function SubscriptionScreen() {
       {!readyOfferVisible ? (
         <>
           <Text style={s.subtitle}>
-            CUT OS Pro adapts meal ideas to your confirmed logs. Food, weight,
+            DawatFit Pro adapts meal ideas to your confirmed logs. Food, weight,
             and workout tracking stay free.
           </Text>
 
@@ -425,7 +425,7 @@ export default function SubscriptionScreen() {
       subscription.catalogStatus === "unavailable" ? (
         <View style={s.noticeCard}>
           <Text style={s.noticeText}>
-            CUT OS couldn't load App Store subscription options. You can still
+            DawatFit couldn't load App Store subscription options. You can still
             restore an existing purchase.
           </Text>
           <Pressable
@@ -442,7 +442,7 @@ export default function SubscriptionScreen() {
         <View style={s.noticeCard}>
           <Text style={s.noticeText}>
             {unavailableMessage ??
-              "CUT OS couldn't load App Store options. Check your connection and try again."}
+              "DawatFit couldn't load App Store options. Check your connection and try again."}
           </Text>
           {subscription.capability.available ? (
             <Pressable
@@ -523,7 +523,7 @@ export default function SubscriptionScreen() {
             pendingAccess ? "Check access again" : "Check purchase access"
           }
           accessibilityRole="button"
-          accessibilityHint="Securely asks CUT OS to verify your App Store purchase again"
+          accessibilityHint="Securely asks DawatFit to verify your App Store purchase again"
           accessibilityState={{
             disabled: actionBusy,
             busy: busyAction === "verify",

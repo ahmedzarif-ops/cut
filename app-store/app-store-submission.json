@@ -41,13 +41,13 @@
     }
   },
   "listing": {
-    "appName": "CUT OS",
+    "appName": "DawatFit",
     "bundleId": "com.zarifahmed.cut",
     "appVersion": "1.0.0",
     "initialRelease": true,
     "primaryLanguage": "en-US",
     "subtitle": "Food, training & progress",
-    "description": "CUT OS helps adults who lift run a focused cut or body recomposition. See what\nremains today, log what happened, and understand how food, body weight, and\ntraining move together.\n\nFree features:\n\n- Search a 99-food nutrition library.\n- Explore 89 balanced meals, including 82 Bengali, Bangladeshi, Desi, and South Asian options.\n- Scan supported food barcodes or add and save custom foods.\n- Log meals, daily nutrition totals, weigh-ins, and training sessions.\n- Review weight and training progress in clear charts.\n\nCUT OS Pro is optional. Pro adds meal fits based on remaining calorie and\nprotein goals, food preferences, and confirmed logs. The free tracking loop\nstays available without Pro.\n\nCUT OS provides general fitness and nutrition information, not medical advice.\nFood and meal nutrition is estimated. Ingredient and common-allergen lists must be\nreviewed against the exact products you use and are not an allergen-safety\nguarantee.\n\nCUT OS is for adults age 18 and older. CUT OS Pro uses an auto-renewable Apple\nsubscription. The exact localized price and billing period appear before you\nconfirm purchase. You can restore purchases in the app and manage or cancel\nthe subscription through Apple.\n\nTerms: https://getcutos.com/terms",
+    "description": "DawatFit helps adults who lift run a focused cut or body recomposition. See what\nremains today, log what happened, and understand how food, body weight, and\ntraining move together.\n\nFree features:\n\n- Search a 99-food nutrition library.\n- Explore 89 balanced meals, including 82 Bengali, Bangladeshi, Desi, and South Asian options.\n- Scan supported food barcodes or add and save custom foods.\n- Log meals, daily nutrition totals, weigh-ins, and training sessions.\n- Review weight and training progress in clear charts.\n\nDawatFit Pro is optional. Pro adds meal fits based on remaining calorie and\nprotein goals, food preferences, and confirmed logs. The free tracking loop\nstays available without Pro.\n\nDawatFit provides general fitness and nutrition information, not medical advice.\nFood and meal nutrition is estimated. Ingredient and common-allergen lists must be\nreviewed against the exact products you use and are not an allergen-safety\nguarantee.\n\nDawatFit is for adults age 18 and older. DawatFit Pro uses an auto-renewable Apple\nsubscription. The exact localized price and billing period appear before you\nconfirm purchase. You can restore purchases in the app and manage or cancel\nthe subscription through Apple.\n\nTerms: https://getcutos.com/terms",
     "keywords": "calorie,protein,macros,food,meal,Desi,Bengali,lifting,weight,workout,cut,recomp,tracker,nutrition",
     "primaryCategory": "Health & Fitness",
     "secondaryCategory": null,

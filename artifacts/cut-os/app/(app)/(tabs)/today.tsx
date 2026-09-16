@@ -353,7 +353,7 @@ export default function TodayScreen() {
           <Text style={s.sectionLabel}>START HERE</Text>
           <Text style={s.heroPrompt}>Set your goal</Text>
           <Text style={s.body}>
-            Tell CUT OS whether you are cutting or recomping, then start
+            Tell DawatFit whether you are cutting or recomping, then start
             logging.
           </Text>
           <Pressable
@@ -362,7 +362,7 @@ export default function TodayScreen() {
             style={s.primaryButton}
             onPress={() => router.push("/onboarding")}
           >
-            <Text style={s.primaryButtonText}>Set up CUT OS</Text>
+            <Text style={s.primaryButtonText}>Set up DawatFit</Text>
           </Pressable>
         </View>
       ) : today ? (

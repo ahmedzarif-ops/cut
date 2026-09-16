@@ -252,7 +252,7 @@ export default function AdultEligibilityScreen() {
         return;
       }
       setActionError(
-        "CUT OS couldn't confirm your age. Check your connection and try again. Health and nutrition features remain locked.",
+        "DawatFit couldn't confirm your age. Check your connection and try again. Health and nutrition features remain locked.",
       );
       gate.retry();
     } finally {
@@ -288,7 +288,7 @@ export default function AdultEligibilityScreen() {
     return (
       <MessageScreen
         title="Checking Apple's age requirement"
-        message="Private health and nutrition features remain locked while CUT OS checks whether Apple requires an age range on this device."
+        message="Private health and nutrition features remain locked while DawatFit checks whether Apple requires an age range on this device."
         loading
         onManage={manageAccount}
         onSignOut={() => void handleSignOut()}
@@ -304,7 +304,7 @@ export default function AdultEligibilityScreen() {
         title="Apple age check needed"
         message={
           declaredAgeRange.error ??
-          "CUT OS couldn't verify Apple's age requirement."
+          "DawatFit couldn't verify Apple's age requirement."
         }
         primaryLabel="Try again"
         onPrimary={declaredAgeRange.retry}
@@ -322,11 +322,11 @@ export default function AdultEligibilityScreen() {
   ) {
     return (
       <MessageScreen
-        title="Share your age range with CUT OS"
+        title="Share your age range with DawatFit"
         message={
           declaredAgeRange.status === "declined"
-            ? "Apple didn't share an age range. CUT OS is adults-only, so private health and nutrition features remain locked."
-            : "Apple requires an age-range check on this device. CUT OS asks only whether your range is 18 or older and does not receive your exact birth date."
+            ? "Apple didn't share an age range. DawatFit is adults-only, so private health and nutrition features remain locked."
+            : "Apple requires an age-range check on this device. DawatFit asks only whether your range is 18 or older and does not receive your exact birth date."
         }
         loading={declaredAgeRange.isRequesting}
         primaryLabel={
@@ -352,8 +352,8 @@ export default function AdultEligibilityScreen() {
   if (declaredAgeRange.status === "ineligible") {
     return (
       <MessageScreen
-        title="CUT OS is for adults"
-        message="Apple's shared age range does not meet CUT OS's 18-or-older requirement. Private health and nutrition features remain locked."
+        title="DawatFit is for adults"
+        message="Apple's shared age range does not meet DawatFit's 18-or-older requirement. Private health and nutrition features remain locked."
         primaryLabel="Manage or delete account"
         onPrimary={manageAccount}
         onSignOut={() => void handleSignOut()}
@@ -373,11 +373,11 @@ export default function AdultEligibilityScreen() {
     }
     return (
       <MessageScreen
-        title={meQuery.isError ? "Couldn't open CUT OS" : "Age confirmed"}
+        title={meQuery.isError ? "Couldn't open DawatFit" : "Age confirmed"}
         message={
           meQuery.isError
-            ? "Your age is confirmed, but CUT OS couldn't load your account. Check your connection and try again."
-            : "Opening CUT OS…"
+            ? "Your age is confirmed, but DawatFit couldn't load your account. Check your connection and try again."
+            : "Opening DawatFit…"
         }
         loading={!meQuery.isError}
         primaryLabel={meQuery.isError ? "Try again" : undefined}
@@ -394,7 +394,7 @@ export default function AdultEligibilityScreen() {
     return (
       <MessageScreen
         title="Checking age requirement"
-        message="Health and nutrition features remain locked while CUT OS verifies your account."
+        message="Health and nutrition features remain locked while DawatFit verifies your account."
         loading
         onManage={manageAccount}
         onSignOut={() => void handleSignOut()}
@@ -422,8 +422,8 @@ export default function AdultEligibilityScreen() {
   if (gate.status === "ineligible") {
     return (
       <MessageScreen
-        title="CUT OS is for adults"
-        message="You must be at least 18 years old to use CUT OS. This account's decision is final, so health and nutrition features will remain locked. If you later turn 18, delete this account and create a new one."
+        title="DawatFit is for adults"
+        message="You must be at least 18 years old to use DawatFit. This account's decision is final, so health and nutrition features will remain locked. If you later turn 18, delete this account and create a new one."
         primaryLabel="Manage or delete account"
         onPrimary={manageAccount}
         onSignOut={() => void handleSignOut()}
@@ -455,14 +455,14 @@ export default function AdultEligibilityScreen() {
         </AutoFocusedHeading>
         <Text style={s.subtitle}>
           {reviewingCurrentPolicy
-            ? "CUT OS's adult-only policy needs your confirmation again. Enter your date of birth to continue."
-            : "CUT OS is only available to adults age 18 or older. Enter your date of birth to continue."}
+            ? "DawatFit's adult-only policy needs your confirmation again. Enter your date of birth to continue."
+            : "DawatFit is only available to adults age 18 or older. Enter your date of birth to continue."}
         </Text>
 
         <View style={s.disclosureCard}>
           <Text style={s.disclosureTitle}>Your date is not saved</Text>
           <Text style={s.disclosureText}>
-            CUT OS does not save your date of birth on this device or put it in
+            DawatFit does not save your date of birth on this device or put it in
             links. It is sent to the server only for this eligibility check and
             discarded after the decision.
           </Text>

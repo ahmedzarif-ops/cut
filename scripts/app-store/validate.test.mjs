@@ -3801,7 +3801,7 @@ test("configured App Store icon is hash-bound and technically valid", (t) => {
   );
 
   const releaseErrors = validateAppIcon({
-    manifest,
+    manifest: { ...manifest, status: "technical_validation_passed_brand_approval_pending" },
     appConfig,
     release: true,
   });
@@ -3810,6 +3810,11 @@ test("configured App Store icon is hash-bound and technically valid", (t) => {
       "release mode requires the exact App Store icon approved for submission",
     ),
   );
+  assert.deepEqual(validateAppIcon({
+    manifest: { ...manifest, status: "approved_for_submission" },
+    appConfig,
+    release: true,
+  }), []);
 
   const temporaryRoot = fs.mkdtempSync(
     path.join(os.tmpdir(), "cut-icon-symlink-"),

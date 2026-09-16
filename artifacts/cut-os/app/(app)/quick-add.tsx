@@ -57,7 +57,7 @@ export default function QuickAddScreen() {
             </Pressable>
           ))}
           <Pressable
-            accessibilityLabel="Photo estimate, CUT OS Pro"
+            accessibilityLabel="Photo estimate, DawatFit Pro"
             accessibilityRole="button"
             style={({ pressed }) => [s.photoRow, pressed && s.pressed]}
             onPress={() => router.replace("/photo-estimate")}

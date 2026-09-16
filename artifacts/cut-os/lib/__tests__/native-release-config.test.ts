@@ -80,7 +80,7 @@ const mobileBuildAndTestDependencies = [
 
 describe("native release configuration", () => {
   it("locks the App Store identity, device support, and icon", () => {
-    expect(appConfig.expo.name).toBe("CUT OS");
+    expect(appConfig.expo.name).toBe("DawatFit");
     expect(appConfig.expo.version).toBe("1.0.0");
     expect(appConfig.expo.orientation).toBe("portrait");
     expect(appConfig.expo.icon).toBe("./assets/images/icon-v2.png");
@@ -203,11 +203,11 @@ describe("native release configuration", () => {
     ]);
   });
 
-  it("uses the dark launch background behind the full-canvas app icon", () => {
+  it("uses the approved blue launch background behind the full-canvas app icon", () => {
     expect(appConfig.expo.splash).toMatchObject({
       image: "./assets/images/icon-v2.png",
       resizeMode: "contain",
-      backgroundColor: "#07111F",
+      backgroundColor: "#2563EB",
     });
     expect(appConfig.expo.ios.infoPlist.UIStatusBarStyle).toBe(
       "UIStatusBarStyleLightContent",
@@ -377,7 +377,7 @@ describe("native release configuration", () => {
     expect(cameraPlugin).toEqual([
       "expo-camera",
       {
-        cameraPermission: "Allow CUT OS to scan food barcodes and take food photos for Pro estimates.",
+        cameraPermission: "Allow DawatFit to scan food barcodes and take food photos for Pro estimates.",
         microphonePermission: false,
         recordAudioAndroid: false,
       },

@@ -327,7 +327,7 @@ function OnboardingForm({
         <Text accessibilityRole="header" style={s.title}>
           Set up your profile
         </Text>
-        <Text style={s.subtitle}>Save the basics for your CUT OS profile.</Text>
+        <Text style={s.subtitle}>Save the basics for your DawatFit profile.</Text>
 
         <Text style={s.label}>Display name</Text>
         <TextInput

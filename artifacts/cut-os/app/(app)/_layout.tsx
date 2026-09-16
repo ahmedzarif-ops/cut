@@ -283,7 +283,7 @@ export default function AppLayout() {
           marker: null,
           loading: false,
           error:
-            "CUT OS couldn't safely verify account-deletion recovery on this device.",
+            "DawatFit couldn't safely verify account-deletion recovery on this device.",
         });
       });
 
@@ -445,7 +445,7 @@ export default function AppLayout() {
   if (deletionStatusQuery.isError) {
     return (
       <GateError
-        message="CUT OS couldn't verify your account status. No private account screens were opened."
+        message="DawatFit couldn't verify your account status. No private account screens were opened."
         onRetry={retryGate}
         onSignOut={leaveAccount}
       />
@@ -464,7 +464,7 @@ export default function AppLayout() {
   } catch {
     return (
       <GateError
-        message="CUT OS received an account status it could not safely verify."
+        message="DawatFit received an account status it could not safely verify."
         onRetry={retryGate}
         onSignOut={leaveAccount}
       />
@@ -505,10 +505,10 @@ export default function AppLayout() {
     adultEligibilityResponse = null;
   } else if (adultEligibilityResolution.error === "unavailable") {
     adultEligibilityError =
-      "CUT OS couldn't verify the age requirement. Check your connection and try again. Health and nutrition features remain locked.";
+      "DawatFit couldn't verify the age requirement. Check your connection and try again. Health and nutrition features remain locked.";
   } else if (adultEligibilityResolution.error === "invalid") {
     adultEligibilityError =
-      "CUT OS received an age requirement status it could not safely verify.";
+      "DawatFit received an age requirement status it could not safely verify.";
   }
 
   if (
@@ -706,7 +706,7 @@ function EligibleSubscriptionShell({
         if (!timeZoneSyncCoordinator.current.fail(attempt)) return;
         setTimeZoneSyncBusy(false);
         setTimeZoneSyncError(
-          "CUT OS couldn't set the local day for this device. Check your connection and try again.",
+          "DawatFit couldn't set the local day for this device. Check your connection and try again.",
         );
       });
   }, [
@@ -724,7 +724,7 @@ function EligibleSubscriptionShell({
     return (
       <GateError
         title="Account check needed"
-        message="CUT OS couldn't load the internal account needed to verify App Store access."
+        message="DawatFit couldn't load the internal account needed to verify App Store access."
         onRetry={() => void meQuery.refetch()}
         onSignOut={onSignOut}
       />
@@ -739,7 +739,7 @@ function EligibleSubscriptionShell({
     return (
       <GateError
         title="Local day needed"
-        message="CUT OS couldn't read this device's time zone, so daily entries remain locked to prevent the wrong date. Check the device date and time settings, then retry."
+        message="DawatFit couldn't read this device's time zone, so daily entries remain locked to prevent the wrong date. Check the device date and time settings, then retry."
         onRetry={() => setTimeZoneSyncRetry((value) => value + 1)}
         onSignOut={onSignOut}
       />
@@ -770,7 +770,7 @@ function EligibleSubscriptionShell({
     return (
       <GateError
         title="Local day needed"
-        message="CUT OS rejected an outdated local-day context, so daily data remains locked. Retry to verify this device's current time zone."
+        message="DawatFit rejected an outdated local-day context, so daily data remains locked. Retry to verify this device's current time zone."
         onRetry={() => {
           setDailyTimeZoneRejected(false);
           setTimeZoneSyncRetry((value) => value + 1);
@@ -793,7 +793,7 @@ function EligibleSubscriptionShell({
     return (
       <GateError
         title="Account check needed"
-        message="CUT OS received an account identifier it could not safely use for App Store access."
+        message="DawatFit received an account identifier it could not safely use for App Store access."
         onRetry={() => void meQuery.refetch()}
         onSignOut={onSignOut}
       />
@@ -909,7 +909,7 @@ function GateError({
       signOutLock,
       onSignOut,
       { setBusy: setSignOutBusy, setError: setSignOutError },
-      "CUT OS couldn't sign out. Check your connection and try again.",
+      "DawatFit couldn't sign out. Check your connection and try again.",
     );
 
   return (
