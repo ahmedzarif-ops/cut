@@ -246,6 +246,18 @@ function OnboardingForm({
       });
       if (!isCurrentPrincipal()) return;
 
+      // A /me request started before the profile transaction can resolve after
+      // this save and overwrite the completed account with its older
+      // onboardingComplete=false response. That sends the route boundary back
+      // to onboarding while /today is mounting and can leave iOS showing only
+      // the native navigation background. Cancel both affected query families
+      // before installing the server-confirmed post-save state.
+      await Promise.all([
+        qc.cancelQueries({ queryKey: getGetMeQueryKey() }),
+        qc.cancelQueries({ queryKey: getGetMyProfileQueryKey() }),
+      ]);
+      if (!isCurrentPrincipal()) return;
+
       qc.setQueryData(getGetMyProfileQueryKey(), saved.profile);
       qc.setQueryData(getGetMeQueryKey(), saved.account);
       qc.setQueryData([...getGetMeQueryKey(), ownerUserId], saved.account);

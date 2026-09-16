@@ -620,6 +620,54 @@ export const ListMyProMealFitsResponse = zod.array(ListMyProMealFitsResponseItem
 
 
 /**
+ * Requires explicit photo-transfer consent. Uses the shared AI daily and monthly allowance. Never logs food automatically or stores the image on CUT servers.
+ * @summary Estimate a food photo for an entitled Pro user
+ */
+export const createMyProPhotoEstimateBodyImageBase64Max = 400000;
+
+
+
+export const CreateMyProPhotoEstimateBody = zod.object({
+  "imageBase64": zod.string().max(createMyProPhotoEstimateBodyImageBase64Max),
+  "consent": zod.literal(true)
+})
+
+export const createMyProPhotoEstimateResponseNameMax = 120;
+
+export const createMyProPhotoEstimateResponseServingDescriptionMax = 120;
+
+export const createMyProPhotoEstimateResponseUncertaintyMax = 400;
+
+export const createMyProPhotoEstimateResponseCaloriesKcalMin = 0;
+export const createMyProPhotoEstimateResponseCaloriesKcalMax = 5000;
+
+export const createMyProPhotoEstimateResponseProteinGMin = 0;
+export const createMyProPhotoEstimateResponseProteinGMax = 500;
+
+export const createMyProPhotoEstimateResponseCarbsGMin = 0;
+export const createMyProPhotoEstimateResponseCarbsGMax = 500;
+
+export const createMyProPhotoEstimateResponseFatGMin = 0;
+export const createMyProPhotoEstimateResponseFatGMax = 500;
+
+export const createMyProPhotoEstimateResponseFiberGMin = 0;
+export const createMyProPhotoEstimateResponseFiberGMax = 500;
+
+
+
+export const CreateMyProPhotoEstimateResponse = zod.object({
+  "name": zod.string().min(1).max(createMyProPhotoEstimateResponseNameMax),
+  "servingDescription": zod.string().min(1).max(createMyProPhotoEstimateResponseServingDescriptionMax),
+  "uncertainty": zod.string().min(1).max(createMyProPhotoEstimateResponseUncertaintyMax),
+  "caloriesKcal": zod.number().min(createMyProPhotoEstimateResponseCaloriesKcalMin).max(createMyProPhotoEstimateResponseCaloriesKcalMax),
+  "proteinG": zod.number().min(createMyProPhotoEstimateResponseProteinGMin).max(createMyProPhotoEstimateResponseProteinGMax),
+  "carbsG": zod.number().min(createMyProPhotoEstimateResponseCarbsGMin).max(createMyProPhotoEstimateResponseCarbsGMax),
+  "fatG": zod.number().min(createMyProPhotoEstimateResponseFatGMin).max(createMyProPhotoEstimateResponseFatGMax),
+  "fiberG": zod.number().min(createMyProPhotoEstimateResponseFiberGMin).max(createMyProPhotoEstimateResponseFiberGMax)
+})
+
+
+/**
  * Uses explicit preferences, confirmed meal history, today's remaining targets, and the user's current request. When the separately approved AI provider is enabled, it may choose only from CUT's source-linked food catalog and CUT calculates all nutrition from those catalog amounts. Otherwise the endpoint returns deterministic catalog fits. No result is logged automatically and every value requires review.
  * @summary Create reviewed personalized meal drafts for a CUT OS Pro user
  */

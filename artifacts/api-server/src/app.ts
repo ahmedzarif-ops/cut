@@ -83,6 +83,8 @@ app.use("/api", helmet({ contentSecurityPolicy: false }));
 // public API limiter. Readiness performs its own database revision checks.
 app.use("/api", healthRouter);
 
+// Only photo analysis accepts a bounded image; other JSON routes retain 100KB.
+app.use("/api/me/pro/photo-estimates", express.json({ limit: "410kb" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -222,6 +222,21 @@ export default function TodayScreen() {
     setEditingWeight(true);
   };
 
+  const openNextAction = () => {
+    switch (today?.nextAction.kind) {
+      case "complete_onboarding":
+        router.push("/onboarding");
+        return;
+      case "weigh_in":
+        openWeightEditor();
+        return;
+      case "first_meal":
+      case "review_meals":
+        router.push("/meal-one");
+        return;
+    }
+  };
+
   React.useEffect(() => {
     if (params.action === "weight" && today?.dayKey) {
       openWeightEditor();
@@ -398,7 +413,17 @@ export default function TodayScreen() {
             </View>
           </View>
 
-          <View style={[s.card, s.nextCard]}>
+          <Pressable
+            accessibilityLabel={today.nextAction.title}
+            accessibilityHint="Opens the next recommended action"
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              s.card,
+              s.nextCard,
+              pressed && s.pressed,
+            ]}
+            onPress={openNextAction}
+          >
             <View style={s.nextIcon}>
               <Ionicons name="navigate" size={20} color={c.primaryForeground} />
             </View>
@@ -412,7 +437,7 @@ export default function TodayScreen() {
               size={20}
               color={c.mutedForeground}
             />
-          </View>
+          </Pressable>
 
           <View>
             <Text style={s.groupTitle}>Quick log</Text>

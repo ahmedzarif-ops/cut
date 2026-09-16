@@ -15,12 +15,17 @@
     "professionalApprovalClaimed": false,
     "initiationDeadlinePolicy": "within_3_calendar_days_after_public_release"
   },
+  "ownerContentAmendment": {
+    "approvedBy": "Zarif Ahmed",
+    "evidenceReference": "app-store/evidence/photo-privacy-owner-approval-2026-09-15.md",
+    "professionalApprovalClaimed": false
+  },
   "rendering": {
     "appName": "CUT OS",
     "basePath": ""
   },
   "sha256": {
-    "/privacy": "7f422d609b67fcf79a1902cfe567d5ec5af61cfb328d7559ed621e8f54ddca37",
+    "/privacy": "703968005674e1e33b5ac4ca051bc4224edcfa5f59329874bc0ba9c916de0c41",
     "/terms": "e88d9a37bbb62e827243216e71fc574ed825f0cf281e824dc7bb3b45fa8c8fe9",
     "/support": "98f8d43ae2d9a0b1291396b05d92635d1442f2be60fe075b5fd441399f271b56",
     "/legal.css": "4ec4eb3c09f7c40571f4423e98d8119b216d376a176f2974d3c45a5a8772bc78"

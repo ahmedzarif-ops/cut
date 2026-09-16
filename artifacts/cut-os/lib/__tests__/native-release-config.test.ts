@@ -41,6 +41,7 @@ const mobileRuntimeDependencies = [
   "expo-camera",
   "expo-constants",
   "expo-crypto",
+  "expo-file-system",
   "expo-font",
   "expo-haptics",
   "expo-linking",
@@ -213,6 +214,20 @@ describe("native release configuration", () => {
     );
   });
 
+  it("embeds every Inter weight needed by native launch and app screens", () => {
+    expect(appConfig.expo.plugins).toContainEqual([
+      "expo-font",
+      {
+        fonts: [
+          "./node_modules/@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf",
+          "./node_modules/@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf",
+          "./node_modules/@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf",
+          "./node_modules/@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf",
+        ],
+      },
+    ]);
+  });
+
   it("declares first-party collection as linked and never tracked", () => {
     const manifest = appConfig.expo.ios.privacyManifests;
     const collected = manifest.NSPrivacyCollectedDataTypes;
@@ -354,7 +369,7 @@ describe("native release configuration", () => {
     expect(appConfig.expo.ios.config.usesNonExemptEncryption).toBe(false);
   });
 
-  it("requests camera access only for barcode scanning", () => {
+  it("requests camera access for barcode scanning and Pro food estimates", () => {
     const cameraPlugin = appConfig.expo.plugins.find(
       (plugin: unknown) => Array.isArray(plugin) && plugin[0] === "expo-camera",
     );
@@ -362,7 +377,7 @@ describe("native release configuration", () => {
     expect(cameraPlugin).toEqual([
       "expo-camera",
       {
-        cameraPermission: "Allow CUT OS to scan food barcodes.",
+        cameraPermission: "Allow CUT OS to scan food barcodes and take food photos for Pro estimates.",
         microphonePermission: false,
         recordAudioAndroid: false,
       },

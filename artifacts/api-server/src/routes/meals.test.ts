@@ -24,6 +24,18 @@ afterAll(async () => {
 });
 
 describe("Balanced meal API", () => {
+  it("requires authentication, consent and bounded bodies for photo estimates", async () => {
+    const anonymous = await request(ctx.app).post("/api/me/pro/photo-estimates").send({});
+    expect(anonymous.status).toBe(401);
+    await makeTestUserEligible(ctx, "photo_request_validation");
+    const invalid = await request(ctx.app).post("/api/me/pro/photo-estimates")
+      .set(asUser("photo_request_validation")).send({ consent: false, imageBase64: "not-a-photo" });
+    expect(invalid.status).toBe(400);
+    const oversized = await request(ctx.app).post("/api/me/pro/photo-estimates")
+      .set(asUser("photo_request_validation")).send({ consent: true, imageBase64: "a".repeat(500_000) });
+    expect(oversized.status).toBe(413);
+    expect(JSON.stringify(oversized.body).length).toBeLessThan(200);
+  });
   it("fails closed when meal-day timezone context is missing or invalid", async () => {
     const clerkUserId = "meal_route_timezone_required";
     const authenticatedOnly = { [TEST_USER_HEADER]: clerkUserId };

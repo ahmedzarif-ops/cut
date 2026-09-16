@@ -304,14 +304,8 @@ export default function MealOneScreen() {
     userId,
   ]);
 
-  React.useEffect(() => {
-    setSelectedId((current) => {
-      if (current && options.some((option) => option.id === current)) {
-        return current;
-      }
-      return options[0]?.id ?? null;
-    });
-  }, [options]);
+  // Keep the tapped template through loading/refetches. An empty loading
+  // result must never replace the user's choice with the first catalog item.
 
   const refreshMealState = async () => {
     await Promise.all([
@@ -700,16 +694,20 @@ export default function MealOneScreen() {
       <Text accessibilityRole="header" style={s.title}>
         {pendingIntent
           ? "Verify your previous meal"
-          : loggedMeals.length > 0
-            ? "Review today’s meals"
-            : "Build your first balanced meal"}
+          : selectedOption
+            ? selectedOption.name
+            : loggedMeals.length > 0
+              ? "Review today’s meals"
+              : "Build your first balanced meal"}
       </Text>
       <Text style={s.subtitle}>
         {pendingIntent
           ? "Finish this safe recovery check before changing or adding meals."
-          : loggedMeals.length > 0
-            ? "Review what you’ve logged, add another option, or return to today’s totals."
-            : "Choose a fixed recipe and review its ingredients, portions, and estimates before logging."}
+          : selectedOption
+            ? "Review the serving size, then add this meal to your log."
+            : loggedMeals.length > 0
+              ? "Review what you’ve logged, add another option, or return to today’s totals."
+              : "Choose a fixed recipe and review its ingredients, portions, and estimates before logging."}
       </Text>
 
       {recoveryNotice && !pendingIntent ? (
@@ -782,7 +780,7 @@ export default function MealOneScreen() {
         </View>
       ) : null}
 
-      {screenState.showLoggedMeals ? (
+      {screenState.showLoggedMeals && !selectedOption ? (
         <View style={s.section}>
           <Text style={s.sectionTitle}>Logged today</Text>
           <Text style={s.sectionDetail}>
@@ -903,7 +901,23 @@ export default function MealOneScreen() {
 
       {!recoveryLocked ? (
         <View style={s.section}>
-          <Text style={s.sectionTitle}>Balanced options</Text>
+          <Text style={s.sectionTitle}>
+            {selectedOption ? "Your selected meal" : "Balanced options"}
+          </Text>
+          {selectedOption ? (
+            <Pressable
+              accessibilityRole="button"
+              disabled={busy}
+              style={s.catalogRetryButton}
+              onPress={() => {
+                setSelectedId(null);
+                setServings(1);
+                createRequestId.current = null;
+              }}
+            >
+              <Text style={s.secondaryButtonText}>Choose a different meal</Text>
+            </Pressable>
+          ) : null}
           <Text style={s.sectionDetail}>
             Fixed single-serving recipe estimates—not personalized medical or
             allergy advice.
@@ -948,246 +962,255 @@ export default function MealOneScreen() {
             </View>
           ) : (
             <View>
-              <View style={s.mealSearchRow}>
-                <TextInput
-                  accessibilityLabel="Search balanced meals"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  clearButtonMode="while-editing"
-                  placeholder="Search meals or ingredients"
-                  placeholderTextColor={c.mutedForeground}
-                  returnKeyType="search"
-                  style={s.mealSearchInput}
-                  value={mealQuery}
-                  onChangeText={setMealQuery}
-                />
-                {mealQuery ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Clear meal search"
-                    hitSlop={6}
-                    style={s.clearSearchButton}
-                    onPress={() => setMealQuery("")}
-                  >
-                    <Text style={s.clearSearchText}>Clear</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-              <ScrollView
-                horizontal
-                accessibilityLabel="Meal filters"
-                contentContainerStyle={s.filterRow}
-                showsHorizontalScrollIndicator={false}
-              >
-                {MEAL_FILTERS.map((filter) => {
-                  const active = mealFilter === filter.id;
-                  return (
-                    <Pressable
-                      key={filter.id}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: active }}
-                      style={[s.filterChip, active && s.filterChipActive]}
-                      onPress={() => setMealFilter(filter.id)}
-                    >
-                      <Text
-                        style={[
-                          s.filterChipText,
-                          active && s.filterChipTextActive,
-                        ]}
-                      >
-                        {filter.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-              <Text accessibilityLiveRegion="polite" style={s.resultCount}>
-                Showing {visibleOptions.length} of {options.length} meals
-              </Text>
-
-              {visibleOptions.length === 0 ? (
-                <View style={s.catalogStateCard}>
-                  <Text style={s.catalogStateText}>
-                    No meals match this search and filter.
-                  </Text>
-                  <Pressable
-                    accessibilityRole="button"
-                    style={s.catalogRetryButton}
-                    onPress={() => {
-                      setMealQuery("");
-                      setMealFilter("all");
-                    }}
-                  >
-                    <Text style={s.secondaryButtonText}>Show all meals</Text>
-                  </Pressable>
-                </View>
-              ) : null}
-
-              <View accessibilityRole="radiogroup" style={s.optionStack}>
-                {visibleOptions.map((option) => {
-                  const selected = option.id === selectedId;
-                  const optionNutrition = nutritionFromOption(option);
-                  const allergenText = allergenReviewText(option.allergens);
-                  return (
-                    <View
-                      key={option.id}
-                      style={[
-                        s.optionCard,
-                        selected && s.optionCardSelected,
-                        busy && s.controlDisabled,
-                      ]}
-                    >
+              {!selectedOption ? (
+                <>
+                  <View style={s.mealSearchRow}>
+                    <TextInput
+                      accessibilityLabel="Search balanced meals"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      clearButtonMode="while-editing"
+                      placeholder="Search meals or ingredients"
+                      placeholderTextColor={c.mutedForeground}
+                      returnKeyType="search"
+                      style={s.mealSearchInput}
+                      value={mealQuery}
+                      onChangeText={setMealQuery}
+                    />
+                    {mealQuery ? (
                       <Pressable
-                        accessibilityRole="radio"
-                        accessibilityState={{
-                          checked: selected,
-                          disabled: busy,
-                        }}
-                        accessibilityLabel={`${option.name}. ${option.cuisine}. ${option.description}. ${nutritionAccessibilityLabel(optionNutrition)}. ${selected ? `Selected. Ingredients: ${option.ingredients.join(", ")}. ${allergenText}. ${option.fitReason}.` : "Double tap to review ingredients, servings, and logging."} Estimated nutrition.`}
-                        accessibilityHint={
-                          selected
-                            ? "Selected. Review and log this meal below."
-                            : "Select and open this meal"
-                        }
-                        disabled={busy}
-                        style={({ pressed }) => [
-                          s.optionSelectSurface,
-                          pressed && !busy && s.buttonPressed,
-                        ]}
-                        onPress={() => selectOption(option.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Clear meal search"
+                        hitSlop={6}
+                        style={s.clearSearchButton}
+                        onPress={() => setMealQuery("")}
                       >
-                        <View style={s.optionHeader}>
-                          <View style={s.optionTitleWrap}>
-                            <Text style={s.cardTitle}>{option.name}</Text>
-                          </View>
-                          <View
+                        <Text style={s.clearSearchText}>Clear</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                  <ScrollView
+                    horizontal
+                    accessibilityLabel="Meal filters"
+                    contentContainerStyle={s.filterRow}
+                    showsHorizontalScrollIndicator={false}
+                  >
+                    {MEAL_FILTERS.map((filter) => {
+                      const active = mealFilter === filter.id;
+                      return (
+                        <Pressable
+                          key={filter.id}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: active }}
+                          style={[s.filterChip, active && s.filterChipActive]}
+                          onPress={() => setMealFilter(filter.id)}
+                        >
+                          <Text
                             style={[
-                              s.radioMark,
-                              selected && s.radioMarkSelected,
+                              s.filterChipText,
+                              active && s.filterChipTextActive,
                             ]}
                           >
-                            {selected ? (
-                              <Text style={s.checkMark}>✓</Text>
-                            ) : null}
-                          </View>
-                        </View>
-                        <Text style={s.cuisineLabel}>{option.cuisine}</Text>
-                        <Text
-                          numberOfLines={selected ? undefined : 2}
-                          style={s.cardDescription}
-                        >
-                          {option.description}
-                        </Text>
-                        <Text style={s.optionMacros}>
-                          {compactNumber(option.caloriesKcal)} kcal ·{" "}
-                          {compactNumber(option.proteinG)}g protein
-                        </Text>
-                        <Text style={s.optionDetails}>
-                          {compactNumber(option.carbsG)}g carbs ·{" "}
-                          {compactNumber(option.fatG)}g fat ·{" "}
-                          {compactNumber(option.fiberG)}g fiber
+                            {filter.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                  <Text accessibilityLiveRegion="polite" style={s.resultCount}>
+                    Showing {visibleOptions.length} of {options.length} meals
+                  </Text>
+
+                  {visibleOptions.length === 0 ? (
+                    <View style={s.catalogStateCard}>
+                      <Text style={s.catalogStateText}>
+                        No meals match this search and filter.
+                      </Text>
+                      <Pressable
+                        accessibilityRole="button"
+                        style={s.catalogRetryButton}
+                        onPress={() => {
+                          setMealQuery("");
+                          setMealFilter("all");
+                        }}
+                      >
+                        <Text style={s.secondaryButtonText}>
+                          Show all meals
                         </Text>
                       </Pressable>
-
-                      {selected && preview ? (
-                        <View style={s.selectedMealDetails}>
-                          <Text style={s.overline}>YOUR MEAL</Text>
-                          <Text style={s.ingredients}>
-                            Per 1× recipe: {option.ingredients.join(", ")}
-                          </Text>
-                          <Text style={s.allergens}>{allergenText}</Text>
-                          <Text style={s.fitReason}>{option.fitReason}</Text>
-
-                          <ServingStepper
-                            label="Servings"
-                            value={servings}
-                            disabled={busy}
-                            onDecrease={() =>
-                              adjustNewMealServings(-MEAL_SERVING_STEP)
-                            }
-                            onIncrease={() =>
-                              adjustNewMealServings(MEAL_SERVING_STEP)
-                            }
-                            c={c}
-                            s={s}
-                          />
-
-                          <View
-                            accessible
-                            accessibilityLiveRegion="polite"
-                            accessibilityLabel={`Meal preview, ${formatMealServings(servings)}, ${nutritionAccessibilityLabel(preview)}. Estimated nutrition.`}
-                            style={s.previewGrid}
-                          >
-                            <MacroMetric
-                              label="Calories"
-                              value={compactNumber(preview.caloriesKcal)}
-                              suffix="kcal"
-                              s={s}
-                            />
-                            <MacroMetric
-                              label="Protein"
-                              value={compactNumber(preview.proteinG)}
-                              suffix="g"
-                              s={s}
-                            />
-                            <MacroMetric
-                              label="Carbs"
-                              value={compactNumber(preview.carbsG)}
-                              suffix="g"
-                              s={s}
-                            />
-                            <MacroMetric
-                              label="Fat"
-                              value={compactNumber(preview.fatG)}
-                              suffix="g"
-                              s={s}
-                            />
-                            <MacroMetric
-                              label="Fiber"
-                              value={compactNumber(preview.fiberG)}
-                              suffix="g"
-                              s={s}
-                            />
-                          </View>
-
-                          <Text style={s.estimateDisclosure}>
-                            Estimated nutrition. Review every ingredient and
-                            package label; cross-contact is not assessed.
-                          </Text>
-
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`Log ${option.name}`}
-                            accessibilityState={{
-                              disabled: busy,
-                              busy: createBusy,
-                            }}
-                            disabled={busy}
-                            style={({ pressed }) => [
-                              s.button,
-                              busy && s.controlDisabled,
-                              pressed && !busy && s.buttonPressed,
-                            ]}
-                            onPress={() => void handleCreate()}
-                          >
-                            {createBusy ? (
-                              <View style={s.savingRow}>
-                                <ActivityIndicator
-                                  color={c.primaryForeground}
-                                />
-                                <Text style={s.buttonText}>Logging meal…</Text>
-                              </View>
-                            ) : (
-                              <Text style={s.buttonText}>
-                                Log {option.name}
-                              </Text>
-                            )}
-                          </Pressable>
-                        </View>
-                      ) : null}
                     </View>
-                  );
-                })}
+                  ) : null}
+                </>
+              ) : null}
+              <View accessibilityRole="radiogroup" style={s.optionStack}>
+                {(selectedOption ? [selectedOption] : visibleOptions).map(
+                  (option) => {
+                    const selected = option.id === selectedId;
+                    const optionNutrition = nutritionFromOption(option);
+                    const allergenText = allergenReviewText(option.allergens);
+                    return (
+                      <View
+                        key={option.id}
+                        style={[
+                          s.optionCard,
+                          selected && s.optionCardSelected,
+                          busy && s.controlDisabled,
+                        ]}
+                      >
+                        <Pressable
+                          accessibilityRole="radio"
+                          accessibilityState={{
+                            checked: selected,
+                            disabled: busy,
+                          }}
+                          accessibilityLabel={`${option.name}. ${option.cuisine}. ${option.description}. ${nutritionAccessibilityLabel(optionNutrition)}. ${selected ? `Selected. Ingredients: ${option.ingredients.join(", ")}. ${allergenText}. ${option.fitReason}.` : "Double tap to review ingredients, servings, and logging."} Estimated nutrition.`}
+                          accessibilityHint={
+                            selected
+                              ? "Selected. Review and log this meal below."
+                              : "Select and open this meal"
+                          }
+                          disabled={busy}
+                          style={({ pressed }) => [
+                            s.optionSelectSurface,
+                            pressed && !busy && s.buttonPressed,
+                          ]}
+                          onPress={() => selectOption(option.id)}
+                        >
+                          <View style={s.optionHeader}>
+                            <View style={s.optionTitleWrap}>
+                              <Text style={s.cardTitle}>{option.name}</Text>
+                            </View>
+                            <View
+                              style={[
+                                s.radioMark,
+                                selected && s.radioMarkSelected,
+                              ]}
+                            >
+                              {selected ? (
+                                <Text style={s.checkMark}>✓</Text>
+                              ) : null}
+                            </View>
+                          </View>
+                          <Text style={s.cuisineLabel}>{option.cuisine}</Text>
+                          <Text
+                            numberOfLines={selected ? undefined : 2}
+                            style={s.cardDescription}
+                          >
+                            {option.description}
+                          </Text>
+                          <Text style={s.optionMacros}>
+                            {compactNumber(option.caloriesKcal)} kcal ·{" "}
+                            {compactNumber(option.proteinG)}g protein
+                          </Text>
+                          <Text style={s.optionDetails}>
+                            {compactNumber(option.carbsG)}g carbs ·{" "}
+                            {compactNumber(option.fatG)}g fat ·{" "}
+                            {compactNumber(option.fiberG)}g fiber
+                          </Text>
+                        </Pressable>
+
+                        {selected && preview ? (
+                          <View style={s.selectedMealDetails}>
+                            <Text style={s.overline}>YOUR MEAL</Text>
+                            <Text style={s.ingredients}>
+                              Per 1× recipe: {option.ingredients.join(", ")}
+                            </Text>
+                            <Text style={s.allergens}>{allergenText}</Text>
+                            <Text style={s.fitReason}>{option.fitReason}</Text>
+
+                            <ServingStepper
+                              label="Servings"
+                              value={servings}
+                              disabled={busy}
+                              onDecrease={() =>
+                                adjustNewMealServings(-MEAL_SERVING_STEP)
+                              }
+                              onIncrease={() =>
+                                adjustNewMealServings(MEAL_SERVING_STEP)
+                              }
+                              c={c}
+                              s={s}
+                            />
+
+                            <View
+                              accessible
+                              accessibilityLiveRegion="polite"
+                              accessibilityLabel={`Meal preview, ${formatMealServings(servings)}, ${nutritionAccessibilityLabel(preview)}. Estimated nutrition.`}
+                              style={s.previewGrid}
+                            >
+                              <MacroMetric
+                                label="Calories"
+                                value={compactNumber(preview.caloriesKcal)}
+                                suffix="kcal"
+                                s={s}
+                              />
+                              <MacroMetric
+                                label="Protein"
+                                value={compactNumber(preview.proteinG)}
+                                suffix="g"
+                                s={s}
+                              />
+                              <MacroMetric
+                                label="Carbs"
+                                value={compactNumber(preview.carbsG)}
+                                suffix="g"
+                                s={s}
+                              />
+                              <MacroMetric
+                                label="Fat"
+                                value={compactNumber(preview.fatG)}
+                                suffix="g"
+                                s={s}
+                              />
+                              <MacroMetric
+                                label="Fiber"
+                                value={compactNumber(preview.fiberG)}
+                                suffix="g"
+                                s={s}
+                              />
+                            </View>
+
+                            <Text style={s.estimateDisclosure}>
+                              Estimated nutrition. Review every ingredient and
+                              package label; cross-contact is not assessed.
+                            </Text>
+
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={`Log ${option.name}`}
+                              accessibilityState={{
+                                disabled: busy,
+                                busy: createBusy,
+                              }}
+                              disabled={busy}
+                              style={({ pressed }) => [
+                                s.button,
+                                busy && s.controlDisabled,
+                                pressed && !busy && s.buttonPressed,
+                              ]}
+                              onPress={() => void handleCreate()}
+                            >
+                              {createBusy ? (
+                                <View style={s.savingRow}>
+                                  <ActivityIndicator
+                                    color={c.primaryForeground}
+                                  />
+                                  <Text style={s.buttonText}>
+                                    Logging meal…
+                                  </Text>
+                                </View>
+                              ) : (
+                                <Text style={s.buttonText}>
+                                  Log {option.name}
+                                </Text>
+                              )}
+                            </Pressable>
+                          </View>
+                        ) : null}
+                      </View>
+                    );
+                  },
+                )}
               </View>
             </View>
           )}

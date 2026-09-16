@@ -54,8 +54,17 @@ describe("iOS UI accessibility screen contracts", () => {
     expect(rootLayoutSource.slice(launchErrorStart, rootLayoutStart)).toContain(
       '<StatusBar style="light" />',
     );
-    expect(rootLayoutSource).toContain(
+    expect(rootLayoutSource).not.toContain(
       'if (launchDecision.surface === "asset_loading") {\n    return <StatusBar style="light" />;',
+    );
+    expect(rootLayoutSource).toContain(
+      "<AssetLaunchScreen timedOut={assetLoadingTimedOut} />",
+    );
+    expect(rootLayoutSource).toContain(
+      'accessibilityLabel="Loading CUT OS display"',
+    );
+    expect(rootLayoutSource).toContain(
+      'accessibilityLabel="Restart CUT OS after startup timeout"',
     );
   });
 
@@ -70,6 +79,20 @@ describe("iOS UI accessibility screen contracts", () => {
     expect(styleBlock(onboardingSource, "secondaryButton")).toContain(
       "minHeight: 44",
     );
+  });
+
+  it("cancels stale onboarding queries before navigating to Today", () => {
+    const cancelStart = onboardingSource.indexOf(
+      "await Promise.all([\n        qc.cancelQueries({ queryKey: getGetMeQueryKey() })",
+    );
+    const accountCommit = onboardingSource.indexOf(
+      "qc.setQueryData(getGetMeQueryKey(), saved.account)",
+    );
+    const navigation = onboardingSource.indexOf('router.replace("/today")');
+
+    expect(cancelStart).toBeGreaterThan(-1);
+    expect(accountCommit).toBeGreaterThan(cancelStart);
+    expect(navigation).toBeGreaterThan(accountCommit);
   });
 
   it("names Today actions and guarantees the cancel target is 44 points", () => {
@@ -87,6 +110,20 @@ describe("iOS UI accessibility screen contracts", () => {
 
     expect(styleBlock(todaySource, "iconButton")).toContain("width: 44");
     expect(styleBlock(todaySource, "iconButton")).toContain("height: 44");
+  });
+
+  it("keeps the Today next action tappable and routes every action kind", () => {
+    expect(todaySource).toContain("const openNextAction = () => {");
+    expect(todaySource).toContain(
+      'accessibilityLabel={today.nextAction.title}\n            accessibilityHint="Opens the next recommended action"\n            accessibilityRole="button"',
+    );
+    expect(todaySource).toContain("onPress={openNextAction}");
+    expect(todaySource).toContain(
+      'case "weigh_in":\n        openWeightEditor();',
+    );
+    expect(todaySource).toContain(
+      'case "first_meal":\n      case "review_meals":\n        router.push("/meal-one");',
+    );
   });
 
   it("exposes the restart fallback as a named button", () => {

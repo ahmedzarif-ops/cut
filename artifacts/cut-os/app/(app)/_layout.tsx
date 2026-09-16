@@ -57,6 +57,7 @@ import {
 } from "@/lib/device-time-zone-gate";
 import {
   decideSubscriptionRoute,
+  resolveSubscriptionRoute,
   isInternalUserUuid,
 } from "@/lib/subscription";
 import {
@@ -827,14 +828,7 @@ function SubscriptionRouteBoundary({
 }) {
   const pathname = usePathname();
   const subscription = useSubscriptionGate();
-  const onSettings = pathname === "/settings" || pathname.endsWith("/settings");
-  const onSubscription =
-    pathname === "/subscription" || pathname.endsWith("/subscription");
-  const route = onSettings
-    ? "settings"
-    : onSubscription
-      ? "subscription"
-      : "core";
+  const route = resolveSubscriptionRoute(pathname);
   const decision = decideSubscriptionRoute({
     route,
     subscription: subscription.server,
