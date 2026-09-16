@@ -7,6 +7,8 @@ enabledForHosting = false
 router = "application"
 build = "corepack pnpm install --frozen-lockfile --prod=false && corepack pnpm --filter @workspace/api-server run build"
 run = "corepack pnpm run start:production"
+deploymentTarget = "gce"
+ignorePorts = false
 
 [deployment.postBuild]
 args = ["corepack", "pnpm", "store", "prune"]
