@@ -39,3 +39,4 @@ Generated with the built-in image tool from approved concept 2. Prompt: extract 
 - Local high-severity audit now exits 0; remaining findings are 4 low, 10 moderate, and the two already patched/explicitly ignored image-size records. No new ignores were added.
 - Workspace typecheck passed after the dependency updates. Full tests and remote CI are being rerun before deploy.
 - Replit fast-forward to dbaac76528f1ffb7e889f210cb573088c74c556d completed with a clean tree; production was not republished. Development-data copy remains OFF and resources remain 0.5 vCPU / 2 GiB RAM.
+- The merged Replit-generated deploymentTarget entry failed the existing provider-controlled-hosting test. Removed that redundant repository override; the live Reserved VM settings remain unchanged. Kept the test intact and preserved ignorePorts=false.
