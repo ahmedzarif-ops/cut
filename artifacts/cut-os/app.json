@@ -138,7 +138,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow CUT OS to scan food barcodes.",
+          "cameraPermission": "Allow CUT OS to scan food barcodes and take food photos for Pro estimates.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }

@@ -45,6 +45,8 @@ import type {
   MealFeedbackInput,
   MealOption,
   NutritionPreferences,
+  PhotoEstimate,
+  PhotoEstimateInput,
   Profile,
   ProfileInput,
   SavedFood,
@@ -1815,6 +1817,78 @@ export function useListMyProMealFits<TData = Awaited<ReturnType<typeof listMyPro
 
 
 
+
+export const getCreateMyProPhotoEstimateUrl = () => {
+
+
+
+
+  return `/api/me/pro/photo-estimates`
+}
+
+/**
+ * Requires explicit photo-transfer consent. Uses the shared AI daily and monthly allowance. Never logs food automatically or stores the image on CUT servers.
+ * @summary Estimate a food photo for an entitled Pro user
+ */
+export const createMyProPhotoEstimate = async (photoEstimateInput: PhotoEstimateInput, options?: RequestInit): Promise<PhotoEstimate> => {
+
+  return customFetch<PhotoEstimate>(getCreateMyProPhotoEstimateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(photoEstimateInput)
+  }
+);}
+
+
+
+
+
+export const getCreateMyProPhotoEstimateMutationOptions = <TError = ErrorType<void | SubscriptionRequiredResponse | AdultEligibilityDeniedResponse | AccountDeletionBlockedResponse | AdultEligibilityRequiredResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMyProPhotoEstimate>>, TError,{data: BodyType<PhotoEstimateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMyProPhotoEstimate>>, TError,{data: BodyType<PhotoEstimateInput>}, TContext> => {
+
+const mutationKey = ['createMyProPhotoEstimate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMyProPhotoEstimate>>, {data: BodyType<PhotoEstimateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMyProPhotoEstimate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMyProPhotoEstimateMutationResult = NonNullable<Awaited<ReturnType<typeof createMyProPhotoEstimate>>>
+    export type CreateMyProPhotoEstimateMutationBody = BodyType<PhotoEstimateInput>
+    export type CreateMyProPhotoEstimateMutationError = ErrorType<void | SubscriptionRequiredResponse | AdultEligibilityDeniedResponse | AccountDeletionBlockedResponse | AdultEligibilityRequiredResponse>
+
+    /**
+ * @summary Estimate a food photo for an entitled Pro user
+ */
+export const useCreateMyProPhotoEstimate = <TError = ErrorType<void | SubscriptionRequiredResponse | AdultEligibilityDeniedResponse | AccountDeletionBlockedResponse | AdultEligibilityRequiredResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMyProPhotoEstimate>>, TError,{data: BodyType<PhotoEstimateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createMyProPhotoEstimate>>,
+        TError,
+        {data: BodyType<PhotoEstimateInput>},
+        TContext
+      > => {
+      return useMutation(getCreateMyProPhotoEstimateMutationOptions(options));
+    }
 
 export const getCreateMyProMealDraftsUrl = () => {
 

@@ -270,6 +270,11 @@ export default function FoodEntryScreen() {
           </View>
         ) : null}
 
+        {params.mode === "photo" ? (
+          <Text style={s.sectionTitle}>
+            Photo estimate — review and correct all values
+          </Text>
+        ) : null}
         <Text style={s.sectionTitle}>Food</Text>
         <Field
           label="Name"

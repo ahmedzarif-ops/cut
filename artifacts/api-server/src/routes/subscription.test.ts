@@ -266,7 +266,13 @@ describe("freemium route boundary", () => {
     expect(response.headers["cache-control"]).toBe("no-store");
     expect(drafts.status).toBe(402);
     expect(drafts.body).toEqual(response.body);
-    expect(getStatus).toHaveBeenCalledTimes(2);
+    const photo = await request(ctx.app)
+      .post("/api/me/pro/photo-estimates")
+      .set(headers)
+      .send({ consent: true });
+    expect(photo.status).toBe(402);
+    expect(photo.body).toEqual(response.body);
+    expect(getStatus).toHaveBeenCalledTimes(3);
     expect(getStatus).toHaveBeenCalledWith(internalUserId);
   });
 

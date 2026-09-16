@@ -486,6 +486,55 @@ export interface MealDraft {
   reviewRequired: true;
 }
 
+export interface PhotoEstimateInput {
+  /** @maxLength 400000 */
+  imageBase64: string;
+  consent: true;
+}
+
+export interface PhotoEstimate {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  servingDescription: string;
+  /**
+     * @minLength 1
+     * @maxLength 400
+     */
+  uncertainty: string;
+  /**
+     * @minimum 0
+     * @maximum 5000
+     */
+  caloriesKcal: number;
+  /**
+     * @minimum 0
+     * @maximum 500
+     */
+  proteinG: number;
+  /**
+     * @minimum 0
+     * @maximum 500
+     */
+  carbsG: number;
+  /**
+     * @minimum 0
+     * @maximum 500
+     */
+  fatG: number;
+  /**
+     * @minimum 0
+     * @maximum 500
+     */
+  fiberG: number;
+}
+
 export type MealDraftResultSource = typeof MealDraftResultSource[keyof typeof MealDraftResultSource];
 
 

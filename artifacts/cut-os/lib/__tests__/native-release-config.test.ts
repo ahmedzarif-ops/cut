@@ -41,6 +41,7 @@ const mobileRuntimeDependencies = [
   "expo-camera",
   "expo-constants",
   "expo-crypto",
+  "expo-file-system",
   "expo-font",
   "expo-haptics",
   "expo-linking",
@@ -368,7 +369,7 @@ describe("native release configuration", () => {
     expect(appConfig.expo.ios.config.usesNonExemptEncryption).toBe(false);
   });
 
-  it("requests camera access only for barcode scanning", () => {
+  it("requests camera access for barcode scanning and Pro food estimates", () => {
     const cameraPlugin = appConfig.expo.plugins.find(
       (plugin: unknown) => Array.isArray(plugin) && plugin[0] === "expo-camera",
     );
@@ -376,7 +377,7 @@ describe("native release configuration", () => {
     expect(cameraPlugin).toEqual([
       "expo-camera",
       {
-        cameraPermission: "Allow CUT OS to scan food barcodes.",
+        cameraPermission: "Allow CUT OS to scan food barcodes and take food photos for Pro estimates.",
         microphonePermission: false,
         recordAudioAndroid: false,
       },

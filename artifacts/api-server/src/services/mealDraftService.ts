@@ -275,7 +275,7 @@ function lunaCostMicrodollars(
   return Math.ceil((inputTokens + 6 * outputTokens) / 5);
 }
 
-async function reserveAiRequest(
+export async function reserveAiRequest(
   userId: string,
   usageDay: string,
   limit: number,
@@ -336,7 +336,7 @@ async function reserveAiRequest(
   });
 }
 
-async function settleAiRequest(
+export async function settleAiRequest(
   userId: string,
   usageDay: string,
   inputTokens: number,

@@ -53,6 +53,8 @@ export * from './nutrition';
 export * from './nutritionPreferences';
 export * from './nutritionPreferencesDietStyle';
 export * from './nutritionPreferencesInput';
+export * from './photoEstimate';
+export * from './photoEstimateInput';
 export * from './profile';
 export * from './profileGoal';
 export * from './profileInput';

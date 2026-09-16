@@ -31,6 +31,10 @@ import {
 } from "@workspace/api-zod";
 
 import { HttpError } from "../lib/httpError";
+import {
+  estimateFoodPhoto,
+  parsePhotoRequest,
+} from "../services/photoEstimateService";
 import { lookupBarcodeFood } from "../services/foodLookupService";
 import { requireDeviceTimeZone } from "../middlewares/requireDeviceTimeZone";
 import { requireAuth } from "../middlewares/requireAuth";
@@ -117,6 +121,17 @@ function containsOnlyKnownKeys(
     Object.keys(value).every((key) => knownKeys.has(key))
   );
 }
+
+router.post(
+  "/me/pro/photo-estimates",
+  requireAuth,
+  requireSubscription,
+  async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    const imageBase64 = parsePhotoRequest(req.body);
+    res.json(await estimateFoodPhoto(req.userId!, imageBase64));
+  },
+);
 
 router.get(
   "/me/meal-options",
